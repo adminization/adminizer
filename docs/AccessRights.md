@@ -1,5 +1,5 @@
 # Access Rights
-When sails-adminpanel starts, for every Model it creates 4 access rights tokens:
+When Adminizer starts, for every Model it creates 4 access rights tokens:
 - create
 - read
 - update

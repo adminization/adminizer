@@ -6,14 +6,14 @@
 
 ## 2. Configuration
 
-* [General Settings](Configuration/General.md)
-* [Model Definitions](Configuration/Models.md)
-* [Field Options](Configuration/Fields.md)
-* [Custom Components](Configuration/CustomComponents.md)
+* [General Settings](configuration/General.md)
+* [Model Definitions](configuration/Models.md)
+* [Field Options](configuration/Fields.md)
+* [Custom Components](configuration/CustomComponents.md)
 
 ## Other
 
-* [Localization](Configuration/Localization.md)
+* [Localization](configuration/Localization.md)
 ## 3. Frontend Integration
 
 * [Inertia Adapter & Flash](InertiaAdapter.md)

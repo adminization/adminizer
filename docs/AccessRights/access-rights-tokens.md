@@ -49,3 +49,34 @@ module.exports.adminpanel = {
     }
 }
 ```
+
+## Groups and Inheritance
+
+A user can belong to several groups. Their final permissions are the **union** of all tokens from these groups. Use this to create a hierarchy of roles. For example, `editor` can inherit the rights of `viewer` plus editing privileges:
+
+```javascript
+module.exports.adminpanel = {
+    groups: {
+        viewer: ['post-read'],
+        editor: ['post-read', 'post-update'],
+        admin: ['post-read', 'post-update', 'post-delete']
+    }
+};
+```
+
+When assigning users to groups, Adminizer automatically grants all associated tokens.
+
+### Restricting Field Visibility
+
+Tokens can be checked inside `groupsAccessRights` of a field. Only users who have the required token (either directly or through a group) will see the field:
+
+```javascript
+fields: {
+    internalNotes: {
+        type: 'text',
+        groupsAccessRights: ['post-update']
+    }
+}
+```
+
+This way you can hide sensitive data from regular users while keeping it visible for editors or admins.

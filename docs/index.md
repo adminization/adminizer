@@ -2,6 +2,7 @@
 
 ## 1. Getting Started
 
+* [Quick Start](QuickStart.md)
 * [Installation](Install.md)
 
 ## 2. Configuration
@@ -13,6 +14,7 @@
 
 ## Other
 
+* [Admin Tips](AdminTips.md)
 * [Localization](Configuration/Localization.md)
 ## 3. Frontend Integration
 

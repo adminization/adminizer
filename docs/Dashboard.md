@@ -33,10 +33,19 @@ module.exports.adminpanel = {
     dashboard: true
 }
 
-```
+### Customizing the Layout
+Widgets can be arranged on a grid by defining a `layout` array. Each item references the widget `id` and its position.
 
-
-
+```javascript
+module.exports.adminpanel = {
+    dashboard: {
+        enable: true,
+        layout: [
+            { id: "users_total", x: 0, y: 0, w: 4, h: 2 },
+            { id: "last_orders", x: 4, y: 0, w: 8, h: 4 }
+        ]
+    }
+}
 
 # Widgets
 

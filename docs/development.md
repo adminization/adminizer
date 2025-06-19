@@ -9,11 +9,14 @@
 - **`npm run build:assets`**  
   Builds frontend assets using Vite.
 
-- **`npm run build:backend`**  
+- **`npm run build:backend`**
   Combines backend copy and compilation steps.
 
-- **`npm run build`**  
-  Full build process: copies backend, compiles backend, and builds assets.
+- **`npm run build:ui`**
+  Builds the React UI library to `dist/ui`.
+
+- **`npm run build`**
+  Full build process: copies backend, compiles backend, builds the UI library, and builds assets.
 
 ## Module-specific Builds (this is just for tests, as an example, you should create your own commands to build modules)
 - **`npm run build:module`**  

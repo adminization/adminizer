@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "rootDir": "src/assets/js",
+    "outDir": "dist/ui",
+    "baseUrl": "src/assets/js",
+    "paths": {
+      "@/*": ["*"]
+    }
+  },
+  "include": [
+    "src/assets/js/components/ui/**/*.ts",
+    "src/assets/js/components/ui/**/*.tsx"
+  ],
+  "exclude": ["node_modules"]
+}

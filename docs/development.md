@@ -9,11 +9,14 @@
 - **`npm run build:assets`**  
   Builds frontend assets using Vite.
 
-- **`npm run build:backend`**  
+- **`npm run build:backend`**
   Combines backend copy and compilation steps.
 
-- **`npm run build`**  
-  Full build process: copies backend, compiles backend, and builds assets.
+- **`npm run compile:ui`**
+  Generates type declarations for the UI components.
+
+- **`npm run build`**
+  Full build process: copies backend, compiles backend, generates UI component types, and builds assets.
 
 ## Module-specific Builds (this is just for tests, as an example, you should create your own commands to build modules)
 - **`npm run build:module`**  

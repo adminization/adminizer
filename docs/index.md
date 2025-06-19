@@ -29,3 +29,4 @@
 * [Field-Level Restrictions](AccessControl/FieldRestrictions.md)
 * [Role & Group Management](AccessControl/RoleGroups.md)
 * [Global UI Components](GlobalUI.md)
+* [UI Component List](UIComponents.md)

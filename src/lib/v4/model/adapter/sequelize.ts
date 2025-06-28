@@ -36,12 +36,18 @@ function generateAssociationsFromSchema(
         }
         // 💡 O:M связь (один ко многим)
         else {
-          const foreignKey = field.collection === modelName ? field.via : `${modelName}Id`;
+          const foreignKey =
+            field.collection === modelName ? `${field.via}Id` : `${modelName}Id`;
+
           model.hasMany(targetModel, {
             as: fieldName,
             foreignKey,
           });
-          const belongsAlias = model.rawAttributes[field.via] ? `${field.via}Assoc` : field.via;
+
+          const belongsAlias = targetModel.rawAttributes[field.via]
+            ? `${field.via}Assoc`
+            : field.via;
+
           if (!targetModel.associations[belongsAlias]) {
             targetModel.belongsTo(model, {
               as: belongsAlias,

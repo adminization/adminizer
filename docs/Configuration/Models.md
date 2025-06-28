@@ -13,3 +13,5 @@ The provided models are:
 
 They can be created and queried like any other models once registered.
 
+When defining self‑referencing relationships, ensure that the foreign key uses a unique column name such as `parentNodeId`. Adminizer's Sequelize adapter automatically handles this and assigns an alias like `parentNode` without conflicting with the attribute name.
+

@@ -1,4 +1,6 @@
 
+## 4.1.5
+- Fixed naming collision error for `MediaManagerAP` when registering Sequelize models.
 ## 4.1.4
 - Fixed Sequelize system model registration errors in tests.
 ## 4.1.3

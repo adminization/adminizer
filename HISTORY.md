@@ -9,3 +9,5 @@
 - Added system model tests for Waterline and Sequelize.
 
 - Fixed test suite reliability by normalizing model lookups and adjusting Sequelize association handling. Sequelize tests temporarily skipped.
+
+- Resolved Sequelize naming collision for parentNode associations

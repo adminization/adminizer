@@ -59,7 +59,7 @@ function generateAssociationsFromSchema(
         const foreignKey = `${fieldName}Id`;
         const alias = fieldName;
 
-        if (!model.associations[alias]) {
+        if (!model.associations[alias] && !Object.prototype.hasOwnProperty.call(model.rawAttributes, alias)) {
           model.belongsTo(targetModel, {
             as: alias,
             foreignKey,

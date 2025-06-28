@@ -9,3 +9,4 @@
 - Added system model tests for Waterline and Sequelize.
 
 - Fixed test suite reliability by normalizing model lookups and adjusting Sequelize association handling. Sequelize tests temporarily skipped.
+- Fixed fixture imports to use TypeScript sources and documented Sequelize parentNode collision.

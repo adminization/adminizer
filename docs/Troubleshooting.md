@@ -48,3 +48,28 @@ npm install material-icons --legacy-peer-deps
 ```
 
 
+
+### Sequelize `parentNode` Naming Collision
+
+**Description:**
+
+Launching the fixture with Sequelize may throw the following error:
+
+```
+Error: Naming collision between attribute 'parentNode' and association 'parentNode' on model MediaManagerAP
+```
+
+**Cause:**
+
+Older builds compiled the ORM adapter with a `parentNode` field that conflicted with the generated association. If the `dist` directory is stale, Sequelize fails when registering models.
+
+**Solution:**
+
+Use the TypeScript sources directly or rebuild the project before starting the fixture:
+
+```bash
+npm run build
+npm start
+```
+
+The adapter now assigns foreign keys with a `Id` suffix (e.g., `parentNodeId`) which prevents this collision.

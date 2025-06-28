@@ -1,6 +1,6 @@
-import {Adminizer} from "../dist/lib/Adminizer";
+import {Adminizer} from "../src/lib/Adminizer";
 import http from 'http';
-import {WaterlineAdapter, WaterlineModel} from "../dist/lib/v4/model/adapter/waterline";
+import {WaterlineAdapter, WaterlineModel} from "../src/lib/v4/model/adapter/waterline";
 import Waterline from "waterline";
 import waterlineConfig from "./waterlineConfig";
 import ExampleWaterline from "./models/Example";
@@ -12,7 +12,7 @@ import CatalogPageNav from "./models/CatalogPageNav";
 import GroupCatalog from "./models/GroupCatalog";
 import UserWaterline from "./models/User";
 import adminpanelConfig from "./adminizerConfig";
-import {AdminpanelConfig} from "../dist/interfaces/adminpanelConfig";
+import {AdminpanelConfig} from "../src/interfaces/adminpanelConfig";
 
 import {ReactQuill} from "../modules/controls/wysiwyg/ReactQuill";
 
@@ -27,7 +27,7 @@ import {JsonSchema as JsonSchemaSequelize} from "./models/sequelize/JsonSchema";
 import {Test as TestSequelize} from "./models/sequelize/Test";
 import {Category as CategorySequelize} from "./models/sequelize/Category";
 import {TestCatalog as TestCatalogSequelize} from "./models/sequelize/TestCatalog";
-import {SequelizeAdapter} from "../dist/lib/v4/model/adapter/sequelize";
+import {SequelizeAdapter} from "../src/lib/v4/model/adapter/sequelize";
 import {seedDatabase} from "./helpers/seedDatabase";
 
 
@@ -38,7 +38,7 @@ import {InfoOne, Info4, Info3, InfoTwo} from "./widgets/Info";
 import {CustomOne} from "./widgets/Custom";
 import {ActionOne, ActionTwo} from "./widgets/Actions";
 import {TestCatalog} from "./virtual-catalog/virtualCatalog";
-import {CatalogHandler} from "../dist/lib/v4/catalog/CatalogHandler";
+import {CatalogHandler} from "../src/lib/v4/catalog/CatalogHandler";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 

@@ -1,4 +1,4 @@
-import {AdminpanelConfig} from "../dist/interfaces/adminpanelConfig";
+import {AdminpanelConfig} from "../src/interfaces/adminpanelConfig";
 import Example from "./models/Example";
 
 const routePrefix = "/adminizer";

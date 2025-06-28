@@ -1,4 +1,4 @@
-import SwitchBase from "../../dist/lib/v4/widgets/abstractSwitch";
+import SwitchBase from "../../src/lib/v4/widgets/abstractSwitch";
 
 export class SwitcherOne extends SwitchBase {
 	readonly id: string = 'site_switcher';

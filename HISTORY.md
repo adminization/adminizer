@@ -11,3 +11,4 @@
 
 - Added system model tests for Waterline and Sequelize.
 
+- Resolved Sequelize naming collision for MediaManagerAP parent associations.

@@ -6,3 +6,4 @@
 - Added tests validating system model registration for Waterline and Sequelize.
 
 - Fixed failing unit tests; updated ORM adapters to handle case-insensitive model names and unique Sequelize associations.
+- Fixed Sequelize naming collision for `parentNode` association.

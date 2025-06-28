@@ -48,7 +48,7 @@ function generateAssociationsFromSchema(
 
           const alias = field.via;
           const belongsToOptions = { foreignKey } as any;
-          if (targetModel.rawAttributes[alias]) {
+          if (targetModel.rawAttributes[alias] || targetModel.associations[alias]) {
             belongsToOptions.as = `${alias}Ref`;
           } else {
             belongsToOptions.as = alias;
@@ -63,21 +63,16 @@ function generateAssociationsFromSchema(
         const targetModel = models[field.model];
         if (!targetModel) continue;
 
-        // Avoid naming collision by making FK explicit: `${fieldName}Id`
-        const foreignKey = `${fieldName}Id`;
         const alias = fieldName;
+        const foreignKey = `${fieldName}Id`;
 
-        // If attribute with the same name already exists, use a unique alias to avoid collisions
-        if (model.rawAttributes[alias]) {
-          model.belongsTo(targetModel, {
-            as: `${alias}Ref`,
-            foreignKey,
-          });
-        } else {
-          model.belongsTo(targetModel, {
-            foreignKey: alias,
-          });
+        const belongsToOptions: any = { foreignKey, as: alias };
+
+        if (model.rawAttributes[alias] || model.associations[alias]) {
+          belongsToOptions.as = `${alias}Ref`;
         }
+
+        model.belongsTo(targetModel, belongsToOptions);
       }
     }
   }

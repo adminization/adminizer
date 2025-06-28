@@ -48,3 +48,16 @@ npm install material-icons --legacy-peer-deps
 ```
 
 
+### Sequelize Self-Relation Naming Collision
+
+**Description:**
+
+When a model references itself using both `model` and `collection` fields, Sequelize may throw an error:
+
+```
+Error: Naming collision between attribute 'parentNode' and association 'parentNode'
+```
+
+**Solution:**
+
+Upgrade to version 4.2.2 or later, which automatically assigns unique aliases for self-referential associations.

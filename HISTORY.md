@@ -11,3 +11,6 @@
 
 ## 4.2.1
 - Fixed failing tests by adding case-insensitive model lookup and resolving Sequelize association naming conflicts.
+
+## 4.2.2
+- Fixed naming collision for self-referential Sequelize models.

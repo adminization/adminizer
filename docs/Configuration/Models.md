@@ -13,3 +13,9 @@ The provided models are:
 
 They can be created and queried like any other models once registered.
 
+> **Note**
+> When using Sequelize, self-referencing associations such as the `parentNode`
+> relation on `MediaManagerAP` rely on explicit foreign key names (for example,
+> `parentNodeId`). This avoids naming collisions between model attributes and
+> association aliases.
+

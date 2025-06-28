@@ -9,3 +9,7 @@
 - Added system model tests for Waterline and Sequelize.
 
 - Fixed test suite reliability by normalizing model lookups and adjusting Sequelize association handling. Sequelize tests temporarily skipped.
+
+## 4.2.1
+- Fixed startup error caused by a Sequelize naming collision on `MediaManagerAP`.
+  Self-associations now use explicit foreign keys.

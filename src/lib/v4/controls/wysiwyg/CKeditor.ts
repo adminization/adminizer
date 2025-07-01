@@ -10,7 +10,8 @@ export class CKeditor extends AbstractControls {
             {
                 dev: "",
                 production: ""
-            }
+            },
+        viewJsPath: {dev: "", production: ""}
     }
     readonly config: Config = {
         items: [
@@ -47,6 +48,10 @@ export class CKeditor extends AbstractControls {
     }
 
     getJsPath(): undefined {
+        return undefined;
+    }
+
+    getViewJsPath(): undefined {
         return undefined;
     }
 

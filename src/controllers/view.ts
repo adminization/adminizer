@@ -56,7 +56,7 @@ export default async function view(req: ReqType, res: ResType) {
             }
             const userProps = inertiaUserHelper(entity, req, groups, record as UserAP, true)
             return req.Inertia.render({
-                component: 'add-user',
+                component: 'view-user',
                 props: userProps
             })
 
@@ -88,7 +88,7 @@ export default async function view(req: ReqType, res: ResType) {
             }
             const groupProps = inertiaGroupHelper(entity, req, users, groupedTokens, group, true)
             return req.Inertia.render({
-                component: 'add-group',
+                component: 'view-group',
                 props: groupProps
             })
 
@@ -96,7 +96,7 @@ export default async function view(req: ReqType, res: ResType) {
             fields = await FieldsHelper.loadAssociations(req, fields, "edit");
             const props = inertiaAddHelper(req, entity, fields, record, true)
             return req.Inertia.render({
-                component: 'add',
+                component: 'view',
                 props: props
             })
     }

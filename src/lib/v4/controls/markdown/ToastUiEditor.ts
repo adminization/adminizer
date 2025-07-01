@@ -16,7 +16,8 @@ export class ToastUiEditor extends AbstractControls{
             {
                 dev: "",
                 production: ""
-            }
+            },
+        viewJsPath: {dev: "", production: ""}
     }
     readonly type: ControlType = 'markdown';
 
@@ -29,6 +30,10 @@ export class ToastUiEditor extends AbstractControls{
     }
 
     getJsPath(): undefined {
+        return undefined;
+    }
+
+    getViewJsPath(): undefined {
         return undefined;
     }
 

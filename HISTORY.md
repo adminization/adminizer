@@ -19,3 +19,4 @@
 
 ## 4.2.2
 - Explicit foreign key names now avoid collisions between attributes and associations in Sequelize.
+- Introduced dedicated view pages and viewPath support for controls

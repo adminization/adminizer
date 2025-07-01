@@ -11,7 +11,8 @@ export class JsonEditor extends AbstractControls{
             {
                 dev: "",
                 production: ""
-            }
+            },
+        viewJsPath: {dev: "", production: ""}
     }
     readonly type: ControlType = 'jsonEditor';
 
@@ -24,6 +25,10 @@ export class JsonEditor extends AbstractControls{
     }
 
     getJsPath(): undefined {
+        return undefined;
+    }
+
+    getViewJsPath(): undefined {
         return undefined;
     }
 

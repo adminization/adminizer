@@ -7,7 +7,8 @@ export class MonacoEditor extends AbstractControls{
     };
     readonly name: string = 'monaco';
     readonly path: Path = {
-        cssPath: "", jsPath: {dev: "", production: ""}
+        cssPath: "", jsPath: {dev: "", production: ""},
+        viewJsPath: {dev: "", production: ""}
     };
     readonly type: ControlType = 'codeEditor';
 
@@ -24,6 +25,10 @@ export class MonacoEditor extends AbstractControls{
     }
 
     getJsPath(): string | undefined {
+        return undefined;
+    }
+
+    getViewJsPath(): string | undefined {
         return undefined;
     }
 

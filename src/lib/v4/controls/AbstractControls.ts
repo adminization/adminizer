@@ -7,7 +7,11 @@ export interface Path {
         dev: string
         production: string
     },
-    cssPath: string
+    cssPath: string,
+    viewJsPath?: {
+        dev: string
+        production: string
+    }
 }
 
 export type Config = Record<string, string | string[] | object | number | boolean>
@@ -35,6 +39,7 @@ export abstract class AbstractControls {
     public abstract getConfig(): Config | undefined
 
     public abstract getJsPath(): string | undefined
+    public abstract getViewJsPath(): string | undefined
     public abstract getCssPath(): string | undefined
 
     public abstract getName(): string

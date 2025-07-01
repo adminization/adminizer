@@ -49,7 +49,8 @@ const LazyField: FC<{
     processing: boolean;
     notFound?: string
     search?: string
-}> = memo(({field, value, onChange, processing, notFound, search}) => {
+    view: boolean
+}> = memo(({field, value, onChange, processing, notFound, search, view}) => {
     const [ref, inView] = useInView({
         triggerOnce: true,
         rootMargin: '100px 0px',
@@ -65,6 +66,7 @@ const LazyField: FC<{
                     notFound={notFound}
                     search={search}
                     processing={processing}
+                    view={view}
                 />
             ) : <Skeleton className="w-full h-[250px] rounded-sm"/>}
         </div>
@@ -166,6 +168,7 @@ const AddForm: FC<{
                                                 processing={catalogProcessing || processing || view}
                                                 notFound={notFound}
                                                 search={page.props.search}
+                                                view={page.props.view}
                                             />
                                         </>
                                         :
@@ -177,6 +180,7 @@ const AddForm: FC<{
                                                 value={data[field.name]}
                                                 onChange={handleFieldChange}
                                                 processing={catalogProcessing || processing || view}
+                                                view={page.props.view}
                                                 notFound={notFound}
                                                 search={page.props.search}
                                             />

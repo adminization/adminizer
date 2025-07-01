@@ -7,3 +7,4 @@
 - Added tests validating system model registration for Waterline and Sequelize.
 
 - Fixed failing unit tests; updated ORM adapters to handle case-insensitive model names and unique Sequelize associations.
+- Added view component and optional view controls

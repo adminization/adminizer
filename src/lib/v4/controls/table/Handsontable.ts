@@ -17,7 +17,11 @@ export class Handsontable extends AbstractControls{
             {
                 dev: "",
                 production: ""
-            }
+            },
+        viewJsPath: {
+            dev: "",
+            production: ""
+        }
     }
     readonly type: ControlType = 'table';
 
@@ -34,6 +38,10 @@ export class Handsontable extends AbstractControls{
     }
 
     getJsPath(): undefined {
+        return undefined;
+    }
+
+    getViewJsPath(): undefined {
         return undefined;
     }
 

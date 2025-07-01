@@ -31,7 +31,8 @@ const FieldRenderer: FC<{
     processing: boolean;
     notFound?: string
     search?: string
-}> = memo(({field, value, onChange, processing, notFound, search}) => {
+    view?: boolean
+}> = memo(({field, value, onChange, processing, notFound, search, view}) => {
 
     const handleInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -189,7 +190,7 @@ const FieldRenderer: FC<{
                 )
             } else {
                 return (
-                    <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
+                    <DynamicControls moduleComponent={(view && field.options?.viewPath ? field.options?.viewPath : field.options?.path) as string} options={field.options?.config}
                                      initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
                                      onChange={handleEditorChange} disabled={processing || field.disabled}/>
                 )
@@ -202,7 +203,7 @@ const FieldRenderer: FC<{
                 )
             } else {
                 return (
-                    <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
+                    <DynamicControls moduleComponent={(view && field.options?.viewPath ? field.options?.viewPath : field.options?.path) as string} options={field.options?.config}
                                      initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
                                      onChange={handleEditorChange} disabled={processing || field.disabled}/>
                 )
@@ -215,7 +216,7 @@ const FieldRenderer: FC<{
                 )
             } else {
                 return (
-                    <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
+                    <DynamicControls moduleComponent={(view && field.options?.viewPath ? field.options?.viewPath : field.options?.path) as string} options={field.options?.config}
                                      initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
                                      onChange={handleEditorChange} disabled={processing || field.disabled}/>
                 )
@@ -229,7 +230,7 @@ const FieldRenderer: FC<{
                 )
             } else {
                 return (
-                    <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
+                    <DynamicControls moduleComponent={(view && field.options?.viewPath ? field.options?.viewPath : field.options?.path) as string} options={field.options?.config}
                                      initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
                                      onChange={handleJSONChange} disabled={processing || field.disabled}/>
                 )
@@ -242,7 +243,7 @@ const FieldRenderer: FC<{
                 )
             } else {
                 return (
-                    <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
+                    <DynamicControls moduleComponent={(view && field.options?.viewPath ? field.options?.viewPath : field.options?.path) as string} options={field.options?.config}
                                      initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
                                      onChange={handleJSONChange} disabled={processing || field.disabled}/>
                 )
@@ -259,7 +260,7 @@ const FieldRenderer: FC<{
                 )
             } else {
                 return (
-                    <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
+                    <DynamicControls moduleComponent={(view && field.options?.viewPath ? field.options?.viewPath : field.options?.path) as string} options={field.options?.config}
                                      initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
                                      onChange={handleJSONChange} disabled={processing || field.disabled}/>
                 )

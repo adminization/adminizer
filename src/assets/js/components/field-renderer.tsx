@@ -29,9 +29,10 @@ const FieldRenderer: FC<{
     value: FieldValue;
     onChange: (name: string, value: FieldValue) => void;
     processing: boolean;
+    view?: boolean;
     notFound?: string
     search?: string
-}> = memo(({field, value, onChange, processing, notFound, search}) => {
+}> = memo(({field, value, onChange, processing, view = false, notFound, search}) => {
 
     const handleInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -99,12 +100,20 @@ const FieldRenderer: FC<{
         return ''
     }, []);
 
+    if (view && field.options?.viewPath) {
+        return (
+            <DynamicControls moduleComponent={field.options.viewPath as string} options={field.options?.config}
+                             initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
+                             onChange={() => {}} disabled={true}/>
+        )
+    }
+
     switch (field.type) {
         case 'checkbox':
             return (
                 <Checkbox
                     id={`${field.type}-${field.name}`}
-                    disabled={processing || field.disabled}
+                    disabled={processing || view || field.disabled}
                     tabIndex={1}
                     required={field.required}
                     className="cursor-pointer size-5"
@@ -117,7 +126,7 @@ const FieldRenderer: FC<{
                 <Textarea
                     id={`${field.type}-${field.name}`}
                     tabIndex={1}
-                    disabled={processing || field.disabled}
+                    disabled={processing || view || field.disabled}
                     value={value as string ?? ''}
                     required={field.required}
                     onChange={handleInputChange}
@@ -136,7 +145,7 @@ const FieldRenderer: FC<{
                         step={1}
                         id={`${field.type}-${field.name}`}
                         onValueChange={handleSliderChange}
-                        disabled={processing || field.disabled}
+                        disabled={processing || view || field.disabled}
                     />
                 </>
             );
@@ -145,7 +154,7 @@ const FieldRenderer: FC<{
                 <Select
                     onValueChange={handleSelectChange}
                     defaultValue={value as string ?? ''}
-                    disabled={processing || field.disabled}
+                    disabled={processing || view || field.disabled}
                     required={field.required}
                 >
                     <SelectTrigger className="w-full cursor-pointer min-h-10" id={field.name}>
@@ -171,7 +180,7 @@ const FieldRenderer: FC<{
                     variant="secondary"
                     notFound={notFound}
                     search={search}
-                    disabled={processing || field.disabled}
+                    disabled={processing || view || field.disabled}
                     mode={field.type === 'association' ? 'single' : 'multiple'}
                     maxCount={10}
                     className={`${processing ? 'pointer-events-none' : ''}`}
@@ -184,67 +193,67 @@ const FieldRenderer: FC<{
                         initialValue={value as string ?? ''}
                         onChange={handleEditorChange}
                         options={field.options?.config as { items: string[] }}
-                        disabled={processing || field.disabled}
+                        disabled={processing || view || field.disabled}
                     />
                 )
             } else {
                 return (
                     <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
                                      initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
-                                     onChange={handleEditorChange} disabled={processing || field.disabled}/>
+                                     onChange={handleEditorChange} disabled={processing || view || field.disabled}/>
                 )
             }
         case 'markdown':
             if (field.options?.name === 'toast-ui') {
                 return (
                     <TuiLazy initialValue={field.value as string ?? ''} options={field.options?.config}
-                             onChange={handleEditorChange} disabled={processing || field.disabled}/>
+                             onChange={handleEditorChange} disabled={processing || view || field.disabled}/>
                 )
             } else {
                 return (
                     <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
                                      initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
-                                     onChange={handleEditorChange} disabled={processing || field.disabled}/>
+                                     onChange={handleEditorChange} disabled={processing || view || field.disabled}/>
                 )
             }
         case 'table':
             if (field.options?.name === 'handsontable') {
                 return (
                     <HandsonTableLazy data={value as any[]} config={field.options?.config}
-                                      onChange={handleTableChange} disabled={processing || field.disabled}/>
+                                      onChange={handleTableChange} disabled={processing || view || field.disabled}/>
                 )
             } else {
                 return (
                     <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
                                      initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
-                                     onChange={handleEditorChange} disabled={processing || field.disabled}/>
+                                     onChange={handleEditorChange} disabled={processing || view || field.disabled}/>
                 )
             }
         case 'jsonEditor':
             if (field.options?.name === 'jsoneditor') {
                 return (
                     <JsonEditorLazy content={value as Content} name={`${field.type}-${field.name}`}
-                                    onChange={handleJSONChange} {...field.options?.config} disabled={processing || field.disabled}
+                                    onChange={handleJSONChange} {...field.options?.config} disabled={processing || view || field.disabled}
                     />
                 )
             } else {
                 return (
                     <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
                                      initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
-                                     onChange={handleJSONChange} disabled={processing || field.disabled}/>
+                                     onChange={handleJSONChange} disabled={processing || view || field.disabled}/>
                 )
             }
         case 'codeEditor':
             if (field.options?.name === 'monaco') {
                 return (
                     <MonacoLazy value={value as string ?? ''} onChange={handleCodeChange}
-                                options={field.options?.config} disabled={processing || field.disabled}/>
+                                options={field.options?.config} disabled={processing || view || field.disabled}/>
                 )
             } else {
                 return (
                     <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
                                      initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
-                                     onChange={handleJSONChange} disabled={processing || field.disabled}/>
+                                     onChange={handleJSONChange} disabled={processing || view || field.disabled}/>
                 )
             }
         case 'geoJson':
@@ -254,14 +263,14 @@ const FieldRenderer: FC<{
                         mode="all"
                         initialFeatures={value as [] ?? undefined}
                         onFeaturesChange={handleGeoJsonChange}
-                        disabled={processing || field.disabled}
+                        disabled={processing || view || field.disabled}
                     />
                 )
             } else {
                 return (
                     <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
                                      initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
-                                     onChange={handleJSONChange} disabled={processing || field.disabled}/>
+                                     onChange={handleJSONChange} disabled={processing || view || field.disabled}/>
                 )
             }
         case 'mediamanager':
@@ -278,7 +287,7 @@ const FieldRenderer: FC<{
                     tabIndex={1}
                     value={value as any ?? ''}
                     onChange={handleInputChange}
-                    disabled={processing || field.disabled}
+                    disabled={processing || view || field.disabled}
                     placeholder={field.label}
                 />
             );

@@ -38,4 +38,11 @@ export abstract class AbstractControls {
     public abstract getCssPath(): string | undefined
 
     public abstract getName(): string
+
+    /**
+     * Returns JS path for view mode component. By default it matches getJsPath.
+     */
+    public getViewJsPath(): string | undefined {
+        return this.getJsPath();
+    }
 }

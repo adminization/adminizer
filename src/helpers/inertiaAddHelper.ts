@@ -185,6 +185,7 @@ export function getControlsOptions(fieldConfig: Field["config"], req: ReqType, t
             ...(fieldOptions?.config || {}), // Additional config provided in the field config
         },
         path: control?.getJsPath() || {},
+        viewPath: control?.getViewJsPath() || control?.getJsPath() || {},
     };
 
     if (type === 'wysiwyg') {
@@ -192,6 +193,7 @@ export function getControlsOptions(fieldConfig: Field["config"], req: ReqType, t
             name: editorName,
             config: control?.getConfig() || {},
             path: control?.getJsPath() || {},
+            viewPath: control?.getViewJsPath() || control?.getJsPath() || {},
         };
 
         // If items are provided, use them instead of the editor's config

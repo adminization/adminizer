@@ -1,4 +1,5 @@
 # Change Log
+- Added dedicated view pages and `viewPath` control support.
 - Fixed Sequelize system model registration errors in tests.
 - Documented material-icons dependency and build step.
 

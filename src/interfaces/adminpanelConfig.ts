@@ -254,6 +254,11 @@ export interface AdminpanelConfig {
     notifications?: {
         enabled: boolean
     }
+    aiAssistant?: {
+        enabled: boolean
+        defaultModel?: string
+        models?: string[]
+    }
 }
 
 export interface ModelConfig {

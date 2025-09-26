@@ -71,6 +71,22 @@ export interface INotificationEvent {
     userId?: number;
 }
 
+export type AiAssistantRole = 'user' | 'assistant';
+
+export interface AiAssistantMessage {
+    id: string;
+    role: AiAssistantRole;
+    content: string;
+    timestamp: Date;
+    modelId: string;
+}
+
+export interface AiAssistantModelInfo {
+    id: string;
+    name: string;
+    description?: string;
+}
+
 export type Migration = {
   name: string;
   timestamp: number,

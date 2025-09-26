@@ -1,3 +1,14 @@
+## 4.3.4
+- Replaced the AI assistant modal with a quarter-width slide-out panel that keeps the main layout visible while chatting.
+
+## 4.3.3
+- Enabled the AI assistant in the fixture configuration with the dummy model and ensured the backend build wires controller en
+dpoints.
+- Documented that the fixture ships with the in-memory assistant for local testing.
+
+## 4.3.2
+- Added AI assistant chat mode with header toggle, in-memory history, and backend API scaffolding.
+
 
 ## 4.2.1
 - Renamed MediaManager parent association to `parent` to resolve Sequelize naming collision.

@@ -4,6 +4,7 @@ import {type BreadcrumbItem as BreadcrumbItemType, SharedData} from '@/types';
 import {NavUser} from "@/components/nav-user.tsx";
 import ThemeSwitcher from '@/components/theme-switcher';
 import {NotificationCenter} from "@/components/notifications/NotificationCenter.tsx";
+import {AiAssistantToggle} from '@/components/ai-assistant/AiAssistantToggle';
 import {useNotifications} from "@/contexts/NotificationContext.tsx";
 import {LoaderCircle} from "lucide-react";
 import {usePage} from "@inertiajs/react";
@@ -20,6 +21,7 @@ export function AppSidebarHeader({breadcrumbs = []}: { breadcrumbs?: BreadcrumbI
                     <Breadcrumbs breadcrumbs={breadcrumbs}/>
                 </div>
                 <div className="flex gap-4 items-center">
+                    <AiAssistantToggle/>
                     <ThemeSwitcher/>
                     {page.props.notifications && (
                         tabs.length > 0 ?

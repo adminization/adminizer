@@ -39,8 +39,9 @@ export async function seedDatabase(
          "read-example-model",
          "update-example-model",
         
-         "read-jsonschema-model",
-        ] 
+        "read-jsonschema-model",
+        "ai-assistant-dummy",
+        ]
       },
     { name: 'Guests', description: 'Guest access' },
   ];

@@ -19,7 +19,7 @@ export class AiAssistantController {
                 req.adminizer.accessRightsHelper.hasPermission(`ai-assistant-${model.id}`, req.user),
             );
 
-        res.json(models);
+        return res.json(models);
     }
 
     static async getHistory(req: ReqType, res: ResType) {
@@ -42,7 +42,7 @@ export class AiAssistantController {
         }
 
         const history = handler.getHistory(req.user.id, modelId).map(AiAssistantController.serializeMessage);
-        res.json({history});
+        return res.json({history});
     }
 
     static async sendMessage(req: ReqType, res: ResType) {
@@ -71,13 +71,13 @@ export class AiAssistantController {
 
         try {
             const response = await handler.sendMessage(req.user, modelId, message.trim());
-            res.json({
+            return res.json({
                 modelId,
                 history: response.history.map(AiAssistantController.serializeMessage),
             });
         } catch (error) {
             Adminizer.log.error('AI assistant error', error);
-            res.status(500).json({error: 'Failed to process request'});
+            return res.status(500).json({error: 'Failed to process request'});
         }
     }
 
@@ -101,7 +101,7 @@ export class AiAssistantController {
         }
 
         handler.resetHistory(req.user.id, modelId);
-        res.json({history: []});
+        return res.json({history: []});
     }
 
     private static serializeMessage(message: AiAssistantMessage) {

@@ -47,3 +47,10 @@ To register a new model:
 2. Add a factory entry to `modelFactories` in `bindAiAssistant.ts`.
 3. Reference the new model identifier in `aiAssistant.models` within your configuration.
 4. Assign the generated access token (`ai-assistant-<modelId>`) to the user groups that should have access.
+
+## Fixture setup
+
+The demo fixture enables the assistant by default so the sparkles toggle immediately opens the chat. The configuration selects
+the in-memory `dummy` model as both the default and the only registered model. The fixture seeder also grants the `Users` group
+the `ai-assistant-dummy` access token, ensuring that non-administrator accounts can exercise the API endpoints during manual
+testing.

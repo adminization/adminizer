@@ -1,3 +1,6 @@
+## 4.3.3
+- Enabled the AI assistant in the demo fixture with dummy model defaults and seeded access tokens for standard users.
+
 ## 4.3.2
 - Added AI assistant chat mode with header toggle, in-memory history, and backend API scaffolding.
 

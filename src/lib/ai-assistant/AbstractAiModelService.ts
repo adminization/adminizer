@@ -14,6 +14,9 @@ export abstract class AbstractAiModelService {
 
     protected constructor(adminizer: Adminizer) {
         this.adminizer = adminizer;
+    }
+
+    public initialize(): void {
         this.registerAccessRight();
     }
 

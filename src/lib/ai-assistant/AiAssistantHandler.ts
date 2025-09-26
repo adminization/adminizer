@@ -16,6 +16,7 @@ export class AiAssistantHandler {
                 `AI assistant model with id "${service.id}" is already registered. Overwriting.`,
             );
         }
+        service.initialize();
         this.models.set(service.id, service);
     }
 

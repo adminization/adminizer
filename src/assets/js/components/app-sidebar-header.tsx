@@ -7,6 +7,7 @@ import {NotificationCenter} from "@/components/notifications/NotificationCenter.
 import {useNotifications} from "@/contexts/NotificationContext.tsx";
 import {LoaderCircle} from "lucide-react";
 import {usePage} from "@inertiajs/react";
+import {AiAssistantLauncher} from "@/components/ai/AiAssistantLauncher.tsx";
 
 export function AppSidebarHeader({breadcrumbs = []}: { breadcrumbs?: BreadcrumbItemType[] }) {
     const {tabs} = useNotifications();
@@ -21,6 +22,7 @@ export function AppSidebarHeader({breadcrumbs = []}: { breadcrumbs?: BreadcrumbI
                 </div>
                 <div className="flex gap-4 items-center">
                     <ThemeSwitcher/>
+                    <AiAssistantLauncher/>
                     {page.props.notifications && (
                         tabs.length > 0 ?
                             <NotificationCenter/> :

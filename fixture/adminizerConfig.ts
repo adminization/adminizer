@@ -435,6 +435,9 @@ const config: AdminpanelConfig = {
     notifications: {
         enabled: true
     },
+    aiAssistant: {
+        enabled: false,
+    },
     routePrefix: routePrefix,
     // routePrefix: "/admin",
     auth: {

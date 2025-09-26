@@ -155,6 +155,11 @@ export function bindInertia(adminizer: Adminizer) {
             ] : null,
             showVersion: req.adminizer.config.showVersion ?? false,
             notifications: req.adminizer.config.notifications.enabled ?? false,
+            aiAssistant: req.adminizer.config.aiAssistant?.enabled ? {
+                enabled: true,
+                defaultModel: req.adminizer.aiAssistantHandler?.getDefaultModelId(),
+                models: req.adminizer.aiAssistantHandler?.listModels() ?? [],
+            } : {enabled: false},
         });
 
         next();

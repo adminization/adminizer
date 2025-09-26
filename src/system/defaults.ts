@@ -154,6 +154,11 @@ let adminpanelConfig: AdminpanelConfig = {
     },
     notifications: {
         enabled: false
+    },
+    aiAssistant: {
+        enabled: false,
+        models: [],
+        defaultModel: undefined,
     }
 }
 

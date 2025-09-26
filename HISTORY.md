@@ -1,4 +1,7 @@
 
+## Unreleased
+- Added AI assistant framework with dummy model, in-memory conversations, API endpoints, and UI chat toggle in the header.
+
 ## 4.2.1
 - Renamed MediaManager parent association to `parent` to resolve Sequelize naming collision.
 ## 4.1.4

@@ -37,6 +37,8 @@ import { NotificationHandler } from './notifications/NotificationHandler';
 import { GeneralNotificationService } from './notifications/GeneralNotificationService';
 import { SystemNotificationService } from './notifications/SystemNotificationService';
 import {bindNotifications} from "../system/bindNotifications";
+import {AIAssistantHandler} from "./ai/AIAssistantHandler";
+import {bindAiAssistant} from "../system/bindAiAssistant";
 import {INotification} from "../interfaces/types";
 
 export class Adminizer {
@@ -57,6 +59,7 @@ export class Adminizer {
     configHelper: ConfigHelper
     menuHelper: MenuHelper
     notificationHandler!: NotificationHandler;
+    aiAssistantHandler!: AIAssistantHandler;
     modelHandler!: ModelHandler
     widgetHandler: WidgetHandler
     vite: ViteDevServer
@@ -282,6 +285,10 @@ export class Adminizer {
 
         // Bind notifications
         if (this.config.notifications.enabled) await bindNotifications(this);
+
+        if (this.config.aiAssistant?.enabled) {
+            bindAiAssistant(this);
+        }
 
         await Router.bind(this); // must be after binding policies and req/res functions
 

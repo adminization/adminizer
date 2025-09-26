@@ -1,3 +1,5 @@
+## 4.4.0
+- Added configurable AI assistant with in-memory conversations, backend API endpoints, and header launcher dialog.
 
 ## 4.2.1
 - Renamed MediaManager parent association to `parent` to resolve Sequelize naming collision.

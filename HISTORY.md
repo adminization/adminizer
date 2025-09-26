@@ -1,3 +1,15 @@
+## 4.3.4
+- Replaced the AI assistant dialog with a docked panel that slides in from the right and shifts the application layout by a quarter width.
+- Added documentation detailing the docked chat experience and supporting components.
+
+## 4.3.3
+- Enabled the AI assistant in the fixture configuration with the dummy model and ensured the backend build wires controller en
+dpoints.
+- Documented that the fixture ships with the in-memory assistant for local testing.
+
+## 4.3.2
+- Added AI assistant chat mode with header toggle, in-memory history, and backend API scaffolding.
+
 
 ## 4.2.1
 - Renamed MediaManager parent association to `parent` to resolve Sequelize naming collision.

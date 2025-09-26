@@ -22,3 +22,8 @@
 
 ## 4.3.1
 - Added TypeScript Umzug migration for system models at `src/migrations/umzug/0001.ts` (SQLite fixture-compatible). Join table naming normalized to lowercase (`groupapuserap`). Updated docs in `docs/Database-Migrations-Umzug.md` and examples for tsx-based runs.
+
+## 4.3.2
+- Added configurable AI assistant support with header entry point and modal chat UI.
+- Introduced `AiAssistantHandler` with an in-memory dummy model and public API endpoints for chatting.
+- Documented setup and API usage in `docs/ai-assistant.md`.

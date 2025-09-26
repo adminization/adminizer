@@ -42,6 +42,7 @@ export interface SharedData {
     flash: Record<FlashMessages, string>;
     auth: Auth;
     notifications: boolean;
+    aiAssistant: boolean;
     [key: string]: unknown;
 }
 

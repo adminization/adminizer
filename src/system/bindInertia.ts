@@ -155,6 +155,7 @@ export function bindInertia(adminizer: Adminizer) {
             ] : null,
             showVersion: req.adminizer.config.showVersion ?? false,
             notifications: req.adminizer.config.notifications.enabled ?? false,
+            aiAssistant: req.adminizer.config.aiAssistant?.enabled ?? false,
         });
 
         next();

@@ -1,3 +1,7 @@
+## 4.3.2
+- Added AI assistant chat mode with header toggle, in-memory history, and backend API scaffolding.
+- Enabled the AI assistant in the fixture, ensured the controllers build into `dist/`, and documented the required build step.
+
 
 ## 4.2.1
 - Renamed MediaManager parent association to `parent` to resolve Sequelize naming collision.

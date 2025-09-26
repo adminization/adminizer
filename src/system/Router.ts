@@ -20,6 +20,7 @@ import {thumbController} from "../controllers/media-manager/ThumbController";
 import {Adminizer} from "../lib/Adminizer";
 import timezones from "../controllers/timezones";
 import {NotificationController} from "../controllers/notifications/NotificationController";
+import {AiAssistantController} from "../controllers/ai/AiAssistantController";
 
 export default class Router {
 
@@ -158,6 +159,28 @@ export default class Router {
                 adminizer.policyManager.bindPolicies(policies, NotificationController.search)
             );
         }
+        if (adminizer.config.aiAssistant?.enabled) {
+            adminizer.app.get(
+                `${adminizer.config.routePrefix}/api/ai-assistant/models`,
+                adminizer.policyManager.bindPolicies(policies, AiAssistantController.getModels)
+            );
+
+            adminizer.app.get(
+                `${adminizer.config.routePrefix}/api/ai-assistant/history/:modelId`,
+                adminizer.policyManager.bindPolicies(policies, AiAssistantController.getHistory)
+            );
+
+            adminizer.app.post(
+                `${adminizer.config.routePrefix}/api/ai-assistant/query`,
+                adminizer.policyManager.bindPolicies(policies, AiAssistantController.sendMessage)
+            );
+
+            adminizer.app.delete(
+                `${adminizer.config.routePrefix}/api/ai-assistant/history/:modelId`,
+                adminizer.policyManager.bindPolicies(policies, AiAssistantController.resetHistory)
+            );
+        }
+
         /**
          * List of records
          */

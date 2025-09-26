@@ -40,7 +40,9 @@ All endpoints require the user to have the access token generated for the model.
 
 * `AiAssistantProvider` handles fetching models/history, sending prompts, and exposing chat state via `useAiAssistant`.
 * `AiAssistantToggle` renders the sparkles button in the header and toggles the assistant workspace. The button displays a spinner while a request is in flight and disables itself if no models are accessible.
-* `AiAssistantPanel` anchors a full-height chat interface to the right quarter of the application viewport. When opened, the primary workspace narrows to make room for the live conversation feed and compose form.
+* `AiAssistantWorkspace` wraps the main application shell and applies a responsive margin so the entire layout shifts left when the chat opens, preserving the full assistant width.
+* `AiAssistantPanel` anchors a full-height chat interface to the right quarter of the application viewport. The panel uses a fixed position so it persists while browsing across routes.
+* The provider persists the open/closed state in `localStorage`, allowing the assistant to remain visible across navigation events.
 * Conversation history is stored client-side for rendering while the server keeps the authoritative in-memory copy.
 
 ## Extending With New Models

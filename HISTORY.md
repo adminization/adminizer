@@ -1,3 +1,7 @@
+## 4.3.5
+- Shift the entire application layout when the AI assistant opens so the chat occupies a dedicated right-side workspace.
+- Persist the assistant's open state across navigation and expose the workspace wrapper for consistent panel positioning.
+
 ## 4.3.4
 - Replaced the AI assistant modal with a persistent right-side workspace that claims one quarter of the viewport when opened.
 - Added a dedicated panel component and layout margin handling so the main application content resizes alongside the chat.

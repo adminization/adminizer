@@ -3,6 +3,7 @@ import {type BreadcrumbItem} from '@/types';
 import {memo, type ReactNode} from 'react';
 import {NotificationProvider} from '@/contexts/NotificationContext';
 import {AiAssistantProvider} from '@/contexts/AiAssistantContext';
+import {AiAssistantWorkspace} from '@/components/ai-assistant/AiAssistantWorkspace';
 
 interface AppLayoutProps {
     children: ReactNode;
@@ -14,9 +15,11 @@ const AppLayout = memo(({children, className, breadcrumbs, ...props}: AppLayoutP
     return (
         <NotificationProvider>
             <AiAssistantProvider>
-                <AppLayoutTemplate breadcrumbs={breadcrumbs} className={className} {...props}>
-                    {children}
-                </AppLayoutTemplate>
+                <AiAssistantWorkspace>
+                    <AppLayoutTemplate breadcrumbs={breadcrumbs} className={className} {...props}>
+                        {children}
+                    </AppLayoutTemplate>
+                </AiAssistantWorkspace>
             </AiAssistantProvider>
         </NotificationProvider>
     )

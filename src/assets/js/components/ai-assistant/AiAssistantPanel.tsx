@@ -53,7 +53,7 @@ export function AiAssistantPanel({width = 'min(25vw, 420px)'}: AiAssistantPanelP
             id="ai-assistant-panel"
             aria-label="AI assistant chat"
             className={clsx(
-                'bg-card text-card-foreground absolute inset-y-0 right-0 z-[60] flex h-full flex-col border-l shadow-xl transition-all duration-300 ease-in-out',
+                'bg-card text-card-foreground fixed inset-y-0 right-0 z-[1000] flex h-screen flex-col border-l shadow-xl transition-all duration-300 ease-in-out',
                 isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
             )}
             style={{width}}

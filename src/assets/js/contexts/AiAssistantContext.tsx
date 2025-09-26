@@ -39,7 +39,18 @@ const AiAssistantContext = createContext<AiAssistantContextValue | undefined>(un
 export const AiAssistantProvider: React.FC<{children: React.ReactNode}> = ({children}) => {
     const page = usePage<SharedData>();
     const aiAssistantConfig = page.props.aiAssistant;
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState<boolean>(() => {
+        if (typeof window === 'undefined') {
+            return false;
+        }
+
+        try {
+            return window.localStorage.getItem('ai-assistant-open') === 'true';
+        } catch (error) {
+            console.warn('Unable to restore AI assistant visibility state', error);
+            return false;
+        }
+    });
     const [models, setModels] = useState<AiAssistantModelDto[]>([]);
     const [activeModel, setActiveModelState] = useState<string | undefined>(aiAssistantConfig?.defaultModel ?? undefined);
     const [messages, setMessages] = useState<AiAssistantMessageDto[]>([]);
@@ -93,6 +104,31 @@ export const AiAssistantProvider: React.FC<{children: React.ReactNode}> = ({chil
         }
         void fetchModels();
     }, [fetchModels, isEnabled]);
+
+    useEffect(() => {
+        if (!isEnabled) {
+            setIsOpen(false);
+            try {
+                if (typeof window !== 'undefined') {
+                    window.localStorage.removeItem('ai-assistant-open');
+                }
+            } catch (error) {
+                console.warn('Unable to clear AI assistant visibility state', error);
+            }
+        }
+    }, [isEnabled]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !isEnabled) {
+            return;
+        }
+
+        try {
+            window.localStorage.setItem('ai-assistant-open', isOpen ? 'true' : 'false');
+        } catch (error) {
+            console.warn('Unable to persist AI assistant visibility state', error);
+        }
+    }, [isEnabled, isOpen]);
 
     useEffect(() => {
         if (!isEnabled || !activeModel) return;

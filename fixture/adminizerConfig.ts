@@ -435,6 +435,11 @@ const config: AdminpanelConfig = {
     notifications: {
         enabled: true
     },
+    aiAssistant: {
+        enabled: true,
+        defaultModel: 'dummy',
+        models: ['dummy'],
+    },
     routePrefix: routePrefix,
     // routePrefix: "/admin",
     auth: {

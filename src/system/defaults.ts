@@ -155,9 +155,20 @@ let adminpanelConfig: AdminpanelConfig = {
     bind: {
         public: true
     },
+    
+    /** 
+     * Experimental feature
+     */
     notifications: {
         enabled: false
     },
+    /** 
+     * Experimental feature
+     */
+    history: {
+        enabled: false
+    },
+
     aiAssistant: {
         enabled: false,
         defaultModel: 'dummy',

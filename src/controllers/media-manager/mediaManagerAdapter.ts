@@ -249,9 +249,9 @@ export class MediaManagerAdapter {
         const [category] = type.split("/"); // "image/jpeg" → "image"
         const wildcardType = `${category}/*`; // "image/*"
 
-        // Разрешено, если:
-        // 1. Точное совпадение (например, "image/jpeg" в allowedTypes)
-        // 2. Разрешена вся категория (например, "image/*" в allowedTypes)
+        // Allowed if:
+        // 1. Exact match (e.g. "image/jpeg" in allowedTypes)
+        // 2. The entire category is allowed (for example, "image/*" in allowedTypes)
         return allowedTypes.includes(type) || allowedTypes.includes(wildcardType);
     }
 }

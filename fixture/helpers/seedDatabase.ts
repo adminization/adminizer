@@ -96,7 +96,7 @@ export async function seedDatabase(
         : await userModel.create(userData).fetch();
 
 
-      // Привязка к группам (упрощённая логика)
+      // Linking to groups (simplified logic)
       const groupName = u.isAdministrator ? 'Admins' : 'Users';
 
       const group = isSequelize
@@ -120,7 +120,7 @@ export async function seedDatabase(
   const allUsers: UserAP[] = isSequelize
     ? await userModel.findAll()
     : await userModel.find();
-    
+
     if (exampleCount === 0) {
       const fakeExamples = Array.from({ length: count }, () => {
         const randomUser = faker.helpers.arrayElement(allUsers);
@@ -155,7 +155,7 @@ export async function seedDatabase(
       await exampleModel.createEach(fakeExamples).fetch();
     }
   }
- 
+
     // ------------------ Tests ------------------ //
     const testCount = isSequelize
     ? await testModel.count()

@@ -35,7 +35,7 @@ const getLocaleFromHTML = () => {
   if (lang?.startsWith('de')) return de;
   if (lang?.startsWith('es')) return es;
   if (lang?.startsWith('fr')) return fr;
-  // Добавь другие при необходимости
+  // Add others if necessary
   return enUS;
 };
 

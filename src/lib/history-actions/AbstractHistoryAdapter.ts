@@ -211,14 +211,14 @@ export abstract class AbstractHistoryAdapter {
                 }
             }
 
-            // Группируем записи по модели для оптимизации
+            // Grouping records by model for optimization
             const fieldsCache = new Map<string, any>();
 
             for (const historyRecord of accessHistory) {
                 const entity = this.findEntityObject(historyRecord);
                 const modelKey = historyRecord.modelName;
 
-                // Используем кэш, чтобы не создавать DataAccessor для каждой записи
+                // We use a cache so as not to create a DataAccessor for each record
                 if (!fieldsCache.has(modelKey)) {
                     const dataAccessor = new DataAccessor(this.adminizer, user, entity, "edit");
                     let fields = dataAccessor.getFieldsConfig();

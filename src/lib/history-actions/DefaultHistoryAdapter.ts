@@ -49,9 +49,9 @@ export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
         let resultItems: HistoryActionsAP[] = [];
         let currentSkip = skip;
 
-        // Дозагружаем пока не наберем нужное количество
+        // Add more until you get the required amount
         while (resultItems.length < limit) {
-            // Запрашиваем с запасом, чтобы уменьшить количество запросов к БД
+            // We request with a reserve to reduce the number of requests to the database
             const fetchLimit = Math.min(limit * 2, 50);
 
             const history = await this.adminizer.modelHandler.model.get(this.model)["_find"]({
@@ -62,12 +62,12 @@ export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
             });
 
             if (history.length === 0) {
-                break; // Больше нет данных
+                break; // No more data
             }
 
             const filteredHistory = await this._getAllHistory(history, user);
 
-            // Добавляем отфильтрованные записи к результату
+            // Add filtered records to the result
             for (const item of filteredHistory) {
                 if (resultItems.length < limit) {
                     resultItems.push(item);
@@ -77,7 +77,7 @@ export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
             totalFetched += history.length;
             currentSkip += history.length;
 
-            // Если получили меньше чем запросили, значит в БД кончились данные
+            // If you receive less than what you requested, it means the database has run out of data
             if (history.length < fetchLimit) {
                 break;
             }

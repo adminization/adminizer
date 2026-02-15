@@ -16,7 +16,7 @@ export class GeneralNotificationService extends AbstractNotificationService {
         };
 
         let notificationDB: NotificationAPModel;
-        // Сохраняем в базу
+        // Save to the database
         if (this.adminizer.modelHandler.model.has('notificationap')) {
             try {
                 notificationDB = await this.adminizer.modelHandler.model.get('notificationap')["_create"](fullNotification);

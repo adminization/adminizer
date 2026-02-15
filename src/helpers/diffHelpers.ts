@@ -3,12 +3,12 @@ export function sanitizeForDiff(data: any): any {
 
     const result = {...data};
 
-    // Удаляем системные поля
+    // Removing system fields
     const systemFields = ['id', 'createdAt', 'updatedAt', 'deletedAt', '__v', '_id'];
     systemFields.forEach(field => delete result[field]);
 
-    // Очищаем чувствительные данные
-    // TODO: Вынести в переменные окружения или в конфиг
+    // Cleaning sensitive data
+    // TODO: Place in environment variables or config
     const sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'creditCard'];
     sensitiveFields.forEach(field => {
         if (result[field] !== undefined) {
@@ -22,7 +22,7 @@ export function sanitizeForDiff(data: any): any {
 export function formatChanges(diffObj: any, oldData: any, newData: any, operation?: 'add' | 'remove' | 'update'): any[] {
     const changes = [];
 
-    // Специальная обработка для операции добавления
+    // Special handling for append operation
     if (operation === 'add') {
         for (const [key, value] of Object.entries(newData)) {
             if (value === '***HIDDEN***') continue;
@@ -38,9 +38,9 @@ export function formatChanges(diffObj: any, oldData: any, newData: any, operatio
         return changes;
     }
 
-    // Стандартная обработка для remove и update
+    // Standard handling for remove and update
     for (const [key, value] of Object.entries(diffObj)) {
-        // Для добавленных полей (когда oldData[key] undefined)
+        // For added fields (when oldData[key] is undefined)
         if (oldData[key] === undefined && newData[key] !== undefined) {
             changes.push({
                 field: key,
@@ -50,7 +50,7 @@ export function formatChanges(diffObj: any, oldData: any, newData: any, operatio
                 operation: 'add'
             });
         }
-        // Для удаленных полей (когда newData[key] undefined)
+        // For removed fields (when newData[key] is undefined)
         else if (newData[key] === undefined && oldData[key] !== undefined) {
             changes.push({
                 field: key,
@@ -60,7 +60,7 @@ export function formatChanges(diffObj: any, oldData: any, newData: any, operatio
                 operation: 'remove'
             });
         }
-        // Для измененных полей
+        // For changed fields
         else {
             changes.push({
                 field: key,

@@ -10,7 +10,7 @@ export class SystemNotificationService extends AbstractNotificationService {
     public readonly icon: string = 'settings'
     public readonly iconColor: string = '#1eb707';
 
-    // Изменяем структуру каналов: храним по userId -> channel -> clientIds
+    // We change the channel structure: store by userId -> channel -> clientIds
     private crudChannels: Map<number, Map<string, Set<string>>> = new Map();
 
     async dispatchNotification(notification: Omit<INotification, 'id' | 'createdAt' | 'notificationClass' | 'icon'>): Promise<boolean> {
@@ -21,7 +21,7 @@ export class SystemNotificationService extends AbstractNotificationService {
         };
 
         let notificationDB: NotificationAPModel;
-        // Сохраняем в базу
+        // Save to the database
         if (this.adminizer.modelHandler.model.has('notificationap')) {
             try {
                 notificationDB = await this.adminizer.modelHandler.model.get('notificationap')["_create"](fullNotification);
@@ -51,7 +51,7 @@ export class SystemNotificationService extends AbstractNotificationService {
                     channel: notification.channel ?? 'system'
                 };
 
-                // Отправляем на все каналы или на конкретный канал
+                // Send to all channels or to a specific channel
                 if (notification.channel) {
                     this.broadcastToChannel(notification.channel, event);
                 } else {
@@ -69,9 +69,9 @@ export class SystemNotificationService extends AbstractNotificationService {
         return false;
     }
 
-    // Обновляем broadcastToChannel для работы с новой структурой
+    // Updating broadcastToChannel to work with the new structure
     private broadcastToChannel(channel: string, event: INotificationEvent): void {
-        // Отправляем всем пользователям, подписанным на этот канал
+        // Sent to all users subscribed to this channel
         this.crudChannels.forEach((userChannels, userId) => {
             const channelClients = userChannels.get(channel);
             if (channelClients) {
@@ -93,7 +93,7 @@ export class SystemNotificationService extends AbstractNotificationService {
         });
     }
 
-    // Добавляем клиента к каналу с привязкой к пользователю
+    // Adding a client to a channel linked to a user
     addClientToChannel(clientId: string, channel: string, userId: number): void {
         if (!this.crudChannels.has(userId)) {
             this.crudChannels.set(userId, new Map());
@@ -108,7 +108,7 @@ export class SystemNotificationService extends AbstractNotificationService {
         Adminizer.log.info(`[${this.notificationClass}] Client ${clientId} (user ${userId}) added to channel ${channel}`);
     }
 
-    // Удаляем клиента из канала конкретного пользователя
+    // Removing a client from a specific user's channel
     removeClientFromChannel(clientId: string, channel: string, userId: number): void {
         const userChannels = this.crudChannels.get(userId);
         if (userChannels) {
@@ -117,20 +117,20 @@ export class SystemNotificationService extends AbstractNotificationService {
                 channelClients.delete(clientId);
                 Adminizer.log.info(`[${this.notificationClass}] Client ${clientId} (user ${userId}) removed from channel ${channel}`);
 
-                // Если в канале больше нет клиентов - удаляем канал
+                // If there are no more clients in the channel, delete the channel
                 if (channelClients.size === 0) {
                     userChannels.delete(channel);
                 }
             }
 
-            // Если у пользователя больше нет каналов - удаляем запись пользователя
+            // If the user no longer has channels, delete the user's entry
             if (userChannels.size === 0) {
                 this.crudChannels.delete(userId);
             }
         }
     }
 
-    // Удаляем клиента из всех каналов пользователя
+    // We remove the client from all user channels
     removeClientFromAllChannels(clientId: string, userId: number): void {
         const userChannels = this.crudChannels.get(userId);
         if (userChannels) {
@@ -138,22 +138,22 @@ export class SystemNotificationService extends AbstractNotificationService {
                 clients.delete(clientId);
                 Adminizer.log.info(`[${this.notificationClass}] Client ${clientId} (user ${userId}) removed from channel ${channel}`);
 
-                // Если в канале больше нет клиентов - удаляем канал
+                // If there are no more clients in the channel, delete the channel
                 if (clients.size === 0) {
                     userChannels.delete(channel);
                 }
             });
 
-            // Если у пользователя больше нет каналов - удаляем запись пользователя
+            // If the user no longer has channels, delete the user's entry
             if (userChannels.size === 0) {
                 this.crudChannels.delete(userId);
             }
         }
     }
 
-    // Переопределяем removeClient для очистки каналов
+    // Overriding removeClient to clear channels
     removeClient(clientId: string): void {
-        // Находим userId по clientId
+        // Find userId by clientId
         let foundUserId: number | null = null;
         for (const [userId, userClients] of this.clients.entries()) {
             if (userClients.has(clientId)) {
@@ -162,16 +162,16 @@ export class SystemNotificationService extends AbstractNotificationService {
             }
         }
 
-        // Удаляем клиента из основного хранилища
+        // Removing the client from the main storage
         super.removeClient(clientId);
 
-        // Удаляем клиента из каналов
+        // Removing a client from channels
         if (foundUserId !== null) {
             this.removeClientFromAllChannels(clientId, foundUserId);
         }
     }
 
-    // Специальный метод для системных событий с указанием канала
+    // Special method for system events specifying the channel
     async logSystemEvent(title: string, message: string, channel?: string, metadata?: Record<string | number, any>): Promise<boolean> {
         return this.dispatchNotification({
             title: title,
@@ -181,7 +181,7 @@ export class SystemNotificationService extends AbstractNotificationService {
         });
     }
 
-    // Методы для CRUD операций
+    // Methods for CRUD operations
     async logCreatedEvent(title: string, message: string, metadata?: Record<string | number, any>): Promise<boolean> {
         return this.logSystemEvent(title, message, 'created', metadata);
     }
@@ -194,7 +194,7 @@ export class SystemNotificationService extends AbstractNotificationService {
         return this.logSystemEvent(title, message, 'deleted', metadata);
     }
 
-    // Новый метод для получения каналов пользователя
+    // New method to get user channels
     getUserChannels(userId: number): Map<string, Set<string>> {
         return this.crudChannels.get(userId) || new Map();
     }

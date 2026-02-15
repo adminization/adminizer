@@ -54,11 +54,11 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
         return currentUrl === normalizedItemLink || currentUrl.startsWith(`${normalizedItemLink}/`);
     };
 
-    // Добавляем ref для хранения актуального состояния
+    // Add ref to store the current state
     const openGroupsRef = useRef(openGroups);
     const touchedGroupsRef = useRef(touchedGroups);
 
-    // Синхронизируем ref при обновлении состояния
+    // Synchronize ref when updating state
     openGroupsRef.current = openGroups;
     touchedGroupsRef.current = touchedGroups;
 
@@ -140,7 +140,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                     return isActiveItem(item.link);
                 });
 
-                // Логику isOpen выносим в переменную, но используем актуальные данные из ref
+                // We put the isOpen logic into a variable, but use the actual data from the ref
                 const isOpenNow = touchedGroups[section]
                     ? openGroups[section]
                     : isAnyItemActive;
@@ -151,16 +151,16 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                             asChild
                             className="cursor-pointer"
                             onClick={() => {
-                                // Определяем новое состояние на основе актуальных значений
+                                // We determine a new state based on current values
                                 const wasTouched = touchedGroupsRef.current[section];
                                 const isOpen = wasTouched
                                     ? openGroupsRef.current[section]
                                     : isAnyItemActive;
 
-                                // Переключаем состояние
+                                // Switching the state
                                 const nextOpen = !isOpen;
 
-                                // Обновляем состояния
+                                // Updating states
                                 setTouchedGroups(prev => ({
                                     ...prev,
                                     [section]: true,

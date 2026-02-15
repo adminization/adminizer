@@ -62,7 +62,7 @@ const MonacoEditor: FC<MonacoEditorProps> = ({ onChange, value, options, disable
         updateEditorOptions();
     }, [width]);
 
-    // Вычисляем высоту редактора
+    // Calculating the height of the editor
     const editorHeight = isMobile ? '300px' : isTablet ? '400px' : '500px';
 
     return (

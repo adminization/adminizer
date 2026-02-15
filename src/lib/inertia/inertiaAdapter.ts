@@ -60,7 +60,7 @@ const inertiaExpressAdapter: (options: Options) => RequestHandler = function (
                     sameSite: 'lax',
                 });
 
-                // Проверяем CSRF только для не-GET запросов И не-API routes
+                // Checking CSRF only for non-GET requests AND non-API routes
                 if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
                     const csrfCookie = req.cookies['XSRF-TOKEN'];
                     const csrfHeader = req.headers[csrf.headerName || 'x-xsrf-token'];
@@ -193,7 +193,7 @@ const inertiaExpressAdapter: (options: Options) => RequestHandler = function (
     };
 };
 
-// Вспомогательная функция для определения API routes
+// Helper function for defining API routes
 function isApiRequest(req: ReqType): boolean {
     const adminizer = req.adminizer;
 
@@ -204,10 +204,10 @@ function isApiRequest(req: ReqType): boolean {
     const corsConfig = adminizer.config.cors;
     const routePrefix = adminizer.config.routePrefix || '';
 
-    // Создаем базовый путь для API
+    // Create a base path for the API
     const apiBasePath = `${routePrefix}/${corsConfig.path?.replace('*', '')}`;
 
-    // Проверяем начинается ли путь с API base path
+    // Checking if the path starts with API base path
     return req.path.startsWith(apiBasePath);
 }
 

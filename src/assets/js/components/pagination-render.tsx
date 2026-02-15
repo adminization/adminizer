@@ -22,7 +22,7 @@ const PaginationRender: FC<PaginationProps> = ({pagination, pageChange, currentP
     return (
         <Pagination>
             <PaginationContent className="flex-wrap">
-                {/* First Item Button - показываем только когда не на первой странице */}
+                {/* First Item Button - show only when not on the first page */}
                 <PaginationItem className={`${showFirstButton ? '' : 'opacity-40 pointer-events-none'}`}>
                     <PaginationLink
                         className="px-6 cursor-pointer bg-secondary hover:bg-muted-foreground/15"
@@ -81,7 +81,7 @@ const PaginationRender: FC<PaginationProps> = ({pagination, pageChange, currentP
                     />
                 </PaginationItem>
 
-                {/* Last Item Button - показываем только когда не на последней странице */}
+                {/* Last Item Button - show only when not on the last page */}
                 <PaginationItem className={`${showLastButton ? '' : 'opacity-40 pointer-events-none'}`}>
                     <PaginationLink
                         className="px-6 cursor-pointer bg-secondary hover:bg-muted-foreground/15"

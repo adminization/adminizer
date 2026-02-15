@@ -282,7 +282,7 @@ export class Adminizer {
         this._emitter.emit('adminizer:loaded');
     }
 
-    // Хелпер для отправки уведомлений
+    // Helper for sending notifications
     public async sendNotification(notification: Omit<INotification, 'id' | 'createdAt' | 'icon'>): Promise<boolean> {
         if (this.config.notifications.enabled) {
             const notificationClass = notification.notificationClass || 'general';

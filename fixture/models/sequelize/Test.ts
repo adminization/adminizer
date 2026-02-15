@@ -63,19 +63,19 @@ export class Test extends Model<
     declare owner?: UserAP;
 
     // ——————————————————————————————————————————————
-    // Many-to-many с UserAP через `test_useraps`
+    // Many-to-many with UserAP via `test_useraps`
     // ——————————————————————————————————————————————
     declare userAPs?: UserAP[];
 
     static associate(sequelize: Sequelize) {
         const UserAPModel = sequelize.model('UserAP') as ModelStatic<Model<UserAP>>;
-        // 1-to-1: ownerId → один UserAP
+        // 1-to-1: ownerId -> one UserAP
         this.belongsTo(UserAPModel, {
             foreignKey: 'ownerId',
             as: 'owner',
         });
 
-        // M-to-N: через таблицу test_useraps
+        // M-to-N: via the test_useraps table
         this.belongsToMany(UserAPModel, {
             through: 'test_useraps',
             foreignKey: 'testId',

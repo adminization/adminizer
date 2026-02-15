@@ -138,7 +138,7 @@ const MediaManager = ({ layout, config, type, onChange, value, name }: Props) =>
     useEffect(() => {
         const initLocales = async () => {
             try {
-                // Используйте GET запрос вместо POST для получения данных
+                // Use GET request instead of POST to get data
                 let res = await axios.get(uploadUrl, {
                     params: {
                         _method: 'getLocales'

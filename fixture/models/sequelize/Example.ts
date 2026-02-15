@@ -108,7 +108,7 @@ import {UserAP} from "../../../src";
     static associate(sequelize: Sequelize) {
       const UserAPModel = sequelize.model('UserAP') as ModelStatic<Model<UserAP>>;
       
-      // 1-to-1: ownerId → один UserAP
+      // 1-to-1: ownerId -> one UserAP
       this.belongsTo(UserAPModel, {
         foreignKey: 'ownerId',
         as: 'owner',

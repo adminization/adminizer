@@ -16,7 +16,7 @@ export default async function bindModels(adminizer: Adminizer) {
 
 	const systemModelsDir = path.resolve(import.meta.dirname, "../models");
 
-	// Фильтруем только .js и .ts файлы, исключая .d.ts
+	// We filter only .js and .ts files, excluding .d.ts
 	const systemModelsFiles = fs.readdirSync(systemModelsDir).filter(file =>
 		(file.endsWith(".js") || (file.endsWith(".ts") && !file.endsWith(".d.ts")))
 	);

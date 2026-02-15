@@ -102,20 +102,20 @@ export async function populateVariants(adminizer: Adminizer, variants: MediaMana
 export function getAssociationFieldName(model: any, associationName: string): string {
     const attributes = model.attributes || {};
 
-    // Для вашего случая: file связь использует fileId
+    // For your case: file connection uses fileId
     if (associationName === 'file') {
-        // Проверяем есть ли связь file и какое у нее via
+        // We check whether there is a file connection and what via it has
         if (attributes.file?.type === 'association' && attributes.file.via) {
-            return attributes.file.via; // Вернет 'fileId'
+            return attributes.file.via; // Returns 'fileId'
         }
 
-        // Или просто проверяем наличие fileId
+        // Or just check for the presence of fileId
         if (attributes.fileId) {
             return 'fileId';
         }
     }
 
-    // Общий случай
+    // General case
     const idField = `${associationName}Id`;
     return attributes[idField] ? idField : associationName;
 }

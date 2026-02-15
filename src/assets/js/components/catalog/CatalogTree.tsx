@@ -200,7 +200,7 @@ const CatalogTree = () => {
 
     const handleToggle = useCallback(async (id: string, isOpen: boolean) => {
 
-        // Если нода закрывается - ничего не делаем
+        // If the node closes, we do nothing
         if (!isOpen) return;
 
         try {
@@ -210,18 +210,18 @@ const CatalogTree = () => {
             const newChildNodes = res.data.data;
 
             setTreeData(prevTree => {
-                // Создаем Set из ID существующих нод для быстрой проверки
+                // Create a Set from the IDs of existing nodes for quick verification
                 const existingNodeIds = new Set(prevTree.map(n => n.id));
 
-                // Фильтруем новые ноды, оставляем только те, которых еще нет
+                // We filter new nodes, leaving only those that do not exist yet
                 const uniqueNewNodes = newChildNodes.filter(
                     (child: { id: string | number; }) => !existingNodeIds.has(child.id)
                 );
 
-                // Если все новые ноды уже есть - не обновляем состояние
+                // If all new nodes already exist, do not update the state
                 if (uniqueNewNodes.length === 0) return prevTree;
 
-                // Мержим деревья, добавляя только уникальные ноды
+                // Merging trees, adding only unique nodes
                 return [...prevTree, ...uniqueNewNodes];
             });
 
@@ -240,31 +240,31 @@ const CatalogTree = () => {
             const {catalog: resCatalog} = res.data;
 
             setTreeData(prevTree => {
-                // Создаем Map существующих нод для быстрого поиска
+                // Create a Map of existing nodes for quick search
                 const existingNodesMap = new Map(prevTree.map(node => [node.id, node]));
                 const newNodes = resCatalog.nodes;
 
-                // Обновляем дерево: добавляем новые ноды и обновляем существующие если text изменился
+                // We update the tree: add new nodes and update existing ones if the text has changed
                 const updatedTree = prevTree.map(node => {
                     const newNode = newNodes.find((n: NodeModel<CustomCatalogData>) => n.id === node.id);
                     return newNode && newNode.text !== node.text ? newNode : node;
                 });
 
-                // Добавляем новые ноды, которых еще нет
+                // Adding new nodes that don’t exist yet
                 const nodesToAdd = newNodes.filter(
                     (newNode: NodeModel<CustomCatalogData>) =>
                         !existingNodesMap.has(newNode.id) ||
                         (existingNodesMap.get(newNode.id)?.text !== newNode.text)
                 );
 
-                // Если нечего добавлять и нечего обновлять - возвращаем предыдущее состояние
+                // If there is nothing to add and nothing to update, return the previous state
                 if (nodesToAdd.length === 0 &&
                     updatedTree.length === prevTree.length &&
                     updatedTree.every((node, i) => node === prevTree[i])) {
                     return prevTree;
                 }
 
-                // Объединяем обновленные и новые ноды
+                // We combine updated and new nodes
                 return [...updatedTree, ...nodesToAdd];
             });
         } catch (error) {
@@ -273,17 +273,17 @@ const CatalogTree = () => {
     }, [])
 
     const reloadCatalog = useCallback(async (item?: any) => {
-        if (item) { // Если элемент отредактирован
-            // Обновляем конкретную ноду в treeData
+        if (item) { // If the element is edited
+            // Updating a specific node in treeData
             setTreeData(prevTree => {
                 return prevTree.map(node => {
                     if (node.id === item.id) {
                         return {
                             ...node,
-                            text: item.name, // Обновляем текст из ответа сервера
+                            text: item.name, // Updating the text from the server response
                             data: {
                                 ...node.data,
-                                ...item // Обновляем все остальные данные из ответа
+                                ...item // Update all other data from the response
                             }
                         };
                     }
@@ -392,21 +392,21 @@ const CatalogTree = () => {
                 const res = await axios.delete('', {data: selectedNode});
 
                 if (res.data.data.ok) {
-                    // Создаем копию текущего treeData для модификации
+                    // Create a copy of the current treeData for modification
                     let updatedTreeData = [...treeData];
 
-                    // Удаляем все выбранные ноды и их потомков
+                    // We delete all selected nodes and their descendants
                     const removeNodeAndChildren = (
                         id: string | number,
                         nodes: NodeModel<CustomCatalogData>[]): NodeModel<CustomCatalogData>[] => {
 
-                        // Фильтруем ноды, удаляя текущую ноду
+                        // Filter nodes by deleting the current node
                         let result = nodes.filter(node => node.id !== id);
 
-                        // Находим всех детей текущей ноды
+                        // Find all children of the current node
                         const children = nodes.filter(node => node.parent === id);
 
-                        // Рекурсивно удаляем каждого ребенка
+                        // Recursively removing each child
                         children.forEach(child => {
                             result = removeNodeAndChildren(child.id, result);
                         });
@@ -414,12 +414,12 @@ const CatalogTree = () => {
                         return result;
                     };
 
-                    // Применяем удаление для каждой выбранной ноды
+                    // Apply deletion for each selected node
                     selectedNodes.forEach(selectedNode => {
                         updatedTreeData = removeNodeAndChildren(selectedNode.id, updatedTreeData);
                     });
 
-                    // Обновляем состояние
+                    // Update the status
                     setTreeData(updatedTreeData);
                 }
             }
@@ -520,27 +520,27 @@ const CatalogTree = () => {
                 _method: 'updateItem'
             });
 
-            // Обновляем ВСЕ ноды с совпадающими modelId и type
+            // We update ALL nodes with matching modelId and type
             setTreeData(prevTree => {
                 const {modelId, type, name} = res.data.data;
 
-                // Если нет modelId или type, не обновляем дерево
+                // If there is no modelId or type, we do not update the tree
                 if (modelId === undefined || type === undefined) {
                     console.warn('No modelId or type in response!');
                     return prevTree;
                 }
                 return prevTree.map(node => {
-                    // Проверяем, что data существует и modelId + type совпадают
+                    // We check that data exists and modelId + type match
                     if (
                         node.data?.modelId === modelId &&
                         node.data?.type === type
                     ) {
                         return {
                             ...node,
-                            text: name, // Берём name из ответа сервера
+                            text: name, // We take name from the server response
                             data: {
                                 ...node.data,
-                                ...res.data.data, // Обновляем все данные из ответа
+                                ...res.data.data, // Update all data from the response
                                 ...{visible: res.data.data.visible ?? false}
                             },
                         };
@@ -566,7 +566,7 @@ const CatalogTree = () => {
             const {catalog: resCatalog} = res.data;
             setTreeData(resCatalog.nodes)
 
-            // Ждём два цикла рендеринга
+            // We are waiting for two rendering cycles
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     if (treeRef.current) {
@@ -581,7 +581,7 @@ const CatalogTree = () => {
             const res = await axios.post('', {s: s, _method: 'search'})
             setTreeData(res.data.data)
 
-            // Ждём два цикла рендеринга
+            // We are waiting for two rendering cycles
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     if (treeRef.current) {
@@ -599,13 +599,13 @@ const CatalogTree = () => {
 
     const handleOpenContextMenu = useCallback((open: boolean, node: NodeModel<CustomCatalogData>) => {
         if (open) {
-            // Проверяем, выделена ли текущая нода
+            // Checking whether the current node is selected
             const isNodeSelected = selectedNodes.some(n => n.id === node.id);
 
-            // Сбрасываем все выделенные ноды
+            // Reset all selected nodes
             setSelectedNodes([]);
 
-            // Если нода не была выделена - выделяем её
+            // If the node has not been selected, select it
             if (!isNodeSelected) {
                 handleSelect(node);
                 getActionsContext(node)

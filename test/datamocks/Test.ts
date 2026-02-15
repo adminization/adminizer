@@ -13,7 +13,7 @@ const Test = Waterline.Collection.extend({
       autoMigrations: { autoIncrement: true },
     },
 
-    // Примитивные поля
+    // Primitive fields
     title: {
       type: "string",
       required: true,
@@ -34,22 +34,22 @@ const Test = Waterline.Collection.extend({
       allowNull: true,
     },
 
-    // Самореференсная ассоциация
+    // Self-referential association
     selfAssociation: {
       model: "test",
     },
 
-    // Односторонняя связь на Example
+    // One-way communication on Example
     example: {
       model: "example",
     },
 
-    // Ассоциация к UserAP (владелец)
+    // Association to UserAP (owner)
     userField: {
       model: "userap",
     },
 
-    // Многих пользователей (many-to-many)
+    // Many users (many-to-many)
     // @ts-ignore
     userAPs: {
       collection: "userap"

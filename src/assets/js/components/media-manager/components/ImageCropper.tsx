@@ -44,7 +44,7 @@ const ImageCropper = ({
     const [isLoading, setIsLoading] = useState(false);
     const [isReady, setIsReady] = useState(false);
 
-    // Аналогичные настройки Cropper.js
+    // Similar Cropper.js settings
     const cropperOptions: ReactCropperProps = {
         viewMode: 2,
         responsive: true,
@@ -141,18 +141,18 @@ const ImageCropper = ({
         );
     };
 
-    // Управление кнопками перемещения/масштабирования
+    // Navigation/Zoom Button Control
     const move = (dx: number, dy: number) => {
         if (!cropperRef.current?.cropper) return;
 
-        // Получаем текущие координаты
+        // Getting the current coordinates
         const currentData = cropperRef.current.cropper.getData();
 
-        // Вычисляем новые координаты
+        // Calculate new coordinates
         const newX = currentData.x + dx;
         const newY = currentData.y + dy;
 
-        // Применяем изменения
+        // Applying the changes
         cropperRef.current.cropper.setData({
             ...currentData,
             x: newX,
@@ -185,7 +185,7 @@ const ImageCropper = ({
                 crop={onCrop}
             />
 
-            {/* Координаты */}
+            {/* Coordinates */}
             <div className="grid grid-cols-4 gap-2 mt-4">
                 {Object.entries(coordinates).map(([key, value]) => (
                     <div key={key} className="flex flex-col items-center gap-2">
@@ -206,7 +206,7 @@ const ImageCropper = ({
                 ))}
             </div>
 
-            {/* Кнопки управления */}
+            {/* Control buttons */}
             <div className="grid grid-cols-4 gap-2 mt-4">
                 <Button variant="outline" onClick={() => move(0, -20)}>
                     <ArrowUp/>
@@ -246,7 +246,7 @@ const ImageCropper = ({
                 </div>
             </div>
 
-            {/* Форматы */}
+            {/* Formats */}
             <div className="grid grid-cols-4 gap-2 mt-4">
                 <div className="flex gap-2 items-center">
                     <Checkbox

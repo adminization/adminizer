@@ -6,7 +6,7 @@ export interface SendNotificationsOptions {
     delayMs?: number;
     userId?: number;
     onlyGeneral?: boolean;
-    generalRatio?: number; // Вероятность general уведомлений (0-1)
+    generalRatio?: number; // Probability of general notifications (0-1)
 }
 
 export async function sendNotificationsWithDelay(
@@ -16,7 +16,7 @@ export async function sendNotificationsWithDelay(
     const {
         count = 10,
         delayMs = 2000,
-        generalRatio = 0.7 // 70% general, 30% system по умолчанию
+        generalRatio = 0.7 // 70% general, 30% system default
     } = options;
 
     const systemChannels = ['created', 'updated', 'deleted', 'system'] as const;
@@ -24,7 +24,7 @@ export async function sendNotificationsWithDelay(
     const actions = ['create', 'update', 'delete', 'approve', 'reject'] as const;
 
     const generateRandomNotification = (): Omit<INotification, 'id' | 'createdAt' | 'icon'> => {
-        // Определяем тип уведомления с учетом вероятности
+        // Determining the type of notification based on probability
         const isGeneral = options.onlyGeneral ? true : faker.number.float({ min: 0, max: 1 }) < generalRatio;
 
         if (!isGeneral) {
@@ -56,9 +56,9 @@ export async function sendNotificationsWithDelay(
         } else {
             // General notification
             const userIdOption = options.userId ?? faker.helpers.arrayElement([
-                undefined, // для всех пользователей
-                1,         // пользователь с ID 1
-                2          // пользователь с ID 2
+                undefined, // for all users
+                1,         // user with ID 1
+                2          // user with ID 2
             ]);
 
             const hasUserId = userIdOption !== undefined;
@@ -82,7 +82,7 @@ export async function sendNotificationsWithDelay(
                 channel: '',
             };
 
-            // Добавляем userId только если он указан
+            // Add userId only if it is specified
             if (hasUserId) {
                 return {
                     ...notification,

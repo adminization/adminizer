@@ -24,7 +24,7 @@ export function NotificationCenter() {
         setRLoading(true);
         try {
             await markAsRead(notificationClass, id);
-            // После успешной пометки, обновляем колокольчик
+            // After successful marking, update the bell
             await refreshBellNotifications();
         } catch (error) {
             console.error('Error marking as read:', error);

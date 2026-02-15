@@ -86,12 +86,12 @@ export abstract class AbstractNotificationService extends EventEmitter {
     addClient(clientId: string, sendFn: (event: INotificationEvent) => void, user: UserAP): void {
         const userId = user.id;
 
-        // Если у пользователя еще нет Map клиентов - создаем
+        // If the user does not yet have Map clients, create one
         if (!this.clients.has(userId)) {
             this.clients.set(userId, new Map());
         }
 
-        // Получаем Map клиентов пользователя и добавляем нового клиента
+        // We get the Map of the user's clients and add a new client
         const userClients = this.clients.get(userId)!;
         userClients.set(clientId, sendFn);
 
@@ -105,12 +105,12 @@ export abstract class AbstractNotificationService extends EventEmitter {
      * @param {string} clientId - The unique identifier of the client to be removed.
      */
     removeClient(clientId: string): void {
-        // Ищем клиента во всех пользовательских Map
+        // We are looking for a client in all custom Maps
         for (const [userId, userClients] of this.clients.entries()) {
             if (userClients.has(clientId)) {
                 userClients.delete(clientId);
 
-                // Если у пользователя больше нет клиентов - удаляем его Map
+                // If the user no longer has clients, delete his Map
                 if (userClients.size === 0) {
                     this.clients.delete(userId);
                 }
@@ -260,7 +260,7 @@ export abstract class AbstractNotificationService extends EventEmitter {
         try {
             let query: any = {notificationClass: this.notificationClass};
 
-            // Если запрашиваются уведомления для конкретного пользователя получаем ID уведомлений пользователя
+            // If notifications are requested for a specific user, we obtain the user's notification ID
             const userNotifications = await this.adminizer.modelHandler.model.get('usernotificationap')["_find"]({
                 where: {
                     userId: userId
@@ -270,7 +270,7 @@ export abstract class AbstractNotificationService extends EventEmitter {
             const notificationIds = userNotifications.map((un: any) => un.notificationId.id);
 
             if (unreadOnly) {
-                // Только непрочитанные
+                // Only unread
                 query.id = userNotifications
                     .filter((un: any) => !un.read)
                     .map((un: any) => un.notificationId.id);
@@ -307,7 +307,7 @@ export abstract class AbstractNotificationService extends EventEmitter {
         for (const notification of notificationsDB) {
             let readStatus = false;
 
-            // Получаем статус прочтения из UserNotificationAP
+            // Getting read status from UserNotificationAP
             const userNotification = await this.getUserNotification(notification.id, userId);
             readStatus = userNotification ? userNotification.read : false;
 
@@ -412,28 +412,28 @@ export abstract class AbstractNotificationService extends EventEmitter {
      */
     async getNotificationsCount(userId: number, unreadOnly: boolean = false): Promise<number> {
         try {
-            // Формируем условие фильтрации по статусу прочтения
+            // We create a filtering condition by reading status
             const whereClause: any = { userId: userId };
             if (unreadOnly) {
-                whereClause.read = false; // только непрочитанные
+                whereClause.read = false; // only unread
             }
-            // если unreadOnly = false — получаем ВСЕ записи (и прочитанные, и нет)
+            // if unreadOnly = false - we get ALL records (both read and not)
 
-            // Получаем все user-notification связи
+            // We receive all user-notification communications
             const userNotifications = await this.adminizer.modelHandler.model.get('usernotificationap')["_find"]({
                 where: whereClause
             }, { populate: [['notificationId', {}]] });
 
             if (userNotifications.length === 0) return 0;
 
-            // Фильтруем по классу уведомлений через notificationId
+            // Filter by notification class using notificationId
             const validNotificationIds = userNotifications
                 .map((un: any) => un.notificationId.id)
                 .filter((id: any) => id != null);
 
             if (validNotificationIds.length === 0) return 0;
 
-            // Пересчитываем только те, у которых notificationClass совпадает
+            // We recalculate only those whose notificationClass matches
             return await this.adminizer.modelHandler.model.get('notificationap')["_count"]({
                 id: validNotificationIds,
                 notificationClass: this.notificationClass

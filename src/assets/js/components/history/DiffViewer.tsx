@@ -6,7 +6,7 @@ import {
     ArrowRight,
     Eye,
 } from 'lucide-react';
-import { cn } from '@/lib/utils'; // Или правильный путь к вашей утилите cn
+import { cn } from '@/lib/utils'; // Or the correct path to your cn utility
 
 interface Change {
     field: string;

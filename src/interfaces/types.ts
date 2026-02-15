@@ -58,7 +58,7 @@ export interface INotification {
         icon: string;
         iconColor: string;
     }
-    notificationClass: string; // Класс нотификации: 'general', 'system', etc.
+    notificationClass: string; // Notification class: 'general', 'system', etc.
     channel: string | 'created' | 'updated' | 'deleted' | 'system';
     metadata?: Record<string | number, any> | Diff;
 }

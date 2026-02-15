@@ -218,7 +218,7 @@ describe('DataAccessor test', () => {
     instance = new DataAccessor(adminizer, editorUser, entity, "list");
 
     const criteria = await instance.sanitizeUserRelationAccess({});
-    // Ожидаем, что критерии фильтруются по user.id
+    // We expect that the criteria are filtered by user.id
     expect(criteria).toHaveProperty("userField");
     expect(criteria["userField"]).toBe(editorUser.id);
   });

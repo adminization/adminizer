@@ -83,7 +83,7 @@ export class DefaultMediaManager extends AbstractMediaManager {
     public async setRelations(
         data: MediaManagerWidgetData[],
         model: string,
-        modelId: string | number, //Обновлено
+        modelId: string | number, //Updated
         widgetName: string
     ): Promise<void> {
 
@@ -91,7 +91,7 @@ export class DefaultMediaManager extends AbstractMediaManager {
             throw new Error("modelId must be a string or number");
         }
 
-        const modelIdStr = String(modelId); //Нормализуем к строке
+        const modelIdStr = String(modelId); //Normalize to string
 
         let modelAssociations = await this.adminizer.modelHandler.model.get(this.modelAssoc)["_find"]({
             where: {
@@ -114,7 +114,7 @@ export class DefaultMediaManager extends AbstractMediaManager {
             await this.adminizer.modelHandler.model.get(this.modelAssoc)["_create"]({
                 mediaManagerId: this.id,
                 model: model.toLowerCase(),
-                modelId: modelIdStr, //Сохраняем как строку
+                modelId: modelIdStr, //Save as a string
                 [fieldName]: widgetItem.id,
                 widgetName: widgetName,
                 sortOrder: key + 1,
@@ -132,7 +132,7 @@ export class DefaultMediaManager extends AbstractMediaManager {
             throw new Error("modelId must be a string or number");
         }
 
-        const modelIdStr = String(modelId); //Нормализуем к строке
+        const modelIdStr = String(modelId); //Normalize to string
 
         let widgetItems: MediaManagerWidgetClientItem[] = [];
 
@@ -142,7 +142,7 @@ export class DefaultMediaManager extends AbstractMediaManager {
             where: {
                 model: model.toLowerCase(),
                 widgetName: widgetName,
-                modelId: modelIdStr, //Поиск по строке
+                modelId: modelIdStr, //Search by string
             },
             sort: "sortOrder ASC"
         }, { populate: [[fieldName, {}]] });

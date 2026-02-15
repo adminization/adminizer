@@ -210,15 +210,15 @@ export class FrontendCatalog {
 
     async deleteItem(item: Item, req: ReqType): Promise<{ ok: boolean }> {
         if (item.id === 0) item.id = null;
-        // Получаем всех непосредственных потомков текущего элемента
+        // Get all immediate children of the current element
         const children = await this.catalog.getChilds(item.id, undefined, req);
 
-        // Рекурсивно удаляем всех потомков
+        // Recursively removing all children
         for (const child of children) {
             await this.deleteItem(child, req);
         }
 
-        // После удаления всех потомков удаляем сам элемент
+        // After deleting all descendants, delete the element itself
         await this.catalog.deleteItem(item.type, item.id, req);
 
         return {ok: true};

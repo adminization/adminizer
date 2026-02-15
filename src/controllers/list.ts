@@ -128,7 +128,7 @@ function setColumns(
             title: req.i18n.__((field.config as BaseFieldConfig).title),
             data: String(i),
             direction: String(i) === orderColumn ? direction : undefined,
-            searchColumnValue: searchValue || undefined, // undefined, если поиска нет
+            searchColumnValue: searchValue || undefined, // undefined if there is no search
         };
         
         

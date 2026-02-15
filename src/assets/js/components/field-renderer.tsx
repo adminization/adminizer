@@ -161,8 +161,8 @@ const FieldRenderer: FC<{
                     </SelectTrigger>
                     <SelectContent className="z-[9999999]">
                         {(Array.isArray(field.isIn)
-                                ? field.isIn.map(value => [value, value]) // если массив — используем значение и отображаемое значение одинаковыми
-                                : Object.entries(field.isIn as object) // если объект — получаем пары [ключ, отображаемое значение]
+                                ? field.isIn.map(value => [value, value]) // if an array, use the value and the displayed value to be the same
+                                : Object.entries(field.isIn as object) // if an object, we get pairs [key, display value]
                         ).map(([key, value]) => (
                             <SelectItem value={String(key)} key={String(key)}>
                                 {String(value)}

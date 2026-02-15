@@ -32,7 +32,7 @@ const HistoryList: FC<HistoryListProps> = ({ modelName, modelId, handleWatchHist
     
     useEffect(() => {
         const fetchData = async () => {
-            setLoading(true); // Включаем лоадер перед запросом
+            setLoading(true); // Enable the loader before the request
             try {
                 const res = await axios.post(`${window.routePrefix}/history/get-model-history`, {
                     modelName,
@@ -45,7 +45,7 @@ const HistoryList: FC<HistoryListProps> = ({ modelName, modelId, handleWatchHist
             } catch (e) {
                 console.log(e);
             } finally {
-                setLoading(false); // Отключаем лоадер после завершения
+                setLoading(false); // Disable the loader after completion
             }
         };
         fetchData();

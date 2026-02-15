@@ -13,7 +13,7 @@ export default {
         type: "string"
     },
     modelId: {
-        type: "string" // ✅ Изменено: поддержка строк и чисел через приведение к строке
+        type: "string" // ✅ Changed: support for strings and numbers via casting to string
     },
     widgetName: {
         type: "string"
@@ -38,7 +38,7 @@ export interface MediaManagerAssociationsAP {
     id: string;
     mediaManagerId?: string;
     model?: string;
-    modelId?: string; // ✅ Изменено: string вместо number
+    modelId?: string; // ✅ Changed: string instead of number
     widgetName?: string;
     sortOrder?: number;
     file?: MediaManagerAP;

@@ -48,7 +48,7 @@ export function AiAssistantViewport({children, panelWidth = DEFAULT_PANEL_WIDTH}
         root.style.setProperty('--ai-assistant-panel-actual-width', actualWidth);
 
         if (isEnabled && isOpen) {
-            // На мобильных не сдвигаем контент, так как панель на весь экран
+            // On mobile devices we do not shift the content, since the panel is full screen
             root.style.marginRight = isMobile ? '0' : panelWidth;
             root.dataset.aiAssistantOpen = 'true';
         } else {

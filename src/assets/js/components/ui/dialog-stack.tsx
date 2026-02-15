@@ -66,7 +66,7 @@ const DialogStackContext = createContext<DialogStackContextType>({
     setShouldAnimate: () => {
     },
     closeDialog: () => {
-    }, // Добавлено
+    }, // Added
 });
 
 type DialogStackChildProps = {
@@ -97,7 +97,7 @@ export const DialogStack = React.forwardRef<DialogStackHandle, DialogStackProps>
             }
         };
 
-        // Императивные методы
+        // Imperative methods
         React.useImperativeHandle(ref, () => ({
             open: () => {
                 setIsOpen(true);

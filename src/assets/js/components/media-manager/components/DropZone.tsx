@@ -22,12 +22,12 @@ const DropZone: FC<DropZoneProps> = ({callback, messages, name}) => {
         setAlert('');
     };
 
-    // Проверка, разрешён ли тип файла
+    // Checking if the file type is allowed
     const isFileAllowed = (file: File): boolean => {
         const fileType = file.type;
         const fileName = file.name;
 
-        // Проверяем по MIME-типу или расширению
+        // Check by MIME type or extension
         return accept.some(type => {
             if (type.startsWith('.')) {
                 return fileName.toLowerCase().endsWith(type.toLowerCase());
@@ -50,7 +50,7 @@ const DropZone: FC<DropZoneProps> = ({callback, messages, name}) => {
             if (!isFileAllowed(file)) {
                 setLoading(false);
                 setAlert(messages[`File type not allowed`] || `File type not allowed: ${file.name}`);
-                return; // Останавливаем загрузку
+                return; // Stopping the download
             }
             await upload(file);
         }
@@ -63,7 +63,7 @@ const DropZone: FC<DropZoneProps> = ({callback, messages, name}) => {
             for (const file of files) {
                 if (!isFileAllowed(file)) {
                     setAlert(`${messages[`File type are not supported`]} .${file.name.split('.').pop()?.toLowerCase()}`);
-                    return; // Останавливаем загрузку
+                    return; // Stopping the download
                 }
                 setLoading(true);
                 await upload(file);

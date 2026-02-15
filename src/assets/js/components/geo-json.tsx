@@ -194,7 +194,7 @@ const MapEditor = ({
     const [rectangleStart, setRectangleStart] = useState<Position | null>(null);
     const [rectangleEnd, setRectangleEnd] = useState<Position | null>(null);
 
-    // Обработчик перемещения маркера
+    // Marker move handler
     const handleMarkerDragEnd = useCallback((e: L.DragEndEvent, featureId: string | number) => {
         if (!allowMarkerMovement) return;
 
@@ -214,7 +214,7 @@ const MapEditor = ({
         onFeaturesChange(updatedFeatures);
     }, [features, onFeaturesChange, allowMarkerMovement]);
 
-    // Завершение рисования полигона
+    // Finish drawing the polygon
     const completePolygon = useCallback(() => {
         if (currentPolygon.length < 3) {
             setCurrentPolygon([]);
@@ -244,14 +244,14 @@ const MapEditor = ({
         setDrawingInProgress,
     ]);
 
-    // Обработчик завершения рисования из родительского компонента
+    // Draw completion handler from parent component
     useEffect(() => {
         if (drawingMode === "polygon" && currentPolygon.length > 0) {
             completePolygon();
         }
     }, [onFinishDrawing, drawingMode, currentPolygon, completePolygon]);
 
-    // Добавление маркера
+    // Adding a marker
     const addMarker = useCallback(
         (latlng: L.LatLng) => {
             if (drawingMode !== "marker") return;
@@ -267,7 +267,7 @@ const MapEditor = ({
         [features, onFeaturesChange, drawingMode, allowMarkerMovement]
     );
 
-    // Добавление точки полигона
+    // Adding a polygon point
     const addPolygonPoint = useCallback(
         (latlng: L.LatLng) => {
             if (drawingMode !== "polygon") return;
@@ -281,7 +281,7 @@ const MapEditor = ({
         [currentPolygon, drawingMode, map, setDrawingInProgress]
     );
 
-    // Начало рисования прямоугольника
+    // Start drawing a rectangle
     const startRectangle = useCallback(
         (latlng: L.LatLng) => {
             if (drawingMode !== "rectangle") return;
@@ -294,7 +294,7 @@ const MapEditor = ({
         [drawingMode, setDrawingInProgress]
     );
 
-    // Обновление прямоугольника
+    // Rectangle update
     const updateRectangle = useCallback(
         (latlng: L.LatLng) => {
             if (!rectangleStart || drawingMode !== "rectangle") return;
@@ -305,7 +305,7 @@ const MapEditor = ({
         [rectangleStart, drawingMode]
     );
 
-    // Завершение рисования прямоугольника
+    // Finish drawing the rectangle
     const finishRectangle = useCallback(() => {
         if (!rectangleStart || !rectangleEnd) {
             setRectangleStart(null);
@@ -336,7 +336,7 @@ const MapEditor = ({
         setDrawingInProgress,
     ]);
 
-    // Обработчики событий карты
+    // Map event handlers
     useEffect(() => {
         const handleClick = (e: L.LeafletMouseEvent) => {
             if (drawingMode === "marker") {
@@ -376,7 +376,7 @@ const MapEditor = ({
         rectangleStart,
     ]);
 
-    // Клавиша Escape для отмены рисования
+    // Escape key to cancel drawing
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
@@ -461,7 +461,7 @@ const MapEditor = ({
                 </React.Fragment>
             ))}
 
-            {/* Текущий рисуемый полигон */}
+            {/* Current polygon being drawn */}
             {drawingMode === "polygon" && currentPolygon.length > 0 && (
                 <>
                     <Polyline
@@ -480,7 +480,7 @@ const MapEditor = ({
                 </>
             )}
 
-            {/* Текущий рисуемый прямоугольник */}
+            {/* Current rectangle being drawn */}
             {drawingMode === "rectangle" && rectangleStart && rectangleEnd && (
                 <Rectangle
                     bounds={[rectangleStart, rectangleEnd]}
@@ -541,7 +541,7 @@ const GeoJsonEditor: React.FC<GeoJsonEditorProps> = ({
         setDrawingMode("none");
     }, [handleFeaturesChange, drawingInProgress]);
 
-    // Обновляем фичи при изменении initialFeatures
+    // Update features when initialFeatures change
     useEffect(() => {
         if (JSON.stringify(initialFeatures) !== JSON.stringify(features)) {
             setFeatures(initialFeatures);

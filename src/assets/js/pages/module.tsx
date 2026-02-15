@@ -15,18 +15,18 @@ export default function Module() {
 
     useEffect(() => {
         const initModule = async () => {
-            // Загружаем JS-компонент
+            // Loading the JS component
             const Module = await import(/* @vite-ignore */ page.props.moduleComponent as string);
             const Component = Module.default as ComponentType["default"];
             setComponent(<Component data={page.props.data}/>);
         };
 
-        // Загружаем CSS, если путь передан
+        // Load CSS if the path is passed
         const loadCSS = () => {
             const cssPath = page.props.moduleComponentCSS as string | undefined;
             if (!cssPath) return;
 
-            // Проверим, не был ли он уже добавлен
+            // Let's check if it has already been added
             if ([...document.head.querySelectorAll("link[rel='stylesheet']")].some(link => (link as HTMLLinkElement).href.includes(cssPath))) {
                 return;
             }

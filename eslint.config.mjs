@@ -33,7 +33,7 @@ export default [
 
         rules: {
             "no-console": "warn",
-            // Отключаем все правила, кроме @typescript-eslint/no-explicit-any
+            // Disable all rules except @typescript-eslint/no-explicit-any
             "no-unused-vars": "off",
             "no-undef": "off",
             "no-warning-comments": ["error", {

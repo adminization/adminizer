@@ -4,7 +4,7 @@ export function bindCors(adminizer: Adminizer){
     if (adminizer.config?.cors?.enabled) {
         const corsConfig = adminizer.config.cors;
 
-        // Поддерживаем массив разрешенных origin
+        // We support an array of allowed origins
         const allowedOrigins = Array.isArray(corsConfig.origin)
             ? corsConfig.origin
             : [corsConfig.origin];
@@ -12,26 +12,26 @@ export function bindCors(adminizer: Adminizer){
         adminizer.app.all(`${adminizer.config.routePrefix}/${corsConfig.path}`, (req: any, res: any, next: any) => {
             const requestOrigin = req.headers.origin;
 
-            // Проверяем разрешен ли origin
+            // Checking if origin is allowed
             const isOriginAllowed = !requestOrigin || allowedOrigins.includes(requestOrigin);
 
             if (requestOrigin && !isOriginAllowed) {
                 console.log(`❌ CORS: Blocked request from ${requestOrigin}`);
 
                 if (req.method === 'OPTIONS') {
-                    // Для preflight - 200 без CORS headers
+                    // For preflight - 200 without CORS headers
                     return res.status(200).end();
                 } else {
-                    // Для основных запросов - ошибка
+                    // For basic queries - error
                     return res.status(403).json({
                         error: 'CORS policy: Origin not allowed'
                     });
                 }
             }
 
-            // Запрос с разрешенного origin или без Origin
+            // Request from allowed origin or without Origin
             if (isOriginAllowed) {
-                // Для CORS запросов возвращаем тот же origin (или первый из списка)
+                // For CORS requests, return the same origin (or the first one from the list)
                 const allowOrigin = requestOrigin || allowedOrigins[0];
                 res.header('Access-Control-Allow-Origin', allowOrigin);
                 res.header('Access-Control-Allow-Credentials',

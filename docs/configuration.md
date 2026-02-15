@@ -415,7 +415,7 @@ This configuration loads all sail models as they are. Just place  in `config\adm
 
 ```javascript
 // @ts-check
-// import { AdminizerConfig } from "adminizer"; // Тип импортируем через комментарий
+// import { AdminizerConfig } from "adminizer"; // Import the type via JSDoc comment
 
 /** @type {import("adminizer").AdminizerConfig} */
 const config = {

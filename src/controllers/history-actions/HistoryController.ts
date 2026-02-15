@@ -5,7 +5,8 @@ import { UserAP } from "../../models/UserAP";
 export class HistoryController {
 
     static async index(req: ReqType, res: ResType): Promise<any> {
-        if (!HistoryController.checkHistoryPermission(req, res)) return
+        const isUiRequest = req.method.toUpperCase() === 'GET';
+        if (!HistoryController.checkHistoryPermission(req, res, isUiRequest)) return
         const adapter = HistoryController.getAdapter(req);
 
         if (req.method.toUpperCase() === 'GET') {
@@ -30,7 +31,7 @@ export class HistoryController {
             const models = rawModels.map(model => {
                 const normalizedModelName = model.toLowerCase();
                 const configModel = normalizedModelConfig.get(normalizedModelName);
-                const title = req.i18n.__(configModel?.title) ?? model; // если title нет — использовать оригинальное имя
+                const title = req.i18n.__(configModel?.title) ?? model; // if there is no title, use the original name
 
                 return {
                     name: model,
@@ -144,15 +145,21 @@ export class HistoryController {
         return req.adminizer.historyHandler.get(adapter);
     }
 
-    private static checkHistoryPermission(req: ReqType, res: ResType): boolean {
+    private static checkHistoryPermission(req: ReqType, res: ResType, shouldRedirectToLogin = false): boolean {
         if (!req.adminizer?.historyHandler) {
             res.status(401).json({ error: 'History system not initialized' });
             return false
         }
 
-        if (req.adminizer.config.auth.enable && !req.user) {
-            res.status(401).json({ error: 'Unauthorized' });
-            return false
+        if (req.adminizer.config.auth.enable) {
+            if (!req.user) {
+                if (shouldRedirectToLogin) {
+                    res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+                } else {
+                    res.status(401).json({ error: 'Unauthorized' });
+                }
+                return false
+            }
         }
 
         const hasPermission = req.adminizer.accessRightsHelper.hasPermission(
@@ -161,7 +168,7 @@ export class HistoryController {
         );
 
         if (!hasPermission) {
-            res.status(403).json({ error: 'Forbidden' });
+            res.sendStatus(403);
             return false
         }
         return true

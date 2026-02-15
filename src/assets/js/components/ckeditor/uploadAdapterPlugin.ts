@@ -3,7 +3,7 @@ import UploadAdapter from '@/components/ckeditor/uploadAdapter';
 
 class UploadAdapterPlugin extends Plugin {
     static get requires() {
-        return ['ImageUpload']; // Зависимость от ImageUpload плагина
+        return ['ImageUpload']; // Dependency on ImageUpload plugin
     }
 
     init() {

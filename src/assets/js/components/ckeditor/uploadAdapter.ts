@@ -26,7 +26,7 @@ export default class UploadAdapter {
                 msg: response.data.msg,
                 url: window.bindPublic ? `/public${response.data.url}` : response.data.url
             };
-            // Ожидаемый формат ответа: {"code":0,"msg":"success","data":{"url":"/upload/struts2.jpeg"}}
+            // Expected response format: {"code":0,"msg":"success","data":{"url":"/upload/struts2.jpeg"}}
 
             return {
                 default: result.url,

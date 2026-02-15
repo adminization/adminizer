@@ -45,7 +45,7 @@ const Gallery = forwardRef<GalleryRef, GalleryProps>(({openMeta, crop, openVaria
         setActiveTab(initTab || 'tile-all');
     }, [initTab]);
 
-    // Загрузка данных при монтировании
+    // Loading data on mount
     useEffect(() => {
         const initGallery = async () => {
             try {
@@ -61,7 +61,7 @@ const Gallery = forwardRef<GalleryRef, GalleryProps>(({openMeta, crop, openVaria
     }, []);
 
 
-    // Метод для добавления нового медиа
+    // Method for adding new media
     const pushMediaItem = (item: Media) => {
         setSkip(prev => prev + 1);
         setMediaList(prev => [item, ...prev]);
@@ -93,7 +93,7 @@ const Gallery = forwardRef<GalleryRef, GalleryProps>(({openMeta, crop, openVaria
         destroyVariant
     }));
 
-    // Смена типа медиа
+    // Changing media type
     const handleChange = async (type: string, tabValue: string) => {
         setPendingTab(tabValue);
         setMediaList([]);

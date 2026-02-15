@@ -41,7 +41,7 @@ function generateAssociationsFromSchema(
                     .join("")
                     .toLowerCase();
 
-                // 💡 M:N связь
+                // 💡 M:N connection
                 if (inverseField && inverseField.collection === modelName) {
                     model.belongsToMany(targetModel, {
                         through: throughTableName,
@@ -50,7 +50,7 @@ function generateAssociationsFromSchema(
                         otherKey: `${field.collection}Id`
                     });
                 }
-                // 💡 O:M связь (один ко многим)
+                // 💡 O:M communication (one to many)
                 else {
                     let foreignKey = `${modelName}Id`;
                     if (field.collection === modelName) {
@@ -74,7 +74,7 @@ function generateAssociationsFromSchema(
                 }
             }
 
-            // 💡 O:1 или 1:1 (belongsTo)
+            // 💡 O:1 or 1:1 (belongsTo)
             if (field.model) {
                 const targetModel = models[field.model];
                 if (!targetModel) continue;
@@ -226,7 +226,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
             ) {
                 continue;
             }
-            // 🧠 Заменяем ключ на `via`, если это ассоциация
+            // 🧠 Replace the key with `via` if this is an association
             const attr = this.attributes?.[key];
             let targetKey = key;
             if (attr?.type === "association" && attr.via) {
@@ -236,7 +236,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
             if (value === null) {
                 result[targetKey] = {[Op.is]: null};
             } else if (Array.isArray(value)) {
-                // ✅ Обработка массивов - используем оператор IN
+                // ✅ Array processing - use the IN operator
                 result[targetKey] = {[Op.in]: value};
             } else if (typeof value === "object" && !Array.isArray(value)) {
                 const operatorEntries = Object.entries(value)
@@ -359,8 +359,8 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         const plainData: Record<string, any> = {};
         const assocData: Record<string, any> = {};
 
-        // console.debug(">> _create: входные данные:", data);
-        // console.debug(">> Доступные ассоциации:", assocNames);
+        // console.debug(">> _create: input data:", data);
+        // console.debug(">> Available associations:", assocNames);
 
         for (const [key, val] of Object.entries(data)) {
             if (assocNames.includes(key)) {
@@ -370,21 +370,21 @@ export class SequelizeModel<T> extends AbstractModel<T> {
             }
         }
 
-        // console.debug(">> Обычные поля для create():", plainData);
-        // console.debug(">> Данные ассоциаций:", assocData);
+        // console.debug(">> Normal fields for create():", plainData);
+        // console.debug(">> Association data:", assocData);
 
 
         let instance: any;
         try {
             instance = await this.model.create(plainData);
-            // console.debug(">> Создан экземпляр (без ассоциаций):", instance.toJSON());
+            // console.debug(">> Instance created (without associations):", instance.toJSON());
         } catch (err) {
-            // console.error("!! Ошибка при create(plainData):", err);
+            // console.error("!! Error during create(plainData):", err);
             throw err;
         }
 
         // assocData = { example: 5, userAPs: [1,2,3], category: 7, tags: [11,22] }
-        // this.model.associations — ваш объект ассоциаций
+        // this.model.associations - your associations object
         for (const [alias, ids] of Object.entries(assocData)) {
             const assoc = this.model.associations[alias];
             if (!assoc) {
@@ -425,36 +425,36 @@ export class SequelizeModel<T> extends AbstractModel<T> {
             {include: assocNames.map(a => ({association: a}))}
         )).toJSON();
 
-        // console.debug(">> Результат после reload:", fresh?.toJSON());
+        // console.debug(">> Result after reload:", fresh?.toJSON());
         return fresh as any;
     }
 
 
     // --- FIND ONE ---
     protected async _findOne(criteria: Partial<T>): Promise<T | null> {
-        // console.debug(">> _findOne: входные критерии:", criteria);
+        // console.debug(">> _findOne: input criteria:", criteria);
 
         const {where} = this._convertWaterlineCriteriaToSequelizeOptions(criteria);
         const includes = this._buildIncludes();
-        // console.debug(">> _findOne: преобразованные where:", where);
+        // console.debug(">> _findOne: converted where:", where);
         // console.debug(">> _findOne: includes:", includes);
 
         let instance = null;
         try {
             instance = await this.model.findOne({where, include: includes});
-            // console.debug(">> _findOne: сырое instance:", instance ? instance.toJSON() : null);
+            // console.debug(">> _findOne: raw instance:", instance ? instance.toJSON() : null);
         } catch (err) {
-            // console.error("!! _findOne: ошибка при вызове findOne:", err);
+            // console.error("!! _findOne: error when calling findOne:", err);
             throw err;
         }
 
         if (!instance) {
-            // console.debug(">> _findOne: ничего не найдено");
+            // console.debug(">> _findOne: nothing found");
             return null;
         }
 
         const plain = instance.get({plain: true}) as T;
-        // console.debug(">> _findOne: plain результат:", plain);
+        // console.debug(">> _findOne: plain result:", plain);
         return plain;
     }
 
@@ -464,7 +464,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         options: FindOptions = {}
     ): Promise<T[]> {
         const assocNames = Object.keys(this.model.associations);
-        // console.debug(">> _find: входные criteria:", criteria, "options:", options);
+        // console.debug(">> _find: input criteria:", criteria, "options:", options);
 
         const {where, limit, offset, order} = this._convertWaterlineCriteriaToSequelizeOptions(criteria);
         const includes = options.populate
@@ -502,14 +502,14 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                             : related?.toJSON();
                         // console.debug(`---- get${alias}():`, mapped);
                     } catch (e) {
-                        // console.error(`!! ошибка при вызове ${getAccessor}():`, e);
+                        // console.error(`!! error when calling ${getAccessor}():`, e);
                     }
                 }
             }
         }
 
         const plain = instances.map(i => i.get({plain: true}) as T);
-        // console.debug(">> _find: plain результаты:", plain);
+        // console.debug(">> _find: plain results:", plain);
 
 
         return plain;
@@ -591,7 +591,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                 try {
                     const related = await record[getAccessor]();
 
-                    // 🧹 Удаляем связанные записи
+                    // 🧹Deleting related posts
                     if (Array.isArray(related)) {
                         for (const r of related) {
                             if (typeof r.destroy === "function") {
@@ -626,7 +626,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
             for (const alias of assocNames) {
                 const assoc = this.model.associations[alias];
 
-                // 🛑 Не трогаем родительские связи
+                // 🛑 We don’t touch parental ties
                 if (assoc.associationType === "BelongsTo") continue;
 
                 // @ts-ignore accessor exists

@@ -73,7 +73,7 @@ const ToastEditor = ({ initialValue, onChange, options, disabled }: TuiEditorPro
         language: lang,
     });
 
-      // ✅ Устанавливаем значение при первом рендере
+      // ✅ Set the value during the first render
     useEffect(() => {
         if (editorRef.current && initialValue) {
             const editorInstance = editorRef.current.getInstance();

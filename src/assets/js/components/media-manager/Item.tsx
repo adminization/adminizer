@@ -52,7 +52,7 @@ export const Item = forwardRef<HTMLLIElement, Props>(function Page(
             <button className={`${styles.Page} after:bg-black dark:after:bg-gray-300`} data-id={id.toString()} {...props}>
                 <img src={url} alt="" className="absolute top-0 left-0 w-full h-full object-cover overflow-hidden rounded-[5px]" />
 
-                {/* Показываем имя файла, если это НЕ изображение */}
+                {/* Show file name if it is NOT an image */}
                 {!isImage && (
                     <div className="absolute inset-x-0 bottom-0 break-words text-white text-sm font-medium bg-black/75 h-[40%] rounded-b-[5px] p-2">
                         {fileName}

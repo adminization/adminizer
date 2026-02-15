@@ -18,13 +18,13 @@ export default defineConfig({
         outDir: path.resolve(import.meta.dirname, ''),
         emptyOutDir: false,
         lib: {
-            // Указываем несколько точек входа
+            // Specifying multiple entry points
             entry: {
                 catalogAction: path.resolve(import.meta.dirname, 'action.tsx'),
                 Group: path.resolve(import.meta.dirname, 'group.tsx'),
-                // Можно добавить больше компонентов
+                // More components can be added
             },
-            // name больше не нужно, так как у каждого компонента будет свое имя
+            // name is no longer needed, since each component will have its own name
             formats: ['es'],
             fileName: (format, entryName) => `${entryName}.${format}.js`,
         },

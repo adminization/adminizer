@@ -188,7 +188,7 @@ export default function AdminCKEditor({ initialValue, onChange, options, disable
         editorRef.current = editor;
     }, []);
 
-    // Обновляем данные в редакторе при изменении initialValue
+    // We update the data in the editor when the initialValue changes
     useEffect(() => {
         if (editorRef.current) {
             const currentData = editorRef.current.getData();

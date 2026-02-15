@@ -17,11 +17,11 @@ interface ItemProps{
 }
 
 const Group = ({update = false, parentId, ...data}: ItemProps) => {
-    // Инициализация состояния формы
+    // Initializing the Form State
     const [title, setTitle] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
-    // Инициализация формы данными при монтировании или изменении data.item
+    // Initializing a form with data when mounting or changing data.item
 
     useEffect(() => {
         if (data.item) {

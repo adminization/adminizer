@@ -100,7 +100,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             const url = `${window.routePrefix}/notifications/api/${type}`
             const res = await axios.get(url, {params: {limit: 20, skip: 0, unreadOnly: false}});
 
-            // Очищаем SSE уведомления при загрузке новой табы
+            // Clearing SSE notifications when loading a new tab
             setSseNotifications([]);
             setLoadedNotifications(res.data);
             return res.data;
@@ -157,7 +157,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         try {
             await axios.put(`${window.routePrefix}/notifications/api/${notificationClass}/${id}/read`, {});
 
-            // Обновляем все списки уведомлений
+            // Update all notification lists
             setSseNotifications(prev =>
                 prev.map(notif =>
                     notif.id === id ? { ...notif, read: true } : notif

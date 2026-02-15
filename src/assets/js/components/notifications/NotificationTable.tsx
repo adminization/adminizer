@@ -36,7 +36,7 @@ export const NotificationTable = (
         }, 300)
     ).current;
 
-    // Убираем дубликаты по ID
+    // Removing duplicates by ID
     useEffect(() => {
         const uniqueIds = new Set();
         const filtered = notifications.filter(notif => {
@@ -47,7 +47,7 @@ export const NotificationTable = (
         setUniqueNotifications(filtered);
     }, [notifications]);
 
-    // Infinite scroll только если есть onLoadMore
+    // Infinite scroll only if there is onLoadMore
     useEffect(() => {
         if (!onLoadMore) return;
 
@@ -60,7 +60,7 @@ export const NotificationTable = (
             const {scrollTop, scrollHeight, clientHeight} = scrollContainer;
             const scrollPosition = scrollTop + clientHeight;
 
-            // Проверяем, достигли ли мы нижней части
+            // Checking if we have reached the bottom
             if (scrollPosition >= scrollHeight - 600) {
                 debouncedLoadMore();
             }
@@ -70,10 +70,10 @@ export const NotificationTable = (
         if (scrollContainer) {
             scrollContainer.addEventListener('scroll', handleScroll);
 
-            // Очистка
+            // Cleaning
             return () => {
                 scrollContainer.removeEventListener('scroll', handleScroll);
-                debouncedLoadMore.cancel(); // Отменяем pending debounced вызовы
+                debouncedLoadMore.cancel(); // Cancel pending debounced calls
             };
         }
     }, [hasMore, onLoadMore, debouncedLoadMore]);

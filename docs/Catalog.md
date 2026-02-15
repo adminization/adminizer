@@ -505,7 +505,7 @@ interface CatalogItem extends Item {
   description?: string;
 }
 
-// Группа продуктов
+// Product group
 class ProductGroup extends AbstractGroup<CatalogItem> {
   readonly type = 'group';
   readonly name = 'Product Group';
@@ -634,7 +634,7 @@ class ProductGroup extends AbstractGroup<CatalogItem> {
   }
 }
 
-// Продукт
+// Product
 class ProductItem extends AbstractItem<CatalogItem> {
   readonly type = 'product';
   readonly name = 'Product';
@@ -772,7 +772,7 @@ class ProductItem extends AbstractItem<CatalogItem> {
   }
 }
 
-// Каталог продуктов
+// Product catalog
 export class ProductCatalog extends AbstractCatalog {
   readonly name = 'Product Catalog';
   readonly slug = 'products';
@@ -791,12 +791,12 @@ export class ProductCatalog extends AbstractCatalog {
 ### Регистрация каталога
 
 ```typescript
-// В файле инициализации Adminizer
+// In the Adminizer bootstrap file
 import { ProductCatalog } from './lib/catalog/ProductCatalog';
 
 const adminizer = new Adminizer(/* config */);
 
-// Регистрация каталога
+// Catalog registration
 adminizer.catalogHandler.add(new ProductCatalog(adminizer));
 ```
 

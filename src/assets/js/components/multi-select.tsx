@@ -66,7 +66,7 @@ interface MultiSelectProps
     asChild?: boolean;
     className?: string;
     /**
-     * Режим выбора: 'multiple' для множественного выбора, 'single' для одиночного
+     * Selection mode: 'multiple' for multiple selection, 'single' for single selection
      * @default 'multiple'
      */
     mode?: 'multiple' | 'single';
@@ -125,10 +125,10 @@ const MultiSelect = React.forwardRef<
             let newSelectedValues;
 
             if (mode === 'single') {
-                // Для одиночного выбора
+                // For single selection
                 newSelectedValues = selectedValues.includes(option) ? [] : [option];
             } else {
-                // Для множественного выбора
+                // For multiple selection
                 newSelectedValues = selectedValues.includes(option)
                     ? selectedValues.filter((value) => value !== option)
                     : [...selectedValues, option];
@@ -137,7 +137,7 @@ const MultiSelect = React.forwardRef<
             setSelectedValues(newSelectedValues);
             onValueChange(newSelectedValues);
 
-            // Закрываем popover в режиме одиночного выбора
+            // Closing the popover in single selection mode
             if (mode === 'single') {
                 setIsPopoverOpen(false);
             }

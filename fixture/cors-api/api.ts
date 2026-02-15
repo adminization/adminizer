@@ -6,10 +6,10 @@ export function corsApi(adminizer: Adminizer) {
     const routePrefix = adminizer.config.routePrefix || '';
     const frontendJwtSecret = process.env.FRONTEND_JWT_SECRET || 'frontend-secret';
 
-    // Эндпоинт для получения CSRF токена
+    // Endpoint for receiving a CSRF token
     adminizer.app.get(`${routePrefix}/api/csrf-token`, (req: any, res: any) => {
-        // Inertia middleware уже установила токен в cookies
-        // Мы просто возвращаем его в ответе для удобства
+        // Inertia middleware has already set the token in cookies
+        // We're just returning it in the response for convenience.
         const csrfToken = req.cookies['XSRF-TOKEN'];
         res.json({
             csrfToken,
@@ -62,7 +62,7 @@ export function corsApi(adminizer: Adminizer) {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                maxAge: 60 * 60 * 24 * 7 * 2, // 2 недели
+                maxAge: 60 * 60 * 24 * 7 * 2, // 2 weeks
             }));
 
             res.json({

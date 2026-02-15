@@ -8,7 +8,7 @@ import axios from "axios";
 import {LoaderCircle} from "lucide-react";
 
 const GroupLinkAdd = ({update = false, type, parentId, ...data}: NavGroupAddProps) => {
-    // Инициализация состояния формы
+    // Initializing the Form State
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [targetBlank, setTargetBlank] = useState<boolean>(false);
     const [visible, setVisible] = useState<boolean>(false);
@@ -18,7 +18,7 @@ const GroupLinkAdd = ({update = false, type, parentId, ...data}: NavGroupAddProp
         console.log(data)
     }, []);
 
-    // Инициализация формы данными при монтировании или изменении data.item
+    // Initializing a form with data when mounting or changing data.item
     useEffect(() => {
         if (data.item) {
             setFormData({
@@ -30,7 +30,7 @@ const GroupLinkAdd = ({update = false, type, parentId, ...data}: NavGroupAddProp
             setTargetBlank(data.item.targetBlank || false);
             setVisible(data.item.visible || false);
         } else {
-            // Сброс формы для создания нового элемента
+            // Resetting the form to create a new element
             setFormData({
                 name: '',
                 ...Object.fromEntries(data.items.map(item => [item.name, '']))

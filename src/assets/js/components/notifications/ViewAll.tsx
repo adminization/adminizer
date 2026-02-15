@@ -39,7 +39,7 @@ const ViewAll = () => {
     const [readLoading, setReadLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
 
-    // Используем ref для хранения текущего skip
+    // Use ref to store the current skip
     const currentSkipRef = useRef(20);
 
     const [activeTab, setActiveTab] = useState<string>('');
@@ -51,7 +51,7 @@ const ViewAll = () => {
         const url = new URL(page.url, window.location.origin);
         const typeParam = url.searchParams.get('type');
 
-        // Устанавливаем активную табу только когда tabs доступны
+        // Set active tab only when tabs are available
         if (typeParam && tabs.some(tab => tab.notificationClass === typeParam)) {
             setActiveTab(typeParam);
         } else {
@@ -59,11 +59,11 @@ const ViewAll = () => {
         }
     }, [tabs, page.url]);
 
-    // Загрузка данных при изменении активной табы
+    // Loading data when changing the active tab
     useEffect(() => {
         const loadData = async () => {
             setLocalLoading(true);
-            currentSkipRef.current = 20; // Сбрасываем ref
+            currentSkipRef.current = 20; // Resetting ref
             setHasMore(true);
             await fetchAllNotifications(activeTab);
             setTimeout(() => {
@@ -73,7 +73,7 @@ const ViewAll = () => {
         loadData();
     }, [activeTab]);
 
-    // Фильтрация уведомлений
+    // Filtering notifications
     useEffect(() => {
         const filtered = allNotifications.filter(notif =>
             notif.notificationClass === activeTab
@@ -120,7 +120,7 @@ const ViewAll = () => {
             setHasMore(false);
         }
 
-        // Обновляем оба значения
+        // Update both values
         currentSkipRef.current = currentSkipRef.current + 20;
         setLoadingMore(false)
     }, [hasMore, localLoading, activeTab, paginateNotifications]);

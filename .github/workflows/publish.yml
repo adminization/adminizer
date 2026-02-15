@@ -6,15 +6,20 @@ on:
       - main
       - next
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: npm
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
       - run: npm install --force && npm run build
@@ -22,7 +27,6 @@ jobs:
       - run: |
           cp ./package.json ./dist/
           cp ./Readme.md ./dist/
-          echo '//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}' > ./dist/.npmrc
 
       # Resolve version: different strategy per branch
       - name: Resolve version (main — patch bump)
@@ -57,17 +61,17 @@ jobs:
           jq -r --arg VER "${VEROUT}-build.${BUILD_VERSION}" '.version = $VER' package.json > /tmp/package.json && mv /tmp/package.json ./package.json
         working-directory: ./dist
 
-      # Publish: main as latest, next with --tag next
+      # Publish with OIDC provenance
       - name: Publish (main)
         if: github.ref == 'refs/heads/main'
-        run: npm publish
+        run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: ./dist
 
       - name: Publish (next)
         if: github.ref == 'refs/heads/next'
-        run: npm publish --tag next
+        run: npm publish --provenance --access public --tag next
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: ./dist

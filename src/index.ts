@@ -19,6 +19,8 @@ export * from "./lib/model/AbstractModel";
 export * from "./lib/model/adapter/waterline";
 export * from "./lib/model/adapter/sequelize"
 export * from "./lib/media-manager/AbstractMediaManager";
+export * from "./lib/controls/AbstractControls";
+export * from "./lib/controls/ControlsHandler";
 export * from "./lib/Adminizer";
 export * from "./models/GroupAP"
 export * from "./models/UserAP"

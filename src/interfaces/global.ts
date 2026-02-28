@@ -86,7 +86,6 @@ declare global {
 		i18n: I18n,
 		allowedFileTypes: string[],
 		uploadedFileType: string
-		_skipCSRF?: boolean
 	}
 
 	type ResType = Response & {

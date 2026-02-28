@@ -60,8 +60,8 @@ const inertiaExpressAdapter: (options: Options) => RequestHandler = function (
                     sameSite: 'lax',
                 });
 
-                // Checking CSRF only for non-GET requests AND non-API routes AND not explicitly skipped
-                if (!req._skipCSRF && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+                // Checking CSRF only for non-GET requests AND non-API routes
+                if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
                     const csrfCookie = req.cookies['XSRF-TOKEN'];
                     const csrfHeader = req.headers[csrf.headerName || 'x-xsrf-token'];
 

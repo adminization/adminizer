@@ -15,7 +15,6 @@ We would like to express special thanks to **Konstantin Zolotarev**, who laid th
 Follow us for updates, tutorials, and community discussions:
 
 [![Telegram](https://img.shields.io/badge/Telegram-Join%20Chat-blue?logo=telegram)](https://t.me/talks_adminizer)
-[![X / Twitter](https://img.shields.io/badge/X-%40admnzr-000000?logo=twitter)](https://x.com/admnzr)
 [![Facebook](https://img.shields.io/badge/Facebook-Adminizer-blue?logo=facebook)](https://www.facebook.com/profile.php?id=61575683442665)
 
 ---

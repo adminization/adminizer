@@ -86,6 +86,7 @@ declare global {
 		i18n: I18n,
 		allowedFileTypes: string[],
 		uploadedFileType: string
+		params: Record<string, string>
 	}
 
 	type ResType = Response & {

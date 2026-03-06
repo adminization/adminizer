@@ -282,7 +282,7 @@ const ListTable = () => {
                                                     >
                                                         {action.type === 'blank' ? (
                                                             <a target="_blank"
-                                                               href={action.link}
+                                                               href={`${action.link}?id=${row.original.id}&entity=${page.props.header.entity.name}`}
                                                             >
                                                                 {action.icon && <MaterialIcon name={action.icon}
                                                                                               className="!text-[18px] mr-2"/>}

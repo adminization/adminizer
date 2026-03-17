@@ -5,6 +5,7 @@
 	"main": "index.js",
 	"exports": {
 		".": "./index.js",
+		"./lib/*": "./dist/lib/*.js",
 		"./ui/*": "./dist/ui/components/ui/*.js"
 	},
 	"scripts": {

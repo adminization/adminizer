@@ -4,6 +4,7 @@ import {FieldsHelper} from "../helpers/fieldsHelper";
 import {BaseFieldConfig, CreateUpdateConfig, MediaManagerOptionsField} from "../interfaces/adminpanelConfig";
 
 import {
+    detachMediaManagerField,
     getRelationsMediaManager,
     saveRelationsMediaManager
 } from "../lib/media-manager/helpers/MediaManagerHelper";
@@ -97,14 +98,9 @@ export default async function edit(req: ReqType, res: ResType) {
                 }
             }
 
-            if (fieldConfigConfig.type === 'mediamanager' && typeof reqData[prop] === "string") {
-                try {
-                    const parsed = JSON.parse(reqData[prop] as string);
-                    rawReqData[prop] = parsed
-                } catch (error) {
-                    throw `Error assign association-many mediamanager data for ${prop}, ${reqData[prop]}`
-                }
-                delete reqData[prop]
+            if (fieldConfigConfig.type === 'mediamanager') {
+                detachMediaManagerField(reqData, rawReqData, prop);
+                continue;
             }
 
             if (fields[prop] && fields[prop].model && fields[prop].model.type === 'json' && reqData[prop] !== '') {

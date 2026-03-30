@@ -2,7 +2,7 @@ import {ControllerHelper} from "../helpers/controllerHelper";
 import {RequestProcessor} from "../lib/requestProcessor";
 import {FieldsHelper} from "../helpers/fieldsHelper";
 import {BaseFieldConfig, CreateUpdateConfig} from "../interfaces/adminpanelConfig";
-import {saveRelationsMediaManager} from "../lib/media-manager/helpers/MediaManagerHelper";
+import {detachMediaManagerField, saveRelationsMediaManager} from "../lib/media-manager/helpers/MediaManagerHelper";
 import {DataAccessor} from "../lib/DataAccessor";
 import {Adminizer} from "../lib/Adminizer";
 import inertiaAddHelper from "../helpers/inertiaAddHelper";
@@ -63,14 +63,9 @@ export default async function add(req: ReqType, res: ResType) {
                 }
             }
 
-            if (fieldConfigConfig.type === 'mediamanager' && typeof reqData[prop] === "string") {
-                try {
-                    const parsed = JSON.parse(reqData[prop] as string);
-                    rawReqData[prop] = parsed
-                } catch (error) {
-                    throw `Error assign association-many mediamanager data for ${prop}, ${reqData[prop]}`
-                }
-                delete reqData[prop]
+            if (fieldConfigConfig.type === 'mediamanager') {
+                detachMediaManagerField(reqData, rawReqData, prop);
+                continue;
             }
 
             // delete property from association-many and association if empty

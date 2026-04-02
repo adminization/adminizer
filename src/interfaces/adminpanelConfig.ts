@@ -231,6 +231,11 @@ export interface AdminpanelConfig {
      * Show adminpanel version on the bottom of navbar
      * */
     showVersion?: boolean
+    /**
+     * Custom runtime version text shown in the sidebar footer.
+     * If not set, Adminizer falls back to its own build version.
+     */
+    versionText?: string
 
     /**
      *

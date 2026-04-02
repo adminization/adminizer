@@ -154,6 +154,7 @@ export function bindInertia(adminizer: Adminizer) {
                 )
             ] : null,
             showVersion: req.adminizer.config.showVersion ?? false,
+            versionText: req.adminizer.config.versionText ?? null,
             notifications: req.adminizer.config.notifications.enabled ?? false,
             aiAssistant: {
                 enabled: req.adminizer.config.aiAssistant?.enabled ?? false,

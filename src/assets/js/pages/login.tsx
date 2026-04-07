@@ -28,6 +28,7 @@ interface LoginProps extends SharedData {
         link: string
     },
     captchaTask: number[]
+    redirectTo?: string
 }
 
 export default function Login() {
@@ -48,7 +49,8 @@ export default function Login() {
     const { post, data, setData, processing, transform, errors, clearErrors } = useForm({
         login: '',
         password: '',
-        captchaSolution: ''
+        captchaSolution: '',
+        redirectTo: page.props.redirectTo ?? ''
     })
 
     const submit: FormEventHandler = (e) => {
@@ -122,6 +124,7 @@ export default function Login() {
                     </p>
                 )}
                 <form onSubmit={submit}>
+                    {data.redirectTo && <input type="hidden" name="redirectTo" value={data.redirectTo} />}
                     <div className="grid gap-5">
                         {hasCaptcha && <InputError message={errors.captchaSolution} />}
                         <div className="grid gap-4">

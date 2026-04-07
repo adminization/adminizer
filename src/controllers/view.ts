@@ -10,6 +10,7 @@ import {UserAP} from "../models/UserAP";
 import {GroupAP} from "../models/GroupAP";
 import {BaseFieldConfig, MediaManagerOptionsField} from "../interfaces/adminpanelConfig";
 import {getRelationsMediaManager} from "../lib/media-manager/helpers/MediaManagerHelper";
+import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 export default async function view(req: ReqType, res: ResType) {
     // Check id
@@ -28,7 +29,7 @@ export default async function view(req: ReqType, res: ResType) {
 
     if (req.adminizer.config.auth.enable) {
         if (!req.user) {
-            return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+            return redirectToLogin(req, res);
         } else if (!req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
             return res.sendStatus(403);
         }

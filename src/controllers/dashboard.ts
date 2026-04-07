@@ -1,6 +1,8 @@
+import {redirectToLogin} from '../helpers/inertiaAutHelper';
+
 export default function (req: ReqType, res: ResType) {
     if (req.adminizer.config.auth.enable && !req.user) {
-        return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+        return redirectToLogin(req, res);
     }
 
     return req.Inertia.render({

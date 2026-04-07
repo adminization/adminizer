@@ -1,6 +1,7 @@
 import { Adminizer } from "../../lib/Adminizer";
 import { AbstractHistoryAdapter } from "../../lib/history-actions/AbstractHistoryAdapter";
 import { UserAP } from "../../models/UserAP";
+import {redirectToLogin} from '../../helpers/inertiaAutHelper';
 
 export class HistoryController {
 
@@ -154,7 +155,7 @@ export class HistoryController {
         if (req.adminizer.config.auth.enable) {
             if (!req.user) {
                 if (shouldRedirectToLogin) {
-                    res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+                    redirectToLogin(req, res);
                 } else {
                     res.status(401).json({ error: 'Unauthorized' });
                 }

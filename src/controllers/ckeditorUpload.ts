@@ -2,13 +2,14 @@ import { ControllerHelper } from "../helpers/controllerHelper";
 import {Entity} from "../interfaces/types";
 import * as fs from "fs";
 import multer from "multer";
+import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 export async function ckEditorUpload(req: ReqType, res: ResType) {
 	let entity = ControllerHelper.findEntityObject(req);
 
 	if (req.adminizer.config.auth.enable) {
 		if (!req.user) {
-			res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+			redirectToLogin(req, res);
 			return
 		} else if (!req.adminizer.accessRightsHelper.enoughPermissions([
 			`update-${entity.name}-model`,

@@ -4,13 +4,14 @@ import {generate} from "password-hash";
 import {inertiaUserHelper} from "../helpers/inertiaUserHelper";
 import { UserAP } from "../models/UserAP";
 import { GroupAP } from "../models/GroupAP";
+import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 export default async function (req: ReqType, res: ResType) {
     let entity = ControllerHelper.findEntityObject(req);
 
     if (req.adminizer.config.auth.enable) {
         if (!req.user) {
-            return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+            return redirectToLogin(req, res);
         } else if (!req.adminizer.accessRightsHelper.hasPermission(`update-${entity.name}-model`, req.user)) {
             return res.sendStatus(403);
         }

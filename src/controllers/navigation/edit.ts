@@ -1,10 +1,11 @@
 import {ControllerHelper} from "../../helpers/controllerHelper";
 import {DataAccessor} from "../../lib/DataAccessor";
+import {redirectToLogin} from '../../helpers/inertiaAutHelper';
 
 export default async function edit(req: ReqType, res: ResType) {
 	if (req.adminizer.config.auth.enable) {
 		if (!req.user) {
-			return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+			return redirectToLogin(req, res);
 		}
 	}
 

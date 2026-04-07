@@ -6,6 +6,7 @@ import {NodeOutput} from "../lib/datatable/NodeTable";
 import {inertiaListHelper} from "../helpers/inertiaListHelper";
 import {Field, Fields} from "../helpers/fieldsHelper";
 import {BaseFieldConfig} from "../interfaces/adminpanelConfig";
+import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 export default async function list(req: ReqType, res: ResType) {
     let entity = ControllerHelper.findEntityObject(req);
@@ -15,7 +16,7 @@ export default async function list(req: ReqType, res: ResType) {
 
     if (req.adminizer.config.auth.enable) {
         if (!req.user) {
-            return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+            return redirectToLogin(req, res);
         } else if (!req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
             return res.sendStatus(403);
         }

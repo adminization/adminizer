@@ -12,6 +12,7 @@ import {DndProvider} from "react-dnd";
 import axios from "axios";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.tsx";
 import {Button} from "@/components/ui/button.tsx";
+import {Badge} from "@/components/ui/badge.tsx";
 import {Pencil, Plus, Ban, LoaderCircle, BetweenHorizontalStart} from "lucide-react";
 import {Input} from "@/components/ui/input.tsx";
 import {
@@ -136,6 +137,12 @@ const CatalogTree = () => {
 
         initCatalog()
     }, []);
+
+    useEffect(() => {
+        if (catalog.idList.length === 1 && !catalog.catalogId && catalog.catalogSlug) {
+            router.get(`${window.routePrefix}/catalog/${catalog.catalogSlug}/${catalog.idList[0]}`);
+        }
+    }, [catalog.catalogId, catalog.catalogSlug, catalog.idList]);
 
     const handleSelect = (node: NodeModel<CustomCatalogData>) => {
         const item = selectedNodes.find((n) => n.id === node.id);
@@ -688,6 +695,8 @@ const CatalogTree = () => {
         }
     }, [actionsTools, selectedNodes, actionsContext])
 
+    const selectedCatalogId = catalog.catalogId || (catalog.idList.length === 1 ? catalog.idList[0] : "");
+
     return (
         <>
             {isLoading ? (
@@ -706,8 +715,13 @@ const CatalogTree = () => {
                     <Toaster position="top-center" richColors closeButton/>
                     <div className="flex gap-8 items-center mb-4">
                         <h1 className="text-[28px] leading-[36px] text-foreground">{messages[catalog.catalogName]}</h1>
-                        {catalog.idList.length > 0 &&
-                            <Select defaultValue={catalog.catalogId}
+                        {catalog.idList.length === 1 && selectedCatalogId && (
+                            <Badge variant="secondary" className="px-3 py-1 text-sm">
+                                {selectedCatalogId}
+                            </Badge>
+                        )}
+                        {catalog.idList.length > 1 &&
+                            <Select value={selectedCatalogId}
                                     onValueChange={(value) => {
                                         router.get(`${window.routePrefix}/catalog/${catalog.catalogSlug}/${value}`)
                                     }}>

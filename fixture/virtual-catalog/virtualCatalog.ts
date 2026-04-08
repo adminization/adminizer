@@ -187,7 +187,11 @@ export class TestCatalog extends AbstractCatalog {
     readonly slug: string = 'test-catalog';
     public readonly icon: string = "bug_report";
     public readonly actionHandlers: ActionHandler[] = []
-    public idList: string[] = []
+    public idList: string[] = ['default']
+
+    async getIdList(): Promise<string[]> {
+        return this.idList;
+    }
 
     constructor(adminizer: Adminizer, model: string) {
         let storage = new TestCatalogStorageService(adminizer, model);

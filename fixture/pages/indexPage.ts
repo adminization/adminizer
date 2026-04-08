@@ -484,6 +484,7 @@ export function renderIndexPage(
             </p>
             <div class="hero-actions">
                 <a class="primary" href="${routePrefix}">Open Adminizer</a>
+                <a class="primary" href="https://github.com/adminization/adminizer" target="_blank" rel="noreferrer">View on GitHub</a>
                 <div class="login-hint">
                     <strong>Demo access</strong>
                     <span>login: <code>demo</code> | password: <code>demo</code></span>

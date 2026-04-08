@@ -4,11 +4,12 @@ import fs from "fs";
 import path from "node:path";
 import { Adminizer } from "../lib/Adminizer";
 import { InertiaMenuHelper } from "../helpers/inertiaMenuHelper";
+import { isAdminizerViteDevMode } from "../helpers/runtimeMode";
 
 export function bindInertia(adminizer: Adminizer) {
 
     const viteRender = () => {
-        if (process.env.VITE_ENV === 'dev') {
+        if (isAdminizerViteDevMode()) {
             return `
                     <script type="module">
                         import RefreshRuntime from "/@react-refresh"

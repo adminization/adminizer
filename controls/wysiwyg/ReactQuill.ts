@@ -23,7 +23,7 @@ export class ReactQuill extends AbstractControls {
     }
 
     getJsPath(): string {
-        if (process.env.VITE_ENV === 'dev') {
+        if (process.env.ADMINIZER_VITE_ENV === 'dev') {
             return this.path.jsPath.dev;
         } else {
             return this.path.jsPath.production

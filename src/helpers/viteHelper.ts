@@ -1,9 +1,10 @@
 import path from "path";
 import fs from "fs";
 import chalk from "chalk";
+import { isAdminizerViteDevMode } from "./runtimeMode";
 
 export function viteRender(routePrefix: string, assetName: string): string {
-    const isViteDev = process.env.VITE_ENV === "dev";
+    const isViteDev = isAdminizerViteDevMode();
     if (isViteDev) {
         return `/${assetName}`
     } else {

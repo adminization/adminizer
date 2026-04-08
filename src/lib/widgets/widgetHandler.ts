@@ -8,6 +8,7 @@ import { Adminizer } from "../Adminizer";
 import { UserAP } from "../../models/UserAP";
 import * as process from "node:process";
 import { I18n } from "../I18n";
+import { isAdminizerViteDevMode } from "../../helpers/runtimeMode";
 
 export type WidgetType = (SwitchBase | InfoBase | ActionBase | LinkBase | CustomBase);
 
@@ -155,7 +156,7 @@ export class WidgetHandler {
                             name: i18n.__(widget.name),
                             backgroundCSS: widget.backgroundCSS ?? null,
                             size: widget.size ?? null,
-                            scriptUrl: process.env.VITE_ENV === 'dev' ? widget.jsPath.dev : widget.jsPath.production,
+                            scriptUrl: isAdminizerViteDevMode() ? widget.jsPath.dev : widget.jsPath.production,
                         })
                     }
                 } else {

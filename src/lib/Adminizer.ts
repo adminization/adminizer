@@ -44,6 +44,7 @@ import {StorageServices} from "./catalog/Navigation";
 import {bindCors} from "../system/bindCors";
 import { HistoryHandler } from "./history-actions/HistoryHandler";
 import bindHistory from "../system/bindHistory";
+import { isAdminizerViteDevMode } from "../helpers/runtimeMode";
 
 export class Adminizer {
     // Preconfigures
@@ -199,7 +200,7 @@ export class Adminizer {
 
 
         // Set vite middleware
-        const isViteDev = process.env.VITE_ENV === "dev";
+        const isViteDev = isAdminizerViteDevMode();
         if (isViteDev) await this.viteMiddleware()
 
         this.emitter.emit('adminizer:init');

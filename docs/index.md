@@ -26,6 +26,7 @@
 ## 4. Admin Panel Features
 
 * [Admin Controls](Controls.md)
+* [Navigation Catalog](Navigation.md)
 
 ## 5. Access Control
 

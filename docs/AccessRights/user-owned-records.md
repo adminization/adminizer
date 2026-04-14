@@ -42,4 +42,13 @@ When `userAccessRelation` points to a `UserAP` association (for example, `author
 * The user model (e.g., `UserAP`) must be properly registered and include the required access rights tokens.
 * Without defining `userAccessRelation`, access is controlled only via global permissions (using `AccessRightsHelper`), not per-record ownership.
 
+#### **FK + Alias Support**
+
+`userAccessRelation` may reference either:
+
+* a direct association field (for example, `owner`), or
+* a foreign key field (for example, `ownerId`) when there is an association alias with `via: "ownerId"` that points to `UserAP`.
+
+This is useful for ORM schemas where relation metadata is stored on an alias field while the configured access field is a plain FK column.
+
 This approach ensures secure and isolated access to data across users — critical for SaaS platforms, B2B applications, and any system with private user-specific content.

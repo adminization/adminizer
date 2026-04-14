@@ -55,18 +55,19 @@ export class Adminizer {
 
     // Instances
     app: Express
-    public config: AdminpanelConfig
+    public config!: AdminpanelConfig
     private readonly _emitter: EventEmitter
     ormAdapters: AbstractAdapter[]
     policyManager!: PolicyManager
-    accessRightsHelper: AccessRightsHelper
-    configHelper: ConfigHelper
-    menuHelper: MenuHelper
+    accessRightsHelper!: AccessRightsHelper
+    configHelper!: ConfigHelper
+    menuHelper!: MenuHelper
+    router!: Router
     notificationHandler!: NotificationHandler;
     historyHandler!: HistoryHandler;
     aiAssistantHandler?: AiAssistantHandler;
     modelHandler!: ModelHandler
-    widgetHandler: WidgetHandler
+    widgetHandler!: WidgetHandler
     vite: ViteDevServer
     controlsHandler!: ControlsHandler
     catalogHandler!: CatalogHandler
@@ -273,7 +274,8 @@ export class Adminizer {
 
         if (this.config.history?.enabled) await bindHistory(this)
 
-        await Router.bind(this); // must be after binding policies and req/res functions
+        this.router = new Router(this)
+        await this.router.bind(); // must be after binding policies and req/res functions
 
         /**
          * Adminizer loaded

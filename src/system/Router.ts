@@ -233,7 +233,7 @@ export default class Router {
 
         if (adminizer.config.models) {
             for (let model in adminizer.config.models) {
-                await this.bindModelRoutes(policies, model);
+                await this.bindModelRoutes(model, policies);
             }
         }
 
@@ -275,7 +275,8 @@ export default class Router {
         Adminizer.log.debug(`Adminpanel removed routes for model \`${model}\`: ${removedPaths.join(', ')}`);
     }
 
-    public async bindModelRoutes(policies: MiddlewareType[], model: string): Promise<void> {
+    public async bindModelRoutes(model: string, policies?: MiddlewareType[]): Promise<void> {
+        if (!policies) policies = this.adminizer.config.policies;
         if (this.modelRoutePatterns.has(model)) {
             this.unbindModelRoutes(model);
         }
@@ -285,7 +286,7 @@ export default class Router {
 
         const registeredPaths: string[] = [];
         const register = (path: string, handler: any) => {
-            this.adminizer.app.all(path, this.adminizer.policyManager.bindPolicies(policies, handler));
+            this.adminizer.app.all(path, this.adminizer.policyManager.bindPolicies(policies!, handler));
             const patterns = this.modelRoutePatterns.get(model) ?? [];
             patterns.push(new RegExp(`^${path.replace(/:[^/]+/g, '[^/]+')}$`));
             this.modelRoutePatterns.set(model, patterns);

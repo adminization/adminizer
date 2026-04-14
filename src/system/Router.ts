@@ -233,7 +233,7 @@ export default class Router {
 
         if (adminizer.config.models) {
             for (let model in adminizer.config.models) {
-                await this.bindModelRoutes(adminizer, policies, model);
+                await this.bindModelRoutes(policies, model);
             }
         }
 
@@ -277,7 +277,7 @@ export default class Router {
 
     public async bindModelRoutes(policies: MiddlewareType[], model: string): Promise<void> {
         if (this.modelRoutePatterns.has(model)) {
-            this.unbindModelRoutes(this.adminizer, model);
+            this.unbindModelRoutes(model);
         }
 
         const modelConfig = this.adminizer.config.models[model];

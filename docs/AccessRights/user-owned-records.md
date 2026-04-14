@@ -23,7 +23,18 @@ models: {
 }
 ```
 
-If the user is **not an administrator**, they will only be able to access records where they are listed in the `author` field. This ownership check is enforced automatically in methods like `process`, `processMany`, and `sanitizeUserRelationAccess`.
+If the user is **not an administrator**, they will only be able to access records where they are listed in the `author` field. This ownership check is enforced automatically through `sanitizeUserRelationAccess`.
+
+#### **Create vs Update Behavior**
+
+When `userAccessRelation` points to a `UserAP` association (for example, `author`):
+
+* On **create**, ownership is assigned automatically via `setUserRelationAccess`:
+  * If a non-admin sends any `author` value manually, it is ignored.
+  * The saved value is forced to the current user ID.
+* On **update**, ownership is **not auto-assigned** again:
+  * Access is still restricted to the user’s own records through `sanitizeUserRelationAccess`.
+  * In other words, update is protected by ownership filtering, not by re-writing the owner field.
 
 #### **Important Notes**
 

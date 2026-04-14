@@ -1,6 +1,15 @@
 import { AbstractModel } from "./AbstractModel";
 import { Adminizer } from "../Adminizer";
 
+/**
+ * Central registry (service locator) for all AbstractModel instances in the application.
+ * A single instance is created in Adminizer and shared across the entire app via `req.adminizer.modelHandler`.
+ *
+ * Models are registered at startup via `bindModels`, then looked up by name from controllers,
+ * services, helpers, and system utilities — without importing each model directly.
+ *
+ * Lookup is case-insensitive: `"UserAP"`, `"userap"`, and `"USERAP"` all resolve to the same model.
+ */
 export class ModelHandler {
 	private models: Map<string, AbstractModel<any>> = new Map();
 

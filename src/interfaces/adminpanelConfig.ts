@@ -110,9 +110,7 @@ export interface AdminpanelConfig {
         }
     }
     /**
-     * @alpha
      * Models configuration
-     * reference upload contoroller ~50 line
      * */
     models: {
         [key: string]: ModelConfig

@@ -280,7 +280,7 @@ export default class Router {
         if (this.modelRoutePatterns.has(model)) {
             this.unbindModelRoutes(model);
         }
-
+        
         const modelConfig = this.adminizer.config.models[model];
         const prefix = `${this.adminizer.config.routePrefix}/model/${model}`;
 
@@ -298,7 +298,7 @@ export default class Router {
             register(`${prefix}/add`, _add);
             register(`${prefix}/edit/:id`, _edit);
             register(`${prefix}/remove/:id`, _remove);
-        } else if (typeof modelConfig !== "boolean") {
+        } else if (modelConfig !== undefined && typeof modelConfig !== "boolean") {
             Adminizer.log.debug(`Adminpanel create CRUD routes for \`${model}\` by ModelConfig`);
 
             /**

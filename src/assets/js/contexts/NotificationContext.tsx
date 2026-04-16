@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { INotification } from '../../../interfaces/types';
-import axios from 'axios';
 import {usePage} from "@inertiajs/react";
 import {SharedData} from "@/types";
+import {adminApi} from '@/lib/admin-api';
 
 interface NotifTabs {
     displayName: string,
@@ -43,7 +43,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     const fetchBellNotifications = async () => {
         try {
-            const res = await axios.get(`${window.routePrefix}/notifications/api`, {
+            const res = await adminApi.getJson<INotification[]>(`${window.routePrefix}/notifications/api`, {
                 params: { unreadOnly: true, limit: 4 }
             });
             setBellNotifications(res.data);
@@ -54,7 +54,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     const getLocale = async () => {
         try {
-            const res = await axios.post(`${window.routePrefix}/notifications`);
+            const res = await adminApi.postJson<Record<string, string>>(`${window.routePrefix}/notifications`);
             setMessages(res.data);
         } catch (error) {
             console.log(error)
@@ -67,7 +67,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     const getTabs = async () => {
         try {
-            const res = await axios.get(`${window.routePrefix}/notifications/api/get-classes`);
+            const res = await adminApi.getJson<{activeServices: NotifTabs[]; initTab: string}>(`${window.routePrefix}/notifications/api/get-classes`);
             if (res.data){
                 setTabs(res.data.activeServices)
                 setInitTab(res.data.initTab)
@@ -84,7 +84,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 return;
             }
 
-            const res = await axios.post(`${window.routePrefix}/notifications/api/search`, {
+            const res = await adminApi.postJson<INotification[]>(`${window.routePrefix}/notifications/api/search`, {
                 s: s,
                 notificationClass: type
             });
@@ -98,7 +98,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setLoading(true);
         try {
             const url = `${window.routePrefix}/notifications/api/${type}`
-            const res = await axios.get(url, {params: {limit: 20, skip: 0, unreadOnly: false}});
+            const res = await adminApi.getJson<INotification[]>(url, {params: {limit: 20, skip: 0, unreadOnly: false}});
 
             // Clearing SSE notifications when loading a new tab
             setSseNotifications([]);
@@ -115,7 +115,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const paginateNotifications = async (type: string, skip: number) => {
         try {
             const url = `${window.routePrefix}/notifications/api/${type}`
-            const res = await axios.get(url, {params: {limit: 20, skip, unreadOnly: false}});
+            const res = await adminApi.getJson<INotification[]>(url, {params: {limit: 20, skip, unreadOnly: false}});
 
             setLoadedNotifications(prev => [...prev, ...res.data]);
             return res.data;
@@ -155,7 +155,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     const markAsRead = async (notificationClass: string, id: string) => {
         try {
-            await axios.put(`${window.routePrefix}/notifications/api/${notificationClass}/${id}/read`, {});
+            await adminApi.putJson(`${window.routePrefix}/notifications/api/${notificationClass}/${id}/read`, {});
 
             // Update all notification lists
             setSseNotifications(prev =>
@@ -179,7 +179,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     const markAllAsRead = async () => {
         try {
-            await axios.put(`${window.routePrefix}/notifications/api/read-all`);
+            await adminApi.putJson(`${window.routePrefix}/notifications/api/read-all`, {});
             setSseNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
             setLoadedNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
             await fetchBellNotifications();

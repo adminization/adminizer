@@ -62,6 +62,40 @@ export default class Router {
         let policies: MiddlewareType[] = adminizer.config.policies;
 
         /**
+         * Prevent stale/cached admin API responses.
+         * This protects JSON endpoints from browser/proxy cache and avoids
+         * old HTML redirects being reused as API payloads.
+         */
+        const noCachePrefixes = [
+            '/api',
+            '/notifications/api',
+            '/history',
+            '/widgets-get-all',
+            '/widgets-get-all-db',
+            '/widgets-switch',
+            '/widgets-info',
+            '/widgets-action',
+            '/media-manager-uploader',
+            '/get-thumbs',
+            '/get-timezones',
+        ];
+        adminizer.app.use(adminizer.config.routePrefix, (req, res, next) => {
+            const requestPath = req.path || '/';
+            const shouldDisableCache = noCachePrefixes.some((prefix) =>
+                requestPath === prefix || requestPath.startsWith(`${prefix}/`)
+            );
+
+            if (shouldDisableCache) {
+                res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+                res.set('Pragma', 'no-cache');
+                res.set('Expires', '0');
+                res.set('Surrogate-Control', 'no-store');
+            }
+
+            return next();
+        });
+
+        /**
          * Widgets All
          */
         adminizer.app.all(`${adminizer.config.routePrefix}/widgets-get-all`, adminizer.policyManager.bindPolicies(policies, _getAllWidgets));

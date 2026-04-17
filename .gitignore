@@ -8,3 +8,4 @@ logs
 codex.patch
 .env
 .codex
+.playwright-mcp

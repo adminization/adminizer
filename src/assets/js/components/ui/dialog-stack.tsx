@@ -46,6 +46,7 @@ interface DialogStackProps extends HTMLAttributes<HTMLDivElement> {
 export type DialogStackHandle = {
     open: () => void;
     close: () => void;
+    closeAll: () => void;
     next: () => void;
     prev: () => void;
     closeCurrent: () => void;
@@ -101,20 +102,20 @@ export const DialogStack = React.forwardRef<DialogStackHandle, DialogStackProps>
         React.useImperativeHandle(ref, () => ({
             open: () => {
                 setIsOpen(true);
-                // setActiveIndex(0);
-                // setShouldAnimate(true);
             },
             close: () => {
                 setIsOpen(false);
                 setActiveIndex(0);
             },
+            closeAll: () => {
+                setIsOpen(false);
+                setActiveIndex(0);
+            },
             next: () => {
-                setActiveIndex(activeIndex + 1);
+                setActiveIndex(prev => prev + 1);
             },
             prev: () => {
-                if (activeIndex > 0) {
-                    setActiveIndex(activeIndex - 1);
-                }
+                setActiveIndex(prev => (prev > 0 ? prev - 1 : 0));
             },
             goTo: (index: number) => {
                 if (index >= 0 && index < totalDialogs) {
@@ -257,7 +258,12 @@ export const DialogStackBody = ({
         | ReactElement<DialogStackChildProps>;
 }) => {
     const context = useContext(DialogStackContext);
-    const [totalDialogs, setTotalDialogs] = useState(Children.count(children));
+    const childCount = Children.count(children);
+    const [totalDialogs, setTotalDialogs] = useState(childCount);
+
+    useEffect(() => {
+        setTotalDialogs(childCount);
+    }, [childCount]);
 
     if (!context) {
         throw new Error('DialogStackBody must be used within a DialogStack');
@@ -305,6 +311,9 @@ export const DialogStackContent = ({
     offset?: number;
 }) => {
     const context = useContext(DialogStackContext);
+    const [isLongPressing, setIsLongPressing] = useState(false);
+    const longPressTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const longPressFiredRef = React.useRef(false);
 
     if (!context) {
         throw new Error('DialogStackContent must be used within a DialogStack');
@@ -314,8 +323,35 @@ export const DialogStackContent = ({
         return null;
     }
 
+    const closeAll = () => {
+        context.setIsOpen(false);
+        context.setActiveIndex(0);
+    };
+
     const handleClose = () => {
+        if (longPressFiredRef.current) {
+            longPressFiredRef.current = false;
+            return;
+        }
         context.closeDialog(index);
+    };
+
+    const startLongPress = () => {
+        longPressFiredRef.current = false;
+        setIsLongPressing(true);
+        longPressTimerRef.current = setTimeout(() => {
+            longPressFiredRef.current = true;
+            setIsLongPressing(false);
+            closeAll();
+        }, 600);
+    };
+
+    const cancelLongPress = () => {
+        if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+        }
+        setIsLongPressing(false);
     };
 
     const handleClick = (e: React.MouseEvent) => {
@@ -347,7 +383,7 @@ export const DialogStackContent = ({
         <div
             onClick={handleClick}
             className={cn(
-                'h-[100vh] md:h-[98vh] w-full md:rounded-l-md border bg-background p-6 shadow-lg md:transition-all duration-200',
+                'h-[100vh] md:h-[98vh] w-full md:rounded-l-md border bg-background shadow-lg md:transition-all duration-200',
                 showAnimation && 'animate-in slide-in-from-right-1/2',
                 distanceFromActive < 0 && 'brightness-75 blur-[2px]',
                 className
@@ -356,8 +392,10 @@ export const DialogStackContent = ({
                 top: 0,
                 marginLeft: `${translateX}`,
                 marginTop: `${window.innerWidth > 768 ? Math.abs(distanceFromActive) * 10 : 0}px`,
-                width: `calc(100% + ${Math.abs(distanceFromActive) * offset}px)`,
-                zIndex: 50 - Math.abs(context.activeIndex - (index ?? 0)),
+                width: distanceFromActive < 0
+                    ? `calc(100% + ${Math.abs(distanceFromActive) * offset}px)`
+                    : '100%',
+                zIndex: distanceFromActive < 0 ? 50 - Math.abs(context.activeIndex - (index ?? 0)) : 1002,
                 position: distanceFromActive ? 'absolute' : 'relative',
                 opacity: distanceFromActive > 0 ? 0 : 1,
                 pointerEvents: distanceFromActive > 0 ? 'none' : 'auto',
@@ -368,22 +406,35 @@ export const DialogStackContent = ({
             }}
             {...props}
         >
-            {context.activeIndex === index && (
-                <Button asChild variant="ghost" className="absolute z-[1005] top-4 right-4 p-1 size-8"
-                        onClick={handleClose} aria-label="Close">
-                    <XIcon/>
-                </Button>
-            )}
-
             <div
                 className={cn(
-                    'h-full w-full transition-all duration-200',
+                    'h-full w-full overflow-y-auto p-6 transition-all duration-200',
                     context.activeIndex !== index &&
                     'pointer-events-none select-none'
                 )}
             >
                 {children}
             </div>
+            {context.activeIndex === index && (
+                <Portal.Root>
+                    <Button
+                        variant="ghost"
+                        className={cn(
+                            'fixed z-[1100] top-4 right-4 p-1 size-8 transition-all',
+                            isLongPressing && 'bg-destructive/20 scale-110'
+                        )}
+                        onClick={handleClose}
+                        onPointerDown={startLongPress}
+                        onPointerUp={cancelLongPress}
+                        onPointerLeave={cancelLongPress}
+                        onPointerCancel={cancelLongPress}
+                        aria-label="Close"
+                        title={context.totalDialogs > 1 ? 'Click to close, hold to close all' : 'Close'}
+                    >
+                        <XIcon/>
+                    </Button>
+                </Portal.Root>
+            )}
         </div>
     );
 };

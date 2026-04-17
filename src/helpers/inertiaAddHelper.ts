@@ -112,6 +112,8 @@ export default function inertiaAddHelper(req: ReqType, entity: Entity, fields: F
         let required = fieldConfig.required ?? false
         let options: any = {}
         let value = record ? record[key] : undefined
+        let relatedModel: string | undefined = undefined
+        let canCreateRelated = false
 
         //@ts-ignore TODO: fix field type
         if (entity.config.model && req.adminizer.configHelper.isId(field, entity.config.model)) {
@@ -150,6 +152,12 @@ export default function inertiaAddHelper(req: ReqType, entity: Entity, fields: F
             const { initValue, initOptions } = setAssociationValues(field, value as string[])
             options = initOptions
             value = initValue
+            relatedModel = (field.model?.model || field.model?.collection) as string | undefined
+            if (relatedModel && req.user) {
+                canCreateRelated = req.adminizer.accessRightsHelper.hasPermission(`create-${relatedModel}-model`, req.user)
+            } else if (relatedModel && !req.adminizer.config.auth?.enable) {
+                canCreateRelated = true
+            }
         }
 
         if (type === 'select-many') {
@@ -210,7 +218,9 @@ export default function inertiaAddHelper(req: ReqType, entity: Entity, fields: F
             disabled: disabled,
             required: required,
             isIn: isIn,
-            options: options
+            options: options,
+            relatedModel: relatedModel,
+            canCreateRelated: canCreateRelated,
         })
     }
     return props

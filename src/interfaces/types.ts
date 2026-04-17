@@ -33,6 +33,8 @@ export interface PropsField {
     required?: boolean;
     isIn?: string[] | number[] | boolean[];
     options?: Record<string, any> | Record<string, any>[]
+    relatedModel?: string;
+    canCreateRelated?: boolean;
 }
 
 export interface DiffChanges {

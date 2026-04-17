@@ -12,13 +12,10 @@ export type MenuItem = {
     title: string;
     id: string;
     type?: 'blank' | 'self';
-    actions: HrefConfig[];
-    icon: string;
-    accessRightsToken: string;
+    actions: HrefConfig[] | null;
+    icon: string | null;
+    accessRightsToken: string | null;
     entityName?: string;
-    /**
-     * Section grouping for navbar items (side navigation)
-     */
     section?: string;
 }
 
@@ -83,7 +80,7 @@ export class MenuHelper {
 
         const config = modelConfig[action];
 
-        if (typeof config !== "object" || config === null || !('actions' in config) || !config.actions.inline) {
+        if (typeof config !== "object" || config === null || !('actions' in config) || !config.actions?.inline) {
             return false;
         }
 
@@ -107,7 +104,7 @@ export class MenuHelper {
 
         const config = modelConfig[action];
 
-        if (typeof config === "object" && config !== null && 'actions' in config && config.actions.global) {
+        if (typeof config === "object" && config !== null && 'actions' in config && config.actions?.global) {
             return config.actions.global;
         }
 
@@ -130,7 +127,7 @@ export class MenuHelper {
 
         const config = modelConfig[action];
 
-        if (typeof config === "object" && config !== null && 'actions' in config && config.actions.inline) {
+        if (typeof config === "object" && config !== null && 'actions' in config && config.actions?.inline) {
             return config.actions.inline;
         }
 
@@ -144,44 +141,33 @@ export class MenuHelper {
      */
     public getMenuItems(user: UserAP): MenuItem[] {
         let menus: MenuItem[] = [];
-        if (this.config.navbar.additionalLinks && this.config.navbar.additionalLinks.length > 0) {
-            this.config.navbar.additionalLinks.forEach(function (additionalLink: {
-                link: any;
-                title: string;
-                disabled: any;
-                id: any;
-                type: 'self' | 'blank';
-                subItems: any;
-                icon: any;
-                accessRightsToken: any;
-                /** Optional section grouping for navbar items */
-                section?: any;
-            }) {
-                if (!additionalLink.link || !additionalLink.title || additionalLink.disabled) {
-                    return;
-                }
-                menus.push({
-                    link: additionalLink.link,
-                    title: additionalLink.title,
-                    type: additionalLink.type,
-                    id: additionalLink.id || additionalLink.title.replace(" ", "_"),
-                    actions: additionalLink.subItems || null,
-                    icon: additionalLink.icon || null,
-                    accessRightsToken: additionalLink.accessRightsToken || null,
-                    section: additionalLink.section || 'Platform',
-                });
+
+        const staticLinks = this.config.navbar?.additionalLinks ?? [];
+        staticLinks.forEach(function (additionalLink: HrefConfig & { disabled?: any }) {
+            if (!additionalLink.link || !additionalLink.title || additionalLink.disabled) {
+                return;
+            }
+            menus.push({
+                link: additionalLink.link,
+                title: additionalLink.title,
+                type: additionalLink.type,
+                id: additionalLink.id || additionalLink.title.replace(" ", "_"),
+                actions: additionalLink.subItems || null,
+                icon: additionalLink.icon || null,
+                accessRightsToken: additionalLink.accessRightsToken || null,
+                section: additionalLink.section || 'Platform',
             });
-        }
+        });
+
         if (this.config.models) {
             const _this = this;
             Object.entries<ModelConfig>(this.config.models).forEach(function ([key, val]) {
-
                 const hide =
-                typeof val.navbar?.visible === 'boolean'
-                    ? !val.navbar.visible
-                    : val.navbar?.groupsAccessRights
-                    ? !GroupsAccessRightsHelper.hasAccess(user, val.navbar.groupsAccessRights)
-                    : false;
+                    typeof val.navbar?.visible === 'boolean'
+                        ? !val.navbar.visible
+                        : val.navbar?.groupsAccessRights
+                        ? !GroupsAccessRightsHelper.hasAccess(user, val.navbar.groupsAccessRights)
+                        : false;
                 if (!hide) {
                     if (val.tools && val.tools.length > 0 && val.tools[0].id !== "overview") {
                         val.tools.unshift({
@@ -204,6 +190,23 @@ export class MenuHelper {
                         section: val.navbar?.section || 'Platform',
                     });
                 }
+            });
+        }
+
+        const { handleAdditionalLinks, sectionHandlers } = this.config.navbar ?? {};
+
+        if (handleAdditionalLinks) {
+            menus = handleAdditionalLinks(user, menus as unknown as HrefConfig[]) as unknown as MenuItem[];
+        }
+
+        if (sectionHandlers) {
+            const sections = Object.keys(sectionHandlers);
+            sections.forEach(section => {
+                const handler = sectionHandlers[section];
+                const sectionLinks = menus.filter(m => m.section === section);
+                const otherLinks = menus.filter(m => m.section !== section);
+                const handled = handler(user, sectionLinks as unknown as HrefConfig[]) as unknown as MenuItem[];
+                menus = [...otherLinks, ...handled];
             });
         }
 

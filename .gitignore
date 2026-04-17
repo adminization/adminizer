@@ -7,3 +7,4 @@ logs
 .patches
 codex.patch
 .env
+.codex

@@ -584,14 +584,22 @@ module.exports = config;
         }
     }
     navbar: { // Left-side navigation bar
-        additionalLinks: { // will be created at the bottom of the sidenav panel
+        additionalLinks: { // static links shown in the sidenav panel
             id: string
             title: string
             link: string
-            icon: string
-            // Only for view, controller still uses his own access rights token
-            accessRightsToken: string
+            type: 'self' | 'blank'
+            icon?: string
+            section?: string
+            accessRightsToken?: string
+            subItems?: HrefConfig[]
         }[]
+        // Called after all links (static + model-generated) are collected. Returns final array.
+        handleAdditionalLinks: (user: UserAP, allLinks: HrefConfig[]) => HrefConfig[]
+        // Per-section handlers, applied after all links are collected.
+        sectionHandlers: {
+            [section: string]: (user: UserAP, links: HrefConfig[]) => HrefConfig[]
+        }
     }
     // Policies that will be executed before going to every page
     policies: string | string[] | Function | Function[]
@@ -648,7 +656,9 @@ If the value of the model key is `true: boolean` then only add and edit routers 
 You can add custom links into your admin panel pages.
 
 You could use:
-- `additionaLinks` in `navbar` property to create links at the top of the sidenav panel
+- `additionalLinks` in `navbar` to define static links in the sidenav panel
+- `handleAdditionalLinks(user, allLinks)` in `navbar` to filter or transform all navbar links (static + model-generated) after all links are collected
+- `sectionHandlers` in `navbar` to apply a handler to links of a specific section, after all links are collected
 - `global` or `inline` actions in `actions` property of `list` view
 - `tools` property to create link like Model submenu
 
@@ -710,6 +720,99 @@ module.exports.adminpanel = {
     }
 };
 ```
+
+## Dynamic navbar links by user
+
+Use `handleAdditionalLinks` to filter or transform the full list of navbar links (static + model-generated) based on the current user. The callback receives all links after models have been processed and must return the final array.
+
+```javascript
+module.exports.adminpanel = {
+    navbar: {
+        additionalLinks: [
+            {
+                id: "help",
+                title: "Help center",
+                link: "/adminizer/help",
+                type: "self",
+                icon: "help",
+                section: "Support"
+            }
+        ],
+        handleAdditionalLinks: function (user, allLinks) {
+            const isAdministrator = Boolean(user?.isAdministrator);
+
+            if (!isAdministrator) {
+                // Remove links that require admin access
+                return allLinks.filter(link => link.id !== 'audit');
+            }
+
+            return [
+                ...allLinks,
+                {
+                    id: "audit",
+                    title: "Audit log",
+                    link: "/adminizer/history",
+                    type: "self",
+                    icon: "history",
+                    accessRightsToken: "read-history",
+                    section: "Monitoring"
+                }
+            ];
+        }
+    }
+};
+```
+
+## Per-section link handlers
+
+Use `sectionHandlers` to apply a handler only to links belonging to a specific section. Each handler receives the links of that section and the current user, and returns the filtered or modified list. Handlers run after all links (static + model-generated) are collected.
+
+```javascript
+module.exports.adminpanel = {
+    navbar: {
+        additionalLinks: [
+            {
+                id: "status",
+                title: "System status",
+                link: "https://status.example.com",
+                type: "blank",
+                icon: "monitoring",
+                section: "Support"
+            }
+        ],
+        sectionHandlers: {
+            Support: function (user, links) {
+                // Only show support links to non-admin users
+                if (user?.isAdministrator) return [];
+                return links;
+            },
+            Platform: function (user, links) {
+                // Filter platform links based on user group
+                return links.filter(link =>
+                    !link.accessRightsToken || user?.groups?.includes('editors')
+                );
+            }
+        }
+    }
+};
+```
+
+All links can be assigned to a sidebar section via `section` field on `HrefConfig`:
+```javascript
+{
+    id: "billing",
+    title: "Billing",
+    link: "/adminizer/billing",
+    type: "self",
+    section: "Finance"
+}
+```
+
+Order of processing:
+1. Static `additionalLinks` are added to the navbar
+2. Model-generated links are appended
+3. `handleAdditionalLinks(user, allLinks)` is applied to the full list
+4. `sectionHandlers` are applied per section
 
 # Edit callback
 

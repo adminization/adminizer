@@ -134,7 +134,19 @@ export interface AdminpanelConfig {
         /**
          * will be created at the bottom of the sidenav panel
          * */
-        additionalLinks: HrefConfig[]
+        additionalLinks?: HrefConfig[]
+        /**
+         * Optional callback to filter or transform all navbar links after models have been processed.
+         * Receives all links (static + model-generated) and the current user; returns the final array.
+         */
+        handleAdditionalLinks?: (user: UserAP, allLinks: HrefConfig[]) => HrefConfig[]
+        /**
+         * Per-section handlers, applied after all links (static + model-generated) are collected.
+         * Each key is a section name; the handler receives links belonging to that section.
+         */
+        sectionHandlers?: {
+            [section: string]: (user: UserAP, links: HrefConfig[]) => HrefConfig[]
+        }
     }
     /**
      * Policies that will be executed before going to every page

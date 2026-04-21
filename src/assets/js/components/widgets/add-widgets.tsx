@@ -1,9 +1,10 @@
 import {useCallback, useEffect, useState} from "react";
-import {Widget} from "@/types";
+import {SharedData, Widget} from "@/types";
 import {Card, CardFooter, CardHeader, CardTitle} from "@/components/ui/card.tsx";
 import MaterialIcon from "@/components/material-icon.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {Input} from "@/components/ui/input.tsx";
+import { usePage } from "@inertiajs/react";
 
 interface AddWidget {
     initWidgets: Widget[];
@@ -18,6 +19,8 @@ type WidgetGroup = Record<string, { items: Widget[], title: string }>;
 type Head = { type: string, title: string };
 
 const AddWidgets = ({initWidgets, onAddWidgets, disabled, searchPlaceholder, actionsTitles}: AddWidget) => {
+    const page = usePage<SharedData>();
+    const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
     const [widgets, setWidgets] = useState<WidgetGroup>({
         switchers: {items: [], title: ''},
         info: {items: [], title: ''},
@@ -101,11 +104,11 @@ const AddWidgets = ({initWidgets, onAddWidgets, disabled, searchPlaceholder, act
         // if no filter and search query
         if (search.length >= 1) {
             let newWidgets = {
-                search: {
-                    items: [] as Widget[],
-                    title: 'Search',
-                }
-            };
+                    search: {
+                        items: [] as Widget[],
+                        title: uiMessages.Search || 'Search',
+                    }
+                };
 
             for (const key of Object.keys(widgets)) {
                 const items = widgets[key].items.filter(e =>
@@ -131,7 +134,7 @@ const AddWidgets = ({initWidgets, onAddWidgets, disabled, searchPlaceholder, act
                     <div
                         className={`cursor-pointer hover:text-primary hover:underline transition-all ${!filter ? 'text-primary underline' : ''}`}
                         onClick={() => setFilter('')}>
-                        All
+                        {actionsTitles['All']}
                     </div>
                     {head.length > 0 && head.map((item: Head) => (
                         <div key={item.type}
@@ -158,16 +161,20 @@ const AddWidgets = ({initWidgets, onAddWidgets, disabled, searchPlaceholder, act
                                         </CardHeader>
                                         <CardFooter className="justify-end">
                                             {item.added ? (
-                                                <Button variant="destructive" onClick={() => addWidget(item.id)}>Hide</Button>
+                                                <Button variant="destructive" onClick={() => addWidget(item.id)}>
+                                                    {uiMessages.Hide || 'Hide'}
+                                                </Button>
                                             ) : (
-                                                <Button onClick={() => addWidget(item.id)}>Show</Button>
+                                                <Button onClick={() => addWidget(item.id)}>
+                                                    {uiMessages.Show || 'Show'}
+                                                </Button>
                                             )}
                                         </CardFooter>
                                     </Card>
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-muted-foreground">No widgets found</p>
+                            <p className="text-muted-foreground">{uiMessages["No widgets found"] || 'No widgets found'}</p>
                         )}
                     </div>
                 ))}

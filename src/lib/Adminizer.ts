@@ -320,6 +320,14 @@ export class Adminizer {
         };
     }
 
+    public static get i18n(): typeof I18n {
+        return I18n;
+    }
+
+    public get i18n(): typeof I18n {
+        return I18n;
+    }
+
     get defaultConfig() {
         return getDefaultConfig();
     }

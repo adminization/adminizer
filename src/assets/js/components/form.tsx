@@ -19,6 +19,7 @@ interface FormProps extends SharedData {
 const Form = () => {
     const page = usePage<FormProps>();
     const {fields} = page.props;
+    const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
 
     // initialize useForm with a safe fallback to avoid crashing when `fields` is missing
     const {
@@ -48,12 +49,12 @@ const Form = () => {
     // Basic validation: ensure fields is an array and has entries
     if (!Array.isArray(fields)) {
         console.error('Fields is not an array in Form component:', fields);
-        return <div className="p-4 text-red-500">Error: Fields data is invalid</div>;
+        return <div className="p-4 text-red-500">{uiMessages["Error: Fields data is invalid"] || 'Error: Fields data is invalid'}</div>;
     }
 
     if (fields.length === 0) {
         console.warn('Fields array is empty in Form component');
-        return <div className="p-4 text-gray-500">No fields to display</div>;
+        return <div className="p-4 text-gray-500">{uiMessages["No fields to display"] || 'No fields to display'}</div>;
     }
 
     const submit: FormEventHandler = (e) => {
@@ -92,6 +93,7 @@ const Form = () => {
 
                                             onChange={handleFieldChange}
                                             processing={processing}
+                                            invalidFieldMessage={uiMessages["Error: Invalid field data"] || 'Error: Invalid field data'}
                                         />
                                     </>
                                     :

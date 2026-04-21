@@ -154,7 +154,7 @@ async function inertiaAdminMessage(req: ReqType, message: string, messageType: s
     }
 
     let errors: Record<string, string> = {};
-    errors[messageType] = message
+    errors[messageType] = req.i18n.__(message)
     return req.Inertia.render({
         component: 'login',
         props: {

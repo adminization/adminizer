@@ -124,15 +124,46 @@ export function bindInertia(adminizer: Adminizer) {
 
     adminizer.app.use((req: ReqType, _, next) => {
         checkAuth(req, adminizer)
+        const defaultLocale = typeof req.adminizer.config.translation !== "boolean"
+            ? req.adminizer.config.translation.defaultLocale
+            : "en";
 
         req.Inertia.setViewData({
-            lang: req.user?.locale || 'en',
+            lang: req.user?.locale || defaultLocale,
         })
         const menuHelper = new InertiaMenuHelper(adminizer)
 
         req.Inertia.shareProps({
             auth: {
                 user: req.session.userPretended ?? req.user
+            },
+            uiMessages: {
+                Delete: req.i18n.__("Delete"),
+                Diff: req.i18n.__("Diff"),
+                Preview: req.i18n.__("Preview"),
+                Add: req.i18n.__("Add"),
+                Search: req.i18n.__("Search"),
+                Yes: req.i18n.__("Yes"),
+                No: req.i18n.__("No"),
+                On: req.i18n.__("On"),
+                Off: req.i18n.__("Off"),
+                Hide: req.i18n.__("Hide"),
+                Show: req.i18n.__("Show"),
+                "No notifications found": req.i18n.__("No notifications found"),
+                "No widgets found": req.i18n.__("No widgets found"),
+                "Changes not found": req.i18n.__("Changes not found"),
+                Old: req.i18n.__("Old"),
+                New: req.i18n.__("New"),
+                Added: req.i18n.__("Added"),
+                Removed: req.i18n.__("Removed"),
+                Updated: req.i18n.__("Updated"),
+                "changed type": req.i18n.__("changed type"),
+                "Error: Invalid field data": req.i18n.__("Error: Invalid field data"),
+                "Error: Fields data is invalid": req.i18n.__("Error: Fields data is invalid"),
+                "No fields to display": req.i18n.__("No fields to display"),
+                "Error: Some fields are missing required properties (name, type, label)": req.i18n.__(
+                    "Error: Some fields are missing required properties (name, type, label)"
+                ),
             },
             menu: req.user ? menuHelper.getMenuItems(req) : null,
             title: menuHelper.getBrandTitle(),

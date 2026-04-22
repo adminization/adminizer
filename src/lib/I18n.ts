@@ -103,8 +103,10 @@ export class I18n {
             }
             locale = this.defaultLocale;
         }
-        const translation = I18n.locales[locale][singular];
+        const localeDictionary = I18n.locales[locale] || {};
+        const translation = localeDictionary[singular];
         if (!translation && this.devMode) {
+            I18n.locales[locale] = I18n.locales[locale] || {};
             I18n.locales[locale][singular] = plural ? {one: singular, other: plural} : singular;
             this.writeFile(locale);
         }

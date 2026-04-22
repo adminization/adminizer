@@ -119,11 +119,9 @@ export class Adminizer {
 
                     const conditions = [
                         condition1,
-                        condition2
+                        condition2,
+                        condition3
                     ];
-                    if (process.env.IS_SAILS === undefined) {
-                        conditions.push(condition3);
-                    }
 
                     if (!conditions.some(condition => condition)) {
                         return typeof next === 'function' ? next() : undefined;

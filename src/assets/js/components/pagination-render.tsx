@@ -8,6 +8,8 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination.tsx";
+import {usePage} from "@inertiajs/react";
+import {SharedData} from "@/types";
 
 interface PaginationProps {
     pagination: PaginationResult
@@ -16,6 +18,13 @@ interface PaginationProps {
 }
 
 const PaginationRender: FC<PaginationProps> = ({pagination, pageChange, currentPage}) => {
+    const page = usePage<SharedData>();
+    const messages = page.props.uiMessages ?? {};
+    const firstLabel = messages.First || "First";
+    const lastLabel = messages.Last || "Last";
+    const previousLabel = messages.Previous || "Previous";
+    const nextLabel = messages.Next || "Next";
+
     const showFirstButton = currentPage !== 1 && pagination.last_page > 1;
     const showLastButton = currentPage !== pagination.last_page && pagination.last_page > 1;
 
@@ -31,13 +40,14 @@ const PaginationRender: FC<PaginationProps> = ({pagination, pageChange, currentP
                             pageChange(1)
                         }}
                     >
-                        First
+                        {firstLabel}
                     </PaginationLink>
                 </PaginationItem>
 
                 {/* Previous Item Button */}
                 <PaginationItem>
                     <PaginationPrevious
+                        label={previousLabel}
                         className={`cursor-pointer bg-secondary hover:bg-muted-foreground/15 ${!pagination.prev_page_url ? 'opacity-50 pointer-events-none' : ''}`}
                         onClick={(e) => {
                             e.preventDefault()
@@ -50,7 +60,7 @@ const PaginationRender: FC<PaginationProps> = ({pagination, pageChange, currentP
 
                 {/* Item Numbers */}
                 {pagination.links.map((link, index) => {
-                    if (link.label === 'Previous' || link.label === 'Next') return null;
+                    if (link.label === 'Previous' || link.label === 'Next' || link.label === previousLabel || link.label === nextLabel) return null;
                     return (
                         <PaginationItem key={index}>
                             <PaginationLink
@@ -71,6 +81,7 @@ const PaginationRender: FC<PaginationProps> = ({pagination, pageChange, currentP
                 {/* Next Item Button */}
                 <PaginationItem>
                     <PaginationNext
+                        label={nextLabel}
                         className={`cursor-pointer bg-secondary hover:bg-muted-foreground/15 ${!pagination.next_page_url ? 'opacity-50 pointer-events-none' : ''}`}
                         onClick={(e) => {
                             e.preventDefault()
@@ -90,7 +101,7 @@ const PaginationRender: FC<PaginationProps> = ({pagination, pageChange, currentP
                             pageChange(pagination.last_page)
                         }}
                     >
-                        Last
+                        {lastLabel}
                     </PaginationLink>
                 </PaginationItem>
             </PaginationContent>

@@ -69,7 +69,6 @@ export function bindInertia(adminizer: Adminizer) {
             // Route prefix script
             const routePrefixScript = `<script>window.routePrefix = "${adminizer.config.routePrefix}";</script>`;
 
-            // For Sails JS
             const bindPublic = `<script>window.bindPublic = ${adminizer.config.bind?.public}</script>`;
             return `
                 ${preloadLinks.join('\n')}
@@ -164,6 +163,21 @@ export function bindInertia(adminizer: Adminizer) {
                 "Error: Some fields are missing required properties (name, type, label)": req.i18n.__(
                     "Error: Some fields are missing required properties (name, type, label)"
                 ),
+                Edit: req.i18n.__("Edit"),
+                create: req.i18n.__("create"),
+                Clean: req.i18n.__("Clean"),
+                "Are you sure?": req.i18n.__("Are you sure?"),
+                "Select Item type": req.i18n.__("Select Item type"),
+                "Select Ids": req.i18n.__("Select Ids"),
+                "Open in a new window": req.i18n.__("Open in a new window"),
+                Visible: req.i18n.__("Visible"),
+                "Performing an action...": req.i18n.__("Performing an action..."),
+                "Action completed": req.i18n.__("Action completed"),
+                Save: req.i18n.__("Save"),
+                First: req.i18n.__("First"),
+                Last: req.i18n.__("Last"),
+                Previous: req.i18n.__("Previous"),
+                Next: req.i18n.__("Next"),
             },
             menu: req.user ? menuHelper.getMenuItems(req) : null,
             title: menuHelper.getBrandTitle(),
@@ -225,4 +239,7 @@ function checkAuth(req: ReqType, adminizer: Adminizer) {
         }
     }
 
+    if (req.i18n && typeof adminizer.config.translation !== 'boolean') {
+        req.i18n.setLocale(req.user?.locale || adminizer.config.translation.defaultLocale);
+    }
 }

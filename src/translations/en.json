@@ -181,5 +181,17 @@
   "Profile expired, contact the administrator": "Profile expired, contact the administrator",
   "The user is not allowed to enter, please contact the administrator": "The user is not allowed to enter, please contact the administrator",
   "On": "On",
-  "Off": "Off"
+  "Off": "Off",
+  "Visible": "Visible",
+  "The file used by the models": "The file used by the models",
+  "This is opensource project": "This is opensource project",
+  "Groups": "Groups",
+  "System": "System",
+  "W x H": "W x H",
+  "Sizes": "Sizes",
+  "First": "First",
+  "Last": "Last",
+  "Previous": "Previous",
+  "Next": "Next",
+  "Notifications": "Notifications"
 }

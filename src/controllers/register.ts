@@ -2,6 +2,7 @@ import {generate} from "password-hash";
 import{ inertiaRegisterHelper} from "../helpers/inertiaAutHelper";
 import { UserAP } from "../models/UserAP";
 import { GroupAP } from "../models/GroupAP";
+import { generateUserApiKey } from "../helpers/apiKeyHelper";
 
 export default async function register(req: ReqType, res: ResType) {
     if (!req.adminizer.config.auth.enable || req.adminizer.config.registration?.enable !== true) {
@@ -53,7 +54,8 @@ export default async function register(req: ReqType, res: ResType) {
                     passwordHashed: passwordHashed,
                     fullName: req.body.fullName,
                     email: req.body.email,
-                    locale: req.body.locale
+                    locale: req.body.locale,
+                    userApiKey: generateUserApiKey()
                 });
                 // TODO refactor CRUD functions for DataAccessor usage
                 let defaultUserGroup: GroupAP = await req.adminizer.modelHandler.model.get("GroupAP")["_findOne"]({name: req.adminizer.config.registration.defaultUserGroup});

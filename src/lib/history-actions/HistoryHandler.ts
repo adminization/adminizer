@@ -18,7 +18,7 @@ export class HistoryHandler {
         if (!instance) {
             Adminizer.log.debug(`HistoryAdapter with id ${id} not found`)
         }
-        Adminizer.log.debug(`ins`, instance)
+        // Adminizer.log.debug(`ins`, instance)  // DEBUG: removed to reduce console noise
         return instance
     }
 }

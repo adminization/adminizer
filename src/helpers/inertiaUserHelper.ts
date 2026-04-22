@@ -22,7 +22,8 @@ interface listProps extends Record<string | number | symbol, unknown> {
     userPretend: {
         label: string,
         postLink: string,
-    }
+    },
+    userApiKey?: string;
 }
 
 export function inertiaUserHelper(entity: Entity, req: ReqType, groups: GroupAP[], user?: UserAP, view: boolean = false) {
@@ -137,6 +138,10 @@ export function inertiaUserHelper(entity: Entity, req: ReqType, groups: GroupAP[
                 value: userGroupsIds.includes(group.id)
             })
         }
+    }
+    // Include userApiKey for edit mode
+    if (user?.userApiKey) {
+        props.userApiKey = user.userApiKey;
     }
     return props;
 }

@@ -2,6 +2,7 @@ import {Adminizer} from "../lib/Adminizer";
 import {generate} from "password-hash";
 import {inertiaInitUserHelper} from "../helpers/inertiaAutHelper";
 import { UserAP } from "../models/UserAP";
+import { generateUserApiKey } from "../helpers/apiKeyHelper";
 
 export default async function initUser(req: ReqType, res: ResType) {
     if (!req.adminizer.config.auth.enable) {
@@ -45,7 +46,8 @@ export default async function initUser(req: ReqType, res: ResType) {
                     fullName: "Administrator",
                     isActive: true,
                     ...(locale !== undefined && {locale}),
-                    isAdministrator: true
+                    isAdministrator: true,
+                    userApiKey: generateUserApiKey()
                 }
             );
         } catch (e) {

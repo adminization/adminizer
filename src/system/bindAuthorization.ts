@@ -5,6 +5,7 @@ import {AdminpanelConfig} from "../interfaces/adminpanelConfig";
 import {Adminizer} from "../lib/Adminizer";
 import {generate} from "password-hash";
 import { UserAP } from "../models/UserAP";
+import { generateUserApiKey } from "../helpers/apiKeyHelper";
 
 export default async function bindAuthorization(adminizer: Adminizer) {
 
@@ -58,10 +59,11 @@ export default async function bindAuthorization(adminizer: Adminizer) {
             // TODO refactor CRUD functions for DataAccessor usage
             await adminizer.modelHandler.model.get("UserAP")?.["_create"]({
                 login: adminData.login, passwordHashed: passwordHashed, fullName: "Administrator",
-                isActive: true, isAdministrator: true
+                isActive: true, isAdministrator: true,
+                userApiKey: generateUserApiKey()
             });
         } catch (e) {
-            Adminizer.log.error("Could not create administrator profile", e)
+            Adminizer.log.error("Error trying to create administrator", e)
             return;
         }
 
@@ -76,7 +78,8 @@ export default async function bindAuthorization(adminizer: Adminizer) {
             // TODO refactor CRUD functions for DataAccessor usage
             await adminizer.modelHandler.model.get("UserAP")?.["_create"]({
                 login: 'demo', password: 'demo', passwordHashed: passwordHashed, fullName: "Administrator",
-                isActive: true, isAdministrator: true
+                isActive: true, isAdministrator: true,
+                userApiKey: generateUserApiKey()
             });
         } catch (e) {
             Adminizer.log.error("Could not create demo administrator profile", e)

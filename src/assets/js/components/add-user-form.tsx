@@ -1,19 +1,19 @@
-import {type SharedData} from '@/types';
-import {Link, useForm, usePage} from "@inertiajs/react";
-import {Icon} from "@/components/icon.tsx";
-import {LoaderCircle, MoveLeft, Info} from "lucide-react";
-import {Button} from "@/components/ui/button.tsx";
-import {Label} from "@/components/ui/label.tsx";
-import {Input} from "@/components/ui/input.tsx";
+import { type SharedData } from '@/types';
+import { Link, useForm, usePage } from "@inertiajs/react";
+import { Icon } from "@/components/icon.tsx";
+import { LoaderCircle, MoveLeft, Info, RefreshCw, Copy, Key } from "lucide-react";
+import { Button } from "@/components/ui/button.tsx";
+import { Label } from "@/components/ui/label.tsx";
+import { Input } from "@/components/ui/input.tsx";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
-import {FormEventHandler, useEffect, useState} from "react";
-import {Checkbox} from "@/components/ui/checkbox"
+} from "@/components/ui/select";
+import { FormEventHandler, useEffect, useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox"
 import {
     Tooltip,
     TooltipContent,
@@ -23,18 +23,11 @@ import {
 import InputError from "@/components/input-error.tsx";
 import MaterialIcon from "@/components/material-icon.tsx";
 import axios from "axios";
+import { toast } from "sonner";
 
 type value = string | boolean | Date | Record<string, string>[]
 
-interface Field {
-    label: string;
-    type: string;
-    name: string;
-    tooltip?: string;
-    value: value;
-}
-
-interface AddUserProps extends SharedData {
+interface AddUserFormProps extends SharedData {
     edit: boolean;
     view: boolean;
     btnBack: {
@@ -55,13 +48,25 @@ interface AddUserProps extends SharedData {
     fields: Field[]
     groups: Field[]
     locales: Record<string, string>[]
+    userApiKey?: string;
+}
+
+interface Field {
+    label: string;
+    type: string;
+    name: string;
+    tooltip?: string;
+    value: value;
 }
 
 export default function AddUserForm() {
-    const page = usePage<AddUserProps>()
+    const page = usePage<AddUserFormProps>()
     const [timezones, setTimezones] = useState<Record<string, string>[]>()
 
-    const {fields, groups, auth} = page.props;
+    const { fields, groups, auth } = page.props;
+    const [showApiKey, setShowApiKey] = useState(false);
+    const [currentApiKey, setCurrentApiKey] = useState<string | undefined>(page.props.userApiKey);
+    const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
     const {
         data,
         setData,
@@ -101,18 +106,40 @@ export default function AddUserForm() {
         setData(fieldName, value);
     }
 
+    const handleRegenerateApiKey = async () => {
+        try {
+            const response = await axios.post('/adminizer/api/user-key/regenerate');
+            setCurrentApiKey(response.data.userApiKey);
+            toast.success('User API key regenerated');
+        } catch (error) {
+            console.error('Failed to regenerate user API key:', error);
+            toast.error('Failed to regenerate user API key');
+        }
+        setShowRegenerateDialog(false);
+    };
+
+    const copyApiKey = async () => {
+        if (!currentApiKey) return;
+        try {
+            await navigator.clipboard.writeText(currentApiKey);
+            toast.success('API key copied to clipboard');
+        } catch (err) {
+            toast.error('Failed to copy');
+        }
+    };
+
     return (
         <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
             <div className="w-full sticky z-[1001] py-4 pb-8 top-0 h-fit bg-background flex gap-4">
                 <Button className="mb-3 w-fit" asChild>
                     <Link href={page.props.btnBack.link}>
-                        <Icon iconNode={MoveLeft}/>
+                        <Icon iconNode={MoveLeft} />
                         {page.props.btnBack.title}
                     </Link>
                 </Button>
                 <Button variant="green" type="submit" className="w-fit" form="addUserForm"
-                        disabled={processing || page.props.view}>
-                    {processing && <LoaderCircle className="h-4 w-4 animate-spin"/>}
+                    disabled={processing || page.props.view}>
+                    {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                     {page.props.btnSave.title}
                 </Button>
             </div>
@@ -168,14 +195,14 @@ export default function AddUserForm() {
                             <div className="grid gap-4">
                                 <Label htmlFor={getField('timezone')?.name}>{getField('timezone')?.label}</Label>
                                 <Select onValueChange={(value) => handleChangeDate('timezone', value)}
-                                        defaultValue={data.timezone as string} disabled={processing || page.props.view}>
+                                    defaultValue={data.timezone as string} disabled={processing || page.props.view}>
                                     <SelectTrigger className="w-full cursor-pointer">
-                                        <SelectValue placeholder={getField('timezone')?.name}/>
+                                        <SelectValue placeholder={getField('timezone')?.name} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {(timezones ?? []).map((option) => (
                                             <SelectItem value={option.value}
-                                                        key={option.value}>{option.label}</SelectItem>
+                                                key={option.value}>{option.label}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -200,7 +227,7 @@ export default function AddUserForm() {
                                     {getField('isAdmin') && (
                                         <div className="grid gap-4">
                                             <Label className="cursor-pointer"
-                                                   htmlFor={getField('isAdmin')?.name}>{getField('isAdmin')?.label}</Label>
+                                                htmlFor={getField('isAdmin')?.name}>{getField('isAdmin')?.label}</Label>
                                             <Checkbox
                                                 id={getField('isAdmin')?.name}
                                                 className="cursor-pointer size-5"
@@ -213,7 +240,7 @@ export default function AddUserForm() {
                                     {getField('isConfirmed') && (
                                         <div className="grid gap-4">
                                             <Label className="cursor-pointer"
-                                                   htmlFor={getField('isConfirmed')?.name}>{getField('isConfirmed')?.label}</Label>
+                                                htmlFor={getField('isConfirmed')?.name}>{getField('isConfirmed')?.label}</Label>
                                             <Checkbox
                                                 id={getField('isConfirmed')?.name}
                                                 className="cursor-pointer size-5"
@@ -229,15 +256,15 @@ export default function AddUserForm() {
                                 <div className="grid gap-4">
                                     <Label htmlFor={getField('locale')?.name}>{getField('locale')?.label}</Label>
                                     <Select onValueChange={(value) => handleChangeDate('locale', value)}
-                                            defaultValue={data.locale as string}
-                                            disabled={processing || page.props.view}>
+                                        defaultValue={data.locale as string}
+                                        disabled={processing || page.props.view}>
                                         <SelectTrigger className="w-full cursor-pointer">
-                                            <SelectValue placeholder={getField('locale')?.name}/>
+                                            <SelectValue placeholder={getField('locale')?.name} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {(page.props.locales ?? []).map((option) => (
                                                 <SelectItem value={option.value}
-                                                            key={option.value}>{option.label}</SelectItem>
+                                                    key={option.value}>{option.label}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -248,7 +275,7 @@ export default function AddUserForm() {
                     {auth.user.isAdministrator && (
                         <Button className="w-fit" asChild variant="outline">
                             <Link href={page.props.userPretend.postLink} method="post" data={{ login: data.login, pretend: true }}>
-                                <MaterialIcon name="masks" className="!text-[18px]"/>
+                                <MaterialIcon name="masks" className="!text-[18px]" />
                                 {page.props.userPretend.label}
                             </Link>
                         </Button>
@@ -258,7 +285,7 @@ export default function AddUserForm() {
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger onClick={(e) => e.preventDefault()}>
-                                    <Icon iconNode={Info} className="text-primary w-5 h-5 cursor-pointer"/>
+                                    <Icon iconNode={Info} className="text-primary w-5 h-5 cursor-pointer" />
                                 </TooltipTrigger>
                                 <TooltipContent align="center" side="top">
                                     <p>{getField('userPassword')?.tooltip}</p>
@@ -296,7 +323,7 @@ export default function AddUserForm() {
                                 disabled={processing || page.props.view}
                                 placeholder={getField('repeatUserPassword')?.label}
                             />
-                            <InputError message={errors.repeatUserPassword}/>
+                            <InputError message={errors.repeatUserPassword} />
                         </div>
                     </div>
                     {page.props.groups.length > 0 && (
@@ -306,7 +333,7 @@ export default function AddUserForm() {
                                 {page.props.groups.map(group => (
                                     <div className="grid gap-4" key={group.name}>
                                         <Label className="cursor-pointer"
-                                               htmlFor={group.name}>{group.label}</Label>
+                                            htmlFor={group.name}>{group.label}</Label>
                                         <Checkbox
                                             id={group.name}
                                             disabled={processing || page.props.view}
@@ -318,6 +345,69 @@ export default function AddUserForm() {
                                 ))}
                             </div>
                         </>
+                    )}
+
+                    {/* User API Key Section — only in edit mode */}
+                    {page.props.edit && !page.props.view && (
+                        <>
+                            <h2 className="font-bold text-xl flex items-center gap-2">
+                                <Key className="w-5 h-5" />
+                                User API Key (for feeds)
+                            </h2>
+                            <div className="flex flex-col gap-4">
+                                {currentApiKey && (
+                                    <div className="flex items-center gap-2">
+                                        <code className="flex-1 text-sm bg-muted px-3 py-2 rounded font-mono truncate">
+                                            {showApiKey ? currentApiKey : '••••••••••••••••••••••••'}
+                                        </code>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setShowApiKey(!showApiKey)}
+                                        >
+                                            {showApiKey ? 'Hide' : 'Show'}
+                                        </Button>
+                                        {showApiKey && (
+                                            <Button variant="outline" size="sm" onClick={copyApiKey}>
+                                                <Copy className="w-4 h-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-fit"
+                                    onClick={() => setShowRegenerateDialog(true)}
+                                >
+                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                    Regenerate User API Key
+                                </Button>
+                                <p className="text-sm text-muted-foreground">
+                                    Regenerating this key will invalidate all existing feed URLs.
+                                    You will need to update the <code className="bg-muted px-1 text-xs">?userKey=</code> parameter in all feed links.
+                                </p>
+                            </div>
+                        </>
+                    )}
+                    {/* Regenerate API Key Confirmation Dialog */}
+                    {showRegenerateDialog && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                            <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6">
+                                <h3 className="text-lg font-semibold mb-2">Regenerate User API Key</h3>
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    This will invalidate all existing feed URLs. You will need to update them with the new userKey.
+                                </p>
+                                <div className="flex justify-end gap-2">
+                                    <Button variant="outline" onClick={() => setShowRegenerateDialog(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button variant="destructive" onClick={handleRegenerateApiKey}>
+                                        Regenerate
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
             </form>

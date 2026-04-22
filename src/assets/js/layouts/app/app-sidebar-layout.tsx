@@ -17,8 +17,8 @@ const AppSidebarLayout = memo(({children, breadcrumbs = [], className}: PropsWit
             <AppSidebar/>
             <SidebarInset className={className}>
                 <AppSidebarHeader breadcrumbs={breadcrumbs}/>
-                <div className="relative flex-1 overflow-hidden">
-                    <div className="h-full">
+                <div className="relative flex-1 overflow-auto">
+                    <div className="min-h-full">
                         {children}
                     </div>
                 </div>

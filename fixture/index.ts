@@ -43,6 +43,10 @@ import { InfoOne, Info4, Info3, InfoTwo } from "./widgets/Info";
 import { CustomOne } from "./widgets/Custom";
 import { ActionOne, ActionTwo } from "./widgets/Actions";
 import { TestCatalog } from "./virtual-catalog/virtualCatalog";
+import {
+    ExampleDatatablePriceRangeFilterHandler,
+    ExampleJsonCustomFilterHandler
+} from "./filters/customFilterHandlers";
 import express from "express";
 import cookieParser from "cookie-parser";
 import { corsApi } from "./cors-api/api";
@@ -113,6 +117,9 @@ if (ormType === "waterline") {
             console.error("Error during database seeding:", seedErr);
         }
     }
+
+    // Enable debug logging
+    Adminizer.logger.level = 'debug';
 }
 
 // Finish
@@ -185,9 +192,9 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
     });
 
     // add custom control wysiwyg
-    adminizer.emitter.on('adminizer:loaded', () => {
-        adminizer.controlsHandler.add(new ReactQuill(adminizer))
-    })
+    // adminizer.emitter.on('adminizer:loaded', () => {
+    //     adminizer.controlsHandler.add(new ReactQuill(adminizer))
+    // })
 
     // Test cors
     adminizer.emitter.on('adminizer:loaded', () => {
@@ -197,6 +204,9 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
     try {
 
         await adminizer.init(adminpanelConfig as unknown as AdminpanelConfig)
+
+        adminizer.filterCustomFieldHandler.add(new ExampleJsonCustomFilterHandler(), { force: true });
+        adminizer.filterCustomFieldHandler.add(new ExampleDatatablePriceRangeFilterHandler(), { force: true });
 
         if (adminizer.config.aiAssistant?.enabled) {
             // Dynamic import to avoid loading OpenAI dependencies when AI assistant is disabled

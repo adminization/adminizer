@@ -4,6 +4,7 @@ import {generate} from 'password-hash';
 import {inertiaUserHelper} from "../helpers/inertiaUserHelper";
 import { UserAP } from "../models/UserAP";
 import { GroupAP } from "../models/GroupAP";
+import { generateUserApiKey } from "../helpers/apiKeyHelper";
 
 export default async function (req: ReqType, res: ResType) {
     let entity = ControllerHelper.findEntityObject(req);
@@ -52,7 +53,8 @@ export default async function (req: ReqType, res: ResType) {
             user = await req.adminizer.modelHandler.model.get("UserAP")["_create"]({
                 login: req.body.login, fullName: req.body.fullName, email: req.body.email,
                 passwordHashed: passwordHashed, timezone: req.body.timezone, expires: req.body.date,
-                locale: locale, isAdministrator: isAdministrator, isConfirmed: isConfirmed, groups: userGroups
+                locale: locale, isAdministrator: isAdministrator, isConfirmed: isConfirmed, groups: userGroups,
+                userApiKey: generateUserApiKey()
             })
             Adminizer.log.debug(`A new user was created: `, user);
 

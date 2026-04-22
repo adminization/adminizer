@@ -23,11 +23,18 @@ interface listProps extends Record<string | number | symbol, unknown> {
         name: string;
         uri: string
     },
-    inlineActions: Actions[]
+    inlineActions: Actions[],
+    filtersEnabled?: boolean,
+    activeFilterName?: string
 }
 
-export function inertiaListHelper(entity: Entity, req: ReqType, fields: Fields) {
+export function inertiaListHelper(entity: Entity, req: ReqType, fields: Fields, activeFilterName?: string) {
     const actionType = 'list';
+
+    // Check if filters are enabled for this model
+    const modelFiltersConfig = req.adminizer.config.modelFilters?.[entity.name];
+    const filtersEnabled = modelFiltersConfig?.enabled === true;
+    
     let props = {
         thActionsTitle: req.i18n.__('Actions'),
         actions: [],
@@ -52,16 +59,16 @@ export function inertiaListHelper(entity: Entity, req: ReqType, fields: Fields) 
         resetBtn: req.i18n.__('Reset'),
     } as listProps
 
-    if (entity.config.add && req.adminizer.accessRightsHelper.hasPermission(`create-${entity.name}-model`, req.user)) {
+    if (entity.config.add && req.adminizer.accessRightsHelper.hasPermission(`create-${entity.name}-model`, req.user, `CRUD create on model "${entity.name}"`)) {
         props.crudActions.createTitle = req.i18n.__('create')
     }
-    if (entity.config.edit && req.adminizer.accessRightsHelper.hasPermission(`update-${entity.name}-model`, req.user)) {
+    if (entity.config.edit && req.adminizer.accessRightsHelper.hasPermission(`update-${entity.name}-model`, req.user, `CRUD update on model "${entity.name}"`)) {
         props.crudActions.editTitle = req.i18n.__('Edit')
     }
-    if (entity.config.view && req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
+    if (entity.config.view && req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user, `CRUD read on model "${entity.name}"`)) {
         props.crudActions.viewsTitle = req.i18n.__('View')
     }
-    if (entity.config.remove && req.adminizer.accessRightsHelper.hasPermission(`delete-${entity.name}-model`, req.user)) {
+    if (entity.config.remove && req.adminizer.accessRightsHelper.hasPermission(`delete-${entity.name}-model`, req.user, `CRUD delete on model "${entity.name}"`)) {
         props.crudActions.deleteTitle = req.i18n.__('Delete')
     }
 
@@ -69,7 +76,8 @@ export function inertiaListHelper(entity: Entity, req: ReqType, fields: Fields) 
 
     if (req.adminizer.menuHelper.hasInlineActions(entity.config, 'list')) {
         for (const inlineAction of req.adminizer.menuHelper.getInlineActions(entity.config, 'list')) {
-            if (req.adminizer.accessRightsHelper.hasPermission(inlineAction.accessRightsToken, req.user)) {
+            const context = `inline action "${inlineAction.title}" (${inlineAction.id}) on model "${entity.name}"`;
+            if (req.adminizer.accessRightsHelper.hasPermission(inlineAction.accessRightsToken, req.user, context)) {
                 props.inlineActions.push({
                     icon: inlineAction.icon,
                     id: inlineAction.id,
@@ -79,6 +87,14 @@ export function inertiaListHelper(entity: Entity, req: ReqType, fields: Fields) 
                 })
             }
         }
+    }
+
+    // Add filtersEnabled flag
+    props.filtersEnabled = filtersEnabled;
+
+    // Add active filter name if filter is applied
+    if (activeFilterName) {
+        props.activeFilterName = activeFilterName;
     }
 
     return props

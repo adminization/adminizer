@@ -8,6 +8,8 @@ import { Adminizer } from "../Adminizer";
 import { UserAP } from "../../models/UserAP";
 import * as process from "node:process";
 import { I18n } from "../I18n";
+import { FilterService } from "../filters/FilterService";
+import { FilterAP } from "../../models/FilterAP";
 
 export type WidgetType = (SwitchBase | InfoBase | ActionBase | LinkBase | CustomBase);
 
@@ -26,7 +28,8 @@ export interface WidgetConfig {
     constructorOption?: any,
     size?: { h: number; w: number; };
     added?: boolean;
-    hideAdminPanelUI?: boolean
+    hideAdminPanelUI?: boolean;
+    group?: string;
 }
 
 export interface WidgetLayoutItem {
@@ -81,13 +84,111 @@ export class WidgetHandler {
         }
     }
 
-    public getAll(user: UserAP, i18n: I18n): Promise<WidgetConfig[]> {
+    private async resolveDashboardUser(user?: UserAP): Promise<UserAP | null> {
+        if (user) {
+            return user;
+        }
+
+        const userModel = this.adminizer.modelHandler.model.get("UserAP");
+        if (!userModel) {
+            return null;
+        }
+
+        const adminLogin = this.adminizer.config.administrator?.login ?? "admin";
+        // TODO refactor CRUD functions for DataAccessor usage
+        const fallbackUser = await userModel["_findOne"]({ login: adminLogin });
+        return fallbackUser ?? null;
+    }
+
+    private resolveModelTitle(modelName: string): string {
+        const models = this.adminizer.config.models ?? {};
+        const modelKey = Object.keys(models).find((key) => key.toLowerCase() === modelName.toLowerCase());
+        if (!modelKey) {
+            return modelName;
+        }
+
+        const modelConfig = models[modelKey];
+        if (typeof modelConfig === "boolean") {
+            return modelKey;
+        }
+
+        return modelConfig.title || modelKey;
+    }
+
+    private buildFilterDescription(filter: FilterAP, modelTitle: string, i18n: I18n): string {
+        const visibilityMap: Record<string, string> = {
+            private: i18n.__("Private"),
+            public: i18n.__("Public"),
+            groups: i18n.__("Groups"),
+            system: i18n.__("Filters"),
+        };
+
+        const visibilityTitle = visibilityMap[filter.visibility] || filter.visibility;
+        return `${modelTitle} - ${visibilityTitle}`;
+    }
+
+    private async getBuiltInFilterWidgets(user: UserAP, i18n: I18n): Promise<WidgetConfig[]> {
+        const models = this.adminizer.config.models ?? {};
+        const modelNames = Object.keys(models);
+        const filterService = new FilterService(this.adminizer);
+        const result: WidgetConfig[] = [];
+
+        for (const modelName of modelNames) {
+            if (!this.adminizer.accessRightsHelper.hasPermission(`read-${modelName}-model`, user)) {
+                continue;
+            }
+
+            let filters: FilterAP[] = [];
+            try {
+                filters = await filterService.getFiltersForModel(modelName, user, {
+                    includePublic: true,
+                    includeSystem: false
+                });
+            } catch {
+                continue;
+            }
+
+            const modelTitle = this.resolveModelTitle(modelName);
+            const sortedFilters = [...filters].sort((a, b) => a.name.localeCompare(b.name));
+
+            for (const filter of sortedFilters) {
+                if (!filterService.canViewFilter(filter, user)) {
+                    continue;
+                }
+
+                const filterId = encodeURIComponent(filter.id);
+                const modelRoute = encodeURIComponent(filter.modelName);
+
+                result.push({
+                    id: `filterWidget-${filter.id}__0`,
+                    type: "info",
+                    api: `${this.adminizer.config.routePrefix}/widgets-filter-info/${filterId}`,
+                    link: `${this.adminizer.config.routePrefix}/model/${modelRoute}?filterId=${filterId}`,
+                    linkType: "self",
+                    description: this.buildFilterDescription(filter, modelTitle, i18n),
+                    icon: (filter.icon as AdminpanelIcon) ?? "filter_list",
+                    name: filter.name,
+                    backgroundCSS: filter.color || null,
+                    group: "filters"
+                });
+            }
+        }
+
+        return result;
+    }
+
+    public async getAll(user: UserAP | undefined, i18n: I18n): Promise<WidgetConfig[]> {
         let widgets: WidgetConfig[] = []
+        const dashboardUser = await this.resolveDashboardUser(user);
+        if (!dashboardUser) {
+            return widgets;
+        }
+
         if (this.widgets.length) {
             let id_key = 0
             for (const widget of this.widgets) {
                 if (widget.widgetType === 'switcher') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, user)) {
+                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, dashboardUser)) {
                         widgets.push({
                             id: `${widget.id}__${id_key}`,
                             type: widget.widgetType,
@@ -100,7 +201,7 @@ export class WidgetHandler {
                         })
                     }
                 } else if (widget.widgetType === 'info') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, user)) {
+                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, dashboardUser)) {
                         widgets.push({
                             id: `${widget.id}__${id_key}`,
                             type: widget.widgetType,
@@ -115,7 +216,7 @@ export class WidgetHandler {
                         })
                     }
                 } else if (widget.widgetType === 'action') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, user)) {
+                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, dashboardUser)) {
                         widgets.push({
                             id: `${widget.id}__${id_key}`,
                             type: widget.widgetType,
@@ -128,7 +229,7 @@ export class WidgetHandler {
                         })
                     }
                 } else if (widget.widgetType === 'link') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, user)) {
+                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, dashboardUser)) {
                         let links_id_key = 0
                         for (const link of widget.links) {
                             widgets.push({
@@ -145,7 +246,7 @@ export class WidgetHandler {
                         }
                     }
                 } else if (widget.widgetType === 'custom') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, user)) {
+                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, dashboardUser)) {
                         widgets.push({
                             id: `${widget.id}_${id_key}`,
                             type: widget.widgetType,
@@ -159,11 +260,14 @@ export class WidgetHandler {
                         })
                     }
                 } else {
-                    return Promise.resolve([])
+                    return []
                 }
             }
         }
-        return Promise.resolve(widgets)
+
+        widgets.push(...await this.getBuiltInFilterWidgets(dashboardUser, i18n));
+
+        return widgets
     }
 
     public async getWidgetsDB(id: number, auth: boolean, i18n: I18n): Promise<{

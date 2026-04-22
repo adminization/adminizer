@@ -193,24 +193,27 @@ const AddForm: FC<{
         };
 
         return (
-            <div className="p-4 w-full">
+            <>
                 {!catalog &&
-                    <div className="w-full sticky z-[1001] py-4 pb-8 top-0 h-fit bg-background flex gap-4">
-                        <Button className="w-fit" asChild>
-                            <Link href={btnBack.link} preserveScroll={true}>
-                                <Icon iconNode={MoveLeft} />
-                                {btnBack.title}
-                            </Link>
-                        </Button>
-                        <Button variant="green" type="submit" className="w-fit lg:hidden"
-                            form="addUserForm"
-                            disabled={catalogProcessing || processing || page.props.view || hasFormErrors()}>
-                            {catalogProcessing || processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                            {page.props.btnSave.title}
-                        </Button>
+                    <div className="w-full sticky z-[1001] top-0 bg-background shadow-md">
+                        <div className="p-4 flex gap-4">
+                            <Button className="w-fit" asChild>
+                                <Link href={btnBack.link} preserveScroll={true}>
+                                    <Icon iconNode={MoveLeft} />
+                                    {btnBack.title}
+                                </Link>
+                            </Button>
+                            <Button variant="green" type="submit" className="w-fit lg:hidden"
+                                form="addUserForm"
+                                disabled={catalogProcessing || processing || page.props.view || hasFormErrors()}>
+                                {catalogProcessing || processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                                {page.props.btnSave.title}
+                            </Button>
+                        </div>
                     </div>
                 }
-                <form
+                <div className="p-4 w-full mt-6">
+                    <form
                     id="addUserForm"
                     onSubmit={submit}
                     className={view ? 'cursor-not-allowed' : ''}
@@ -303,6 +306,7 @@ const AddForm: FC<{
                     }}
                 />}
             </div>
+            </>
         );
     };
 

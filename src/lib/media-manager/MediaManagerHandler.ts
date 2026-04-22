@@ -19,7 +19,7 @@ export class MediaManagerHandler {
         if (!instance) {
             Adminizer.log.debug(`MediaManager with id ${id} not found`)
         }
-        Adminizer.log.debug(`ins`, instance)
+        // Adminizer.log.debug(`ins`, instance)  // DEBUG: removed to reduce console noise
         return instance
     }
 }

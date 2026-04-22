@@ -13,6 +13,19 @@ import { ModelAnyField } from "../lib/model/AbstractModel";
 import { isObject } from "./JsUtils";
 import { MediaManagerHandler } from "../lib/media-manager/MediaManagerHandler";
 
+/**
+ * Get ISO week number from date
+ * @param date - Date object
+ * @returns Week number (1-53)
+ */
+function getWeekNumber(date: Date): number {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
 export type PropsFieldType =
     'text'
     | 'number'
@@ -124,6 +137,27 @@ export default function inertiaAddHelper(req: ReqType, entity: Entity, fields: F
                 options = { ...fieldConfig.options }
                 if ("min" in fieldConfig.options) {
                     value = record ? record[key] : fieldConfig.options.min ? fieldConfig.options.min : 0
+                }
+            }
+            // Format datetime for datetime-local input (YYYY-MM-DDTHH:mm)
+            if (type === 'datetime' && value) {
+                const date = new Date(value as string | Date);
+                if (!isNaN(date.getTime())) {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                }
+            }
+            // Format week for week input (YYYY-Www)
+            if (type === 'week' && value) {
+                const date = new Date(value as string | Date);
+                if (!isNaN(date.getTime())) {
+                    const year = date.getFullYear();
+                    const week = getWeekNumber(date);
+                    value = `${year}-W${String(week).padStart(2, '0')}`;
                 }
             }
         }

@@ -123,7 +123,11 @@ export class I18n {
 
         try {
             const data = fs.readFileSync(file, "utf8");
-            I18n.locales[locale] = JSON.parse(data);
+            const parsed = JSON.parse(data);
+            I18n.locales[locale] = {
+                ...(I18n.locales[locale] || {}),
+                ...parsed
+            };
             if (!this.devMode) {
                 I18n.localeCache[file] = I18n.locales[locale];
             }

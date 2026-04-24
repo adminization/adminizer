@@ -1,0 +1,168 @@
+import {ControllerHelper} from "../helpers/controllerHelper";
+import {Adminizer} from "../lib/Adminizer";
+import {DataAccessor} from "../lib/DataAccessor";
+import {BaseFieldConfig} from "../interfaces/adminpanelConfig";
+import {Field} from "../helpers/fieldsHelper";
+
+/**
+ * Inline update controller for list view
+ * PATCH /adminizer/model/:name/inline/:id
+ * 
+ * Body: { field: string, value: any }
+ */
+export default async function inlineUpdate(req: ReqType, res: ResType) {
+    // Check ID
+    if (!req.params.id) {
+        return res.status(400).json({ error: 'Record ID is required' });
+    }
+
+    // Check field
+    if (!req.body.field) {
+        return res.status(400).json({ error: 'Field name is required' });
+    }
+
+    const entity = ControllerHelper.findEntityObject(req);
+    if (!entity.model) {
+        return res.status(404).json({ error: 'Model not found' });
+    }
+
+    // Check permissions
+    if (req.adminizer.config.auth.enable) {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        if (!req.adminizer.accessRightsHelper.hasPermission(`update-${entity.name}-model`, req.user)) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+    }
+
+    const fieldName = req.body.field;
+    const newValue = req.body.value;
+
+    // Get field config
+    const dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "edit");
+    const fields = dataAccessor.getFieldsConfig();
+    const fieldConfig = fields[fieldName] as Field;
+
+    if (!fieldConfig) {
+        return res.status(400).json({ error: `Field '${fieldName}' not found` });
+    }
+
+    // Check if field is inline editable
+    const baseConfig = fieldConfig.config as BaseFieldConfig;
+    if (!baseConfig.inlineEditable) {
+        return res.status(403).json({ error: `Field '${fieldName}' is not inline editable` });
+    }
+
+    // Check if field has displayModifier (should not be editable)
+    if (baseConfig.displayModifier) {
+        return res.status(403).json({ error: `Field '${fieldName}' has displayModifier and cannot be edited` });
+    }
+
+    // Validate value
+    const validationError = validateInlineValue(newValue, baseConfig, fieldConfig.model?.type);
+    if (validationError) {
+        return res.status(400).json({ error: validationError });
+    }
+
+    // Convert value based on field type
+    const convertedValue = convertInlineValue(newValue, fieldConfig.model?.type);
+
+    // Update record
+    const id = req.params.id;
+    const params: Record<string, string | number> = {};
+    params[entity.config.identifierField || req.adminizer.config.identifierField] = id;
+
+    try {
+        await entity.model.update(params, { [fieldName]: convertedValue }, dataAccessor);
+
+        return res.json({
+            success: true, 
+            data: { 
+                id, 
+                field: fieldName, 
+                value: convertedValue 
+            } 
+        });
+    } catch (error) {
+        Adminizer.log.error('Inline update error:', error);
+        return res.status(500).json({ error: 'Failed to update record' });
+    }
+}
+
+/**
+ * Validate value according to inline validation rules
+ */
+function validateInlineValue(
+    value: any,
+    config: BaseFieldConfig,
+    fieldType?: string
+): string | null {
+    const validation = config.inlineValidation;
+
+    // String validations
+    if (typeof value === 'string') {
+        if (validation?.minLength && value.length < validation.minLength) {
+            return `Value must be at least ${validation.minLength} characters`;
+        }
+        if (validation?.maxLength && value.length > validation.maxLength) {
+            return `Value must be at most ${validation.maxLength} characters`;
+        }
+        if (validation?.pattern && !new RegExp(validation.pattern).test(value)) {
+            return `Value does not match required pattern`;
+        }
+    }
+
+    // Number validations
+    if (typeof value === 'number' || ['integer', 'number', 'float', 'range'].includes(fieldType || '')) {
+        const numValue = Number(value);
+        if (isNaN(numValue)) {
+            return 'Invalid number';
+        }
+        if (validation?.min !== undefined && numValue < validation.min) {
+            return `Value must be at least ${validation.min}`;
+        }
+        if (validation?.max !== undefined && numValue > validation.max) {
+            return `Value must be at most ${validation.max}`;
+        }
+    }
+
+    // Custom validation
+    if (validation?.validate) {
+        const result = validation.validate(value);
+        if (typeof result === 'string') {
+            return result;
+        }
+        if (result === false) {
+            return 'Invalid value';
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Convert value to appropriate type
+ */
+function convertInlineValue(value: any, fieldType?: string): any {
+    if (value === null || value === undefined) {
+        return value;
+    }
+
+    switch (fieldType) {
+        case 'boolean':
+            return Boolean(value);
+        case 'integer':
+            return parseInt(value, 10);
+        case 'number':
+        case 'float':
+            return parseFloat(value);
+        case 'range':
+            return typeof value === 'string' ? parseFloat(value) : Number(value);
+        case 'email':
+        case 'string':
+        case 'text':
+        default:
+            return typeof value === 'string' ? value : String(value);
+    }
+}

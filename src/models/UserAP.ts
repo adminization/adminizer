@@ -51,6 +51,10 @@ export default {
   },
   isConfirmed: {
     type: "boolean"
+  },
+  apiKey: {
+    type: "string",
+    field: "userApiKey"
   }
 }
 
@@ -73,4 +77,5 @@ export interface UserAP {
       layout: WidgetsLayouts
   };
   isConfirmed?: boolean;
+  apiKey?: string;
 }

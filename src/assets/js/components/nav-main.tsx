@@ -28,7 +28,16 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
         if (!acc[section]) acc[section] = [];
         acc[section].push(item);
         return acc;
-    }, {});
+    }, {} as Record<string, NavItem[]>);
+
+    // Sort sections: 'Platform' first, 'System' last, others alphabetical
+    const sortedSections = Object.keys(groupedItems).sort((a, b) => {
+        if (a === 'Platform') return -1;
+        if (b === 'Platform') return 1;
+        if (a === 'System') return 1;
+        if (b === 'System') return -1;
+        return a.localeCompare(b);
+    });
 
     const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
         const init: Record<string, boolean> = {};
@@ -132,7 +141,8 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
 
     return (
         <>
-            {Object.entries(groupedItems).map(([section, itemsInSection]) => {
+            {sortedSections.map(section => {
+                const itemsInSection = groupedItems[section];
                 const isAnyItemActive = itemsInSection.some(item => {
                     if (item.actions?.length > 0) {
                         return item.actions.some(subItem => isActiveItem(subItem.link));

@@ -29,7 +29,16 @@ let adminpanelConfig: AdminpanelConfig = {
      */
     navbar: {
         // List of additional actions
-        additionalLinks: []
+        additionalLinks: [
+            {
+                link: '/adminizer/user-filters',
+                title: 'User Filters',
+                id: 'user-filters',
+                icon: 'filter_list',
+                section: 'System',
+                type: 'self'
+            }
+        ]
     },
 
     brand: {

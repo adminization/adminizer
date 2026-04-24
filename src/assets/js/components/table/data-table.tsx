@@ -19,7 +19,6 @@ import {Input} from "@/components/ui/input.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {Icon} from "@/components/icon.tsx";
 import {Search} from "lucide-react";
-import { useRef, useEffect } from 'react';
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -44,14 +43,6 @@ export function DataTable<TData, TValue>(
         searchTxt
     }: DataTableProps<TData, TValue>) {
 
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        if (globalSearch && inputRef.current) {
-            inputRef.current.focus();
-        }
-    });
-
     const table = useReactTable({
         data,
         columns,
@@ -66,7 +57,6 @@ export function DataTable<TData, TValue>(
             {globalSearch && onGlobalSearch && (
                 <div className="flex gap-2 p-2">
                     <Input
-                        ref={inputRef}
                         type="text"
                         value={searchValue}
                         placeholder={searchTxt}

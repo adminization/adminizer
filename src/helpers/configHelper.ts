@@ -171,6 +171,14 @@ export class ConfigHelper {
             ...defaultConfig.models,
             ...config.models
         },
+        navbar: {
+            ...defaultConfig.navbar,
+            ...config.navbar,
+            additionalLinks: [
+                ...(defaultConfig.navbar?.additionalLinks || []),
+                ...(config.navbar?.additionalLinks || [])
+            ]
+        },
         forms: {
             path: configForms.path ?? defaultForms.path,
             data: {

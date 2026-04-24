@@ -89,10 +89,17 @@ function generateAssociationsFromSchema(
                     asName = `${alias}Ref`;
                 }
 
-                model.belongsTo(targetModel, {
+                const belongsToOptions: any = {
                     as: asName,
                     foreignKey,
-                });
+                };
+                
+                // Add onDelete constraint if specified
+                if (field.onDelete) {
+                    belongsToOptions.onDelete = field.onDelete;
+                }
+
+                model.belongsTo(targetModel, belongsToOptions);
             }
         }
     }
@@ -103,8 +110,9 @@ function resolveType(type: any): Attribute["type"] {
         ? type.toString().toLowerCase()
         : "";
     if (sqlType.includes("string") || sqlType.includes("uuid")) return "string";
+    // tinyint(1) is used by MySQL/MariaDB for BOOLEAN
+    if (sqlType.includes("bool") || sqlType === "tinyint(1)") return "boolean";
     if (sqlType.includes("int") || sqlType.includes("float") || sqlType.includes("decimal")) return "number";
-    if (sqlType.includes("bool")) return "boolean";
     if (sqlType.includes("json")) return "json";
     if (sqlType.includes("date")) return "string";
     return "ref";
@@ -215,61 +223,231 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
 
     _convertCriteriaToSequelize(criteria: any): any {
-        const result: Record<string, any> = {};
+        // Special handling for Sequelize.literal() at the top level
+        if (criteria && typeof criteria === 'object' && 'val' in criteria && typeof criteria.val === 'string') {
+            // This is a Sequelize.literal object, return it as-is
+            return criteria;
+        }
 
-        for (const key in criteria) {
+        // DEBUG: Log input criteria
+        // console.log(`[Sequelize Debug] _convertCriteriaToSequelize INPUT:`, {
+        //     keys: Object.keys(criteria),
+        //     hasSymbols: inputSymbols.length > 0,
+        //     symbols: inputSymbols.map(s => s.description || String(s))
+        // });
+        // if (inputSymbols.length > 0) {
+        //     console.log(`[Sequelize Debug]   Symbol values:`, inputSymbols.map(s => ({
+        //         symbol: s.description || String(s),
+        //         value: criteria[s],
+        //         typeOfValue: typeof criteria[s]
+        //     })));
+        // }
+
+        const result: any = {};
+
+        // Handle both string keys and Symbol keys (Op.and, Op.or, etc.)
+        const allKeys = [
+            ...Object.keys(criteria),
+            ...Object.getOwnPropertySymbols(criteria)
+        ];
+
+        for (const key of allKeys) {
             const value = criteria[key];
 
-            if (
-                value === undefined ||
-                (typeof value === "object" && value !== null && Object.keys(value).length === 0)
-            ) {
-                continue;
-            }
-            // 🧠 Replace the key with `via` if this is an association
-            const attr = this.attributes?.[key];
-            let targetKey = key;
-            if (attr?.type === "association" && attr.via) {
-                targetKey = attr.via;
+            // 🧠 Replace the key with `via` if this is an association (MUST happen before null/other checks)
+            let targetKey: string | typeof key = key;
+            
+            // Only process string keys for association replacement
+            if (typeof key === 'string') {
+                const attr = this.attributes?.[key];
+                
+                // Check if this is an association attribute (either from attributes or model.associations)
+                if (attr?.type === "association" && attr.via) {
+                    targetKey = attr.via;
+                } else if (this.model.associations[key]) {
+                    // Fallback: check associations directly
+                    const assoc = this.model.associations[key];
+                    if (assoc && 'foreignKey' in assoc) {
+                        targetKey = assoc.foreignKey as string;
+                    }
+                }
             }
 
+            // Special handling for null values (IS NULL condition)
             if (value === null) {
                 result[targetKey] = {[Op.is]: null};
-            } else if (Array.isArray(value)) {
+                continue;
+            }
+
+            // 🔹 Handle Sequelize Op operators (already in Sequelize format)
+            if (key === (Op.and as any) || key === 'and') {
+                result[Op.and as any] = Array.isArray(value)
+                    ? value.map((item: any) => this._convertCriteriaToSequelize(item))
+                    : [];
+                continue;
+            }
+
+            if (key === (Op.or as any) || key === 'or') {
+                result[Op.or as any] = Array.isArray(value)
+                    ? value.map((item: any) => this._convertCriteriaToSequelize(item))
+                    : [];
+                continue;
+            }
+
+            if (key === (Op.not as any) || key === 'not' || key === '$not') {
+                result[Op.not as any] = this._convertCriteriaToSequelize(value);
+                continue;
+            }
+
+            // Skip Symbol keys that are not handled above (should not happen, but safety check)
+            if (typeof key === 'symbol') {
+                continue;
+            }
+
+            if (Array.isArray(value)) {
                 // ✅ Array processing - use the IN operator
                 result[targetKey] = {[Op.in]: value};
             } else if (typeof value === "object" && !Array.isArray(value)) {
-                const operatorEntries = Object.entries(value)
-                    .filter(([_, v]) => v !== undefined && v !== null)
-                    .map(([op, val]) => {
-                        switch (op) {
-                            case "contains":
-                                return [Op.like, `%${val}%`];
-                            case "startsWith":
-                                return [Op.startsWith, val];
-                            case "endsWith":
-                                return [Op.endsWith, val];
-                            case ">":
-                                return [Op.gt, val];
-                            case ">=":
-                                return [Op.gte, val];
-                            case "<":
-                                return [Op.lt, val];
-                            case "<=":
-                                return [Op.lte, val];
-                            case "!=":
-                                return [Op.ne, val];
-                            case "in":
-                                return [Op.in, val];
-                            case "nin":
-                                return [Op.notIn, val];
-                            default:
-                                return [Op.eq, val];
-                        }
-                    });
+                // Check if value already contains Sequelize Op operators
+                // Need to check both string keys and Symbol keys
+                const valueKeys = Object.keys(value);
+                const valueSymbols = Object.getOwnPropertySymbols(value);
+                
+                // DEBUG: Log boolean/boolean-like conditions
+                // console.log(`[Sequelize Debug] Converting criteria:`, {
+                //     targetKey: String(targetKey),
+                //     symbol: symbolDesc,
+                //     value: val,
+                //     typeOfValue: typeof val,
+                //     rawValue: val,
+                //     isFalse: val === false,
+                //     isZero: val === 0
+                // });
 
-                if (operatorEntries.length > 0) {
-                    result[targetKey] = Object.fromEntries(operatorEntries);
+                // Helper function to check if a symbol/op is a Sequelize operator
+                const isSequelizeOp = (op: string | symbol): boolean => {
+                    // Check direct Symbol equality first
+                    if (op === (Op.gt as any) || op === (Op.gte as any) || op === (Op.lt as any) || op === (Op.lte as any) ||
+                        op === (Op.eq as any) || op === (Op.ne as any) || op === (Op.in as any) || op === (Op.notIn as any) ||
+                        op === (Op.like as any) || op === (Op.iLike as any) || op === (Op.between as any) ||
+                        op === (Op.startsWith as any) || op === (Op.endsWith as any) || op === (Op.is as any) || op === (Op.not as any)) {
+                        return true;
+                    }
+                    
+                    // Fallback: check by Symbol description (handles different Symbol instances)
+                    if (typeof op === 'symbol') {
+                        const desc = op.description || op.toString();
+                        return desc.includes('gt') || desc.includes('gte') || desc.includes('lt') || desc.includes('lte') ||
+                               desc.includes('eq') || desc.includes('ne') || desc.includes('in') || desc.includes('notIn') ||
+                               desc.includes('like') || desc.includes('iLike') || desc.includes('between') ||
+                               desc.includes('startsWith') || desc.includes('endsWith') || desc.includes('is') || desc.includes('not');
+                    }
+                    
+                    // Check string operators (legacy Waterline format)
+                    return op === '$gt' || op === '$gte' || op === '$lt' || op === '$lte' ||
+                           op === '$eq' || op === '$ne' || op === '$in' || op === '$notIn' ||
+                           op === '$like' || op === '$iLike' || op === '$between' ||
+                           op === '$startsWith' || op === '$endsWith' || op === '$is' || op === '$not' ||
+                           op === 'not';
+                };
+
+                const hasSequelizeOp = [...valueKeys, ...valueSymbols].some(isSequelizeOp);
+
+                // If already Sequelize format, pass through
+                if (hasSequelizeOp) {
+                    result[targetKey] = value;
+                    // DEBUG: Log Sequelize operator passed through
+                    // const sym = valueSymbols.length > 0 ? valueSymbols[0] : null;
+                    // const resultSymbols = Object.getOwnPropertySymbols(result[targetKey]);
+                    // console.log(`[Sequelize Debug] Sequelize operator recognized for "${String(targetKey)}":`, {
+                    //     symbol: sym ? (sym.description || String(sym)) : 'none',
+                    //     value: sym ? (value as any)[sym] : value[Object.keys(value)[0]],
+                    //     resultAfterAssignment: {
+                    //         hasSymbols: resultSymbols.length > 0,
+                    //         symbols: resultSymbols.map(s => s.description || String(s)),
+                    //         regularKeys: Object.keys(result[targetKey]),
+                    //         isEmpty: Object.keys(result[targetKey]).length === 0 && resultSymbols.length === 0
+                    //     }
+                    // });
+                    continue;
+                }
+
+                // Handle operator objects like {contains: 'val'} (legacy Waterline format)
+                for (const [op, val] of Object.entries(value)) {
+                    if (val === undefined || val === null) continue;
+
+                    switch (op) {
+                        case "contains":
+                            // Check if field is a date/datetime type
+                            const attr = this.model.rawAttributes?.[targetKey as string];
+                            const typeName = attr?.type as any;
+                            // Check type name (works for DATE, DATEONLY, TIME, etc.)
+                            const typeStr = typeof typeName === 'function'
+                                ? typeName.name.toLowerCase()
+                                : String(typeName).toLowerCase();
+                            const isDateType = typeStr.includes('date') || typeStr.includes('time');
+                            
+                            // TIME type should use LIKE (it's stored as 'HH:MM' string)
+                            const isTimeType = typeStr === 'time';
+                            
+                            if (isDateType && !isTimeType) {
+                                // For date fields (not time), check if value is a valid date
+                                const dateValue = new Date(String(val));
+                                if (isNaN(dateValue.getTime())) {
+                                    // Invalid date string - skip this condition entirely
+                                    // This prevents moment.js warnings
+                                    // Don't add anything to result - field will be excluded from WHERE
+                                } else {
+                                    // Valid date - use exact match
+                                    result[targetKey] = {[Op.eq as any]: dateValue};
+                                }
+                            } else {
+                                // For time fields and non-date fields - use Op.like with wildcards
+                                result[targetKey] = {[Op.like as any]: `%${val}%`};
+                            }
+                            break;
+                        case "startsWith":
+                            result[targetKey] = {[Op.startsWith as any]: val};
+                            break;
+                        case "endsWith":
+                            result[targetKey] = {[Op.endsWith as any]: val};
+                            break;
+                        case ">":
+                            result[targetKey] = {[Op.gt as any]: val};
+                            break;
+                        case ">=":
+                            result[targetKey] = {[Op.gte as any]: val};
+                            break;
+                        case "<":
+                            result[targetKey] = {[Op.lt as any]: val};
+                            break;
+                        case "<=":
+                            result[targetKey] = {[Op.lte as any]: val};
+                            break;
+                        case "!=":
+                            result[targetKey] = {[Op.ne as any]: val};
+                            break;
+                        case "in":
+                            result[targetKey] = {[Op.in as any]: val};
+                            break;
+                        case "nin":
+                            result[targetKey] = {[Op.notIn as any]: val};
+                            break;
+                        case "$is":
+                            result[targetKey] = {[Op.is as any]: val};
+                            break;
+                        case "$not":
+                            result[targetKey] = {[Op.not as any]: val};
+                            break;
+                        case "$ne":
+                            result[targetKey] = {[Op.ne as any]: val};
+                            break;
+                        case "not":
+                            result[targetKey] = {[Op.not as any]: val};
+                            break;
+                        default:
+                            result[targetKey] = {[Op.eq as any]: val};
+                    }
                 }
             } else {
                 result[targetKey] = value;
@@ -286,15 +464,28 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         offset?: number;
         order?: any[];
     } {
-        // console.debug("WATERLINE CRITERIA (raw):", criteria);
+        // For Sequelize: Extract Waterline pagination/ordering params.
+        // Everything else is WHERE criteria.
+        // 'sort' as string = Waterline ordering ("field direction") — goes to ORDER BY
+        // 'sort' as boolean/object = model field — goes to WHERE
+        const criteriaSortValue = 'sort' in criteria ? (criteria as any).sort : undefined;
+        const isWaterlineSort = typeof criteriaSortValue === 'string';
 
+        const {where: nestedWhere, skip, limit, sort: _wSort, select, ...rest} = criteria;
 
-        const {where: nestedWhere, skip, limit, sort, ...rest} = criteria;
+        // If 'sort' is a model field (not a Waterline ordering string), put it back
+        if (!isWaterlineSort && criteriaSortValue !== undefined) {
+            rest.sort = criteriaSortValue;
+        }
 
+        // Check if nestedWhere has any keys (including Symbol keys like Op.and)
+        const hasNestedWhereKeys = nestedWhere && (
+            Object.keys(nestedWhere).length > 0 ||
+            Object.getOwnPropertySymbols(nestedWhere).length > 0
+        );
 
-        const rawWhere = (nestedWhere && Object.keys(nestedWhere).length > 0)
-            ? nestedWhere
-            : rest;
+        // If there's an explicit 'where' key, use it. Otherwise use rest (field conditions).
+        const rawWhere = hasNestedWhereKeys ? nestedWhere : rest;
 
         // console.debug("WATERLINE CRITERIA: using rawWhere =", rawWhere);
 
@@ -311,8 +502,8 @@ export class SequelizeModel<T> extends AbstractModel<T> {
             result.limit = limit;
             // console.debug("→ limit =", limit);
         }
-        if (typeof sort === "string") {
-            const [field, dir] = sort.trim().split(/\s+/);
+        if (typeof _wSort === "string") {
+            const [field, dir] = _wSort.trim().split(/\s+/);
             result.order = [[field, dir?.toUpperCase() === "DESC" ? "DESC" : "ASC"]];
             // console.debug("→ order =", result.order);
         }
@@ -467,9 +658,14 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         // console.debug(">> _find: input criteria:", criteria, "options:", options);
 
         const {where, limit, offset, order} = this._convertWaterlineCriteriaToSequelizeOptions(criteria);
+        const hasRelationPathCondition = this._hasRelationPathCondition(where);
+        const usedRelationAliases = hasRelationPathCondition
+            ? this._extractRelationAliasesFromWhere(where)
+            : new Set<string>();
+
         const includes = options.populate
             ? options.populate.map(([field, opts]) => ({association: field, ...opts}))
-            : assocNames.map(a => ({association: a}));
+            : assocNames.map((alias) => this._buildListInclude(alias, usedRelationAliases, hasRelationPathCondition));
 
         // console.debug(">> _find: where, limit, offset, order, includes:", {
         //   where,
@@ -485,7 +681,8 @@ export class SequelizeModel<T> extends AbstractModel<T> {
             limit,
             offset,
             order,
-            include: includes
+            include: includes,
+            subQuery: hasRelationPathCondition ? false : undefined
         });
 
 
@@ -513,6 +710,45 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
 
         return plain;
+    }
+
+    /**
+     * Public method for raw SQL where clauses (Sequelize.literal support)
+     * Bypasses Waterline criteria conversion for direct Sequelize usage
+     */
+    async findWithRawWhere(
+        where: any,
+        options: { limit?: number; offset?: number; order?: any; populate?: boolean } = {}
+    ): Promise<T[]> {
+        const assocNames = Object.keys(this.model.associations);
+        const includes = options.populate !== false
+            ? assocNames.map(a => ({association: a}))
+            : [];
+
+        const instances = await this.model.findAll({
+            where,
+            limit: options.limit,
+            offset: options.offset,
+            order: options.order,
+            include: includes
+        });
+
+        return instances.map(i => i.get({plain: true}) as T);
+    }
+
+    /**
+     * Public method for count with raw SQL where clauses
+     */
+    async countWithRawWhere(where: any): Promise<number> {
+        const assocNames = Object.keys(this.model.associations);
+        const include = assocNames.map((association) => ({ association }));
+
+        return await this.model.count({
+            where,
+            include,
+            distinct: true,
+            col: this.primaryKey || this.model.primaryKeyAttribute || 'id'
+        });
     }
 
     // --- UPDATE ONE ---
@@ -662,13 +898,104 @@ export class SequelizeModel<T> extends AbstractModel<T> {
     // --- COUNT ---
     protected async _count(criteria: Partial<T> = {}): Promise<number> {
         const {where} = this._convertWaterlineCriteriaToSequelizeOptions(criteria);
+        const assocNames = Object.keys(this.model.associations);
+        const include = assocNames.map((association) => ({ association }));
 
-        const result = await this.model.count({where});
+        const result = await this.model.count({
+            where,
+            include,
+            distinct: true,
+            col: this.primaryKey || this.model.primaryKeyAttribute || 'id'
+        });
 
         return result;
     }
 
     // --- HELPER ---
+    private _hasRelationPathCondition(input: any): boolean {
+        if (!input || typeof input !== 'object') {
+            return false;
+        }
+
+        if (Array.isArray(input)) {
+            return input.some((item) => this._hasRelationPathCondition(item));
+        }
+
+        const keys: Array<string | symbol> = [
+            ...Object.keys(input),
+            ...Object.getOwnPropertySymbols(input)
+        ];
+
+        for (const key of keys) {
+            if (typeof key === 'string' && /^\$[A-Za-z0-9_]+\.[A-Za-z0-9_]+\$$/.test(key)) {
+                return true;
+            }
+
+            const value = input[key as keyof typeof input];
+            if (value && typeof value === 'object' && this._hasRelationPathCondition(value)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private _extractRelationAliasesFromWhere(input: any, aliases: Set<string> = new Set<string>()): Set<string> {
+        if (!input || typeof input !== 'object') {
+            return aliases;
+        }
+
+        if (Array.isArray(input)) {
+            input.forEach((item) => this._extractRelationAliasesFromWhere(item, aliases));
+            return aliases;
+        }
+
+        const keys: Array<string | symbol> = [
+            ...Object.keys(input),
+            ...Object.getOwnPropertySymbols(input)
+        ];
+
+        for (const key of keys) {
+            if (typeof key === 'string') {
+                const match = key.match(/^\$([A-Za-z0-9_]+)\.[A-Za-z0-9_]+\$$/);
+                if (match?.[1]) {
+                    aliases.add(match[1]);
+                }
+            }
+
+            const value = input[key as keyof typeof input];
+            if (value && typeof value === 'object') {
+                this._extractRelationAliasesFromWhere(value, aliases);
+            }
+        }
+
+        return aliases;
+    }
+
+    private _buildListInclude(
+        alias: string,
+        usedRelationAliases: Set<string>,
+        hasRelationPathCondition: boolean
+    ): IncludeOptions {
+        const include: IncludeOptions = { association: alias };
+
+        if (!hasRelationPathCondition) {
+            return include;
+        }
+
+        const association = this.model.associations[alias] as any;
+        const isUsedInWhere = usedRelationAliases.has(alias);
+        const isHasMany = association instanceof HasMany || association?.associationType === 'HasMany';
+
+        // When filtering by relation path ($alias.field$), extra joined hasMany associations
+        // can duplicate base rows and break page size. Load such associations separately.
+        if (isHasMany && !isUsedInWhere) {
+            (include as any).separate = true;
+        }
+
+        return include;
+    }
+
     private _buildIncludes(): IncludeOptions[] {
         return Object.keys(this.model.associations).map(key => ({association: key}));
     }

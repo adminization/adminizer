@@ -53,14 +53,15 @@ export class AccessRightsHelper {
             return true;
         }
 
+        // No tokens required — access granted for all authenticated users
         if (!tokens.length) {
-            return false;
+            return true;
         }
 
         return tokens.some((token) => this.hasPermission(token, user));
     }
 
-    public hasPermission(tokenId: string, user: UserAP): boolean {
+    public hasPermission(tokenId: string | undefined, user: UserAP, context?: string): boolean {
         if (!this.adminizer.config.auth.enable) {
             return true;
         }
@@ -69,13 +70,14 @@ export class AccessRightsHelper {
             return true;
         }
 
-        tokenId = tokenId.toLowerCase()
         if (!tokenId) {
             Adminizer.log.warn(
-                `AccessRightsHelper > hasPermission no tokenId: ${tokenId}`
+                `AccessRightsHelper > hasPermission: missing accessRightsToken${context ? ` [${context}]` : ''}`
             )
             return false
         }
+
+        tokenId = tokenId.toLowerCase()
         const tokenIsValid = this._tokens.some((token) => token.id === tokenId);
 
         if (!tokenIsValid) {

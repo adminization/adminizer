@@ -359,6 +359,10 @@ export class DataAccessor {
 
         // Check if the model has `userAccessRelation` configured
         if (!this.user.isAdministrator && modelConfig && modelConfig.userAccessRelation) {
+            Adminizer.log.warn(
+                `[userAccessRelation] Model "${modelName}" has userAccessRelation="${modelConfig.userAccessRelation}". ` +
+                `User "${this.user.login}" (id: ${this.user.id}) will only see records they own.`
+            );
             // Get access field from userAccessRelation
             const userAccessRelation = modelConfig.userAccessRelation;
             if (typeof userAccessRelation === 'string') {

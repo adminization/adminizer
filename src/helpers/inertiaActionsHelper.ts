@@ -15,7 +15,8 @@ export default  function inertiaActionsHelper(actionType: ActionType, entity: En
         const actions = req.adminizer.menuHelper.getGlobalActions(entity.config, actionType)
         if (actions && actions.length > 0) {
             actions.forEach(function (action) {
-                if (req.adminizer.accessRightsHelper.hasPermission(action.accessRightsToken, req.user)) {
+                const context = `global action "${action.title}" (${action.id}) on model "${entity.name}"`;
+                if (req.adminizer.accessRightsHelper.hasPermission(action.accessRightsToken, req.user, context)) {
                     resActions.push({
                         link: action.link,
                         id: action.id,

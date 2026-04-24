@@ -278,6 +278,70 @@ export interface AdminpanelConfig {
         adapter?: string,
         excludeModels?: string[],
     }
+    /**
+     * Filter system configuration
+     */
+    filters?: {
+        /**
+         * Global enable/disable of the filter system
+         * @default true
+         */
+        enabled?: boolean;
+    }
+    /**
+     * Filter settings for specific models
+     * @deprecated Use model-level `models.<Model>.filters` instead
+     */
+    modelFilters?: {
+        [modelName: string]: ModelFiltersConfig;
+    };
+}
+
+/**
+ * Filter configuration for a specific model
+ */
+export interface ModelFiltersConfig {
+    /**
+     * Enable filters for this model
+     * Works only when global filters.enabled is not false
+     * @default undefined (use global setting)
+     */
+    enabled?: boolean;
+
+    /**
+     * Use legacy search instead of filters
+     * @default false
+     */
+    useLegacySearch?: boolean;
+
+    /**
+     * Fields to exclude from auto-generated filters
+     * @example ['password', 'apiKey', 'token']
+     */
+    excludeFields?: string[];
+
+    /**
+     * Fields to include in auto-generated filters (whitelist mode)
+     * If specified, only these fields will have filters generated
+     * Takes priority over excludeFields
+     */
+    includeFields?: string[];
+
+    /**
+     * Fields to exclude from filter fields API
+     * Use this to hide specific fields from the filter UI
+     * @example ['password', 'apiKey', 'token', 'createdAt']
+     */
+    excludeFromFilters?: string[];
+
+    /**
+     * Custom field type overrides for filters
+     * Use this to change how a field appears in the filter UI
+     * @example { my_field: 'select' }
+     */
+    fieldTypes?: {
+        [fieldName: string]: string;
+    };
 }
 
 export interface ModelConfig {
@@ -313,6 +377,10 @@ export interface ModelConfig {
      * Entity fields configuration
      * */
     fields?: FieldsModels
+    /**
+     * Filter settings for this model
+     */
+    filters?: ModelFiltersConfig
     /**
      * List display configuration
      * */
@@ -447,6 +515,47 @@ export interface BaseFieldConfig {
 
     /** show or hode element, default `true` */
     visible?: boolean
+
+    /**
+     * Allow inline editing of this field in list view
+     * When true, the field can be edited directly in the table
+     * @default false
+     */
+    inlineEditable?: boolean
+
+    /**
+     * Validation rules for inline editing
+     * Applied when field is updated via inline edit
+     */
+    inlineValidation?: {
+        /** Minimum length for string fields */
+        minLength?: number
+        /** Maximum length for string fields */
+        maxLength?: number
+        /** Minimum value for number fields */
+        min?: number
+        /** Maximum value for number fields */
+        max?: number
+        /** Regex pattern for validation */
+        pattern?: string
+        /** Custom validation function */
+        validate?: (value: any) => boolean | string
+    }
+
+    /**
+     * Attach a custom filter handler to this field.
+     * Handler must be registered in Adminizer instance via `customFilterHandler`.
+     */
+    customFilter?: {
+        /**
+         * Handler ID in format "ModelName.fieldName"
+         */
+        handlerId: string
+        /**
+         * @deprecated Condition label is taken from handler class `name`
+         */
+        label?: string
+    }
 }
 
 export interface TuiEditorFieldConfig extends BaseFieldConfig {

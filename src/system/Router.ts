@@ -5,7 +5,16 @@ import _edit from "../controllers/edit";
 import _add from "../controllers/add";
 import _view from "../controllers/view";
 import _remove from "../controllers/remove";
+import _inlineUpdate from "../controllers/inlineUpdate";
+import _filterFields from "../controllers/filter-fields/filterFields";
+import { getSavedFilters, saveFilter, deleteFilter, applyTemporaryFilter, getTemporaryFilter, getFilterLocales } from "../controllers/filter-fields/savedFilters";
+import { getAllUserFilters } from "../controllers/filter-fields/getAllUserFilters";
+import { getModelColumns, updateFilterColumns } from "../controllers/filter-fields/columns";
+import { getAllGroups } from "../controllers/filter-fields/groups";
 import { ckEditorUpload } from "../controllers/ckeditorUpload";
+import _exportData from "../controllers/exportData";
+import _feed from "../controllers/feed";
+import { getUserApiKey, regenerateUserApiKey } from "../controllers/userApiKey";
 import _form from "../controllers/form";
 import { CreateUpdateConfig } from "../interfaces/adminpanelConfig";
 import { widgetSwitchController } from "../controllers/widgets/switch";
@@ -14,6 +23,7 @@ import _widgetsDB from "../controllers/widgetsDB";
 import { widgetInfoController } from '../controllers/widgets/Info';
 import { widgetActionController } from '../controllers/widgets/Action';
 import { widgetCustomController } from "../controllers/widgets/Custom";
+import { widgetFilterInfoController } from "../controllers/widgets/filterInfo";
 import { catalogController } from "../controllers/catalog/Catalog";
 import { mediaManagerController } from "../controllers/media-manager/mediaManagerApi";
 import { thumbController } from "../controllers/media-manager/ThumbController";
@@ -22,6 +32,7 @@ import timezones from "../controllers/timezones";
 import { NotificationController } from "../controllers/notifications/NotificationController";
 import { AiAssistantController } from "../controllers/ai/AiAssistantController";
 import { HistoryController } from "../controllers/history-actions/HistoryController";
+import listUserFilters from "../controllers/listUserFilters";
 
 export default class Router {
 
@@ -72,6 +83,11 @@ export default class Router {
          * Widgets Info
          */
         adminizer.app.all(`${adminizer.config.routePrefix}/widgets-info/:widgetId`, adminizer.policyManager.bindPolicies(policies, widgetInfoController))
+
+        /**
+         * Widgets Filter Info (built-in filter widgets)
+         */
+        adminizer.app.all(`${adminizer.config.routePrefix}/widgets-filter-info/:filterId`, adminizer.policyManager.bindPolicies(policies, widgetFilterInfoController));
 
         /**
          * Widgets Action
@@ -220,6 +236,67 @@ export default class Router {
          */
         adminizer.app.all(baseRoute, adminizer.policyManager.bindPolicies(policies, _list));
 
+        if (adminizer.config.filters?.enabled) {
+
+            /**
+             * Get filter fields for model
+             */
+            adminizer.app.get(`${baseRoute}/filter-fields`, adminizer.policyManager.bindPolicies(policies, _filterFields));
+
+            /**
+             * Saved filters
+             */
+            adminizer.app.get(`${baseRoute}/saved-filters`, adminizer.policyManager.bindPolicies(policies, getSavedFilters));
+            adminizer.app.get(`${baseRoute}/filter/locales`, adminizer.policyManager.bindPolicies(policies, getFilterLocales));
+            adminizer.app.get(`${baseRoute}/filter/temporary`, adminizer.policyManager.bindPolicies(policies, getTemporaryFilter));
+            adminizer.app.post(`${baseRoute}/filter`, adminizer.policyManager.bindPolicies(policies, saveFilter));
+            adminizer.app.post(`${baseRoute}/filter/apply`, adminizer.policyManager.bindPolicies(policies, applyTemporaryFilter));
+            adminizer.app.delete(`${baseRoute}/filter/:id`, adminizer.policyManager.bindPolicies(policies, deleteFilter));
+
+            /**
+             * Get all groups (for admin filter visibility settings)
+             */
+            adminizer.app.get(`${adminizer.config.routePrefix}/groups`, getAllGroups);
+
+            /**
+             * Export data (JSON, CSV, XLSX)
+             */
+            adminizer.app.post(`${baseRoute}/export`, adminizer.policyManager.bindPolicies(policies, _exportData));
+
+            /**
+             * Public feed API — export by apiKey without auth
+             * GET /adminizer/api/feed/:apiKey.json
+             * GET /adminizer/api/feed/:apiKey.xml
+             */
+            adminizer.app.get(`${adminizer.config.routePrefix}/api/feed/:apiKey.:format`, _feed);
+            // Also support without extension (defaults to JSON)
+            adminizer.app.get(`${adminizer.config.routePrefix}/api/feed/:apiKey`, _feed);
+
+            /**
+             * User Filters — list all filters accessible to the current user across all models
+             */
+            adminizer.app.get(`${adminizer.config.routePrefix}/api/all-user-filters`, adminizer.policyManager.bindPolicies(policies, getAllUserFilters));
+            adminizer.app.all(`${adminizer.config.routePrefix}/user-filters`, adminizer.policyManager.bindPolicies(policies, listUserFilters));
+            /**
+            * Get model columns (available columns for the model)
+            */
+            adminizer.app.get(`${baseRoute}/columns`, adminizer.policyManager.bindPolicies(policies, getModelColumns));
+
+            /**
+             * Update filter columns configuration
+             */
+            adminizer.app.post(`${baseRoute}/filter/:filterId/columns`, adminizer.policyManager.bindPolicies(policies, updateFilterColumns));
+        }
+
+        /**
+         * User API Key management
+         * GET /adminizer/api/user-key — returns current user's API key
+         * POST /adminizer/api/user-key/regenerate — regenerates the API key
+         */
+        adminizer.app.get(`${adminizer.config.routePrefix}/api/user-key`, adminizer.policyManager.bindPolicies(policies, getUserApiKey));
+        adminizer.app.post(`${adminizer.config.routePrefix}/api/user-key/regenerate`, adminizer.policyManager.bindPolicies(policies, regenerateUserApiKey));
+
+
         adminizer.app.get(`${adminizer.config.routePrefix}/get-timezones`, adminizer.policyManager.bindPolicies(policies, timezones))
 
         if (adminizer.config.models) {
@@ -281,6 +358,11 @@ export default class Router {
                 }
             }
         }
+
+        /**
+         * Inline update field in list view
+         */
+        adminizer.app.patch(`${baseRoute}/inline/:id`, adminizer.policyManager.bindPolicies(policies, _inlineUpdate));
 
         /**
          * View record details

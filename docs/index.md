@@ -9,6 +9,7 @@
 * [General Settings](Configuration/General.md)
 * [Model Definitions](Configuration/Models.md)
 * [Field Options](Configuration/Fields.md)
+* [Inline Editing](Configuration/InlineEditing.md)
 * [Custom Components](Configuration/CustomComponents.md)
 
 ## Other

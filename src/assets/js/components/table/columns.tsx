@@ -6,9 +6,12 @@ import {Button} from "@/components/ui/button.tsx";
 import {Icon} from "@/components/icon.tsx";
 import {Columns} from "@/types";
 import {simpleSanitizeHtml} from "@/lib/utils.ts";
+import {InlineEditableCell} from "@/components/table/inline-editable-cell";
 
 export function useTableColumns(
     columnConfigs: Columns,
+    modelName: string,
+    updateRecord: (recordId: any, fieldName: string, newValue: any) => void,
     onSort?: (key: string, direction: 'asc' | 'desc') => void,
     onColumnSearch?: (key: string, value: string) => void,
     handleSearch?: () => void,
@@ -45,6 +48,7 @@ export function useTableColumns(
                             <input
                                 type="text"
                                 defaultValue={config.searchColumnValue}
+                                data-column-index={key}
                                 className="text-xs p-1 border rounded mb-2 text-foreground"
                                 onChange={(e) => {
                                     onColumnSearch(config.data, (e.target as HTMLInputElement).value);
@@ -60,12 +64,24 @@ export function useTableColumns(
                 )
             },
             cell: ({row}) => {
-                const cleanHtml = simpleSanitizeHtml(row.getValue(key)?.toString() ?? '');
+                const value = row.getValue(key);
+                const recordId = row.original?.id;
+                const fieldType = (config as any).type;
+                const hasDisplayModifier = (config as any).hasDisplayModifier || false;
+
                 return (
-                    <div className="text-center max-w-[300px] overflow-hidden text-ellipsis" dangerouslySetInnerHTML={{ __html: cleanHtml }}>
-                    </div>
+                    <InlineEditableCell
+                        value={value}
+                        fieldName={key}
+                        recordId={recordId}
+                        modelName={modelName}
+                        fieldType={fieldType}
+                        fieldConfig={config}
+                        hasDisplayModifier={hasDisplayModifier}
+                        onUpdateRecord={updateRecord}
+                    />
                 )
             }
         }));
-    }, [columnConfigs, onSort, showSearchInputs, onColumnSearch]);
+    }, [columnConfigs, modelName, updateRecord, onSort, showSearchInputs, onColumnSearch]);
 }

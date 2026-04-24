@@ -144,6 +144,7 @@ export class MenuHelper {
      */
     public getMenuItems(user: UserAP): MenuItem[] {
         let menus: MenuItem[] = [];
+        const filtersDisabledGlobally = this.config.filters?.enabled === false;
         if (this.config.navbar.additionalLinks && this.config.navbar.additionalLinks.length > 0) {
             this.config.navbar.additionalLinks.forEach(function (additionalLink: {
                 link: any;
@@ -157,6 +158,14 @@ export class MenuHelper {
                 /** Optional section grouping for navbar items */
                 section?: any;
             }) {
+                const additionalLinkPath = typeof additionalLink.link === "string"
+                    ? additionalLink.link.replace(/\/+$/, "")
+                    : "";
+                const isUserFiltersLink = additionalLink.id === "user-filters"
+                    || additionalLinkPath.endsWith("/user-filters");
+                if (filtersDisabledGlobally && isUserFiltersLink) {
+                    return;
+                }
                 if (!additionalLink.link || !additionalLink.title || additionalLink.disabled) {
                     return;
                 }

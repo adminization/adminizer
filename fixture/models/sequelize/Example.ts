@@ -39,62 +39,62 @@ import {UserAP} from "../../../src";
   
     @Column(DataType.BOOLEAN)
     declare sort: boolean;
-  
-    @Column(DataType.STRING)
+
+    @Column(DataType.TIME)
     declare time: string;
-  
+
     @Column(DataType.INTEGER)
     declare number: number;
-  
+
     @Column(DataType.STRING)
     declare color: string;
-  
-    @Column(DataType.STRING)
-    declare range: string;
-  
-    @Column(DataType.STRING)
-    declare date: string;
-  
+
+    @Column(DataType.INTEGER)
+    declare range: number;
+
+    @Column(DataType.DATEONLY)
+    declare date: Date;
+
     @Column(DataType.STRING)
     declare month: string;
-  
+
     @Column(DataType.STRING)
     declare week: string;
-  
+
     @Column(DataType.STRING)
     declare code: string;
-  
+
     @Column(DataType.STRING)
     declare editor: string;
-  
+
     @Column(DataType.JSON)
     declare selectMany: object;
-  
+
     @Column(DataType.STRING)
     declare select: string;
-  
+
     @ForeignKey(() => Example)
     @Column(DataType.INTEGER)
     declare testRelation: number;
-  
+
     @BelongsTo(() => Example)
     declare testRelationExample?: Example;
-  
+
     @Column(DataType.STRING)
     declare tui: string;
-  
+
     @Column(DataType.JSON)
     declare datatable: object;
-  
+
     @Column(DataType.JSON)
     declare json: object;
-  
+
     @HasMany(() => Test, 'exampleId')
     declare tests: Test[];
-  
-    @Column(DataType.STRING)
-    declare datetime: string;
-  
+
+    @Column(DataType.DATE)
+    declare datetime: Date;
+
     @Column(DataType.JSON)
     declare geojson: object;
 

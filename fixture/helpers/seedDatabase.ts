@@ -122,28 +122,70 @@ export async function seedDatabase(
     : await userModel.find();
 
     if (exampleCount === 0) {
+      // Helper function to get ISO week number (YYYY-Www format)
+      const getWeekNumber = (date: Date): string => {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+        return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+      };
+
       const fakeExamples = Array.from({ length: count }, () => {
         const randomUser = faker.helpers.arrayElement(allUsers);
         if(isSequelize) {
           return {
-            title:       faker.lorem.word(),
-            description: faker.lorem.paragraph(),
-            sort:        faker.datatype.boolean(),
-            time:        getRandomTime(),
+            title:         faker.lorem.word(),
+            description:   faker.lorem.paragraph(),
+            disabled_text: faker.lorem.sentence(),
+            sort:          faker.datatype.boolean(),
+            time:          getRandomTime(),
+            number:        faker.number.int(300),
+            color:         faker.color.rgb(),
+            range:         faker.number.int({ min: 10, max: 80 }),
+            date:          faker.date.past(),
+            month:         faker.date.past().toISOString().slice(0, 7),
+            week:          getWeekNumber(faker.date.past()),
+            datetime:      faker.date.recent().toISOString().slice(0, 16),
+            code:          faker.lorem.paragraphs(2),
+            editor:        faker.lorem.paragraphs(3),
+            selectMany:    faker.helpers.arrayElements(['Sone', 'Stwo', 'Sthree', 'Sfour', 'Sfive'], 2),
+            select:        faker.helpers.arrayElement(['decrease', 'increase', 'none']),
+            tui:           faker.lorem.paragraphs(2),
+            datatable:     [
+              { name: faker.commerce.product(), footage: faker.number.int(100), price: faker.number.int(1000) },
+              { name: faker.commerce.product(), footage: faker.number.int(100), price: faker.number.int(1000) }
+            ],
+            json:          { key: faker.lorem.word(), value: faker.lorem.word(), count: faker.number.int(100) },
             ownerId:       randomUser.id,
-            number:      faker.number.int(300),
-            editor:      faker.lorem.text(),
           }
         } else {
           return {
-            title:       faker.lorem.word(),
-            description: faker.lorem.paragraph(),
-            sort:        faker.datatype.boolean(),
-            time:        getRandomTime(),
-            owner:       randomUser.id,
+            title:         faker.lorem.word(),
+            description:   faker.lorem.paragraph(),
+            disabled_text: faker.lorem.sentence(),
+            sort:          faker.datatype.boolean(),
+            time:          getRandomTime(),
+            owner:         randomUser.id,
             ownerId:       randomUser.id,
-            number:      faker.number.int(300),
-            editor:      faker.lorem.text(),
+            number:        faker.number.int(300),
+            color:         faker.color.rgb(),
+            range:         faker.number.int({ min: 10, max: 80 }),
+            date:          faker.date.past(),
+            month:         faker.date.past().toISOString().slice(0, 7),
+            week:          getWeekNumber(faker.date.past()),
+            datetime:      faker.date.recent().toISOString().slice(0, 16),
+            code:          faker.lorem.paragraphs(2),
+            editor:        faker.lorem.paragraphs(3),
+            selectMany:    faker.helpers.arrayElements(['Sone', 'Stwo', 'Sthree', 'Sfour', 'Sfive'], 2),
+            select:        faker.helpers.arrayElement(['decrease', 'increase', 'none']),
+            tui:           faker.lorem.paragraphs(2),
+            datatable:     [
+              { name: faker.commerce.product(), footage: faker.number.int(100), price: faker.number.int(1000) },
+              { name: faker.commerce.product(), footage: faker.number.int(100), price: faker.number.int(1000) }
+            ],
+            json:          { key: faker.lorem.word(), value: faker.lorem.word(), count: faker.number.int(100) },
           }
         }
       }
@@ -215,7 +257,7 @@ export async function seedDatabase(
           },
           required: ["name"]
         },
-        name: faker.internet.userName()
+        name: faker.internet.username()
       };
       return schemaData;
     });

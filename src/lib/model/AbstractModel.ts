@@ -196,6 +196,27 @@ export abstract class AbstractModel<T> {
         return records.map(record => dataAccessor.process(record));
     }
 
+    /**
+     * Find with raw SQL where clause (Sequelize.literal support)
+     * Only available in Sequelize adapter
+     */
+    async findWithRawWhere(
+        where: any,
+        options?: { limit?: number; offset?: number; order?: any; populate?: boolean }
+    ): Promise<any[]> {
+        // Default implementation - will be overridden by Sequelize adapter
+        throw new Error('findWithRawWhere is only supported in Sequelize adapter');
+    }
+
+    /**
+     * Count with raw SQL where clause (Sequelize.literal support)
+     * Only available in Sequelize adapter
+     */
+    async countWithRawWhere(where: any): Promise<number> {
+        // Default implementation - will be overridden by Sequelize adapter
+        throw new Error('countWithRawWhere is only supported in Sequelize adapter');
+    }
+
     public async updateOne(criteria: Partial<T>, data: Partial<T>, dataAccessor: DataAccessor): Promise<Partial<T> | null> {
         let _data = dataAccessor.process(data);
 

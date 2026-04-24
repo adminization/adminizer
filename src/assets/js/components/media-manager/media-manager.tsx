@@ -130,7 +130,14 @@ const MediaManager = ({ layout, config, type, onChange, value, name }: Props) =>
 
     useEffect(() => {
         if (value !== undefined && value !== null) {
-            setItems(value);
+            setItems(prevItems => {
+                // Only update if value actually changed
+                if (prevItems.length !== value.length || 
+                    prevItems.some((item, i) => item.id !== value[i]?.id)) {
+                    return value;
+                }
+                return prevItems;
+            });
         }
     }, [value]);
 

@@ -1,5 +1,5 @@
 import AppLayout from "@/layouts/app-layout"
-import ListTable from "@/components/list-table.tsx";
+import ListTable from "@/components/list-table";
 import type {BreadcrumbItem} from "@/types";
 
 const breadcrumbs: BreadcrumbItem[] = [];

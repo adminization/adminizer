@@ -23,7 +23,8 @@ const AddWidgets = ({initWidgets, onAddWidgets, disabled, searchPlaceholder, act
         info: {items: [], title: ''},
         actions: {items: [], title: ''},
         links: {items: [], title: ''},
-        custom: {items: [], title: ''}
+        custom: {items: [], title: ''},
+        filters: {items: [], title: ''}
     });
 
     const [head, setHead] = useState<Head[]>([]);
@@ -36,11 +37,20 @@ const AddWidgets = ({initWidgets, onAddWidgets, disabled, searchPlaceholder, act
             info: {items: [], title: ''},
             actions: {items: [], title: ''},
             links: {items: [], title: ''},
-            custom: {items: [], title: ''}
+            custom: {items: [], title: ''},
+            filters: {items: [], title: ''}
         };
         const newHead: Head[] = [];
 
         for (const widget of initWidgets) {
+            if (widget.group === 'filters') {
+                newWidgets.filters.items.push(widget);
+                if (newHead.find(e => e.type === 'filters')) continue
+                newWidgets.filters.title = actionsTitles['Filters']
+                newHead.push({type: 'filters', title: actionsTitles['Filters']});
+                continue;
+            }
+
             if (widget.type === 'switcher') {
                 newWidgets.switchers.items.push(widget);
                 if (newHead.find(e => e.type === 'switchers')) continue
@@ -131,7 +141,7 @@ const AddWidgets = ({initWidgets, onAddWidgets, disabled, searchPlaceholder, act
                     <div
                         className={`cursor-pointer hover:text-primary hover:underline transition-all ${!filter ? 'text-primary underline' : ''}`}
                         onClick={() => setFilter('')}>
-                        All
+                        {actionsTitles['All'] || 'All'}
                     </div>
                     {head.length > 0 && head.map((item: Head) => (
                         <div key={item.type}

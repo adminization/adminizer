@@ -2,6 +2,7 @@ import express, {Express} from "express";
 import cookieParser from 'cookie-parser'
 import * as path from "path";
 import winston from "winston";
+import chalk from "chalk";
 import EventEmitter from 'events';
 
 import {AdminpanelConfig} from "../interfaces/adminpanelConfig";
@@ -44,6 +45,8 @@ import {StorageServices} from "./catalog/Navigation";
 import {bindCors} from "../system/bindCors";
 import { HistoryHandler } from "./history-actions/HistoryHandler";
 import bindHistory from "../system/bindHistory";
+import bindCustomFilterHandlers from "../system/bindCustomFilterHandlers";
+import { CustomFilterHandler } from "./filters/CustomFilterHandler";
 
 export class Adminizer {
     // Preconfigures
@@ -67,6 +70,7 @@ export class Adminizer {
     aiAssistantHandler?: AiAssistantHandler;
     modelHandler!: ModelHandler
     widgetHandler: WidgetHandler
+    customFilterHandler!: CustomFilterHandler
     vite: ViteDevServer
     controlsHandler!: ControlsHandler
     catalogHandler!: CatalogHandler
@@ -86,7 +90,26 @@ export class Adminizer {
             })
         ),
         transports: [
-            new winston.transports.Console(),
+            new winston.transports.Console({
+                format: winston.format.combine(
+                    winston.format.timestamp(),
+                    winston.format.printf(({timestamp, level, message, ...meta}) => {
+                        const metaString = Object.keys(meta).length ? JSON.stringify(meta) : "";
+                        const colors: Record<string, (s: string) => string> = {
+                            error: chalk.red,
+                            warn: chalk.yellow,
+                            info: chalk.green,
+                            http: chalk.magenta,
+                            verbose: chalk.cyan,
+                            debug: chalk.blue,
+                            silly: chalk.gray,
+                        };
+                        const colorize = colors[level] ?? chalk.white;
+                        const line = `[${timestamp}] ${level.toUpperCase()}: ${message} ${metaString}`;
+                        return colorize(line);
+                    })
+                )
+            }),
             new winston.transports.File({filename: "logs/app.log"}),
         ],
     })
@@ -210,6 +233,7 @@ export class Adminizer {
         // TODO: 'hot reload' unbind models & unbind forms
         await bindModels(this);
         await bindForms(this);
+        bindCustomFilterHandlers(this);
 
         this.config.rootPath = path.resolve(import.meta.dirname + "/..")
 

@@ -35,7 +35,7 @@ const breadcrumbs: BreadcrumbItem[] = [];
 export default function Add() {
     const page = usePage<AddProps>();
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout breadcrumbs={breadcrumbs} className="overflow-auto h-[calc(100svh-16px)]">
             <AddForm page={page} catalog={false}/>
         </AppLayout>
     )

@@ -94,8 +94,6 @@ export abstract class AbstractNotificationService extends EventEmitter {
         // We get the Map of the user's clients and add a new client
         const userClients = this.clients.get(userId)!;
         userClients.set(clientId, sendFn);
-
-        Adminizer.log.info(`[${this.notificationClass}] Client ${clientId} connected for user ${userId}. Total users: ${this.clients.size}, user clients: ${userClients.size}`);
     }
 
 

@@ -75,6 +75,7 @@ export interface Widget {
     constructorOption?: any;
     constructorName?: string;
     hideAdminPanelUI?: boolean;
+    group?: string;
     size?: {
         w: number
         h: number

@@ -7,7 +7,7 @@ const models: AdminpanelConfig["models"] = {
         title: 'Test model',
         model: 'test',
         displayName: 'title',
-        userAccessRelation: 'owner',
+        // userAccessRelation: 'owner',
         fields: {
             createdAt: false,
             updatedAt: false,
@@ -46,37 +46,45 @@ const models: AdminpanelConfig["models"] = {
         title: 'All controls',
         model: 'example',
         displayName: 'description',
-        userAccessRelation: 'owner',
-        tools: [
-            {
-                id: '1',
-                link: `https://google.com`,
-                type: 'blank',
-                title: 'Some new action',
-                icon: 'reorder',
-            },
-            {
-                id: '2',
-                link: `${routePrefix}/form/global`,
-                type: 'self',
-                title: 'Form example',
-                icon: 'payment',
-            },
-            {
-                id: '3',
-                link: 'https://google.com',
-                type: 'blank',
-                title: 'Form example from file Form example from file',
-                icon: 'touch_app',
-            }
-        ],
+        filters: {
+            enabled: true,
+            excludeFromFilters: ['createdAt', 'id', 'ownerId', 'testRelation', 'testRelationExample'],
+        },
+        // userAccessRelation: 'owner',
+        // tools: [
+        //     {
+        //         id: '1',
+        //         link: `https://google.com`,
+        //         type: 'blank',
+        //         title: 'Some new action',
+        //         icon: 'reorder',
+        //     },
+        //     {
+        //         id: '2',
+        //         link: `${routePrefix}/form/global`,
+        //         type: 'self',
+        //         title: 'Form example',
+        //         icon: 'payment',
+        //     },
+        //     {
+        //         id: '3',
+        //         link: 'https://google.com',
+        //         type: 'blank',
+        //         title: 'Form example from file Form example from file',
+        //         icon: 'touch_app',
+        //     }
+        // ],
         fields: {
-            createdAt: false,
+            createdAt: {
+                title: 'created At',
+                type: 'string',
+            },
             updatedAt: false,
             title: {
                 title: 'Title',
                 type: 'string',
-                required: true
+                required: true,
+                inlineEditable: true
             },
             description: {
                 title: 'Textarea',
@@ -86,7 +94,8 @@ const models: AdminpanelConfig["models"] = {
             },
             sort: {
                 type: 'boolean',
-                title: 'Boolean'
+                title: 'Boolean',
+                inlineEditable: true
             },
             disabled_text: {
                 title: 'Disabled',
@@ -100,7 +109,8 @@ const models: AdminpanelConfig["models"] = {
                 options: {
                     min: 10,
                     max: 80
-                }
+                },
+                inlineEditable: true
             },
             select: {
                 title: 'Select',
@@ -135,6 +145,7 @@ const models: AdminpanelConfig["models"] = {
             number: {
                 title: 'Number',
                 type: 'number',
+                inlineEditable: true
             },
             color: {
                 title: 'color',
@@ -145,7 +156,11 @@ const models: AdminpanelConfig["models"] = {
                 type: 'week',
             },
             json: {
-                type: 'jsoneditor'
+                type: 'jsoneditor',
+                customFilter: {
+                    handlerId: 'Example.json',
+                    label: 'Custom filtering'
+                }
             },
             tui: {
                 type: 'tuieditor',
@@ -173,6 +188,9 @@ const models: AdminpanelConfig["models"] = {
             datatable: {
                 title: 'Price',
                 type: 'table',
+                customFilter: {
+                    handlerId: 'Example.datatable'
+                },
                 options: {
                     config: {
                         dataSchema: { name: null, footage: null, price: null },
@@ -189,10 +207,6 @@ const models: AdminpanelConfig["models"] = {
                 title: 'Select many',
                 isIn: ['Sone', 'Stwo', 'Sthree', 'Sfour', 'Sfive'],
                 type: 'select-many'
-            },
-            checkboxes: {
-                title: 'Checkboxes',
-                isIn: ['one', 'two', 'three']
             },
             editor: {
                 title: 'Editor',
@@ -227,7 +241,7 @@ const models: AdminpanelConfig["models"] = {
                     }
                 }
             },
-            testRelation: {
+            testRelationExample: {
                 title: 'Test one association',
                 displayModifier: function (data) {
                     return data?.title;
@@ -236,96 +250,108 @@ const models: AdminpanelConfig["models"] = {
             },
             tests: {
                 title: 'One to many association',
-                displayModifier: function (data) {
-                    return data?.title;
+                displayModifier: function (data: any) {
+                    if (Array.isArray(data)) {
+                        return data
+                            .map((item: any) => item?.title)
+                            .filter(Boolean)
+                            .join(', ');
+                    }
+                    return data?.title || '';
+                },
+                disabled: false
+            },
+            owner: {
+                title: 'Owner',
+                displayModifier: function (data: any) {
+                    return data?.login || '';
                 },
                 disabled: false
             },
         },
         list: {
             fields: {
-                json: false,
-                tui: false,
-                geojson: false,
-                week: false,
-                color: false,
-                range: false,
-                date: false,
-                month: false,
-                selectMany: false,
-                select: false,
-                dateTime: false,
-                testRelation: false,
-                tests: false,
-                price: false,
-                code: false,
-                datatable: false
+                // json: false,
+                // tui: false,
+                // geojson: false,
+                // week: false,
+                // color: false,
+                // range: false,
+                // date: false,
+                // month: false,
+                // selectMany: false,
+                // select: false,
+                // testRelation: false,
+                // tests: false,
+                // price: false,
+                // code: false,
+                // datatable: false
             },
-            actions: {
-                global: [
-                    {
-                        id: "1",
-                        link: 'https://google.com',
-                        type: 'blank',
-                        title: 'Google',
-                        icon: 'insert_link'
-                    }, {
-                        id: "2",
-                        link: 'https://google.com',
-                        type: 'blank',
-                        title: 'Google',
-                        icon: 'insert_link'
-                    }, {
-                        id: "3",
-                        link: 'https://google.com',
-                        type: 'blank',
-                        title: 'Google',
-                        icon: 'insert_link'
-                    }, {
-                        id: "4",
-                        link: 'https://google.com',
-                        type: 'blank',
-                        title: 'Google',
-                        icon: 'insert_link'
-                    }, {
-                        id: "5",
-                        link: `${routePrefix}/form/global`,
-                        type: 'self',
-                        title: 'Form',
-                        icon: 'insert_link'
-                    },
-                ],
-                inline: [
-                    {
-                        id: "1",
-                        link: 'https://google.com',
-                        type: 'blank',
-                        title: 'Google',
-                        icon: 'insert_link'
-                    },
-                    {
-                        id: "2",
-                        link: 'https://google.com',
-                        type: 'blank',
-                        title: 'Google1',
-                        icon: 'insert_link'
-                    },
-                    {
-                        id: "3",
-                        link: 'https://google.com',
-                        type: 'blank',
-                        title: 'Google2',
-                        icon: 'insert_link'
-                    },
-                    {
-                        id: "4",
-                        link: `${routePrefix}/model/example/edit`,
-                        type: 'self',
-                        title: 'Test Edit',
-                        icon: 'insert_link'
-                    }
-                ]
-            }
+            // actions: {
+            //     global: [
+            //         {
+            //             id: "1",
+            //             link: 'https://google.com',
+            //             type: 'blank',
+            //             title: 'Google',
+            //             icon: 'insert_link'
+            //         }, {
+            //             id: "2",
+            //             link: 'https://google.com',
+            //             type: 'blank',
+            //             title: 'Google',
+            //             icon: 'insert_link'
+            //         }, {
+            //             id: "3",
+            //             link: 'https://google.com',
+            //             type: 'blank',
+            //             title: 'Google',
+            //             icon: 'insert_link'
+            //         }, {
+            //             id: "4",
+            //             link: 'https://google.com',
+            //             type: 'blank',
+            //             title: 'Google',
+            //             icon: 'insert_link'
+            //         }, {
+            //             id: "5",
+            //             link: `${routePrefix}/form/global`,
+            //             type: 'self',
+            //             title: 'Form',
+            //             icon: 'insert_link'
+            //         },
+            //     ],
+            //     inline: [
+            //         {
+            //             id: "1",
+            //             link: 'https://google.com',
+            //             type: 'blank',
+            //             title: 'Google',
+            //             icon: 'insert_link'
+            //         },
+            //         {
+            //             id: "2",
+            //             link: 'https://google.com',
+            //             type: 'blank',
+            //             title: 'Google1',
+            //             icon: 'insert_link'
+            //         },
+            //         {
+            //             id: "3",
+            //             link: 'https://google.com',
+            //             type: 'blank',
+            //             title: 'Google2',
+            //             icon: 'insert_link'
+            //         },
+            //         {
+            //             id: "4",
+            //             link: `${routePrefix}/model/example/edit`,
+            //             type: 'self',
+            //             title: 'Test Edit',
+            //             icon: 'insert_link'
+            //         }
+            //     ]
+            // }
         },
         icon: 'inbox'
     },
@@ -458,6 +484,9 @@ const models: AdminpanelConfig["models"] = {
 }
 
 const config: AdminpanelConfig = {
+    filters: {
+        enabled: true
+    },
     mediamanager: {
         fileStoragePath: '.tmp/public',
         allowMIME: ['image/*', 'application/*', 'text/*', 'video/*'],

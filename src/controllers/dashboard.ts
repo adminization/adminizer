@@ -16,7 +16,8 @@ export default function (req: ReqType, res: ResType) {
                 'Fast links': req.i18n.__('Fast links'),
                 'Actions': req.i18n.__('Actions'),
                 'Info': req.i18n.__('Info'),
-                'Switcher': req.i18n.__('Switcher')
+                'Switcher': req.i18n.__('Switcher'),
+                'Filters': req.i18n.__('Filters')
             },
             searchPlaceholder: req.i18n.__('Search'),
         }

@@ -6,6 +6,28 @@ import { Adminizer } from "../lib/Adminizer";
 import { InertiaMenuHelper } from "../helpers/inertiaMenuHelper";
 
 export function bindInertia(adminizer: Adminizer) {
+    const escapeHtmlAttribute = (value: string): string => value
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    const resolveFaviconHref = (): string => {
+        const customFavicon = adminizer.config.favicon?.trim();
+        if (!customFavicon) {
+            return `${adminizer.config.routePrefix}/files/favicon.png`;
+        }
+
+        if (/^[a-z][a-z0-9+.-]*:/i.test(customFavicon) || customFavicon.startsWith("//")) {
+            return customFavicon;
+        }
+
+        if (customFavicon.startsWith("/")) {
+            return customFavicon;
+        }
+
+        return `${adminizer.config.routePrefix}/${customFavicon.replace(/^\/+/, "")}`;
+    };
 
     const viteRender = () => {
         if (process.env.VITE_ENV === 'dev') {
@@ -81,12 +103,14 @@ export function bindInertia(adminizer: Adminizer) {
     };
 
     const getHtml = (page: Page, _viewData: Record<string, string>) => {
+        const faviconHref = escapeHtmlAttribute(resolveFaviconHref());
+
         return `
        <!DOCTYPE html><html lang="${_viewData.lang}">
         <head>
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <meta charset="utf-8"><title inertia></title>
-            <link rel="icon" type="image/png" href="${adminizer.config.routePrefix}/files/favicon.png">
+            <link rel="icon" type="image/png" href="${faviconHref}">
             ${viteRender()}
             </head>
         <body>

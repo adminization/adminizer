@@ -81,6 +81,14 @@ interface DashboardConfig {
 // TODO fields that can be both object and boolean should be divided into main field and "fieldnameEnable" - type boolean
 export interface AdminpanelConfig {
     routePrefix: string
+    /**
+     * Custom favicon URL for admin pages.
+     * - absolute URL is used as-is (`https://...`, `//...`, `data:...`)
+     * - path starting with `/` is treated as absolute path from site root
+     * - relative path is resolved from `routePrefix`
+     * @default `${routePrefix}/files/favicon.png`
+     */
+    favicon?: string
 
     /** prepare to impl dashboard*/
     dashboard?: boolean | DashboardConfig

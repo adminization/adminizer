@@ -144,7 +144,7 @@ const AddWidgets = ({initWidgets, onAddWidgets, disabled, searchPlaceholder, act
                     <div
                         className={`cursor-pointer hover:text-primary hover:underline transition-all ${!filter ? 'text-primary underline' : ''}`}
                         onClick={() => setFilter('')}>
-                        {actionsTitles['All'] || '{actionsTitles['All'}']}
+                        {actionsTitles['All']}
                     </div>
                     {head.length > 0 && head.map((item: Head) => (
                         <div key={item.type}

@@ -2,6 +2,7 @@ import {Adminizer} from '../../lib/Adminizer';
 import {UserAP} from "../../models/UserAP";
 import {SystemNotificationService} from "../../lib/notifications/SystemNotificationService";
 import {INotification} from "../../interfaces/types";
+import {redirectToLogin} from '../../helpers/inertiaAutHelper';
 
 export class NotificationController {
     static async search(req: ReqType, res: ResType): Promise<void> {
@@ -319,7 +320,7 @@ export class NotificationController {
         // We use the redirect only for UI pages; API requests receive 401.
         if (req.adminizer.config.auth.enable && !req.user) {
             if (shouldRedirectToLogin) {
-                res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+                redirectToLogin(req, res);
             } else {
                 res.status(401).json({error: 'Unauthorized'});
             }

@@ -35,19 +35,28 @@ import { HistoryController } from "../controllers/history-actions/HistoryControl
 import listUserFilters from "../controllers/listUserFilters";
 
 export default class Router {
+    public adminizer: Adminizer;
 
-    static onlyOnce: boolean = false;
+    constructor(adminizer: Adminizer) {
+        this.adminizer = adminizer;
+    }
+
+    onlyOnce: boolean = false;
+
+    /** Regexp patterns of model routes registered via bindModelRoutes, keyed by model name */
+    private modelRoutePatterns: Map<string, RegExp[]> = new Map();
 
     /**
      * The idea is that all methods within the first 3 seconds after start call this method, and as soon as all have been loaded, the loading will be blocked
      */
-    static async bind(adminizer: Adminizer): Promise<void> {
+    async bind(): Promise<void> {
 
         if (this.onlyOnce) {
-            Adminizer.log.error(`This method allowed for run only one time`);
+            Adminizer.log.error(`Method "Router.bind(...)" allowed for run only one time`);
             return;
         }
-
+        
+        const adminizer = this.adminizer
 
         if (
             typeof adminizer.defaultMiddleware === 'function' &&
@@ -62,6 +71,40 @@ export default class Router {
          * @type {MiddlewareType[]}
          */
         let policies: MiddlewareType[] = adminizer.config.policies;
+
+        /**
+         * Prevent stale/cached admin API responses.
+         * This protects JSON endpoints from browser/proxy cache and avoids
+         * old HTML redirects being reused as API payloads.
+         */
+        const noCachePrefixes = [
+            '/api',
+            '/notifications/api',
+            '/history',
+            '/widgets-get-all',
+            '/widgets-get-all-db',
+            '/widgets-switch',
+            '/widgets-info',
+            '/widgets-action',
+            '/media-manager-uploader',
+            '/get-thumbs',
+            '/get-timezones',
+        ];
+        adminizer.app.use(adminizer.config.routePrefix, (req, res, next) => {
+            const requestPath = req.path || '/';
+            const shouldDisableCache = noCachePrefixes.some((prefix) =>
+                requestPath === prefix || requestPath.startsWith(`${prefix}/`)
+            );
+
+            if (shouldDisableCache) {
+                res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+                res.set('Pragma', 'no-cache');
+                res.set('Expires', '0');
+                res.set('Surrogate-Control', 'no-store');
+            }
+
+            return next();
+        });
 
         /**
          * Widgets All
@@ -301,61 +344,7 @@ export default class Router {
 
         if (adminizer.config.models) {
             for (let model in adminizer.config.models) {
-                const modelConfig = adminizer.config.models[model];
-                /**
-                 * Add support only routes created for boolean true
-                 */
-                if (typeof modelConfig === "boolean" && modelConfig === true) {
-                    Adminizer.log.debug(`Adminpanel create CRUD routes for \`${model}\` by boolean true`)
-                    adminizer.app.all(`${adminizer.config.routePrefix}/model/${model}/add`, adminizer.policyManager.bindPolicies(policies, _add));
-                    adminizer.app.all(`${adminizer.config.routePrefix}/model/${model}/edit/:id`, adminizer.policyManager.bindPolicies(policies, _edit));
-                    adminizer.app.all(`${adminizer.config.routePrefix}/model/${model}/remove/:id`, adminizer.policyManager.bindPolicies(policies, _remove));
-                } else if (typeof modelConfig !== "boolean") {
-                    Adminizer.log.debug(`Adminpanel create CRUD routes for \`${model}\` by ModelConfig`)
-
-                    /**
-                     * Create new record
-                     */
-                    if (modelConfig.add) {
-                        let addHandler = modelConfig.add as CreateUpdateConfig;
-                        if (addHandler.controller) {
-                            if (typeof addHandler.controller === 'string') {
-                                // Dynamic import for string paths
-                                let controller = await import(addHandler.controller);
-                                adminizer.app.all(`${adminizer.config.routePrefix}/model/${model}/add`, adminizer.policyManager.bindPolicies(policies, controller.default));
-                            } else {
-                                // Direct function reference (controller function matches middleware signature)
-                                adminizer.app.all(`${adminizer.config.routePrefix}/model/${model}/add`, adminizer.policyManager.bindPolicies(policies, addHandler.controller as any));
-                            }
-                        } else {
-                            adminizer.app.all(`${adminizer.config.routePrefix}/model/${model}/add`, adminizer.policyManager.bindPolicies(policies, _add));
-                        }
-                    } else {
-                        adminizer.app.all(`${adminizer.config.routePrefix}/model/${model}/add`, adminizer.policyManager.bindPolicies(policies, _add));
-                    }
-                    /**
-                     * Edit existing record
-                     */
-                    if (modelConfig.edit) {
-                        let editHandler = modelConfig.edit as CreateUpdateConfig;
-                        if (editHandler.controller) {
-                            if (typeof editHandler.controller === 'string') {
-                                // Dynamic import for string paths
-                                let controller = await import(editHandler.controller);
-                                adminizer.app.all(`${adminizer.config.routePrefix}/model/${model}/edit/:id`, adminizer.policyManager.bindPolicies(policies, controller.default));
-                            } else {
-                                // Direct function reference (controller function matches middleware signature)
-                                adminizer.app.all(`${adminizer.config.routePrefix}/model/${model}/edit/:id`, adminizer.policyManager.bindPolicies(policies, editHandler.controller as any));
-                            }
-                        } else {
-                            adminizer.app.all(`${adminizer.config.routePrefix}/model/${model}/edit/:id`, adminizer.policyManager.bindPolicies(policies, _edit));
-                        }
-                    } else {
-                        adminizer.app.all(`${adminizer.config.routePrefix}/model/${model}/edit/:id`, adminizer.policyManager.bindPolicies(policies, _edit));
-                    }
-                } else {
-                    Adminizer.log.silly(`Adminpanel skip create CRUD routes for model: ${model}`)
-                }
+                await this.bindModelRoutes(model, policies);
             }
         }
 
@@ -384,5 +373,85 @@ export default class Router {
         }
         // TODO emit can be used in tests
         adminizer.emitter.emit("router:bound");
+    }
+
+    public unbindModelRoutes(model: string): void {
+        if (!this.adminizer.app._router) return;
+        const patterns = this.modelRoutePatterns.get(model);
+        if (!patterns?.length) return;
+        const removedPaths: string[] = [];
+        this.adminizer.app._router.stack = this.adminizer.app._router.stack.filter((layer: any) => {
+            if (layer.route && patterns.some((p: RegExp) => p.test(layer.route.path))) {
+                removedPaths.push(layer.route.path);
+                return false;
+            }
+            return true;
+        });
+        this.modelRoutePatterns.delete(model);
+        Adminizer.log.debug(`Adminpanel removed routes for model \`${model}\`: ${removedPaths.join(', ')}`);
+    }
+
+    public async bindModelRoutes(model: string, policies?: MiddlewareType[]): Promise<void> {
+        if (!policies) policies = this.adminizer.config.policies;
+        if (this.modelRoutePatterns.has(model)) {
+            this.unbindModelRoutes(model);
+        }
+        
+        const modelConfig = this.adminizer.config.models[model];
+        const prefix = `${this.adminizer.config.routePrefix}/model/${model}`;
+
+        const registeredPaths: string[] = [];
+        const register = (path: string, handler: any) => {
+            this.adminizer.app.all(path, this.adminizer.policyManager.bindPolicies(policies!, handler));
+            const patterns = this.modelRoutePatterns.get(model) ?? [];
+            patterns.push(new RegExp(`^${path.replace(/:[^/]+/g, '[^/]+')}$`));
+            this.modelRoutePatterns.set(model, patterns);
+            registeredPaths.push(path);
+        };
+
+        if (typeof modelConfig === "boolean" && modelConfig === true) {
+            Adminizer.log.debug(`Adminpanel create CRUD routes for \`${model}\` by boolean true`);
+            register(`${prefix}/add`, _add);
+            register(`${prefix}/edit/:id`, _edit);
+            register(`${prefix}/remove/:id`, _remove);
+        } else if (modelConfig !== undefined && typeof modelConfig !== "boolean") {
+            Adminizer.log.debug(`Adminpanel create CRUD routes for \`${model}\` by ModelConfig`);
+
+            /**
+             * Create new record
+             */
+            const addHandler = modelConfig.add as CreateUpdateConfig;
+            if (addHandler?.controller) {
+                if (typeof addHandler.controller === 'string') {
+                    let controller = await import(addHandler.controller);
+                    register(`${prefix}/add`, controller.default);
+                } else {
+                    register(`${prefix}/add`, addHandler.controller as any);
+                }
+            } else {
+                register(`${prefix}/add`, _add);
+            }
+
+            /**
+             * Edit existing record
+             */
+            const editHandler = modelConfig.edit as CreateUpdateConfig;
+            if (editHandler?.controller) {
+                if (typeof editHandler.controller === 'string') {
+                    let controller = await import(editHandler.controller);
+                    register(`${prefix}/edit/:id`, controller.default);
+                } else {
+                    register(`${prefix}/edit/:id`, editHandler.controller as any);
+                }
+            } else {
+                register(`${prefix}/edit/:id`, _edit);
+            }
+        } else {
+            Adminizer.log.silly(`Adminpanel skip create CRUD routes for model: ${model}`);
+        }
+
+        if (registeredPaths.length > 0) {
+            Adminizer.log.debug(`Adminpanel added routes for model \`${model}\`: ${registeredPaths.join(', ')}`);
+        }
     }
 }

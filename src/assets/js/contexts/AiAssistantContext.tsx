@@ -1,7 +1,7 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
-import axios from 'axios';
 import {usePage} from '@inertiajs/react';
 import {SharedData} from '@/types';
+import {adminApi} from '@/lib/admin-api';
 
 export interface AiAssistantMessageDto {
     id: string;
@@ -75,7 +75,7 @@ export const AiAssistantProvider: React.FC<{children: React.ReactNode}> = ({chil
         if (!isEnabled) return;
         try {
             setLoading(true);
-            const {data} = await axios.get<AiAssistantModelDto[]>(`${window.routePrefix}/api/ai-assistant/models`);
+            const {data} = await adminApi.getJson<AiAssistantModelDto[]>(`${window.routePrefix}/api/ai-assistant/models`);
             setModels(data);
             setActiveModelState((current) => {
                 if (current) {
@@ -98,7 +98,7 @@ export const AiAssistantProvider: React.FC<{children: React.ReactNode}> = ({chil
         if (!isEnabled || !modelId) return;
         try {
             setLoading(true);
-            const {data} = await axios.get<{history: AiAssistantMessageDto[]}>(`${window.routePrefix}/api/ai-assistant/history/${modelId}`);
+            const {data} = await adminApi.getJson<{history: AiAssistantMessageDto[]}>(`${window.routePrefix}/api/ai-assistant/history/${modelId}`);
             setMessages(data.history ?? []);
         } catch (err) {
             console.error('Failed to load AI assistant history', err);
@@ -147,7 +147,7 @@ export const AiAssistantProvider: React.FC<{children: React.ReactNode}> = ({chil
         setError(null);
 
         try {
-            const {data} = await axios.post<{history: AiAssistantMessageDto[]; modelId: string}>(
+            const {data} = await adminApi.postJson<{history: AiAssistantMessageDto[]; modelId: string}>(
                 `${window.routePrefix}/api/ai-assistant/query`,
                 {modelId: activeModel, message: trimmed},
             );

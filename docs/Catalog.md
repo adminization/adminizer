@@ -25,6 +25,8 @@ The Adminizer catalog system powers tree-shaped resources such as navigation men
 
 Every catalog must be registered in the global [`CatalogHandler`](#cataloghandler). Adminizer exposes the catalog UI at `/admin/catalog/:slug/:id?`, where `slug` selects the catalog and the optional `id` points to a specific storage instance (for example, a navigation section).
 
+When a catalog exposes exactly one available storage `id`, the frontend treats it as already selected. In that case the UI renders a badge with that `id` instead of the selector dropdown, and if the current route has no `id` yet the client redirects to `/catalog/:slug/:id` automatically.
+
 ## Runtime Architecture
 
 ### AbstractCatalog

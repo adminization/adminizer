@@ -7,6 +7,6 @@ logs
 .patches
 codex.patch
 .env
-QWEN.md
-.qwen/
 TODO
+.codex
+.playwright-mcp

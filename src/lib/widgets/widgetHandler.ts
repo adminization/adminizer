@@ -270,6 +270,14 @@ export class WidgetHandler {
         return widgets
     }
 
+    private translateWidgetConfig(widget: WidgetConfig, i18n: I18n): WidgetConfig {
+        return {
+            ...widget,
+            name: typeof widget.name === "string" ? i18n.__(widget.name) : widget.name,
+            description: typeof widget.description === "string" ? i18n.__(widget.description) : widget.description
+        };
+    }
+
     public async getWidgetsDB(id: number, auth: boolean, i18n: I18n): Promise<{
         widgets: WidgetConfig[],
         layout: WidgetsLayouts,
@@ -298,7 +306,9 @@ export class WidgetHandler {
             }
         } else {
             // User has saved widgets - return them
-            result.widgets = user.widgets.widgets;
+            result.widgets = (user.widgets.widgets || []).map((widget: WidgetConfig) =>
+                this.translateWidgetConfig(widget, i18n)
+            );
             result.layout = user.widgets.layout;
         }
 

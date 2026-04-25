@@ -59,7 +59,7 @@
   "Select Items": "Ничего не выбрано",
   "Switcher": "Переключатель",
   "Timezone": "Временная зона",
-  "Title": "Title",
+  "Title": "Заголовок",
   "Toggle to change the grid. To save the grid, turn it off.": "Переключите для изменения сетки. Чтобы сохранить сетку, отключите.",
   "User groups": "Группы пользователя",
   "User settings": "Настроики пользователя",
@@ -296,3 +296,4 @@
   "Internal server error": "Внутренняя ошибка сервера",
   "Filter visibility": "Видимость фильтра"
 }
+ 

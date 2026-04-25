@@ -1,5 +1,6 @@
 import {MediaManagerHandler} from "../../lib/media-manager/MediaManagerHandler";
 import {MediaManagerAdapter} from "./mediaManagerAdapter";
+import {redirectToLogin} from '../../helpers/inertiaAutHelper';
 
 export async function mediaManagerController(req: ReqType, res: ResType) {
     const method = req.method.toUpperCase();
@@ -10,7 +11,7 @@ export async function mediaManagerController(req: ReqType, res: ResType) {
 
     if (req.adminizer.config.auth.enable) {
         if (!req.user) {
-            return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+            return redirectToLogin(req, res);
         } else if (!req.adminizer.accessRightsHelper.hasPermission(`mediaManager-${id}`, req.user)) {
             return res.sendStatus(403);
         }

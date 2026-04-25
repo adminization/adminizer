@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
-import {router} from '@inertiajs/react'
+import {router, usePage} from '@inertiajs/react'
 import {
     Tree,
     getBackendOptions,
@@ -12,6 +12,7 @@ import {DndProvider} from "react-dnd";
 import axios from "axios";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.tsx";
 import {Button} from "@/components/ui/button.tsx";
+import {Badge} from "@/components/ui/badge.tsx";
 import {Pencil, Plus, Ban, LoaderCircle, BetweenHorizontalStart} from "lucide-react";
 import {Input} from "@/components/ui/input.tsx";
 import {
@@ -62,8 +63,10 @@ const CatalogTree = () => {
         movingGroupsRootOnly: false
     })
 
+    const page = usePage<{uiMessages?: Record<string, string>}>()
+    const messages = (page.props.uiMessages || {}) as Record<string, string>
+
     const [items, setItems] = useState<CatalogItem[]>([])
-    const [messages, setMessages] = useState<Record<string, string>>({})
     const [isLoading, setIsLoading] = useState(false)
     const dialogRef = useRef<DialogStackHandle>(null);
     const [addItemProps, setAddItemProps] = useState({items: [], model: "", labels: {}})
@@ -115,17 +118,9 @@ const CatalogTree = () => {
             setIsNavigation(resCatalog.catalogSlug === "navigation");
         };
 
-        const initLocales = async () => {
-            let res = await axios.post('', {
-                _method: 'getLocales'
-            });
-            setMessages(res.data.data);
-        };
-
         const initCatalog = async () => {
             try {
                 setIsLoading(true);
-                await initLocales();
                 await fetchData();
             } catch (error) {
                 console.error('Error initializing catalog:', error);
@@ -136,6 +131,12 @@ const CatalogTree = () => {
 
         initCatalog()
     }, []);
+
+    useEffect(() => {
+        if (catalog.idList.length === 1 && !catalog.catalogId && catalog.catalogSlug) {
+            router.get(`${window.routePrefix}/catalog/${catalog.catalogSlug}/${catalog.idList[0]}`);
+        }
+    }, [catalog.catalogId, catalog.catalogSlug, catalog.idList]);
 
     const handleSelect = (node: NodeModel<CustomCatalogData>) => {
         const item = selectedNodes.find((n) => n.id === node.id);
@@ -688,6 +689,8 @@ const CatalogTree = () => {
         }
     }, [actionsTools, selectedNodes, actionsContext])
 
+    const selectedCatalogId = catalog.catalogId || (catalog.idList.length === 1 ? catalog.idList[0] : "");
+
     return (
         <>
             {isLoading ? (
@@ -697,17 +700,17 @@ const CatalogTree = () => {
                     <Skeleton className="h-full w-full rounded-md"/>
                 </>
             ) : (
-                <CatalogContext.Provider value={
-                    {
-                        messages,
-                        setMessages
-                    }
-                }>
+                <CatalogContext.Provider value={{ messages }}>
                     <Toaster position="top-center" richColors closeButton/>
                     <div className="flex gap-8 items-center mb-4">
-                        <h1 className="text-[28px] leading-[36px] text-foreground">{messages[catalog.catalogName]}</h1>
-                        {catalog.idList.length > 0 &&
-                            <Select defaultValue={catalog.catalogId}
+                        <h1 className="text-[28px] leading-[36px] text-foreground">{catalog.catalogName}</h1>
+                        {catalog.idList.length === 1 && selectedCatalogId && (
+                            <Badge variant="secondary" className="px-3 py-1 text-sm">
+                                {selectedCatalogId}
+                            </Badge>
+                        )}
+                        {catalog.idList.length > 1 &&
+                            <Select value={selectedCatalogId}
                                     onValueChange={(value) => {
                                         router.get(`${window.routePrefix}/catalog/${catalog.catalogSlug}/${value}`)
                                     }}>

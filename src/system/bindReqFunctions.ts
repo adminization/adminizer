@@ -15,12 +15,28 @@ export default function bindReqFunctions(adminizer: Adminizer) {
         /**
          * Add i18n
          * */
-        req.i18n = new I18n({
-            locales: adminizer.config.translation !== false ? adminizer.config.translation.locales : [],
-            directory: adminizer.config.translation !== false ? adminizer.config.translation.path ?? null : null
-        });
+        const hasExternalI18n =
+            typeof (req as Partial<ReqType>).i18n?.__ === "function";
+
+        if (!hasExternalI18n) {
+            req.i18n = new I18n({
+                locales: adminizer.config.translation !== false ? adminizer.config.translation.locales : [],
+                directory: adminizer.config.translation !== false ? adminizer.config.translation.path ?? null : null
+            });
+        }
+
         if (res.locals) {
-            req.i18n.registerMethods(res.locals, req)
+            if (hasExternalI18n) {
+                const externalI18n = (req as Partial<ReqType>).i18n as any;
+                const methods = ["__", "__n", "getLocale", "isPreferredLocale"] as const;
+                for (const method of methods) {
+                    if (typeof externalI18n?.[method] === "function") {
+                        res.locals[method] = externalI18n[method].bind(externalI18n);
+                    }
+                }
+            } else {
+                req.i18n.registerMethods(res.locals, req)
+            }
         }
 
         // NOTE: This is here because inertia should receive data to routes
@@ -38,6 +54,28 @@ export default function bindReqFunctions(adminizer: Adminizer) {
 
         if (req.session.userPretended) {
             req.user = req.session.userPretended;
+        }
+
+        if (typeof adminizer.config.translation !== "boolean" && req.i18n?.setLocale) {
+            const configuredLocales = adminizer.config.translation?.locales || [];
+            const normalizeLocale = (value: unknown): string | null => {
+                if (typeof value !== "string") return null;
+
+                const normalized = value.toLowerCase().replace("_", "-");
+                const base = normalized.split("-")[0];
+
+                if (configuredLocales.includes(normalized)) return normalized;
+                if (configuredLocales.includes(base)) return base;
+
+                return null;
+            };
+
+            const preferredLocale =
+                normalizeLocale(req.user?.locale) ||
+                normalizeLocale((req.user as any)?.language) ||
+                normalizeLocale(req.headers["x-locale"]);
+
+            req.i18n.setLocale(preferredLocale || adminizer.config.translation.defaultLocale);
         }
 
         next();

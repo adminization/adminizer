@@ -549,20 +549,25 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         const assocNames = Object.keys(this.model.associations);
         const plainData: Record<string, any> = {};
         const assocData: Record<string, any> = {};
-
-        // console.debug(">> _create: input data:", data);
-        // console.debug(">> Available associations:", assocNames);
-
         for (const [key, val] of Object.entries(data)) {
             if (assocNames.includes(key)) {
-                assocData[key] = val;
+                const assoc = this.model.associations[key];
+                // For BelongsTo, set the FK directly in plainData so NOT NULL constraints are satisfied
+                if (assoc && assoc.associationType === 'BelongsTo') {
+                    const fk = assoc.foreignKey;
+                    if (val !== null && val !== undefined) {
+                        plainData[fk] = typeof val === 'object' ? val[assoc.target.primaryKeyAttribute] : val;
+                    }
+                } else {
+                    assocData[key] = val;
+                }
             } else {
                 plainData[key] = val;
             }
         }
 
-        // console.debug(">> Normal fields for create():", plainData);
-        // console.debug(">> Association data:", assocData);
+        console.debug(">> Normal fields for create():", JSON.stringify(plainData));
+        console.debug(">> Association data:", JSON.stringify(assocData));
 
 
         let instance: any;
@@ -764,7 +769,15 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
         for (const [key, val] of Object.entries(data)) {
             if (assocNames.includes(key)) {
-                assocData[key] = val;
+                const assoc = this.model.associations[key];
+                if (assoc && assoc.associationType === 'BelongsTo') {
+                    const fk = assoc.foreignKey;
+                    if (val !== null && val !== undefined) {
+                        plainData[fk] = typeof val === 'object' ? (val as Record<string, unknown>)[assoc.target.primaryKeyAttribute] : val;
+                    }
+                } else {
+                    assocData[key] = val;
+                }
             } else {
                 plainData[key] = val;
             }
@@ -787,7 +800,15 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
         for (const [key, val] of Object.entries(data)) {
             if (assocNames.includes(key)) {
-                assocData[key] = val;
+                const assoc = this.model.associations[key];
+                if (assoc && assoc.associationType === 'BelongsTo') {
+                    const fk = assoc.foreignKey;
+                    if (val !== null && val !== undefined) {
+                        plainData[fk] = typeof val === 'object' ? (val as Record<string, unknown>)[assoc.target.primaryKeyAttribute] : val;
+                    }
+                } else {
+                    assocData[key] = val;
+                }
             } else {
                 plainData[key] = val;
             }

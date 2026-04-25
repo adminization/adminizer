@@ -428,26 +428,11 @@ export class DataAccessor {
                     );
                 }
 
-                // Fetch the intermediate record associated with the user
-                // TODO refactor CRUD functions for DataAccessor usage
-                const intermediateRecord = await intermediateModel["_findOne"]({[via]: this.user.id});
-                if (!intermediateRecord) {
-                    throw new Error(
-                        `No intermediate record found in model "${intermediateRelation.model}" associated with user ID "${this.user.id}"`
-                    );
-                }
-
-                // Ensure there is only one associated intermediate record
-                const intermediateRecordCount = await intermediateModel.count({[via]: this.user.id}, this);
-                if (intermediateRecordCount > 1) {
-                    throw new Error(
-                        `Multiple intermediate records found in model "${intermediateRelation.model}" associated with user ID "${this.user.id}". ` +
-                        `Expected only one`
-                    );
-                }
-
-                // Add the intermediate record ID to the criteria
-                sanitizedCriteria = {...sanitizedCriteria, [field]: intermediateRecord.id}
+                // Fetch all intermediate records associated with the user
+                const intermediateRecords = await intermediateModel["_find"]({[via]: this.user.id});
+                const intermediateIds = (intermediateRecords || []).map((r) => r.id);
+                // Filter main model by all matching intermediate record IDs
+                sanitizedCriteria = {...sanitizedCriteria, [field]: {in: intermediateIds}};
             }
         }
 
@@ -497,54 +482,42 @@ export class DataAccessor {
                 // If userAccessRelation is an object
                 const {field, via} = userAccessRelation;
 
-                // only admin can set user access relation manually
+                // For non-admins: validate that the chosen intermediate record belongs to the user
                 if (updatedRecord[field as keyof T] && !this.user.isAdministrator) {
-                    delete updatedRecord[field as keyof T];
-                }
+                    if (!via) {
+                        throw new Error(`Invalid userAccessRelation configuration: "via" is required`);
+                    }
 
-                // Get attributes of the current model and validate the intermediate relation
-                const modelAttributes = this.entity.model.attributes;
-                const intermediateRelation = modelAttributes[field];
-                if (!intermediateRelation || !intermediateRelation.model) {
-                    throw new Error(`Invalid intermediate relation configuration for field "${field}" in model ${this.entity.model.modelname}`);
-                }
+                    const modelAttributes = this.entity.model.attributes;
+                    const intermediateRelation = modelAttributes[field];
+                    if (!intermediateRelation || !intermediateRelation.model) {
+                        throw new Error(`Invalid intermediate relation configuration for field "${field}" in model ${this.entity.model.modelname}`);
+                    }
 
-                // Retrieve the intermediate model
-                const intermediateModel = this.adminizer.modelHandler.model.get(intermediateRelation.model.toLowerCase());
-                if (!intermediateModel) {
-                    throw new Error(`Intermediate model "${intermediateRelation.model}" not found`);
-                }
+                    const intermediateModel = this.adminizer.modelHandler.model.get(intermediateRelation.model.toLowerCase());
+                    if (!intermediateModel) {
+                        throw new Error(`Intermediate model "${intermediateRelation.model}" not found`);
+                    }
 
-                // Validate the `via` field in the intermediate model
-                const intermediateAttributes = intermediateModel.attributes;
-                const viaRelation = intermediateAttributes[via];
-                if (!viaRelation || viaRelation.model.toLowerCase() !== 'userap') {
-                    throw new Error(
-                        `Unsupported or invalid via field "${via}" in intermediate model "${intermediateRelation.model}". ` +
-                        `Currently, only relations to "userap" are supported`
-                    );
-                }
+                    // Validate the `via` field in the intermediate model
+                    const intermediateAttributes = intermediateModel.attributes;
+                    const viaRelation = intermediateAttributes[via];
+                    if (!viaRelation || !viaRelation.model || viaRelation.model.toLowerCase() !== 'userap') {
+                        throw new Error(
+                            `Unsupported or invalid via field "${via}" in intermediate model "${intermediateRelation.model}". ` +
+                            `Currently, only relations to "userap" are supported`
+                        );
+                    }
 
-                // Find an existing intermediate record linking the user to the main record
-                // TODO refactor CRUD functions for DataAccessor usage
-                const intermediateRecord = await intermediateModel["_findOne"]({[via]: this.user.id});
-                if (!intermediateRecord) {
-                    throw new Error(
-                        `No intermediate record found in model "${intermediateRelation.model}" linking user "${this.user.id}" to the main record`
-                    );
+                    const intermediatePk = (intermediateModel.primaryKey ?? 'id') as string;
+                    const chosenId = typeof updatedRecord[field as keyof T] === 'object'
+                        ? (updatedRecord[field as keyof T] as Record<string, unknown>)[intermediatePk]
+                        : updatedRecord[field as keyof T];
+                    const record = await intermediateModel["_findOne"]({[intermediatePk]: chosenId, [via]: this.user.id});
+                    if (!record) {
+                        throw new Error(`Access denied: "${field}" does not belong to the current user`);
+                    }
                 }
-
-                // Ensure there is only one associated intermediate record
-                const intermediateRecordCount = await intermediateModel.count({[via]: this.user.id}, this);
-                if (intermediateRecordCount > 1) {
-                    throw new Error(
-                        `Multiple intermediate records found in model "${intermediateRelation.model}" associated with user ID "${this.user.id}". ` +
-                        `Expected only one`
-                    );
-                }
-
-                // Set the ID of the intermediate record to the main record's field
-                updatedRecord[field as keyof T] = intermediateRecord.id as T[keyof T];
             }
         }
         return updatedRecord;

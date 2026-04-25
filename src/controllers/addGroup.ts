@@ -4,6 +4,7 @@ import {Adminizer} from "../lib/Adminizer";
 import {inertiaGroupHelper} from "../helpers/inertiaGroupHelper";
 import { UserAP } from "../models/UserAP";
 import { GroupAP } from "../models/GroupAP";
+import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 export default async function addGroup(req: ReqType, res: ResType) {
 
@@ -11,7 +12,7 @@ export default async function addGroup(req: ReqType, res: ResType) {
 
     if (req.adminizer.config.auth.enable) {
         if (!req.user) {
-            return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+            return redirectToLogin(req, res);
         } else if (!req.adminizer.accessRightsHelper.hasPermission(`create-${entity.name}-model`, req.user)) {
             return res.sendStatus(403);
         }

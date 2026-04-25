@@ -16,12 +16,13 @@ export class StorageService {
 	protected id: string
 	protected model: string
 	protected readonly adminizer: Adminizer
+	public readonly ready: Promise<void>
 
 	constructor(adminizer: Adminizer, id: string, model: string) {
 		this.adminizer = adminizer;
 		this.id = id
 		this.model = model.toLowerCase()
-		this.initModel()
+		this.ready = this.initModel()
 	}
 
 	public async initModel() {
@@ -191,6 +192,11 @@ export class StorageServices {
 
 	public getAll() {
 		return this.storages
+	}
+
+	/** Resolves when all sections have finished loading from the database */
+	public async ready(): Promise<void> {
+		await Promise.all(this.storages.map(s => s.ready))
 	}
 }
 

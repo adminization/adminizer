@@ -1,9 +1,11 @@
+import {redirectToLogin} from '../helpers/inertiaAutHelper';
+
 /**
  * Welcome text
  */
 export default function welcome(req: ReqType, res: ResType) {
     if (!req.user) {
-        return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+        return redirectToLogin(req, res);
     }
 
     let text = ''

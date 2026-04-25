@@ -34,6 +34,14 @@ export class AccessRightsHelper {
         }
     }
 
+    public registerModelTokens(modelName: string, department?: string): void {
+        department = department ?? `Model ${modelName}`;
+        this.registerToken({ id: `create-${modelName}-model`, name: "Create", description: "Access to creating record in database", department });
+        this.registerToken({ id: `read-${modelName}-model`, name: "Read", description: "Access to reading records in database", department });
+        this.registerToken({ id: `update-${modelName}-model`, name: "Update", description: "Access to updating records in database", department });
+        this.registerToken({ id: `delete-${modelName}-model`, name: "Delete", description: "Access to deleting records in database", department });
+    }
+
     public getTokens(): AccessRightsToken[] {
         return this._tokens;
     }

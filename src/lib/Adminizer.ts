@@ -58,13 +58,14 @@ export class Adminizer {
 
     // Instances
     app: Express
-    public config: AdminpanelConfig
+    public config!: AdminpanelConfig
     private readonly _emitter: EventEmitter
     ormAdapters: AbstractAdapter[]
     policyManager!: PolicyManager
-    accessRightsHelper: AccessRightsHelper
-    configHelper: ConfigHelper
-    menuHelper: MenuHelper
+    accessRightsHelper!: AccessRightsHelper
+    configHelper!: ConfigHelper
+    menuHelper!: MenuHelper
+    router!: Router
     notificationHandler!: NotificationHandler;
     historyHandler!: HistoryHandler;
     aiAssistantHandler?: AiAssistantHandler;
@@ -141,11 +142,9 @@ export class Adminizer {
 
                     const conditions = [
                         condition1,
-                        condition2
+                        condition2,
+                        condition3
                     ];
-                    if (process.env.IS_SAILS === undefined) {
-                        conditions.push(condition3);
-                    }
 
                     if (!conditions.some(condition => condition)) {
                         return typeof next === 'function' ? next() : undefined;
@@ -297,7 +296,8 @@ export class Adminizer {
 
         if (this.config.history?.enabled) await bindHistory(this)
 
-        await Router.bind(this); // must be after binding policies and req/res functions
+        this.router = new Router(this)
+        await this.router.bind(); // must be after binding policies and req/res functions
 
         /**
          * Adminizer loaded
@@ -340,6 +340,14 @@ export class Adminizer {
             verbose: (...args: any[]) => this.logger.verbose(args.join(" ")),
             silly: (...args: any[]) => this.logger.silly(args.join(" ")),
         };
+    }
+
+    public static get i18n(): typeof I18n {
+        return I18n;
+    }
+
+    public get i18n(): typeof I18n {
+        return I18n;
     }
 
     get defaultConfig() {

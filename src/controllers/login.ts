@@ -86,13 +86,15 @@ export default async function login(req: ReqType, res: ResType) {
                         maxAge: 60 * 60 * 24 * 7 * 2,
                     }));
 
+                    const redirectTo = req.body.redirectTo as string;
+                    const safeRedirect = redirectTo && redirectTo.startsWith('/') ? redirectTo : `${req.adminizer.config.routePrefix}/`;
+
                     // Force full page reload after login to prevent iframe issues
                     if (req.headers['x-inertia']) {
-                        // If it's an Inertia request, send 409 to force full page reload
-                        return res.writeHead(409, { 'x-inertia-location': `${req.adminizer.config.routePrefix}/` }).end();
+                        return res.writeHead(409, { 'x-inertia-location': safeRedirect }).end();
                     }
 
-                    return res.redirect(`${req.adminizer.config.routePrefix}/`);
+                    return res.redirect(safeRedirect);
                 } else {
                     return inertiaAdminMessage(req, "Wrong password", 'password');
                 }
@@ -152,7 +154,7 @@ async function inertiaAdminMessage(req: ReqType, message: string, messageType: s
     }
 
     let errors: Record<string, string> = {};
-    errors[messageType] = message
+    errors[messageType] = req.i18n.__(message)
     return req.Inertia.render({
         component: 'login',
         props: {

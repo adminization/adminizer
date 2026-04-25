@@ -1,9 +1,11 @@
+import {redirectToLogin} from '../helpers/inertiaAutHelper';
+
 export default async function widgetsDB(req: ReqType, res: ResType) {
     let id: number = 0
     let auth = req.adminizer.config.auth.enable
     if (auth) {
         if (!req.user) {
-            return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+            return redirectToLogin(req, res);
         } else if (!req.adminizer.accessRightsHelper.hasPermission(`widgets`, req.user)) {
             return res.sendStatus(403);
         }

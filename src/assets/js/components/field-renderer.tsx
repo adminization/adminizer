@@ -12,6 +12,7 @@ import AdminCKEditor from "@/components/ckeditor/ckeditor.tsx";
 
 import MultiSelect from "@/components/multi-select.tsx";
 import {Layout} from '@/components/media-manager/Item.tsx';
+import {useRelationStack} from "@/components/relation/RelationDialogStack";
 
 const TuiLazy = lazy(() => import('@/components/toast-editor.tsx'));
 const HandsonTableLazy = lazy(() => import('@/components/handsontable.tsx'));
@@ -31,6 +32,8 @@ const FieldRenderer: FC<{
     notFound?: string
     search?: string
 }> = memo(({field, value, onChange, processing, notFound, search}) => {
+
+    const relationStack = useRelationStack();
 
     const handleInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -173,7 +176,15 @@ const FieldRenderer: FC<{
             );
         case 'association':
         case 'association-many':
-        case 'select-many':
+        case 'select-many': {
+            const isAssociation = field.type === 'association' || field.type === 'association-many';
+            const canOpen = isAssociation && !!field.relatedModel && !!relationStack;
+            const handleOpenItem = canOpen
+                ? (id: string) => relationStack!.open(field.relatedModel!, id)
+                : undefined;
+            const handleAddNew = canOpen && field.canCreateRelated
+                ? () => relationStack!.openCreate(field.relatedModel!)
+                : undefined;
             return (
                 <MultiSelect
                     options={field.options}
@@ -185,9 +196,12 @@ const FieldRenderer: FC<{
                     disabled={processing || field.disabled}
                     mode={field.type === 'association' ? 'single' : 'multiple'}
                     maxCount={10}
+                    onOpenItem={handleOpenItem}
+                    onAddNew={handleAddNew}
                     className={`${processing ? 'pointer-events-none' : ''} scroll-pt-30 scroll-mt-30`}
                 />
             )
+        }
         case 'wysiwyg':
             if (field.options?.name === 'ckeditor') {
                 return (

@@ -8,32 +8,7 @@ export default async function bindAccessRights(adminizer: Adminizer) {
             
             const model = models[key];
             if (typeof model !== "boolean") {
-                let modelName = model.model;
-                let department = `Model ${key}`;
-
-                // create
-                adminizer.accessRightsHelper.registerToken({
-                    id: `create-${modelName}-model`, name: "Create",
-                    description: "Access to creating record in database", department: department
-                });
-
-                // read
-                adminizer.accessRightsHelper.registerToken({
-                    id: `read-${modelName}-model`, name: "Read",
-                    description: "Access to reading records in database", department: department
-                });
-
-                // update
-                adminizer.accessRightsHelper.registerToken({
-                    id: `update-${modelName}-model`, name: "Update",
-                    description: "Access to updating records in database", department: department
-                });
-
-                // delete
-                adminizer.accessRightsHelper.registerToken({
-                    id: `delete-${modelName}-model`, name: "Delete",
-                    description: "Access to deleting records in database", department: department
-                });
+                adminizer.accessRightsHelper.registerModelTokens(model.model);
             }
         }
     }

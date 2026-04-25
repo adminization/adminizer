@@ -159,6 +159,11 @@ req.Inertia.shareProps({
     //...
 })
 ```
+
+`menuHelper.getMenuItems(req)` returns sidebar items already localized on the server (titles, sections, and nested action titles are translated via `req.i18n.__(...)` before sending Inertia props).
+You can also share a common dictionary (for example `uiMessages`) via `shareProps` and consume it in React components for reusable interface labels.
+For dashboard widgets, shared `uiMessages` can include keys like `Show`, `Hide`, `On`, `Off`, and `No widgets found`.
+
 **See the implementation here** `src/system/bindInertia.ts`
 ### Usage in controllers
 Example:

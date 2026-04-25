@@ -1,10 +1,23 @@
+export function redirectToLogin(req: ReqType, res: ResType): void {
+    const loginUrl = `${req.adminizer.config.routePrefix}/model/userap/login`;
+    const redirectTo = encodeURIComponent(req.originalUrl);
+    res.redirect(`${loginUrl}?redirectTo=${redirectTo}`);
+}
+
 export function inertiaLoginHelper(req: ReqType) {
     let props: Record<string, unknown> = {};
     props.login = req.i18n.__('Login');
     props.password = req.i18n.__('Password');
     props.title = req.i18n.__("Welcome");
     props.submitButton = req.i18n.__("Log in");
+    props.captchaMessages = {
+        initial: req.i18n.__("I'm not a robot"),
+        solving: req.i18n.__("Solving CAPTCHA..."),
+        success: req.i18n.__("Verification complete!"),
+        error: req.i18n.__("Error solving CAPTCHA. Try again."),
+    };
     props.submitLink = `${req.adminizer.config.routePrefix}/model/userap/login`
+    props.redirectTo = (req.query?.redirectTo as string) || '';
     if (req.adminizer.config.registration?.enable === true) {
         props.registerLink = {
             title: req.i18n.__("Register"),

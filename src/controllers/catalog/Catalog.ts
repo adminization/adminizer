@@ -1,5 +1,6 @@
 import {FrontendCatalog, FrontendCatalogUtils} from "./FrontendCatalogAdapter";
 import {Adminizer} from "../../lib/Adminizer";
+import {redirectToLogin} from '../../helpers/inertiaAutHelper';
 
 export async function catalogController(req: ReqType, res: ResType) {
     const slug = req.params.slug;
@@ -8,7 +9,7 @@ export async function catalogController(req: ReqType, res: ResType) {
     const postfix = id ? `${slug}-${id}` : `${slug}`
     if (req.adminizer.config.auth.enable) {
         if (!req.user) {
-            return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+            return redirectToLogin(req, res);
         } else if (!req.adminizer.accessRightsHelper.hasPermission(`catalog-${postfix}`, req.user)) {
             return res.sendStatus(403);
         }

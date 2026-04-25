@@ -1,4 +1,5 @@
 import {CustomBase} from "../../lib/widgets/abstractCustom";
+import {redirectToLogin} from '../../helpers/inertiaAutHelper';
 
 export async function widgetCustomController(req: ReqType, res: ResType) {
 	let widgetId = req.params.widgetId;
@@ -8,7 +9,7 @@ export async function widgetCustomController(req: ReqType, res: ResType) {
 
 	if (req.adminizer.config.auth.enable) {
 		if (!req.user) {
-			return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+			return redirectToLogin(req, res);
 		} else if (!req.adminizer.accessRightsHelper.hasPermission(`widget-${widgetId}`, req.user)) {
 			return res.sendStatus(403);
 		}

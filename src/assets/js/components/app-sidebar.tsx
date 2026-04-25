@@ -39,6 +39,7 @@ type Section = {
 interface MenuProps extends SharedData {
     section: Section[]
     showVersion?: boolean
+    versionText?: string | null
 }
 
 export function AppSidebar() {
@@ -239,7 +240,7 @@ export function AppSidebar() {
 
             <SidebarFooter>
                 <div className="text-center opacity-70">
-                    {page.props.showVersion && `v.${__APP_VERSION__}`}
+                    {page.props.showVersion && `v.${page.props.versionText || __APP_VERSION__}`}
                 </div>
             </SidebarFooter>
         </Sidebar>

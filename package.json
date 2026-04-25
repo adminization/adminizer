@@ -5,7 +5,9 @@
 	"main": "index.js",
 	"exports": {
 		".": "./index.js",
-		"./ui/*": "./dist/ui/components/ui/*.js"
+		"./lib/DataAccessor": "./dist/lib/DataAccessor.js",
+		"./ui/*": "./dist/ui/components/ui/*.js",
+		"./adminizer-module": "./adminizer-module.d.ts"
 	},
 	"scripts": {
 		"test": "vitest --watch=false",

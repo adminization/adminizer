@@ -43,6 +43,7 @@ const ViewAll = () => {
     const currentSkipRef = useRef(20);
 
     const [activeTab, setActiveTab] = useState<string>('');
+    const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
 
 
     useEffect(() => {
@@ -138,7 +139,7 @@ const ViewAll = () => {
                 hasMore={hasMore}
             />
         } else {
-            return <div className="text-center font-medium mt-8">No notifications found</div>;
+            return <div className="text-center font-medium mt-8">{uiMessages["No notifications found"] || 'No notifications found'}</div>;
         }
     };
 

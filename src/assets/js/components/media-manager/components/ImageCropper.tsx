@@ -235,7 +235,7 @@ const ImageCropper = ({
                     </DialogTrigger>
                     <DialogContent className="z-[1011]">
                         <DialogHeader>
-                            <DialogTitle>Preview</DialogTitle>
+                            <DialogTitle>{messages["Preview"]}</DialogTitle>
                         </DialogHeader>
                         <img src={previewSrc ?? ''} alt="Preview" autoFocus={true}/>
                     </DialogContent>

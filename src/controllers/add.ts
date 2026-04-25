@@ -2,10 +2,11 @@ import {ControllerHelper} from "../helpers/controllerHelper";
 import {RequestProcessor} from "../lib/requestProcessor";
 import {FieldsHelper} from "../helpers/fieldsHelper";
 import {BaseFieldConfig, CreateUpdateConfig} from "../interfaces/adminpanelConfig";
-import {saveRelationsMediaManager} from "../lib/media-manager/helpers/MediaManagerHelper";
+import {detachMediaManagerField, saveRelationsMediaManager} from "../lib/media-manager/helpers/MediaManagerHelper";
 import {DataAccessor} from "../lib/DataAccessor";
 import {Adminizer} from "../lib/Adminizer";
 import inertiaAddHelper from "../helpers/inertiaAddHelper";
+import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 export default async function add(req: ReqType, res: ResType) {
     let entity = ControllerHelper.findEntityObject(req);
@@ -19,7 +20,7 @@ export default async function add(req: ReqType, res: ResType) {
 
     if (req.adminizer.config.auth.enable) {
         if (!req.user) {
-            return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+            return redirectToLogin(req, res);
         } else if (!req.adminizer.accessRightsHelper.hasPermission(`create-${entity.name}-model`, req.user)) {
             return res.sendStatus(403);
         }
@@ -63,14 +64,9 @@ export default async function add(req: ReqType, res: ResType) {
                 }
             }
 
-            if (fieldConfigConfig.type === 'mediamanager' && typeof reqData[prop] === "string") {
-                try {
-                    const parsed = JSON.parse(reqData[prop] as string);
-                    rawReqData[prop] = parsed
-                } catch (error) {
-                    throw `Error assign association-many mediamanager data for ${prop}, ${reqData[prop]}`
-                }
-                delete reqData[prop]
+            if (fieldConfigConfig.type === 'mediamanager') {
+                detachMediaManagerField(reqData, rawReqData, prop);
+                continue;
             }
 
             // delete property from association-many and association if empty

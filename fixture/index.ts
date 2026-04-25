@@ -50,6 +50,7 @@ import {
 import express from "express";
 import cookieParser from "cookie-parser";
 import { corsApi } from "./cors-api/api";
+import { renderIndexPage, NavTreeNode } from "./pages/indexPage";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
@@ -246,6 +247,15 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
         /** Test Catalog */
         adminizer.catalogHandler.add(new TestCatalog(adminizer, 'testcatalog'))
 
+        /** Seed navigation — wait for StorageService to finish loading before writing */
+        if (!process.env.NO_SEED_DATA) {
+            const navCatalog = adminizer.catalogHandler.getCatalog('navigation') as any;
+            if (navCatalog?.storageServices) {
+                await navCatalog.storageServices.ready();
+            }
+            await seedNavigation(adminizer);
+        }
+
         /** Test notifications */
         //setTimeout(() => sendNotificationsWithDelay(adminizer, {count: 150, onlyGeneral: false, generalRatio: 0.5, delayMs: 300}), 5000); // Initial delay 10 seconds
 
@@ -282,7 +292,7 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
     // Custom route
     mainApp.get('/nav', async (req, res) => {
         try {
-            let header = await adminizer.modelHandler.model.get('navigationap')["_findOne"]({ label: 'header' });
+            const header = await adminizer.modelHandler.model.get('navigationap')["_findOne"]({ label: 'header' });
             res.json({ header: header });
         } catch (error) {
             res.status(500).json({ error: 'Internal server error' });
@@ -290,8 +300,18 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
     });
 
     // Route for the main page
-    mainApp.get('/', (req, res) => {
-        res.send('<h1>Welcome to Adminizer</h1><p>Go to <a href="/adminizer">Adminizer</a></p>');
+    mainApp.get('/', async (req, res) => {
+        try {
+            const [header, footer] = await Promise.all([
+                getNavigationSection('header'),
+                getNavigationSection('footer'),
+            ]);
+
+            res.type('html').send(renderIndexPage(adminpanelConfig.routePrefix, { header, footer }));
+        } catch (error) {
+            console.error(error);
+            res.status(500).send('Navigation preview rendering failed');
+        }
     });
 
     // Error handling
@@ -312,6 +332,191 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 }
 
 
-function sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+async function getNavigationSection(section: string): Promise<NavTreeNode[]> {
+    const navigationRecord = await adminizer.modelHandler.model.get('navigationap')["_findOne"]({ label: section });
+    return navigationRecord?.tree ?? [];
+}
+
+async function seedNavigation(adminizer: Adminizer) {
+    const routePrefix = adminpanelConfig.routePrefix;
+    try {
+        const catalog = adminizer.catalogHandler.getCatalog('navigation') as any;
+        if (!catalog) { console.warn('seedNavigation: navigation catalog not found'); return; }
+
+        const seedSection = async (section: string, tree: NavTreeNode[]) => {
+            const storage = catalog.storageServices.get(section);
+            if (!storage) { console.warn(`seedNavigation: storage "${section}" not found`); return; }
+            // Only seed if storage is empty
+            const existing = await storage.findElementsByParentId(null, null);
+            if (existing.length > 0) return;
+            await storage.populateFromTree(tree);
+            await storage.saveToDB();
+            console.log(`Navigation ${section} seeded`);
+        };
+
+        // header
+        const headerTree: NavTreeNode[] = [
+                {
+                    id: 'h-group-docs',
+                    name: 'Documentation',
+                    type: 'group',
+                    parentId: null,
+                    sortOrder: 0,
+                    icon: 'folder',
+                    visible: true,
+                    children: [
+                        {
+                            id: 'h-link-docs-install',
+                            name: 'Install',
+                            type: 'link',
+                            parentId: 'h-group-docs',
+                            sortOrder: 0,
+                            icon: 'link',
+                            urlPath: 'https://docs.adminizer.org/Install.html',
+                            targetBlank: true,
+                            visible: true,
+                            children: [],
+                        },
+                        {
+                            id: 'h-link-docs-controls',
+                            name: 'Controls',
+                            type: 'link',
+                            parentId: 'h-group-docs',
+                            sortOrder: 1,
+                            icon: 'link',
+                            urlPath: 'https://docs.adminizer.org/Controls.html',
+                            targetBlank: true,
+                            visible: true,
+                            children: [],
+                        },
+                        {
+                            id: 'h-link-docs-navigation',
+                            name: 'Navigation Catalog',
+                            type: 'link',
+                            parentId: 'h-group-docs',
+                            sortOrder: 2,
+                            icon: 'link',
+                            urlPath: 'https://docs.adminizer.org/Navigation.html',
+                            targetBlank: true,
+                            visible: true,
+                            children: [],
+                        },
+                    ],
+                },
+                {
+                    id: 'h-group-admin',
+                    name: 'Adminizer',
+                    type: 'group',
+                    parentId: null,
+                    sortOrder: 1,
+                    icon: 'folder',
+                    visible: true,
+                    children: [
+                        {
+                            id: 'h-link-admin-home',
+                            name: 'Dashboard',
+                            type: 'link',
+                            parentId: 'h-group-admin',
+                            sortOrder: 0,
+                            icon: 'link',
+                            urlPath: routePrefix,
+                            targetBlank: false,
+                            visible: true,
+                            children: [],
+                        },
+                        {
+                            id: 'h-link-admin-examples',
+                            name: 'All Controls (Example)',
+                            type: 'link',
+                            parentId: 'h-group-admin',
+                            sortOrder: 1,
+                            icon: 'link',
+                            urlPath: `${routePrefix}/model/Example`,
+                            targetBlank: false,
+                            visible: true,
+                            children: [],
+                        },
+                        {
+                            id: 'h-link-admin-test',
+                            name: 'Test Model',
+                            type: 'link',
+                            parentId: 'h-group-admin',
+                            sortOrder: 2,
+                            icon: 'link',
+                            urlPath: `${routePrefix}/model/Test`,
+                            targetBlank: false,
+                            visible: true,
+                            children: [],
+                        },
+                        {
+                            id: 'h-link-admin-categories',
+                            name: 'Categories',
+                            type: 'link',
+                            parentId: 'h-group-admin',
+                            sortOrder: 3,
+                            icon: 'link',
+                            urlPath: `${routePrefix}/model/Category`,
+                            targetBlank: false,
+                            visible: true,
+                            children: [],
+                        },
+                    ],
+                },
+            ];
+        await seedSection('header', headerTree);
+
+        // footer
+        const footerTree: NavTreeNode[] = [
+            {
+                id: 'f-link-home',
+                name: 'Home',
+                type: 'link',
+                parentId: null,
+                sortOrder: 0,
+                icon: 'link',
+                urlPath: '/',
+                targetBlank: false,
+                visible: true,
+                children: [],
+            },
+            {
+                id: 'f-group-links',
+                name: 'Links',
+                type: 'group',
+                parentId: null,
+                sortOrder: 1,
+                icon: 'folder',
+                visible: true,
+                children: [
+                    {
+                        id: 'f-link-github',
+                        name: 'GitHub',
+                        type: 'link',
+                        parentId: 'f-group-links',
+                        sortOrder: 0,
+                        icon: 'link',
+                        urlPath: 'https://github.com/adminizer',
+                        targetBlank: true,
+                        visible: true,
+                        children: [],
+                    },
+                    {
+                        id: 'f-link-docs',
+                        name: 'Documentation',
+                        type: 'link',
+                        parentId: 'f-group-links',
+                        sortOrder: 1,
+                        icon: 'link',
+                        urlPath: 'https://docs.adminizer.org/Install.html',
+                        targetBlank: true,
+                        visible: true,
+                        children: [],
+                    },
+                ],
+            },
+        ];
+        await seedSection('footer', footerTree);
+    } catch (e) {
+        console.error('seedNavigation error:', e);
+    }
 }

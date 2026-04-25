@@ -16,6 +16,50 @@ import {Adminizer} from "../../Adminizer";
 
 type PostParams = Record<string, string | number | boolean | object | string[] | number[] | null>;
 
+export function normalizeMediaManagerWidgetData(
+    value: PostParams[string] | undefined,
+    prop: string
+): MediaManagerWidgetData[] {
+    if (value === undefined || value === null || value === "") {
+        return [];
+    }
+
+    if (typeof value === "string") {
+        let parsedValue: unknown;
+
+        try {
+            parsedValue = JSON.parse(value);
+        } catch (error) {
+            throw new Error(`Error assign association-many mediamanager data for ${prop}, ${value}`);
+        }
+
+        if (parsedValue === null) {
+            return [];
+        }
+
+        if (!Array.isArray(parsedValue)) {
+            throw new Error(`Error assign association-many mediamanager data for ${prop}, ${value}`);
+        }
+
+        return parsedValue as MediaManagerWidgetData[];
+    }
+
+    if (Array.isArray(value)) {
+        return value as MediaManagerWidgetData[];
+    }
+
+    throw new Error(`Error assign association-many mediamanager data for ${prop}, ${JSON.stringify(value)}`);
+}
+
+export function detachMediaManagerField(
+    reqData: PostParams,
+    rawReqData: PostParams,
+    prop: string
+) {
+    rawReqData[prop] = normalizeMediaManagerWidgetData(reqData[prop], prop);
+    delete reqData[prop];
+}
+
 /**
  * Create a random file name with prefix and type. If prefix is true, the file name will be prefixed with a random string.
  * @param filenameOrig
@@ -43,7 +87,7 @@ export async function saveRelationsMediaManager(adminizer: Adminizer, fields: Fi
         let fieldConfigConfig = fields[prop].config as BaseFieldConfig;
         let options = fieldConfigConfig.options as MediaManagerOptionsField;
         if (fieldConfigConfig.type === 'mediamanager') {
-            let data = reqData[prop] as MediaManagerWidgetData[];
+            const data = normalizeMediaManagerWidgetData(reqData[prop], prop);
             let mediaManager = adminizer.mediaManagerHandler.get(options?.id ?? 'default')
             await mediaManager.setRelations(data, model, recordId, prop)
         }

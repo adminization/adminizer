@@ -2,8 +2,10 @@ import {ControllerHelper} from "../helpers/controllerHelper";
 import {RequestProcessor} from "../lib/requestProcessor";
 import {FieldsHelper} from "../helpers/fieldsHelper";
 import {BaseFieldConfig, CreateUpdateConfig, MediaManagerOptionsField} from "../interfaces/adminpanelConfig";
+import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 import {
+    detachMediaManagerField,
     getRelationsMediaManager,
     saveRelationsMediaManager
 } from "../lib/media-manager/helpers/MediaManagerHelper";
@@ -29,7 +31,7 @@ export default async function edit(req: ReqType, res: ResType) {
 
     if (req.adminizer.config.auth.enable) {
         if (!req.user) {
-            return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+            return redirectToLogin(req, res);
         } else if (!req.adminizer.accessRightsHelper.hasPermission(`update-${entity.name}-model`, req.user)) {
             return res.sendStatus(403);
         }
@@ -97,14 +99,9 @@ export default async function edit(req: ReqType, res: ResType) {
                 }
             }
 
-            if (fieldConfigConfig.type === 'mediamanager' && typeof reqData[prop] === "string") {
-                try {
-                    const parsed = JSON.parse(reqData[prop] as string);
-                    rawReqData[prop] = parsed
-                } catch (error) {
-                    throw `Error assign association-many mediamanager data for ${prop}, ${reqData[prop]}`
-                }
-                delete reqData[prop]
+            if (fieldConfigConfig.type === 'mediamanager') {
+                detachMediaManagerField(reqData, rawReqData, prop);
+                continue;
             }
 
             if (fields[prop] && fields[prop].model && fields[prop].model.type === 'json' && reqData[prop] !== '') {

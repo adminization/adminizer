@@ -4,15 +4,6 @@ import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import packageJson from './package.json';
 
-const ReactConfig = {
-    // Disable React compiler to reduce memory usage
-    // babel: {
-    //     plugins: [
-    //         ['babel-plugin-react-compiler'],
-    //     ]
-    // }
-};
-
 
 export default defineConfig({
     define: {
@@ -44,7 +35,7 @@ export default defineConfig({
         },
     },
     plugins: [
-        react(ReactConfig),
+        react(),
         tailwindcss(),
     ],
     esbuild: {

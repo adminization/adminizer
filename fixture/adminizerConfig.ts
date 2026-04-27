@@ -848,7 +848,11 @@ const config: AdminpanelConfig = {
         path: 'mg_path', // path to migrations
         //config: string | object // db-migrate config
     },
-    showVersion: true,
+    showVersion: {
+        link: 'https://docs.adminizer.org',
+        hint: 'Adminizer documentation',
+        // text is set dynamically in fixture/index.ts (startup time)
+    },
 };
 
 export default config

@@ -166,5 +166,16 @@
   "Previous": "Précédent",
   "Next": "Suivant",
   "Notifications": "Notifications",
-  "Global Settings": "Paramètres globaux"
+  "Global Settings": "Paramètres globaux",
+  "Send feedback": "Envoyer des commentaires",
+  "Feedback": "Commentaires",
+  "Description": "Description",
+  "Attach files": "Joindre des fichiers",
+  "Send": "Envoyer",
+  "Sending...": "Envoi en cours...",
+  "Feedback sent successfully": "Commentaires envoyés avec succès",
+  "Title is required": "Le titre est obligatoire",
+  "File size exceeds the 5 MB limit": "La taille du fichier dépasse la limite de 5 Mo",
+  "Remove file": "Supprimer le fichier",
+  "Max 5 MB per file": "Max. 5 Mo par fichier"
 }

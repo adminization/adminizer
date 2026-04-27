@@ -246,14 +246,20 @@ export interface AdminpanelConfig {
         name: string
     }[]
     /**
-     * Show adminpanel version on the bottom of navbar
-     * */
-    showVersion?: boolean
-    /**
-     * Custom runtime version text shown in the sidebar footer.
-     * If not set, Adminizer falls back to its own build version.
+     * Show adminpanel version in the sidebar footer.
+     * - `false` / omitted — hidden
+     * - `true` — show build version with no extras
+     * - `string` — show that string as the version label
+     * - `object` — full control:
+     *   - `text`  — custom version label (falls back to build version)
+     *   - `link`  — URL opened when the label is clicked (opens in new tab)
+     *   - `hint`  — tooltip shown on hover
      */
-    versionText?: string
+    showVersion?: boolean | string | {
+        text?: string
+        link?: string
+        hint?: string
+    }
 
     /**
      *

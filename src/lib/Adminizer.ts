@@ -47,6 +47,7 @@ import { HistoryHandler } from "./history-actions/HistoryHandler";
 import bindHistory from "../system/bindHistory";
 import bindCustomFilterHandlers from "../system/bindCustomFilterHandlers";
 import { CustomFilterHandler } from "./filters/CustomFilterHandler";
+import { FeedbackHandler } from "./feedback/FeedbackHandler";
 
 export class Adminizer {
     // Preconfigures
@@ -77,6 +78,7 @@ export class Adminizer {
     catalogHandler!: CatalogHandler
     mediaManagerHandler!: MediaManagerHandler
     storageServices!: StorageServices
+    feedbackHandler!: FeedbackHandler
 
     // Constants
     jwtSecret: string = process.env.JWT_SECRET ?? uuid()
@@ -295,6 +297,9 @@ export class Adminizer {
         if (this.config.aiAssistant?.enabled) await bindAiAssistant(this);
 
         if (this.config.history?.enabled) await bindHistory(this)
+
+        // FeedbackHandler registers its own route lazily when handler.register() is called
+        this.feedbackHandler = new FeedbackHandler(this)
 
         this.router = new Router(this)
         await this.router.bind(); // must be after binding policies and req/res functions

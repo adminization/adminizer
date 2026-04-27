@@ -166,5 +166,16 @@
   "Previous": "Попередній",
   "Next": "Далі",
   "Notifications": "Сповіщення",
-  "Global Settings": "Глобальні налаштування"
+  "Global Settings": "Глобальні налаштування",
+  "Send feedback": "Надіслати відгук",
+  "Feedback": "Зворотній зв'язок",
+  "Description": "Опис",
+  "Attach files": "Прикріпити файли",
+  "Send": "Надіслати",
+  "Sending...": "Надсилання...",
+  "Feedback sent successfully": "Відгук успішно надіслано",
+  "Title is required": "Заголовок обов'язковий",
+  "File size exceeds the 5 MB limit": "Розмір файлу перевищує 5 МБ",
+  "Remove file": "Видалити файл",
+  "Max 5 MB per file": "Макс. 5 МБ на файл"
 }

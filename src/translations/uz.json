@@ -166,5 +166,16 @@
   "Previous": "Oldingi",
   "Next": "Keyingisi",
   "Notifications": "Bildirishnomalar",
-  "Global Settings": "Global sozlamalar"
+  "Global Settings": "Global sozlamalar",
+  "Send feedback": "Fikr bildirish",
+  "Feedback": "Fikr-mulohaza",
+  "Description": "Tavsif",
+  "Attach files": "Fayllarni biriktirish",
+  "Send": "Yuborish",
+  "Sending...": "Yuborilmoqda...",
+  "Feedback sent successfully": "Fikr muvaffaqiyatli yuborildi",
+  "Title is required": "Sarlavha majburiy",
+  "File size exceeds the 5 MB limit": "Fayl hajmi 5 MB chegarasidan oshib ketdi",
+  "Remove file": "Faylni o'chirish",
+  "Max 5 MB per file": "Har bir fayl uchun max 5 MB"
 }

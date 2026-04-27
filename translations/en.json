@@ -65,5 +65,17 @@
   "Profile expired, contact the administrator": "Profile expired, contact the administrator",
   "The user is not allowed to enter, please contact the administrator": "The user is not allowed to enter, please contact the administrator",
   "On": "On",
-  "Off": "Off"
+  "Off": "Off",
+  "Send feedback": "Send feedback",
+  "Feedback": "Feedback",
+  "Title": "Title",
+  "Description": "Description",
+  "Attach files": "Attach files",
+  "Send": "Send",
+  "Sending...": "Sending...",
+  "Feedback sent successfully": "Feedback sent successfully",
+  "Title is required": "Title is required",
+  "File size exceeds the 5 MB limit": "File size exceeds the 5 MB limit",
+  "Remove file": "Remove file",
+  "Max 5 MB per file": "Max 5 MB per file"
 }

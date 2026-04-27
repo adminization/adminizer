@@ -166,5 +166,16 @@
   "Previous": "以前的",
   "Next": "下一个",
   "Notifications": "通知",
-  "Global Settings": "全局设置"
+  "Global Settings": "全局设置",
+  "Send feedback": "发送反馈",
+  "Feedback": "反馈",
+  "Description": "描述",
+  "Attach files": "附加文件",
+  "Send": "发送",
+  "Sending...": "发送中...",
+  "Feedback sent successfully": "反馈发送成功",
+  "Title is required": "标题为必填项",
+  "File size exceeds the 5 MB limit": "文件大小超过 5 MB 限制",
+  "Remove file": "删除文件",
+  "Max 5 MB per file": "每个文件最大 5 MB"
 }

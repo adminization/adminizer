@@ -166,5 +166,16 @@
   "Previous": "سابق",
   "Next": "التالي",
   "Notifications": "إشعارات",
-  "Global Settings": "الإعدادات العالمية"
+  "Global Settings": "الإعدادات العالمية",
+  "Send feedback": "إرسال ملاحظات",
+  "Feedback": "ملاحظات",
+  "Description": "الوصف",
+  "Attach files": "إرفاق ملفات",
+  "Send": "إرسال",
+  "Sending...": "جارٍ الإرسال...",
+  "Feedback sent successfully": "تم إرسال الملاحظات بنجاح",
+  "Title is required": "العنوان مطلوب",
+  "File size exceeds the 5 MB limit": "حجم الملف يتجاوز حد 5 ميغابايت",
+  "Remove file": "إزالة الملف",
+  "Max 5 MB per file": "بحد أقصى 5 ميغابايت لكل ملف"
 }

@@ -166,5 +166,16 @@
   "Previous": "前の",
   "Next": "次",
   "Notifications": "通知",
-  "Global Settings": "グローバル設定"
+  "Global Settings": "グローバル設定",
+  "Send feedback": "フィードバックを送信",
+  "Feedback": "フィードバック",
+  "Description": "説明",
+  "Attach files": "ファイルを添付",
+  "Send": "送信",
+  "Sending...": "送信中...",
+  "Feedback sent successfully": "フィードバックが正常に送信されました",
+  "Title is required": "タイトルは必須です",
+  "File size exceeds the 5 MB limit": "ファイルサイズが5MBの制限を超えています",
+  "Remove file": "ファイルを削除",
+  "Max 5 MB per file": "ファイルあたり最大5MB"
 }

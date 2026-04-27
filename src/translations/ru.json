@@ -166,6 +166,16 @@
   "Previous": "Назад",
   "Next": "Вперед",
   "Notifications": "Уведомления",
-  "Global Settings": "Глобальные настройки"
+  "Global Settings": "Глобальные настройки",
+  "Send feedback": "Отправить отзыв",
+  "Feedback": "Обратная связь",
+  "Description": "Описание",
+  "Attach files": "Прикрепить файлы",
+  "Send": "Отправить",
+  "Sending...": "Отправка...",
+  "Feedback sent successfully": "Отзыв успешно отправлен",
+  "Title is required": "Заголовок обязателен",
+  "File size exceeds the 5 MB limit": "Размер файла превышает 5 МБ",
+  "Remove file": "Удалить файл",
+  "Max 5 MB per file": "Макс. 5 МБ на файл"
 }
- 

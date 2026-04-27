@@ -166,5 +166,16 @@
   "Previous": "이전의",
   "Next": "다음",
   "Notifications": "알림",
-  "Global Settings": "전역 설정"
+  "Global Settings": "전역 설정",
+  "Send feedback": "피드백 보내기",
+  "Feedback": "피드백",
+  "Description": "설명",
+  "Attach files": "파일 첨부",
+  "Send": "보내기",
+  "Sending...": "전송 중...",
+  "Feedback sent successfully": "피드백이 성공적으로 전송되었습니다",
+  "Title is required": "제목은 필수입니다",
+  "File size exceeds the 5 MB limit": "파일 크기가 5MB 제한을 초과합니다",
+  "Remove file": "파일 삭제",
+  "Max 5 MB per file": "파일당 최대 5MB"
 }

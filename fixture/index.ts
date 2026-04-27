@@ -47,6 +47,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import { corsApi } from "./cors-api/api";
 import { renderIndexPage, NavTreeNode } from "./pages/indexPage";
+import { FileFeedbackHandler } from "./feedback/FileFeedbackHandler";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
@@ -197,6 +198,16 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
     try {
 
+        // Stamp startup time into the version label
+        const startedAt = new Date().toLocaleString('en-GB', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
+            hour12: false,
+        });
+        if (adminpanelConfig.showVersion && typeof adminpanelConfig.showVersion === 'object') {
+            (adminpanelConfig.showVersion as any).text = startedAt;
+        }
+
         await adminizer.init(adminpanelConfig as unknown as AdminpanelConfig)
 
         if (adminizer.config.aiAssistant?.enabled) {
@@ -220,6 +231,12 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
                 Adminizer.log.warn('[fixture] Skipping OpenAI data agent registration because OPENAI_API_KEY is missing.');
             }
         }
+
+        // Register fixture feedback handler (saves to .tmp/feedback/)
+        const feedbackHandler = new FileFeedbackHandler();
+        feedbackHandler.triggerLabel = '🐛 Found a bug?';
+        feedbackHandler.placeholder = 'Tell us what broke — or what you were doing when it broke. We promise not to laugh. (We might laugh a little.)';
+        adminizer.feedbackHandler.register(feedbackHandler);
 
         adminizer.widgetHandler.add(new SwitcherOne());
         adminizer.widgetHandler.add(new SwitcherTwo());

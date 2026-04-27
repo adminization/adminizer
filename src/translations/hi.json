@@ -166,5 +166,16 @@
   "Previous": "पहले का",
   "Next": "अगला",
   "Notifications": "सूचनाएं",
-  "Global Settings": "वैश्विक सेटिंग्स"
+  "Global Settings": "वैश्विक सेटिंग्स",
+  "Send feedback": "फ़ीडबैक भेजें",
+  "Feedback": "फ़ीडबैक",
+  "Description": "विवरण",
+  "Attach files": "फ़ाइलें संलग्न करें",
+  "Send": "भेजें",
+  "Sending...": "भेजा जा रहा है...",
+  "Feedback sent successfully": "फ़ीडबैक सफलतापूर्वक भेजा गया",
+  "Title is required": "शीर्षक आवश्यक है",
+  "File size exceeds the 5 MB limit": "फ़ाइल का आकार 5 MB की सीमा से अधिक है",
+  "Remove file": "फ़ाइल हटाएं",
+  "Max 5 MB per file": "प्रति फ़ाइल अधिकतम 5 MB"
 }

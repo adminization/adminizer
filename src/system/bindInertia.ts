@@ -160,6 +160,7 @@ export function bindInertia(adminizer: Adminizer) {
             auth: {
                 user: req.session.userPretended ?? req.user
             },
+            routePrefix: req.adminizer.config.routePrefix,
             uiMessages: {
                 Delete: req.i18n.__("Delete"),
                 Diff: req.i18n.__("Diff"),
@@ -202,6 +203,18 @@ export function bindInertia(adminizer: Adminizer) {
                 Last: req.i18n.__("Last"),
                 Previous: req.i18n.__("Previous"),
                 Next: req.i18n.__("Next"),
+                "Send feedback": req.i18n.__("Send feedback"),
+                "Feedback": req.i18n.__("Feedback"),
+                "Title": req.i18n.__("Title"),
+                "Description": req.i18n.__("Description"),
+                "Attach files": req.i18n.__("Attach files"),
+                "Send": req.i18n.__("Send"),
+                "Sending...": req.i18n.__("Sending..."),
+                "Feedback sent successfully": req.i18n.__("Feedback sent successfully"),
+                "Title is required": req.i18n.__("Title is required"),
+                "File size exceeds the 5 MB limit": req.i18n.__("File size exceeds the 5 MB limit"),
+                "Remove file": req.i18n.__("Remove file"),
+                "Max 5 MB per file": req.i18n.__("Max 5 MB per file"),
             },
             menu: req.user ? menuHelper.getMenuItems(req) : null,
             title: menuHelper.getBrandTitle(),
@@ -222,8 +235,16 @@ export function bindInertia(adminizer: Adminizer) {
                     }))
                 )
             ] : null,
-            showVersion: req.adminizer.config.showVersion ?? false,
-            versionText: req.adminizer.config.versionText ?? null,
+            version: (() => {
+                const v = req.adminizer.config.showVersion;
+                if (!v) return null;
+                if (v === true)   return { text: null, link: null, hint: null };
+                if (typeof v === 'string') return { text: v, link: null, hint: null };
+                return { text: v.text ?? null, link: v.link ?? null, hint: v.hint ?? null };
+            })(),
+            showFeedback: req.adminizer.feedbackHandler?.isRegistered() ?? false,
+            feedbackTriggerLabel: req.adminizer.feedbackHandler?.getTriggerLabel() ?? null,
+            feedbackPlaceholder: req.adminizer.feedbackHandler?.getPlaceholder() ?? null,
             notifications: req.adminizer.config.notifications.enabled ?? false,
             aiAssistant: {
                 enabled: req.adminizer.config.aiAssistant?.enabled ?? false,

@@ -166,5 +166,16 @@
   "Previous": "Trước",
   "Next": "Kế tiếp",
   "Notifications": "Thông báo",
-  "Global Settings": "Cài đặt chung"
+  "Global Settings": "Cài đặt chung",
+  "Send feedback": "Gửi phản hồi",
+  "Feedback": "Phản hồi",
+  "Description": "Mô tả",
+  "Attach files": "Đính kèm tệp",
+  "Send": "Gửi",
+  "Sending...": "Đang gửi...",
+  "Feedback sent successfully": "Phản hồi đã được gửi thành công",
+  "Title is required": "Tiêu đề là bắt buộc",
+  "File size exceeds the 5 MB limit": "Kích thước tệp vượt quá giới hạn 5 MB",
+  "Remove file": "Xóa tệp",
+  "Max 5 MB per file": "Tối đa 5 MB mỗi tệp"
 }

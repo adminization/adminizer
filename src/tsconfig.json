@@ -2,7 +2,8 @@
 	"compilerOptions": {
 		"module": "ESNext",
 		"target": "ESNext",
-		"moduleResolution": "Node",
+		"moduleResolution": "bundler",
+		// "ignoreDeprecations": "6.0",
 		"esModuleInterop": true,
 		"sourceMap": false,
 		"declaration": true,
@@ -10,11 +11,16 @@
 		"skipLibCheck": true,
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
-		// "strict": true,
+		"strict": false,
+		"strictNullChecks": false,
+		"useUnknownInCatchVariables": false,
 		"alwaysStrict": true,
 		"noImplicitAny": true,
 		"noImplicitReturns": true,
-		"lib": ["dom", "esnext"],
+		"lib": [
+			"dom",
+			"esnext"
+		],
 		"rootDir": "./",
 		// "baseUrl": "./",
 		"outDir": "../dist",
@@ -23,7 +29,14 @@
 		"esm": true,
 		"experimentalSpecifierResolution": "node"
 	},
-	"lib": ["esnext"],
-	"exclude": ["node_modules", "assets/**/*"],
-	"include": ["**/*.ts"]
+	"lib": [
+		"esnext"
+	],
+	"exclude": [
+		"node_modules",
+		"assets/**/*"
+	],
+	"include": [
+		"**/*.ts"
+	]
 }

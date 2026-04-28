@@ -9,7 +9,11 @@ export function bindCors(adminizer: Adminizer){
             ? corsConfig.origin
             : [corsConfig.origin];
 
-        adminizer.app.all(`${adminizer.config.routePrefix}/${corsConfig.path}`, (req: any, res: any, next: any) => {
+        adminizer.app.use(adminizer.config.routePrefix, (req: any, res: any, next: any) => {
+            if (!matchesCorsPath(req.path, corsConfig.path)) {
+                return next();
+            }
+
             const requestOrigin = req.headers.origin;
 
             // Checking if origin is allowed
@@ -51,4 +55,20 @@ export function bindCors(adminizer: Adminizer){
 
         console.log('✅ API CORS middleware enabled. Allowed origins:', allowedOrigins);
     }
+}
+
+function matchesCorsPath(requestPath: string, configuredPath = ''): boolean {
+    const normalizedRequestPath = requestPath.replace(/^\/+/, '');
+    const normalizedConfiguredPath = configuredPath.replace(/^\/+/, '');
+
+    if (!normalizedConfiguredPath || normalizedConfiguredPath === '*') {
+        return true;
+    }
+
+    if (!normalizedConfiguredPath.includes('*')) {
+        return normalizedRequestPath === normalizedConfiguredPath;
+    }
+
+    const prefix = normalizedConfiguredPath.slice(0, normalizedConfiguredPath.indexOf('*'));
+    return normalizedRequestPath.startsWith(prefix);
 }

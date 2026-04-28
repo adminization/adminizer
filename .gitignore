@@ -10,3 +10,4 @@ codex.patch
 TODO
 .codex
 .playwright-mcp
+package-lock.json

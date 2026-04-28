@@ -150,7 +150,10 @@ export default class Router {
         /**
          *  Create a base entity route
          */
-        let baseRoute = `${adminizer.config.routePrefix}/:entityType(form|model)/:entityName`;
+        const entityRoutes = (suffix = '') => [
+            `${adminizer.config.routePrefix}/form/:entityName${suffix}`,
+            `${adminizer.config.routePrefix}/model/:entityName${suffix}`,
+        ];
 
         /**
          * Catalog
@@ -178,7 +181,7 @@ export default class Router {
         /**
          * Upload images CKeditor5
          */
-        adminizer.app.post(`${baseRoute}/ckeditor5/upload`, adminizer.policyManager.bindPolicies(policies, ckEditorUpload));
+        adminizer.app.post(entityRoutes('/ckeditor5/upload'), adminizer.policyManager.bindPolicies(policies, ckEditorUpload));
 
         /**
          * Notifications
@@ -277,24 +280,24 @@ export default class Router {
         /**
          * List of records
          */
-        adminizer.app.all(baseRoute, adminizer.policyManager.bindPolicies(policies, _list));
+        adminizer.app.all(entityRoutes(), adminizer.policyManager.bindPolicies(policies, _list));
 
         if (adminizer.config.filters?.enabled) {
 
             /**
              * Get filter fields for model
              */
-            adminizer.app.get(`${baseRoute}/filter-fields`, adminizer.policyManager.bindPolicies(policies, _filterFields));
+            adminizer.app.get(entityRoutes('/filter-fields'), adminizer.policyManager.bindPolicies(policies, _filterFields));
 
             /**
              * Saved filters
              */
-            adminizer.app.get(`${baseRoute}/saved-filters`, adminizer.policyManager.bindPolicies(policies, getSavedFilters));
-            adminizer.app.get(`${baseRoute}/filter/locales`, adminizer.policyManager.bindPolicies(policies, getFilterLocales));
-            adminizer.app.get(`${baseRoute}/filter/temporary`, adminizer.policyManager.bindPolicies(policies, getTemporaryFilter));
-            adminizer.app.post(`${baseRoute}/filter`, adminizer.policyManager.bindPolicies(policies, saveFilter));
-            adminizer.app.post(`${baseRoute}/filter/apply`, adminizer.policyManager.bindPolicies(policies, applyTemporaryFilter));
-            adminizer.app.delete(`${baseRoute}/filter/:id`, adminizer.policyManager.bindPolicies(policies, deleteFilter));
+            adminizer.app.get(entityRoutes('/saved-filters'), adminizer.policyManager.bindPolicies(policies, getSavedFilters));
+            adminizer.app.get(entityRoutes('/filter/locales'), adminizer.policyManager.bindPolicies(policies, getFilterLocales));
+            adminizer.app.get(entityRoutes('/filter/temporary'), adminizer.policyManager.bindPolicies(policies, getTemporaryFilter));
+            adminizer.app.post(entityRoutes('/filter'), adminizer.policyManager.bindPolicies(policies, saveFilter));
+            adminizer.app.post(entityRoutes('/filter/apply'), adminizer.policyManager.bindPolicies(policies, applyTemporaryFilter));
+            adminizer.app.delete(entityRoutes('/filter/:id'), adminizer.policyManager.bindPolicies(policies, deleteFilter));
 
             /**
              * Get all groups (for admin filter visibility settings)
@@ -304,7 +307,7 @@ export default class Router {
             /**
              * Export data (JSON, CSV, XLSX)
              */
-            adminizer.app.post(`${baseRoute}/export`, adminizer.policyManager.bindPolicies(policies, _exportData));
+            adminizer.app.post(entityRoutes('/export'), adminizer.policyManager.bindPolicies(policies, _exportData));
 
             /**
              * Public feed API — export by apiKey without auth
@@ -323,12 +326,12 @@ export default class Router {
             /**
             * Get model columns (available columns for the model)
             */
-            adminizer.app.get(`${baseRoute}/columns`, adminizer.policyManager.bindPolicies(policies, getModelColumns));
+            adminizer.app.get(entityRoutes('/columns'), adminizer.policyManager.bindPolicies(policies, getModelColumns));
 
             /**
              * Update filter columns configuration
              */
-            adminizer.app.post(`${baseRoute}/filter/:filterId/columns`, adminizer.policyManager.bindPolicies(policies, updateFilterColumns));
+            adminizer.app.post(entityRoutes('/filter/:filterId/columns'), adminizer.policyManager.bindPolicies(policies, updateFilterColumns));
         }
 
         /**
@@ -351,17 +354,17 @@ export default class Router {
         /**
          * Inline update field in list view
          */
-        adminizer.app.patch(`${baseRoute}/inline/:id`, adminizer.policyManager.bindPolicies(policies, _inlineUpdate));
+        adminizer.app.patch(entityRoutes('/inline/:id'), adminizer.policyManager.bindPolicies(policies, _inlineUpdate));
 
         /**
          * View record details
          */
-        adminizer.app.all(baseRoute + "/view/:id", adminizer.policyManager.bindPolicies(policies, _view));
+        adminizer.app.all(entityRoutes('/view/:id'), adminizer.policyManager.bindPolicies(policies, _view));
 
         /**
          * Remove record
          */
-        adminizer.app.all(baseRoute + "/remove/:id", adminizer.policyManager.bindPolicies(policies, _remove));
+        adminizer.app.all(entityRoutes('/remove/:id'), adminizer.policyManager.bindPolicies(policies, _remove));
 
         /**
          * Create a default dashboard
@@ -376,19 +379,27 @@ export default class Router {
     }
 
     public unbindModelRoutes(model: string): void {
-        if (!this.adminizer.app._router) return;
+        const routerStack = this.getRouterStack();
+        if (!routerStack) return;
         const patterns = this.modelRoutePatterns.get(model);
         if (!patterns?.length) return;
         const removedPaths: string[] = [];
-        this.adminizer.app._router.stack = this.adminizer.app._router.stack.filter((layer: any) => {
+        const filteredStack = routerStack.filter((layer: any) => {
             if (layer.route && patterns.some((p: RegExp) => p.test(layer.route.path))) {
                 removedPaths.push(layer.route.path);
                 return false;
             }
             return true;
         });
+        routerStack.splice(0, routerStack.length, ...filteredStack);
         this.modelRoutePatterns.delete(model);
         Adminizer.log.debug(`Adminpanel removed routes for model \`${model}\`: ${removedPaths.join(', ')}`);
+    }
+
+    private getRouterStack(): any[] | null {
+        const app = this.adminizer.app as any;
+        const router = app.router ?? app._router;
+        return Array.isArray(router?.stack) ? router.stack : null;
     }
 
     public async bindModelRoutes(model: string, policies?: MiddlewareType[]): Promise<void> {

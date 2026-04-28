@@ -131,7 +131,7 @@
 		"@types/uuid": "^10.0.0",
 		"@types/waterline": "^0.13.9",
 		"@typescript-eslint/eslint-plugin": "^8.32.1",
-		"@vitejs/plugin-react": "^4.7.0",
+		"@vitejs/plugin-react": "^5.2.0",
 		"ckeditor5": "^45.0.0",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",

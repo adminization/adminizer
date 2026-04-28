@@ -88,20 +88,16 @@ export class FeedService {
 
         // Build fields directly from model attributes (bypass permission checks for public API)
         const fields = this.buildFieldsFromAttributes(entity.model.attributes, entity.config?.fields || {}, adminizerInstance);
-        console.log('[FeedService] fields count=', Object.keys(fields).length);
 
         // Use saved columns if available
         let displayFields = fields;
         if (filter.columns && filter.columns.length > 0) {
             displayFields = this.applyCustomColumns(fields, filter.columns);
         }
-        console.log('[FeedService] displayFields count=', Object.keys(displayFields).length);
 
         // Convert datetime conditions (same as exportData.ts)
         const rawConditions = filter.conditions || [];
-        console.log('[FeedService] raw conditions count=', rawConditions.length);
         const convertedConditions = convertDatetimeConditions(rawConditions, { dropEmptyValues: true });
-        console.log('[FeedService] converted conditions count=', convertedConditions.length);
 
         const createdAtSortField = this.resolveCreatedAtSortField(entity.model.attributes, displayFields);
 
@@ -127,10 +123,8 @@ export class FeedService {
             adminizerInstance.customFilterHandler
         );
 
-        console.log('[FeedService] calling queryBuilder.execute...');
 
         const result = await queryBuilder.execute(queryParams);
-        console.log('[FeedService] query done, records=', result.data?.length ?? 0, 'total=', result.total, 'filtered=', result.filtered);
 
         Adminizer.log.info(`FeedService: === END fetchFilterData === records=${result.data?.length ?? 0}`);
 

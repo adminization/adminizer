@@ -229,20 +229,6 @@ export class SequelizeModel<T> extends AbstractModel<T> {
             return criteria;
         }
 
-        // DEBUG: Log input criteria
-        // console.log(`[Sequelize Debug] _convertCriteriaToSequelize INPUT:`, {
-        //     keys: Object.keys(criteria),
-        //     hasSymbols: inputSymbols.length > 0,
-        //     symbols: inputSymbols.map(s => s.description || String(s))
-        // });
-        // if (inputSymbols.length > 0) {
-        //     console.log(`[Sequelize Debug]   Symbol values:`, inputSymbols.map(s => ({
-        //         symbol: s.description || String(s),
-        //         value: criteria[s],
-        //         typeOfValue: typeof criteria[s]
-        //     })));
-        // }
-
         const result: any = {};
 
         // Handle both string keys and Symbol keys (Op.and, Op.or, etc.)
@@ -313,17 +299,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                 const valueKeys = Object.keys(value);
                 const valueSymbols = Object.getOwnPropertySymbols(value);
                 
-                // DEBUG: Log boolean/boolean-like conditions
-                // console.log(`[Sequelize Debug] Converting criteria:`, {
-                //     targetKey: String(targetKey),
-                //     symbol: symbolDesc,
-                //     value: val,
-                //     typeOfValue: typeof val,
-                //     rawValue: val,
-                //     isFalse: val === false,
-                //     isZero: val === 0
-                // });
-
+            
                 // Helper function to check if a symbol/op is a Sequelize operator
                 const isSequelizeOp = (op: string | symbol): boolean => {
                     // Check direct Symbol equality first
@@ -356,19 +332,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                 // If already Sequelize format, pass through
                 if (hasSequelizeOp) {
                     result[targetKey] = value;
-                    // DEBUG: Log Sequelize operator passed through
-                    // const sym = valueSymbols.length > 0 ? valueSymbols[0] : null;
-                    // const resultSymbols = Object.getOwnPropertySymbols(result[targetKey]);
-                    // console.log(`[Sequelize Debug] Sequelize operator recognized for "${String(targetKey)}":`, {
-                    //     symbol: sym ? (sym.description || String(sym)) : 'none',
-                    //     value: sym ? (value as any)[sym] : value[Object.keys(value)[0]],
-                    //     resultAfterAssignment: {
-                    //         hasSymbols: resultSymbols.length > 0,
-                    //         symbols: resultSymbols.map(s => s.description || String(s)),
-                    //         regularKeys: Object.keys(result[targetKey]),
-                    //         isEmpty: Object.keys(result[targetKey]).length === 0 && resultSymbols.length === 0
-                    //     }
-                    // });
+                   
                     continue;
                 }
 

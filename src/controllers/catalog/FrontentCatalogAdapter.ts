@@ -109,7 +109,6 @@ export class FrontendCatalog {
             if (item.data.id === 0) item.data.id = null;
             arrItems.push(await this.catalog.find(item.data))
         }
-        console.log(arrItems)
         if (type === 'tools') {
             return (await this.catalog.getActions(arrItems))?.filter(e => e.displayTool);
         } else {
@@ -123,7 +122,6 @@ export class FrontendCatalog {
             if (item.data.id === 0) item.data.id = null;
             arrItems.push(await this.catalog.find(item.data))
         }
-        console.log(arrItems)
         return this.catalog.handleAction(actionId, arrItems, data, req);
     }
 
@@ -169,8 +167,7 @@ export class FrontendCatalog {
 
     async search(s: string, req: ReqType) {
         let searchResult = await this.catalog.search(s, undefined, req);
-        // let itemsTree = AbstractCatalog.buildTree(searchResult);
-        // console.log(itemsTree)
+    
         return FrontendCatalogUtils.treeToNode(searchResult, this.catalog.getGroupType().type);
     }
 

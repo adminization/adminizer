@@ -566,9 +566,6 @@ export class SequelizeModel<T> extends AbstractModel<T> {
             }
         }
 
-        console.debug(">> Normal fields for create():", JSON.stringify(plainData));
-        console.debug(">> Association data:", JSON.stringify(assocData));
-
 
         let instance: any;
         try {

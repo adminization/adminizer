@@ -343,20 +343,14 @@ export class FilterService {
             throw new Error('Access denied');
         }
 
-        // Debug: log before delete
-        console.log('[FilterService.deleteFilter] Deleting filter:', filterId);
-        console.log('[FilterService.deleteFilter] User ID:', user.id);
-
         // Delete columns first - find by filter association and delete by ID
         const columnModel = this.adminizer.modelHandler.model.get('filtercolumnap');
         if (columnModel) {
             // Find columns for this filter
             const columns = await columnModel["_find"]({ filter: filterId });
-            console.log('[FilterService.deleteFilter] Found columns:', columns.length);
             
             // Delete each column by ID to avoid cascade issues
             for (const column of columns) {
-                console.log('[FilterService.deleteFilter] Deleting column:', column.id);
                 await columnModel["_destroyOne"]({ id: column.id });
             }
         }
@@ -364,13 +358,10 @@ export class FilterService {
         // Delete filter by ID only
         const filterModel = this.adminizer.modelHandler.model.get('filterap');
         if (filterModel) {
-            console.log('[FilterService.deleteFilter] Deleting filter:', filterId);
             // Use destroyOne with explicit ID to avoid cascade
             await filterModel["_destroyOne"]({ id: filterId });
-            console.log('[FilterService.deleteFilter] Filter deleted successfully');
         }
         
-        console.log('[FilterService.deleteFilter] Delete completed');
     }
 
     /**

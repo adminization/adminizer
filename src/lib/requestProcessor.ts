@@ -36,10 +36,7 @@ export class RequestProcessor {
 
         for (let key in postParams) {
             let field = fields[key];
-            if(key === 'sort') {
-                console.log(fields[key], key, postParams[key])
-            }
-
+            
             // if (field.model.type === 'boolean') {
             //     postParams[key] = ['true', '1', 'yes', "TRUE", "on"].includes(postParams[key].toString().toLowerCase());
             //     continue;

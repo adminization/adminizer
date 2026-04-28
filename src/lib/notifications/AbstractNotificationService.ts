@@ -113,7 +113,6 @@ export abstract class AbstractNotificationService extends EventEmitter {
                     this.clients.delete(userId);
                 }
 
-                Adminizer.log.info(`[${this.notificationClass}] Client ${clientId} disconnected from user ${userId}. Total users: ${this.clients.size}`);
                 return;
             }
         }

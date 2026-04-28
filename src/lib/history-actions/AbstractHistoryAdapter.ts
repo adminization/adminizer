@@ -197,8 +197,6 @@ export abstract class AbstractHistoryAdapter {
                         
             if (!accessToUsersHistory) {
                 history = history.filter((historyRecord) => {
-                    console.log(historyRecord.user.id === user.id);
-                    console.log(historyRecord.user.id, user.id);
                     
                     return historyRecord.user.id === user.id;
                 });

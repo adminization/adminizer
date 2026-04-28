@@ -134,9 +134,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         const eventSource = new EventSource(`${window.routePrefix}/notifications/api/stream`);
 
-        eventSource.addEventListener('connected', (event) => {
-            const data = JSON.parse((event as MessageEvent).data);
-            console.log('Connected event:', data);
+        eventSource.addEventListener('connected', (_event) => {
             getTabs()
         });
 

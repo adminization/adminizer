@@ -60,15 +60,15 @@ interface GeoJsonEditorProps {
 }
 
 const ControlPanel = ({
-                          position,
-                          onAddMarker,
-                          onAddPolygon,
-                          onAddRectangle,
-                          onClearAll,
-                          onFinishDrawing,
-                          drawingMode,
-                          drawingInProgress,
-                      }: {
+    position,
+    onAddMarker,
+    onAddPolygon,
+    onAddRectangle,
+    onClearAll,
+    onFinishDrawing,
+    drawingMode,
+    drawingInProgress,
+}: {
     position: string;
     onAddMarker: () => void;
     onAddPolygon: () => void;
@@ -89,9 +89,8 @@ const ControlPanel = ({
         <div className={`${positionClass} leaflet-control-container`}>
             <div className="leaflet-control leaflet-bar flex flex-col bg-sidebar [&>button]:border-b">
                 <Button
-                    className={`cursor-pointer rounded-none leaflet-control-button ${
-                        drawingMode === "marker" ? "active" : ""
-                    }`}
+                    className={`cursor-pointer rounded-none leaflet-control-button ${drawingMode === "marker" ? "active" : ""
+                        }`}
                     variant="ghost"
                     size="sm"
                     onClick={(e) => {
@@ -105,9 +104,8 @@ const ControlPanel = ({
                     <MapPin />
                 </Button>
                 <Button
-                    className={`cursor-pointer rounded-none leaflet-control-button ${
-                        drawingMode === "polygon" ? "active" : ""
-                    }`}
+                    className={`cursor-pointer rounded-none leaflet-control-button ${drawingMode === "polygon" ? "active" : ""
+                        }`}
                     variant="ghost"
                     size="sm"
                     onClick={(e) => {
@@ -121,9 +119,8 @@ const ControlPanel = ({
                     <Hexagon />
                 </Button>
                 <Button
-                    className={`cursor-pointer rounded-none leaflet-control-button ${
-                        drawingMode === "rectangle" ? "active" : ""
-                    }`}
+                    className={`cursor-pointer rounded-none leaflet-control-button ${drawingMode === "rectangle" ? "active" : ""
+                        }`}
                     variant="ghost"
                     size="sm"
                     onClick={(e) => {
@@ -171,15 +168,15 @@ const ControlPanel = ({
 };
 
 const MapEditor = ({
-                       features,
-                       mode,
-                       drawingMode,
-                       setDrawingMode,
-                       onFeaturesChange,
-                       setDrawingInProgress,
-                       onFinishDrawing,
-                       allowMarkerMovement = true,
-                   }: {
+    features,
+    mode,
+    drawingMode,
+    setDrawingMode,
+    onFeaturesChange,
+    setDrawingInProgress,
+    onFinishDrawing,
+    allowMarkerMovement = true,
+}: {
     features: MapFeature[];
     mode: string;
     drawingMode: string;
@@ -246,10 +243,11 @@ const MapEditor = ({
 
     // Draw completion handler from parent component
     useEffect(() => {
-        if (drawingMode === "polygon" && currentPolygon.length > 0) {
+        if (onFinishDrawing > 0 && drawingMode === "polygon" && currentPolygon.length >= 3) {
             completePolygon();
         }
-    }, [onFinishDrawing, drawingMode, currentPolygon, completePolygon]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [onFinishDrawing]); // Только по триггеру кнопки "Готово"
 
     // Adding a marker
     const addMarker = useCallback(
@@ -492,18 +490,18 @@ const MapEditor = ({
 };
 
 const GeoJsonEditor: React.FC<GeoJsonEditorProps> = ({
-                                                         mode = "all",
-                                                         initialFeatures = [],
-                                                         center = [45.7, 60.1],
-                                                         zoom = 3,
-                                                         showControls = true,
-                                                         controlsPosition = "top-right",
-                                                         onFeaturesChange,
-                                                         className,
-                                                         style,
-                                                         disabled,
-                                                         allowMarkerMovement = true,
-                                                     }) => {
+    mode = "all",
+    initialFeatures = [],
+    center = [45.7, 60.1],
+    zoom = 3,
+    showControls = true,
+    controlsPosition = "top-right",
+    onFeaturesChange,
+    className,
+    style,
+    disabled,
+    allowMarkerMovement = true,
+}) => {
     const [features, setFeatures] = useState<MapFeature[]>(initialFeatures);
     const [drawingMode, setDrawingMode] = useState<
         "none" | "marker" | "polygon" | "rectangle"

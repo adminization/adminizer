@@ -1,4 +1,5 @@
 import {MaterialIcon} from "./MaaterialIcons";
+//@ts-ignore
 import {EditorOptions} from "@toast-ui/editor/types/editor";
 import {GridSettings as HandsontableSettings} from "handsontable/settings";
 import {GroupAP} from "../models/GroupAP";

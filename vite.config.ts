@@ -28,7 +28,7 @@ export default defineConfig({
                 manualChunks: {
                     vendor: ['react', 'react-dom'],
                     monaco: ['@monaco-editor/react'],
-                    handsontable: ['@handsontable/react', 'handsontable'],
+                    handsontable: ['@handsontable/react-wrapper', 'handsontable'],
                     jsoneditor: ['vanilla-jsoneditor']
                 }
             },

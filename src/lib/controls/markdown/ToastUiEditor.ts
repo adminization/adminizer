@@ -1,9 +1,8 @@
 import {AbstractControls, ControlType, Path, Config } from "../AbstractControls";
-import {EditorOptions} from "@toast-ui/editor/types/editor";
 import {Adminizer} from "../../Adminizer";
 
 export class ToastUiEditor extends AbstractControls{
-    readonly config: Partial<EditorOptions> = {
+    readonly config: Record<string, string | string[] | object | number | boolean> = {
         hideModeSwitch: true,
         height: '400px',
         initialEditType: 'markdown',

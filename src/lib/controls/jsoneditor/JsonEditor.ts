@@ -1,9 +1,8 @@
 import {AbstractControls, ControlType, Path, Config } from "../AbstractControls";
-import {EditorOptions} from "@toast-ui/editor/types/editor";
 import {Adminizer} from "../../Adminizer";
 
 export class JsonEditor extends AbstractControls{
-    readonly config: Partial<EditorOptions> = {};
+    readonly config: Record<string, string | string[] | object | number | boolean> = {};
     readonly name: string = 'jsoneditor';
     readonly path: Path = {
         cssPath: "",

@@ -147,14 +147,13 @@ async function cleanTempFolder() {
  * @param adminizer
  */
 async function ormSharedFixtureLift(adminizer: Adminizer) {
-    let routePrefix = adminpanelConfig.routePrefix;
     process.env.ROUTE_PREFIX = adminpanelConfig.routePrefix;
 
     // Add custom module
     adminizer.emitter.on('adminizer:loaded', () => {
-        let policies: MiddlewareType[] = adminizer.config.policies;
-        const module = async (req: ReqType, res: ResType) => {
-            if (req.adminizer.config.auth.enable) {
+        let policies = adminizer.config.policies as MiddlewareType[];
+        const module = async (req: ReqType, res: ResType, next: express.NextFunction) => {
+            if (req.adminizer.config.auth?.enable) {
                 if (!req.user) {
                     return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
                 }

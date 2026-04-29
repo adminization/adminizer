@@ -9,20 +9,11 @@ import {FilterCondition, FilterAP} from "../models/FilterAP";
 import {FilterColumnAP} from "../models/FilterColumnAP";
 import {FilterService} from "../lib/filters/FilterService";
 import {convertDatetimeConditions} from "../helpers/filterDatetimeHelper";
-import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 export default async function list(req: ReqType, res: ResType) {
     let entity = ControllerHelper.findEntityObject(req);
     if (!entity.model) {
         return res.status(404).send({error: 'Not Found'});
-    }
-
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return redirectToLogin(req, res);
-        } else if (!req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
-            return res.sendStatus(403);
-        }
     }
 
     let dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "list");

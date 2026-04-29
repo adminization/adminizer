@@ -1,19 +1,9 @@
 import {FrontendCatalog, FrontendCatalogUtils} from "./FrontendCatalogAdapter";
 import {Adminizer} from "../../lib/Adminizer";
-import {redirectToLogin} from '../../helpers/inertiaAutHelper';
 
 export async function catalogController(req: ReqType, res: ResType) {
     const slug = req.params.slug;
     let id = req.params.id ? req.params.id : '';
-
-    const postfix = id ? `${slug}-${id}` : `${slug}`
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return redirectToLogin(req, res);
-        } else if (!req.adminizer.accessRightsHelper.hasPermission(`catalog-${postfix}`, req.user)) {
-            return res.sendStatus(403);
-        }
-    }
 
     if (slug === 'navigation' && !id) {
         return res.sendStatus(404)
@@ -101,4 +91,6 @@ export async function catalogController(req: ReqType, res: ResType) {
                 return res.json({data: await frontendCatalog.deleteItem(data.data, req)})
         }
     }
+
+    return res.status(405).end();
 }

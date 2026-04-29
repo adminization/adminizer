@@ -1,4 +1,3 @@
-import { ControllerHelper } from "../helpers/controllerHelper";
 import { generateUserApiKey } from "../helpers/apiKeyHelper";
 import { Adminizer } from "../lib/Adminizer";
 
@@ -9,14 +8,6 @@ import { Adminizer } from "../lib/Adminizer";
  */
 
 export async function getUserApiKey(req: ReqType, res: ResType) {
-    if (!req.adminizer.config.auth.enable) {
-        return res.status(403).json({ error: 'Auth is disabled' });
-    }
-
-    if (!req.user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
     // If user doesn't have an API key yet, generate one
     if (!req.user.apiKey) {
         const newKey = generateUserApiKey();
@@ -34,14 +25,6 @@ export async function getUserApiKey(req: ReqType, res: ResType) {
 }
 
 export async function regenerateUserApiKey(req: ReqType, res: ResType) {
-    if (!req.adminizer.config.auth.enable) {
-        return res.status(403).json({ error: 'Auth is disabled' });
-    }
-
-    if (!req.user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
     const newKey = generateUserApiKey();
 
     try {

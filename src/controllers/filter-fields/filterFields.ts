@@ -81,16 +81,6 @@ export default async function filterFields(req: ReqType, res: ResType) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
     }
 
-    // Check access rights
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return res.status(401).send({ error: req.i18n.__('Unauthorized') });
-        }
-        if (!req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
-            return res.status(403).send({ error: req.i18n.__('Forbidden') });
-        }
-    }
-
     // Get fields via DataAccessor (respects access rights and merged field config)
     const dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "list");
     const fields = dataAccessor.getFieldsConfig() || {};

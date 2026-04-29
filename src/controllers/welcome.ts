@@ -1,13 +1,7 @@
-import {redirectToLogin} from '../helpers/inertiaAutHelper';
-
 /**
  * Welcome text
  */
 export default function welcome(req: ReqType, res: ResType) {
-    if (!req.user) {
-        return redirectToLogin(req, res);
-    }
-
     let text = ''
     let title = ''
     if ( Boolean((req.adminizer.configHelper.getConfig()).welcome) && Boolean((req.adminizer.configHelper.getConfig()).welcome.title) && Boolean((req.adminizer.configHelper.getConfig()).welcome.text)) {

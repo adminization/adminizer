@@ -7,13 +7,6 @@ import { Adminizer } from "../../lib/Adminizer";
  * Supports search by name, filter by modelName, and pagination.
  */
 export async function getAllUserFilters(req: ReqType, res: ResType) {
-    // Check auth
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return res.status(401).send({ error: req.i18n.__('Unauthorized') });
-        }
-    }
-
     const filterService = new FilterService(req.adminizer);
     const userModel = req.adminizer.modelHandler.model.get('userap');
     const groupModel = req.adminizer.modelHandler.model.get('groupap');

@@ -6,7 +6,6 @@ import {detachMediaManagerField, saveRelationsMediaManager} from "../lib/media-m
 import {DataAccessor} from "../lib/DataAccessor";
 import {Adminizer} from "../lib/Adminizer";
 import inertiaAddHelper from "../helpers/inertiaAddHelper";
-import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 export default async function add(req: ReqType, res: ResType) {
     let entity = ControllerHelper.findEntityObject(req);
@@ -16,14 +15,6 @@ export default async function add(req: ReqType, res: ResType) {
 
     if (!entity.config?.add) {
         return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/${entity.uri}`);
-    }
-
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return redirectToLogin(req, res);
-        } else if (!req.adminizer.accessRightsHelper.hasPermission(`create-${entity.name}-model`, req.user)) {
-            return res.sendStatus(403);
-        }
     }
 
     let dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "add");

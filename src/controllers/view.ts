@@ -10,7 +10,6 @@ import {UserAP} from "../models/UserAP";
 import {GroupAP} from "../models/GroupAP";
 import {BaseFieldConfig, MediaManagerOptionsField} from "../interfaces/adminpanelConfig";
 import {getRelationsMediaManager} from "../lib/media-manager/helpers/MediaManagerHelper";
-import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 export default async function view(req: ReqType, res: ResType) {
     // Check id
@@ -26,15 +25,6 @@ export default async function view(req: ReqType, res: ResType) {
     if (!entity.model) {
         return res.status(404).send({error: 'Not Found'});
     }
-
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return redirectToLogin(req, res);
-        } else if (!req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
-            return res.sendStatus(403);
-        }
-    }
-
 
     let dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "view");
     let fields = dataAccessor.getFieldsConfig();

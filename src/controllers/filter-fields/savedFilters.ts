@@ -174,16 +174,6 @@ export async function applyTemporaryFilter(req: ReqType, res: ResType) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
     }
 
-    // Check access
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return res.status(401).send({ error: req.i18n.__('Unauthorized') });
-        }
-        if (!req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
-            return res.status(403).send({ error: req.i18n.__('Forbidden') });
-        }
-    }
-
     const { name, conditions, columns } = req.body;
 
     if (!conditions || !Array.isArray(conditions)) {
@@ -221,16 +211,6 @@ export async function getTemporaryFilter(req: ReqType, res: ResType) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
     }
 
-    // Check access
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return res.status(401).send({ error: req.i18n.__('Unauthorized') });
-        }
-        if (!req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
-            return res.status(403).send({ error: req.i18n.__('Forbidden') });
-        }
-    }
-
     const temporaryFilter = req.session?.temporaryFilters?.[entity.name];
 
     if (!temporaryFilter) {
@@ -256,16 +236,6 @@ export async function getSavedFilters(req: ReqType, res: ResType) {
 
     if (!entity.model) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
-    }
-
-    // Check access
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return res.status(401).send({ error: req.i18n.__('Unauthorized') });
-        }
-        if (!req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
-            return res.status(403).send({ error: req.i18n.__('Forbidden') });
-        }
     }
 
     const filterService = new FilterService(req.adminizer);
@@ -328,16 +298,6 @@ export async function saveFilter(req: ReqType, res: ResType) {
 
     if (!entity.model) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
-    }
-
-    // Check access
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return res.status(401).send({ error: req.i18n.__('Unauthorized') });
-        }
-        if (!req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
-            return res.status(403).send({ error: req.i18n.__('Forbidden') });
-        }
     }
 
     const { name, description, conditions, sortField, sortDirection, icon, color, filterId, columns, visibility, groupIds } = req.body;
@@ -519,16 +479,6 @@ export async function deleteFilter(req: ReqType, res: ResType) {
 
     if (!entity.model) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
-    }
-
-    // Check access
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return res.status(401).send({ error: req.i18n.__('Unauthorized') });
-        }
-        if (!req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
-            return res.status(403).send({ error: req.i18n.__('Forbidden') });
-        }
     }
 
     const filterId = Array.isArray(req.params.id) ? req.params.id[0] : String(req.params.id);

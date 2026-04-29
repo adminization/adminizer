@@ -2,11 +2,10 @@ import {Adminizer} from '../../lib/Adminizer';
 import {UserAP} from "../../models/UserAP";
 import {SystemNotificationService} from "../../lib/notifications/SystemNotificationService";
 import {INotification} from "../../interfaces/types";
-import {redirectToLogin} from '../../helpers/inertiaAutHelper';
 
 export class NotificationController {
     static async search(req: ReqType, res: ResType): Promise<void> {
-        if (!NotificationController.checkNotifPermission(req, res)) return;
+        if (!NotificationController.checkNotifStatus(req, res)) return;
 
         if (req.method.toUpperCase() === 'POST') {
             const {s, notificationClass} = req.body;
@@ -27,8 +26,7 @@ export class NotificationController {
     }
 
     static async viewAll(req: ReqType, res: ResType): Promise<void> {
-        const isUiRequest = req.method.toUpperCase() === 'GET';
-        if (!NotificationController.checkNotifPermission(req, res, isUiRequest)) return;
+        if (!NotificationController.checkNotifStatus(req, res)) return;
 
         if (req.method.toUpperCase() === 'POST') {
             const messages = {
@@ -63,7 +61,7 @@ export class NotificationController {
     }
 
     static async getNotificationClasses(req: ReqType, res: ResType): Promise<void> {
-        if (!NotificationController.checkNotifPermission(req, res)) return;
+        if (!NotificationController.checkNotifStatus(req, res)) return;
 
         if (req.adminizer.config.notifications.enabled === false) {
             Adminizer.log.warn('[Notifications] Notifications disabled in config');
@@ -95,7 +93,7 @@ export class NotificationController {
     }
 
     static async getNotificationsStream(req: ReqType, res: ResType): Promise<void> {
-        if (!NotificationController.checkNotifPermission(req, res)) return;
+        if (!NotificationController.checkNotifStatus(req, res)) return;
 
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -201,7 +199,7 @@ export class NotificationController {
 
     // API for receiving class notifications
     static async getNotificationsByClass(req: ReqType, res: ResType): Promise<void> {
-        if (!NotificationController.checkNotifPermission(req, res)) return;
+        if (!NotificationController.checkNotifStatus(req, res)) return;
 
         try {
             const {notificationClass} = req.params;
@@ -240,7 +238,7 @@ export class NotificationController {
 
     // API for receiving all user notifications
     static async getUserNotifications(req: ReqType, res: ResType): Promise<void> {
-        if (!NotificationController.checkNotifPermission(req, res)) return;
+        if (!NotificationController.checkNotifStatus(req, res)) return;
 
         const {limit = 4, skip = 0, unreadOnly = false} = req.query;
 
@@ -281,7 +279,7 @@ export class NotificationController {
 
     // API for marking as read
     static async markAsRead(req: ReqType, res: ResType): Promise<void> {
-        if (!NotificationController.checkNotifPermission(req, res)) return;
+        if (!NotificationController.checkNotifStatus(req, res)) return;
 
         try {
             const {notificationClass, id} = req.params;
@@ -297,7 +295,7 @@ export class NotificationController {
     }
 
     static async markAllAsRead(req: ReqType, res: ResType): Promise<void> {
-        if (!NotificationController.checkNotifPermission(req, res)) return;
+        if (!NotificationController.checkNotifStatus(req, res)) return;
 
         try {
             const services = req.adminizer.notificationHandler.getAllServices();
@@ -312,18 +310,9 @@ export class NotificationController {
         }
     }
 
-    private static checkNotifPermission(req: ReqType, res: ResType, shouldRedirectToLogin = false): boolean {
+    private static checkNotifStatus(req: ReqType, res: ResType): boolean {
         if (!req.adminizer?.notificationHandler) {
             res.status(500).json({error: 'Notification system not initialized'});
-            return false;
-        }
-        // We use the redirect only for UI pages; API requests receive 401.
-        if (req.adminizer.config.auth.enable && !req.user) {
-            if (shouldRedirectToLogin) {
-                redirectToLogin(req, res);
-            } else {
-                res.status(401).json({error: 'Unauthorized'});
-            }
             return false;
         }
         return true;

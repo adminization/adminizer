@@ -1,6 +1,5 @@
 import {MediaManagerHandler} from "../../lib/media-manager/MediaManagerHandler";
 import {MediaManagerAdapter} from "./mediaManagerAdapter";
-import {redirectToLogin} from '../../helpers/inertiaAutHelper';
 
 export async function mediaManagerController(req: ReqType, res: ResType) {
     const method = req.method.toUpperCase();
@@ -8,14 +7,6 @@ export async function mediaManagerController(req: ReqType, res: ResType) {
 
     // const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
     // await delay(1000);
-
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return redirectToLogin(req, res);
-        } else if (!req.adminizer.accessRightsHelper.hasPermission(`mediaManager-${id}`, req.user)) {
-            return res.sendStatus(403);
-        }
-    }
 
     if (!id) {
         return res.sendStatus(404)

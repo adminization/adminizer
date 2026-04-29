@@ -1,10 +1,4 @@
-import {redirectToLogin} from '../helpers/inertiaAutHelper';
-
 export default function (req: ReqType, res: ResType) {
-    if (req.adminizer.config.auth.enable && !req.user) {
-        return redirectToLogin(req, res);
-    }
-
     return req.Inertia.render({
         component: 'dashboard',
         props: {

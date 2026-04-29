@@ -24,14 +24,6 @@ export async function widgetFilterInfoController(req: ReqType, res: ResType) {
         return res.status(404).send({ error: req.i18n.__("Not found") });
     }
 
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
-        } else if (!req.adminizer.accessRightsHelper.hasPermission("widgets", req.user)) {
-            return res.sendStatus(403);
-        }
-    }
-
     const user = await resolveDashboardUser(req);
     if (!user) {
         return res.status(401).send({ error: req.i18n.__("Unauthorized") });
@@ -62,4 +54,6 @@ export async function widgetFilterInfoController(req: ReqType, res: ResType) {
             return res.status(500).send({ error: e.message || req.i18n.__("Internal server error") });
         }
     }
+
+    return res.status(405).end();
 }

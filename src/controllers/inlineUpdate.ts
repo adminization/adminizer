@@ -26,16 +26,6 @@ export default async function inlineUpdate(req: ReqType, res: ResType) {
         return res.status(404).json({ error: 'Model not found' });
     }
 
-    // Check permissions
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-        if (!req.adminizer.accessRightsHelper.hasPermission(`update-${entity.name}-model`, req.user)) {
-            return res.status(403).json({ error: 'Forbidden' });
-        }
-    }
-
     const fieldName = req.body.field;
     const newValue = req.body.value;
 

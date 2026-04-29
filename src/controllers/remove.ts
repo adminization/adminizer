@@ -3,7 +3,6 @@ import {deleteRelationsMediaManager} from "../lib/media-manager/helpers/MediaMan
 import {ModelAnyField, ModelAnyInstance} from "../lib/model/AbstractModel";
 import {DataAccessor} from "../lib/DataAccessor";
 import {Adminizer} from "../lib/Adminizer";
-import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 export default async function remove(req: ReqType, res: ResType) {
     // Checking id of the record
@@ -21,14 +20,6 @@ export default async function remove(req: ReqType, res: ResType) {
 
     if (!entity.config.remove) {
         return res.redirect(`${req.adminizer.config.routePrefix}/${entity.uri}`);
-    }
-
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return redirectToLogin(req, res);
-        } else if (!req.adminizer.accessRightsHelper.hasPermission(`delete-${entity.name}-model`, req.user)) {
-            return res.sendStatus(403);
-        }
     }
 
     /**

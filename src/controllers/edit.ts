@@ -2,7 +2,6 @@ import {ControllerHelper} from "../helpers/controllerHelper";
 import {RequestProcessor} from "../lib/requestProcessor";
 import {FieldsHelper} from "../helpers/fieldsHelper";
 import {BaseFieldConfig, CreateUpdateConfig, MediaManagerOptionsField} from "../interfaces/adminpanelConfig";
-import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 import {
     detachMediaManagerField,
@@ -27,14 +26,6 @@ export default async function edit(req: ReqType, res: ResType) {
 
     if (!entity.config.edit) {
         return res.redirect(`${req.adminizer.config.routePrefix}/${entity.uri}`);
-    }
-
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return redirectToLogin(req, res);
-        } else if (!req.adminizer.accessRightsHelper.hasPermission(`update-${entity.name}-model`, req.user)) {
-            return res.sendStatus(403);
-        }
     }
 
     let record;

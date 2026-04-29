@@ -16,16 +16,6 @@ export async function getModelColumns(req: ReqType, res: ResType) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
     }
 
-    // Check access
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return res.status(401).send({ error: req.i18n.__('Unauthorized') });
-        }
-        if (!req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
-            return res.status(403).send({ error: req.i18n.__('Forbidden') });
-        }
-    }
-
     // Get available fields from DataAccessor (respects user permissions)
     const dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "list");
     const fields = dataAccessor.getFieldsConfig();
@@ -89,16 +79,6 @@ export async function updateFilterColumns(req: ReqType, res: ResType) {
 
     if (!entity.model) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
-    }
-
-    // Check access
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return res.status(401).send({ error: req.i18n.__('Unauthorized') });
-        }
-        if (!req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
-            return res.status(403).send({ error: req.i18n.__('Forbidden') });
-        }
     }
 
     const filterId = req.params.filterId ? String(req.params.filterId) : undefined;

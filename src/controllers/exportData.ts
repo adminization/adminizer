@@ -25,16 +25,6 @@ export default async function exportData(req: ReqType, res: ResType) {
         return res.status(404).json({ error: 'Model not found' });
     }
 
-    // Check access
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-        if (!req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user)) {
-            return res.status(403).json({ error: 'Forbidden' });
-        }
-    }
-
     const { filterId, format, selectedFields: bodySelectedFields } = req.body as {
         filterId?: string;
         format?: ExportFormat;

@@ -4,7 +4,6 @@ import inertiaFormHelper from "../helpers/inertiaFromHelper";
 import {getRelationsMediaManager, saveRelationsMediaManager} from "../lib/media-manager/helpers/MediaManagerHelper";
 import {MediaManagerOptionsField} from "../interfaces/adminpanelConfig";
 import {MediaManagerHandler} from "../lib/media-manager/MediaManagerHandler";
-import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 export default async function form(req: ReqType, res: ResType) {
     let slug = req.params.slug;
@@ -14,13 +13,6 @@ export default async function form(req: ReqType, res: ResType) {
         return res.status(404).send({error: 'Not Found'});
     }
 
-    if (req.adminizer.config.auth.enable) {
-        if (!req.user) {
-            return redirectToLogin(req, res);
-        } else if (!req.adminizer.accessRightsHelper.hasPermission(`update-${slug}-form`, req.user)) {
-            return res.sendStatus(403);
-        }
-    }
     let form = FormHelper.get(req.adminizer, slug);
 
     if (!form) {

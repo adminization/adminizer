@@ -33,6 +33,29 @@ import { NotificationController } from "../controllers/notifications/Notificatio
 import { AiAssistantController } from "../controllers/ai/AiAssistantController";
 import { HistoryController } from "../controllers/history-actions/HistoryController";
 import listUserFilters from "../controllers/listUserFilters";
+import {
+    requireAdmin,
+    requireAnyPermission,
+    requireAuthAPI,
+    requireAuthEnabled,
+    requireAuthUI,
+    requirePermission
+} from "../middlewares/authGuards";
+import {
+    aiModelToken,
+    catalogToken,
+    formCreateToken,
+    formUpdateToken,
+    historyToken,
+    mediaManagerToken,
+    modelCreateToken,
+    modelDeleteToken,
+    modelReadToken,
+    modelUpdateToken,
+    widgetToken,
+    widgetsToken
+} from "../middlewares/permissionResolvers";
+import { bindWithPolicies } from "./routeGuards";
 
 export default class Router {
     public adminizer: Adminizer;
@@ -71,6 +94,8 @@ export default class Router {
          * @type {MiddlewareType[]}
          */
         let policies: MiddlewareType[] = adminizer.config.policies;
+        const withGuards = (action: MiddlewareType, ...guards: MiddlewareType[]) =>
+            bindWithPolicies(adminizer, policies, action, guards);
 
         /**
          * Prevent stale/cached admin API responses.
@@ -109,43 +134,67 @@ export default class Router {
         /**
          * Widgets All
          */
-        adminizer.app.all(`${adminizer.config.routePrefix}/widgets-get-all`, adminizer.policyManager.bindPolicies(policies, _getAllWidgets));
+        adminizer.app.all(
+            `${adminizer.config.routePrefix}/widgets-get-all`,
+            withGuards(_getAllWidgets, requireAuthUI(), requirePermission(widgetsToken, { mode: "ui" }))
+        );
 
         /**
          * Widgets All from DB
          */
-        adminizer.app.all(`${adminizer.config.routePrefix}/widgets-get-all-db`, adminizer.policyManager.bindPolicies(policies, _widgetsDB));
+        adminizer.app.all(
+            `${adminizer.config.routePrefix}/widgets-get-all-db`,
+            withGuards(_widgetsDB, requireAuthUI(), requirePermission(widgetsToken, { mode: "ui" }))
+        );
 
 
         /**
          * Widgets Switch
          */
-        adminizer.app.all(`${adminizer.config.routePrefix}/widgets-switch/:widgetId`, adminizer.policyManager.bindPolicies(policies, widgetSwitchController));
+        adminizer.app.all(
+            `${adminizer.config.routePrefix}/widgets-switch/:widgetId`,
+            withGuards(widgetSwitchController, requireAuthUI(), requirePermission(widgetToken, { mode: "ui" }))
+        );
 
         /**
          * Widgets Info
          */
-        adminizer.app.all(`${adminizer.config.routePrefix}/widgets-info/:widgetId`, adminizer.policyManager.bindPolicies(policies, widgetInfoController))
+        adminizer.app.all(
+            `${adminizer.config.routePrefix}/widgets-info/:widgetId`,
+            withGuards(widgetInfoController, requireAuthUI(), requirePermission(widgetToken, { mode: "ui" }))
+        )
 
         /**
          * Widgets Filter Info (built-in filter widgets)
          */
-        adminizer.app.all(`${adminizer.config.routePrefix}/widgets-filter-info/:filterId`, adminizer.policyManager.bindPolicies(policies, widgetFilterInfoController));
+        adminizer.app.all(
+            `${adminizer.config.routePrefix}/widgets-filter-info/:filterId`,
+            withGuards(widgetFilterInfoController, requireAuthUI(), requirePermission(widgetsToken, { mode: "ui" }))
+        );
 
         /**
          * Widgets Action
          */
-        adminizer.app.all(`${adminizer.config.routePrefix}/widgets-action/:widgetId`, adminizer.policyManager.bindPolicies(policies, widgetActionController));
+        adminizer.app.all(
+            `${adminizer.config.routePrefix}/widgets-action/:widgetId`,
+            withGuards(widgetActionController, requireAuthUI(), requirePermission(widgetToken, { mode: "ui" }))
+        );
 
         /**
          * Widgets Custom
          */
-        adminizer.app.all(`${adminizer.config.routePrefix}/widgets-action/:widgetId`, adminizer.policyManager.bindPolicies(policies, widgetCustomController));
+        adminizer.app.all(
+            `${adminizer.config.routePrefix}/widgets-action/:widgetId`,
+            withGuards(widgetCustomController, requireAuthUI(), requirePermission(widgetToken, { mode: "ui" }))
+        );
 
         /**
          * Edit form
          * */
-        adminizer.app.all(`${adminizer.config.routePrefix}/form/:slug`, adminizer.policyManager.bindPolicies(policies, _form));
+        adminizer.app.all(
+            `${adminizer.config.routePrefix}/form/:slug`,
+            withGuards(_form, requireAuthUI(), requirePermission(formUpdateToken, { mode: "ui" }))
+        );
 
         /**
          *  Create a base entity route
@@ -158,30 +207,51 @@ export default class Router {
         /**
          * Catalog
          */
-        adminizer.app.all(`${adminizer.config.routePrefix}/catalog/:slug/:id`, adminizer.policyManager.bindPolicies(policies, catalogController));
-        adminizer.app.all(`${adminizer.config.routePrefix}/catalog/:slug`, adminizer.policyManager.bindPolicies(policies, catalogController));
+        adminizer.app.all(
+            `${adminizer.config.routePrefix}/catalog/:slug/:id`,
+            withGuards(catalogController, requireAuthUI(), requirePermission(catalogToken, { mode: "ui" }))
+        );
+        adminizer.app.all(
+            `${adminizer.config.routePrefix}/catalog/:slug`,
+            withGuards(catalogController, requireAuthUI(), requirePermission(catalogToken, { mode: "ui" }))
+        );
 
         /**
          * Media Manager
          */
         adminizer.app.post(
             `${adminizer.config.routePrefix}/media-manager-uploader/:id/upload`,
-            adminizer.policyManager.bindPolicies(policies, mediaManagerController)
+            withGuards(mediaManagerController, requireAuthUI(), requirePermission(mediaManagerToken, { mode: "ui" }))
         );
         adminizer.app.post(
             `${adminizer.config.routePrefix}/media-manager-uploader/:id/upload-variant`,
-            adminizer.policyManager.bindPolicies(policies, mediaManagerController)
+            withGuards(mediaManagerController, requireAuthUI(), requirePermission(mediaManagerToken, { mode: "ui" }))
         );
         adminizer.app.all(
             `${adminizer.config.routePrefix}/media-manager-uploader/:id`,
-            adminizer.policyManager.bindPolicies(policies, mediaManagerController)
+            withGuards(mediaManagerController, requireAuthUI(), requirePermission(mediaManagerToken, { mode: "ui" }))
         );
         adminizer.app.all(`${adminizer.config.routePrefix}/get-thumbs`, adminizer.policyManager.bindPolicies(policies, thumbController));
 
         /**
          * Upload images CKeditor5
          */
-        adminizer.app.post(entityRoutes('/ckeditor5/upload'), adminizer.policyManager.bindPolicies(policies, ckEditorUpload));
+        adminizer.app.post(
+            entityRoutes('/ckeditor5/upload'),
+            withGuards(
+                ckEditorUpload,
+                requireAuthUI(),
+                requireAnyPermission(
+                    [
+                        modelUpdateToken,
+                        modelCreateToken,
+                        formUpdateToken,
+                        formCreateToken,
+                    ],
+                    { mode: "ui" }
+                )
+            )
+        );
 
         /**
          * Notifications
@@ -189,46 +259,46 @@ export default class Router {
         if (adminizer.config.notifications.enabled) {
             adminizer.app.get(
                 `${adminizer.config.routePrefix}/notifications`,
-                adminizer.policyManager.bindPolicies(policies, NotificationController.viewAll)
+                withGuards(NotificationController.viewAll, requireAuthUI())
             );
             adminizer.app.post(
                 `${adminizer.config.routePrefix}/notifications`,
-                adminizer.policyManager.bindPolicies(policies, NotificationController.viewAll)
+                withGuards(NotificationController.viewAll, requireAuthAPI())
             );
 
             adminizer.app.get(
                 `${adminizer.config.routePrefix}/notifications/api/stream`,
-                adminizer.policyManager.bindPolicies(policies, NotificationController.getNotificationsStream)
+                withGuards(NotificationController.getNotificationsStream, requireAuthAPI())
             );
 
             adminizer.app.get(
                 `${adminizer.config.routePrefix}/notifications/api/get-classes`,
-                adminizer.policyManager.bindPolicies(policies, NotificationController.getNotificationClasses)
+                withGuards(NotificationController.getNotificationClasses, requireAuthAPI())
             );
 
             adminizer.app.get(
                 `${adminizer.config.routePrefix}/notifications/api/:notificationClass`,
-                adminizer.policyManager.bindPolicies(policies, NotificationController.getNotificationsByClass)
+                withGuards(NotificationController.getNotificationsByClass, requireAuthAPI())
             );
 
             adminizer.app.get(
                 `${adminizer.config.routePrefix}/notifications/api`,
-                adminizer.policyManager.bindPolicies(policies, NotificationController.getUserNotifications)
+                withGuards(NotificationController.getUserNotifications, requireAuthAPI())
             );
 
             adminizer.app.put(
                 `${adminizer.config.routePrefix}/notifications/api/:notificationClass/:id/read`,
-                adminizer.policyManager.bindPolicies(policies, NotificationController.markAsRead)
+                withGuards(NotificationController.markAsRead, requireAuthAPI())
             );
 
             adminizer.app.put(
                 `${adminizer.config.routePrefix}/notifications/api/read-all`,
-                adminizer.policyManager.bindPolicies(policies, NotificationController.markAllAsRead)
+                withGuards(NotificationController.markAllAsRead, requireAuthAPI())
             );
 
             adminizer.app.post(
                 `${adminizer.config.routePrefix}/notifications/api/search`,
-                adminizer.policyManager.bindPolicies(policies, NotificationController.search)
+                withGuards(NotificationController.search, requireAuthAPI())
             );
         }
 
@@ -238,19 +308,23 @@ export default class Router {
         if (adminizer.config.history?.enabled) {
             adminizer.app.get(
                 `${adminizer.config.routePrefix}/history/view-all`,
-                adminizer.policyManager.bindPolicies(policies, HistoryController.index)
+                withGuards(
+                    HistoryController.index,
+                    requireAuthUI(),
+                    requirePermission(historyToken, { mode: "ui" })
+                )
             )
             adminizer.app.post(
                 `${adminizer.config.routePrefix}/history/view-all`,
-                adminizer.policyManager.bindPolicies(policies, HistoryController.index)
+                withGuards(HistoryController.index, requireAuthAPI(), requirePermission(historyToken))
             )
             adminizer.app.post(
                 `${adminizer.config.routePrefix}/history/get-model-history`,
-                adminizer.policyManager.bindPolicies(policies, HistoryController.getAllModelHistory)
+                withGuards(HistoryController.getAllModelHistory, requireAuthAPI(), requirePermission(historyToken))
             );
             adminizer.app.post(
                 `${adminizer.config.routePrefix}/history/get-model-fields`,
-                adminizer.policyManager.bindPolicies(policies, HistoryController.getModelFieldsHistory)
+                withGuards(HistoryController.getModelFieldsHistory, requireAuthAPI(), requirePermission(historyToken))
             )
         }
 
@@ -258,56 +332,86 @@ export default class Router {
         if (adminizer.config.aiAssistant?.enabled) {
             adminizer.app.get(
                 `${adminizer.config.routePrefix}/api/ai-assistant/models`,
-                adminizer.policyManager.bindPolicies(policies, AiAssistantController.getModels)
+                withGuards(AiAssistantController.getModels, requireAuthAPI())
             );
 
             adminizer.app.get(
                 `${adminizer.config.routePrefix}/api/ai-assistant/history/:modelId`,
-                adminizer.policyManager.bindPolicies(policies, AiAssistantController.getHistory)
+                withGuards(AiAssistantController.getHistory, requireAuthAPI(), requirePermission(aiModelToken))
             );
 
             adminizer.app.post(
                 `${adminizer.config.routePrefix}/api/ai-assistant/query`,
-                adminizer.policyManager.bindPolicies(policies, AiAssistantController.sendMessage)
+                withGuards(AiAssistantController.sendMessage, requireAuthAPI(), requirePermission(aiModelToken))
             );
 
             adminizer.app.delete(
                 `${adminizer.config.routePrefix}/api/ai-assistant/history/:modelId`,
-                adminizer.policyManager.bindPolicies(policies, AiAssistantController.resetHistory)
+                withGuards(AiAssistantController.resetHistory, requireAuthAPI(), requirePermission(aiModelToken))
             );
         }
 
         /**
          * List of records
          */
-        adminizer.app.all(entityRoutes(), adminizer.policyManager.bindPolicies(policies, _list));
+        adminizer.app.all(
+            entityRoutes(),
+            withGuards(_list, requireAuthUI(), requirePermission(modelReadToken, { mode: "ui" }))
+        );
 
         if (adminizer.config.filters?.enabled) {
 
             /**
              * Get filter fields for model
              */
-            adminizer.app.get(entityRoutes('/filter-fields'), adminizer.policyManager.bindPolicies(policies, _filterFields));
+            adminizer.app.get(
+                entityRoutes('/filter-fields'),
+                withGuards(_filterFields, requireAuthAPI(), requirePermission(modelReadToken))
+            );
 
             /**
              * Saved filters
              */
-            adminizer.app.get(entityRoutes('/saved-filters'), adminizer.policyManager.bindPolicies(policies, getSavedFilters));
-            adminizer.app.get(entityRoutes('/filter/locales'), adminizer.policyManager.bindPolicies(policies, getFilterLocales));
-            adminizer.app.get(entityRoutes('/filter/temporary'), adminizer.policyManager.bindPolicies(policies, getTemporaryFilter));
-            adminizer.app.post(entityRoutes('/filter'), adminizer.policyManager.bindPolicies(policies, saveFilter));
-            adminizer.app.post(entityRoutes('/filter/apply'), adminizer.policyManager.bindPolicies(policies, applyTemporaryFilter));
-            adminizer.app.delete(entityRoutes('/filter/:id'), adminizer.policyManager.bindPolicies(policies, deleteFilter));
+            adminizer.app.get(
+                entityRoutes('/saved-filters'),
+                withGuards(getSavedFilters, requireAuthAPI(), requirePermission(modelReadToken))
+            );
+            adminizer.app.get(
+                entityRoutes('/filter/locales'),
+                withGuards(getFilterLocales, requireAuthAPI(), requirePermission(modelReadToken))
+            );
+            adminizer.app.get(
+                entityRoutes('/filter/temporary'),
+                withGuards(getTemporaryFilter, requireAuthAPI(), requirePermission(modelReadToken))
+            );
+            adminizer.app.post(
+                entityRoutes('/filter'),
+                withGuards(saveFilter, requireAuthAPI(), requirePermission(modelReadToken))
+            );
+            adminizer.app.post(
+                entityRoutes('/filter/apply'),
+                withGuards(applyTemporaryFilter, requireAuthAPI(), requirePermission(modelReadToken))
+            );
+            adminizer.app.delete(
+                entityRoutes('/filter/:id'),
+                withGuards(deleteFilter, requireAuthAPI(), requirePermission(modelReadToken))
+            );
 
             /**
              * Get all groups (for admin filter visibility settings)
              */
-            adminizer.app.get(`${adminizer.config.routePrefix}/groups`, getAllGroups);
+            adminizer.app.get(
+                `${adminizer.config.routePrefix}/groups`,
+                withGuards(getAllGroups, requireAuthAPI(), requireAdmin())
+            );
 
             /**
              * Export data (JSON, CSV, XLSX)
              */
-            adminizer.app.post(entityRoutes('/export'), adminizer.policyManager.bindPolicies(policies, _exportData));
+            adminizer.app.post(
+                entityRoutes('/export'),
+                withGuards(_exportData, requireAuthAPI(), requirePermission(modelReadToken))
+            );
 
             /**
              * Public feed API — export by apiKey without auth
@@ -321,17 +425,29 @@ export default class Router {
             /**
              * User Filters — list all filters accessible to the current user across all models
              */
-            adminizer.app.get(`${adminizer.config.routePrefix}/api/all-user-filters`, adminizer.policyManager.bindPolicies(policies, getAllUserFilters));
-            adminizer.app.all(`${adminizer.config.routePrefix}/user-filters`, adminizer.policyManager.bindPolicies(policies, listUserFilters));
+            adminizer.app.get(
+                `${adminizer.config.routePrefix}/api/all-user-filters`,
+                withGuards(getAllUserFilters, requireAuthAPI())
+            );
+            adminizer.app.all(
+                `${adminizer.config.routePrefix}/user-filters`,
+                withGuards(listUserFilters, requireAuthUI())
+            );
             /**
             * Get model columns (available columns for the model)
             */
-            adminizer.app.get(entityRoutes('/columns'), adminizer.policyManager.bindPolicies(policies, getModelColumns));
+            adminizer.app.get(
+                entityRoutes('/columns'),
+                withGuards(getModelColumns, requireAuthAPI(), requirePermission(modelReadToken))
+            );
 
             /**
              * Update filter columns configuration
              */
-            adminizer.app.post(entityRoutes('/filter/:filterId/columns'), adminizer.policyManager.bindPolicies(policies, updateFilterColumns));
+            adminizer.app.post(
+                entityRoutes('/filter/:filterId/columns'),
+                withGuards(updateFilterColumns, requireAuthAPI(), requirePermission(modelReadToken))
+            );
         }
 
         /**
@@ -339,11 +455,20 @@ export default class Router {
          * GET /adminizer/api/user-key — returns current user's API key
          * POST /adminizer/api/user-key/regenerate — regenerates the API key
          */
-        adminizer.app.get(`${adminizer.config.routePrefix}/api/user-key`, adminizer.policyManager.bindPolicies(policies, getUserApiKey));
-        adminizer.app.post(`${adminizer.config.routePrefix}/api/user-key/regenerate`, adminizer.policyManager.bindPolicies(policies, regenerateUserApiKey));
+        adminizer.app.get(
+            `${adminizer.config.routePrefix}/api/user-key`,
+            withGuards(getUserApiKey, requireAuthEnabled(), requireAuthAPI())
+        );
+        adminizer.app.post(
+            `${adminizer.config.routePrefix}/api/user-key/regenerate`,
+            withGuards(regenerateUserApiKey, requireAuthEnabled(), requireAuthAPI())
+        );
 
 
-        adminizer.app.get(`${adminizer.config.routePrefix}/get-timezones`, adminizer.policyManager.bindPolicies(policies, timezones))
+        adminizer.app.get(
+            `${adminizer.config.routePrefix}/get-timezones`,
+            withGuards(timezones, requireAuthUI())
+        )
 
         if (adminizer.config.models) {
             for (let model in adminizer.config.models) {
@@ -354,25 +479,34 @@ export default class Router {
         /**
          * Inline update field in list view
          */
-        adminizer.app.patch(entityRoutes('/inline/:id'), adminizer.policyManager.bindPolicies(policies, _inlineUpdate));
+        adminizer.app.patch(
+            entityRoutes('/inline/:id'),
+            withGuards(_inlineUpdate, requireAuthAPI(), requirePermission(modelUpdateToken))
+        );
 
         /**
          * View record details
          */
-        adminizer.app.all(entityRoutes('/view/:id'), adminizer.policyManager.bindPolicies(policies, _view));
+        adminizer.app.all(
+            entityRoutes('/view/:id'),
+            withGuards(_view, requireAuthUI(), requirePermission(modelReadToken, { mode: "ui" }))
+        );
 
         /**
          * Remove record
          */
-        adminizer.app.all(entityRoutes('/remove/:id'), adminizer.policyManager.bindPolicies(policies, _remove));
+        adminizer.app.all(
+            entityRoutes('/remove/:id'),
+            withGuards(_remove, requireAuthUI(), requirePermission(modelDeleteToken, { mode: "ui" }))
+        );
 
         /**
          * Create a default dashboard
          */
         if (adminizer.config.dashboard) {
-            adminizer.app.all(adminizer.config.routePrefix, adminizer.policyManager.bindPolicies(policies, _dashboard));
+            adminizer.app.all(adminizer.config.routePrefix, withGuards(_dashboard, requireAuthUI()));
         } else {
-            adminizer.app.all(adminizer.config.routePrefix, adminizer.policyManager.bindPolicies(policies, _welcome));
+            adminizer.app.all(adminizer.config.routePrefix, withGuards(_welcome, requireAuthUI()));
         }
         // TODO emit can be used in tests
         adminizer.emitter.emit("router:bound");
@@ -412,8 +546,8 @@ export default class Router {
         const prefix = `${this.adminizer.config.routePrefix}/model/${model}`;
 
         const registeredPaths: string[] = [];
-        const register = (path: string, handler: any) => {
-            this.adminizer.app.all(path, this.adminizer.policyManager.bindPolicies(policies!, handler));
+        const register = (path: string, handler: MiddlewareType, guards: MiddlewareType[] = []) => {
+            this.adminizer.app.all(path, bindWithPolicies(this.adminizer, policies!, handler, guards));
             const patterns = this.modelRoutePatterns.get(model) ?? [];
             patterns.push(new RegExp(`^${path.replace(/:[^/]+/g, '[^/]+')}$`));
             this.modelRoutePatterns.set(model, patterns);
@@ -422,9 +556,21 @@ export default class Router {
 
         if (typeof modelConfig === "boolean" && modelConfig === true) {
             Adminizer.log.debug(`Adminpanel create CRUD routes for \`${model}\` by boolean true`);
-            register(`${prefix}/add`, _add);
-            register(`${prefix}/edit/:id`, _edit);
-            register(`${prefix}/remove/:id`, _remove);
+            register(
+                `${prefix}/add`,
+                _add,
+                [requireAuthUI(), requirePermission(() => `create-${model}-model`, { mode: "ui" })]
+            );
+            register(
+                `${prefix}/edit/:id`,
+                _edit,
+                [requireAuthUI(), requirePermission(() => `update-${model}-model`, { mode: "ui" })]
+            );
+            register(
+                `${prefix}/remove/:id`,
+                _remove,
+                [requireAuthUI(), requirePermission(() => `delete-${model}-model`, { mode: "ui" })]
+            );
         } else if (modelConfig !== undefined && typeof modelConfig !== "boolean") {
             Adminizer.log.debug(`Adminpanel create CRUD routes for \`${model}\` by ModelConfig`);
 
@@ -435,12 +581,24 @@ export default class Router {
             if (addHandler?.controller) {
                 if (typeof addHandler.controller === 'string') {
                     let controller = await import(addHandler.controller);
-                    register(`${prefix}/add`, controller.default);
+                    register(
+                        `${prefix}/add`,
+                        controller.default,
+                        [requireAuthUI(), requirePermission(() => `create-${model}-model`, { mode: "ui" })]
+                    );
                 } else {
-                    register(`${prefix}/add`, addHandler.controller as any);
+                    register(
+                        `${prefix}/add`,
+                        addHandler.controller as MiddlewareType,
+                        [requireAuthUI(), requirePermission(() => `create-${model}-model`, { mode: "ui" })]
+                    );
                 }
             } else {
-                register(`${prefix}/add`, _add);
+                register(
+                    `${prefix}/add`,
+                    _add,
+                    [requireAuthUI(), requirePermission(() => `create-${model}-model`, { mode: "ui" })]
+                );
             }
 
             /**
@@ -450,12 +608,24 @@ export default class Router {
             if (editHandler?.controller) {
                 if (typeof editHandler.controller === 'string') {
                     let controller = await import(editHandler.controller);
-                    register(`${prefix}/edit/:id`, controller.default);
+                    register(
+                        `${prefix}/edit/:id`,
+                        controller.default,
+                        [requireAuthUI(), requirePermission(() => `update-${model}-model`, { mode: "ui" })]
+                    );
                 } else {
-                    register(`${prefix}/edit/:id`, editHandler.controller as any);
+                    register(
+                        `${prefix}/edit/:id`,
+                        editHandler.controller as MiddlewareType,
+                        [requireAuthUI(), requirePermission(() => `update-${model}-model`, { mode: "ui" })]
+                    );
                 }
             } else {
-                register(`${prefix}/edit/:id`, _edit);
+                register(
+                    `${prefix}/edit/:id`,
+                    _edit,
+                    [requireAuthUI(), requirePermission(() => `update-${model}-model`, { mode: "ui" })]
+                );
             }
         } else {
             Adminizer.log.silly(`Adminpanel skip create CRUD routes for model: ${model}`);

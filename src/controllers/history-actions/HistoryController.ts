@@ -1,13 +1,11 @@
 import { Adminizer } from "../../lib/Adminizer";
 import { AbstractHistoryAdapter } from "../../lib/history-actions/AbstractHistoryAdapter";
 import { UserAP } from "../../models/UserAP";
-import {redirectToLogin} from '../../helpers/inertiaAutHelper';
 
 export class HistoryController {
 
     static async index(req: ReqType, res: ResType): Promise<any> {
-        const isUiRequest = req.method.toUpperCase() === 'GET';
-        if (!HistoryController.checkHistoryPermission(req, res, isUiRequest)) return
+        if (!HistoryController.checkHistoryPermission(req, res)) return
         const adapter = HistoryController.getAdapter(req);
 
         if (req.method.toUpperCase() === 'GET') {
@@ -146,21 +144,10 @@ export class HistoryController {
         return req.adminizer.historyHandler.get(adapter);
     }
 
-    private static checkHistoryPermission(req: ReqType, res: ResType, shouldRedirectToLogin = false): boolean {
+    private static checkHistoryPermission(req: ReqType, res: ResType): boolean {
         if (!req.adminizer?.historyHandler) {
             res.status(401).json({ error: 'History system not initialized' });
             return false
-        }
-
-        if (req.adminizer.config.auth.enable) {
-            if (!req.user) {
-                if (shouldRedirectToLogin) {
-                    redirectToLogin(req, res);
-                } else {
-                    res.status(401).json({ error: 'Unauthorized' });
-                }
-                return false
-            }
         }
 
         const hasPermission = req.adminizer.accessRightsHelper.hasPermission(

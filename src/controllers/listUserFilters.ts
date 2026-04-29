@@ -3,10 +3,6 @@
  * Page controller for the user filters list view.
  */
 export default async function listUserFilters(req: ReqType, res: ResType) {
-    if (req.adminizer.config.auth.enable && !req.user) {
-        return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
-    }
-
     // Get all models for the dropdown
     const allModels = req.adminizer.config.models || {};
     const modelsList = Object.keys(allModels).map(name => {

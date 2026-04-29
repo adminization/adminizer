@@ -1,14 +1,7 @@
-import {redirectToLogin} from '../helpers/inertiaAutHelper';
-
 export default async function widgetsDB(req: ReqType, res: ResType) {
     let id: number = 0
     let auth = req.adminizer.config.auth.enable
-    if (auth) {
-        if (!req.user) {
-            return redirectToLogin(req, res);
-        } else if (!req.adminizer.accessRightsHelper.hasPermission(`widgets`, req.user)) {
-            return res.sendStatus(403);
-        }
+    if (req.user) {
         id = req.user.id
     }
 
@@ -34,4 +27,6 @@ export default async function widgetsDB(req: ReqType, res: ResType) {
             return res.status(500).send({error: e.message || 'Internal Server Error'});
         }
     }
+
+    return res.status(405).end();
 }

@@ -2,25 +2,9 @@ import { ControllerHelper } from "../helpers/controllerHelper";
 import {Entity} from "../interfaces/types";
 import * as fs from "fs";
 import multer from "multer";
-import {redirectToLogin} from '../helpers/inertiaAutHelper';
 
 export async function ckEditorUpload(req: ReqType, res: ResType) {
 	let entity = ControllerHelper.findEntityObject(req);
-
-	if (req.adminizer.config.auth.enable) {
-		if (!req.user) {
-			redirectToLogin(req, res);
-			return
-		} else if (!req.adminizer.accessRightsHelper.enoughPermissions([
-			`update-${entity.name}-model`,
-			`create-${entity.name}-model`,
-			`update-${entity.name}-form`,
-			`create-${entity.name}-form`
-		], req.user)) {
-			res.sendStatus(403);
-			return
-		}
-	}
 
     const dirDownload = `uploads/${entity.type}/${entity.name}/ckeditor`;
 

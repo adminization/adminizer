@@ -216,52 +216,50 @@ export function TableToolbar({header, showSearch, onToggleSearch}: TableToolbarP
                         {t('Filters')}
                     </Button>
                 )}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="outline"
-                            disabled={exporting || !hasActiveFilter}
-                            title={hasActiveFilter ? undefined : t('Export is only available with an active filter')}
-                        >
-                            <Icon iconNode={exporting ? RefreshCcw : Download}/>
-                            {exporting ? t('Exporting...') : t('Export')}
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                        <DropdownMenuGroup className="grid gap-1">
-                            <DropdownMenuItem
-                                onClick={() => hasActiveFilter && handleExport('json')}
-                                disabled={!hasActiveFilter}
-                                className={cn('cursor-pointer', !hasActiveFilter && 'opacity-50 cursor-not-allowed')}
+                {hasActiveFilter && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="outline"
+                                disabled={exporting}
                             >
-                                <div className="flex items-center gap-4 w-full">
-                                    <span className="font-mono text-xs w-8 shrink-0">JSON</span>
-                                    <span className="text-muted-foreground text-xs">{t('Data in JSON format')}</span>
-                                </div>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => hasActiveFilter && handleExport('csv')}
-                                disabled={!hasActiveFilter}
-                                className={cn('cursor-pointer', !hasActiveFilter && 'opacity-50 cursor-not-allowed')}
-                            >
-                                <div className="flex items-center gap-4 w-full">
-                                    <span className="font-mono text-xs w-8 shrink-0">CSV</span>
-                                    <span className="text-muted-foreground text-xs">{t('Text format CSV')}</span>
-                                </div>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => hasActiveFilter && handleExport('xlsx')}
-                                disabled={!hasActiveFilter}
-                                className={cn('cursor-pointer', !hasActiveFilter && 'opacity-50 cursor-not-allowed')}
-                            >
-                                <div className="flex items-center gap-4 w-full">
-                                    <span className="font-mono text-xs w-8 shrink-0">XLSX</span>
-                                    <span className="text-muted-foreground text-xs">{t('Excel file')}</span>
-                                </div>
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                                <Icon iconNode={exporting ? RefreshCcw : Download}/>
+                                {exporting ? t('Exporting...') : t('Export')}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                            <DropdownMenuGroup className="grid gap-1">
+                                <DropdownMenuItem
+                                    onClick={() => handleExport('json')}
+                                    className={cn('cursor-pointer')}
+                                >
+                                    <div className="flex items-center gap-4 w-full">
+                                        <span className="font-mono text-xs w-8 shrink-0">JSON</span>
+                                        <span className="text-muted-foreground text-xs">{t('Data in JSON format')}</span>
+                                    </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => handleExport('csv')}
+                                    className={cn('cursor-pointer')}
+                                >
+                                    <div className="flex items-center gap-4 w-full">
+                                        <span className="font-mono text-xs w-8 shrink-0">CSV</span>
+                                        <span className="text-muted-foreground text-xs">{t('Text format CSV')}</span>
+                                    </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => handleExport('xlsx')}
+                                    className={cn('cursor-pointer')}
+                                >
+                                    <div className="flex items-center gap-4 w-full">
+                                        <span className="font-mono text-xs w-8 shrink-0">XLSX</span>
+                                        <span className="text-muted-foreground text-xs">{t('Excel file')}</span>
+                                    </div>
+                                </DropdownMenuItem>
+                            </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
                 <Button
                     className="transition-none cursor-pointer"
                     variant={showSearch ? "destructive" : "outline"}

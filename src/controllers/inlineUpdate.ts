@@ -11,6 +11,8 @@ import {Field} from "../helpers/fieldsHelper";
  * Body: { field: string, value: any }
  */
 export default async function inlineUpdate(req: ReqType, res: ResType) {
+    const allowedFieldTypes = new Set(['string', 'integer', 'number', 'range', 'boolean', 'float', 'email']);
+
     // Check ID
     if (!req.params.id) {
         return res.status(400).json({ error: 'Record ID is required' });
@@ -38,9 +40,20 @@ export default async function inlineUpdate(req: ReqType, res: ResType) {
         return res.status(400).json({ error: `Field '${fieldName}' not found` });
     }
 
-    // Check if field is inline editable
+    const identifierField =
+        entity.config.identifierField ||
+        req.adminizer.config.identifierField ||
+        entity.model.primaryKey ||
+        'id';
+
+    const blockedInlineFields = new Set(['id', 'createdat', 'updatedat']);
+    if (blockedInlineFields.has(fieldName.toLowerCase()) || fieldName === identifierField) {
+        return res.status(403).json({ error: `Field '${fieldName}' cannot be edited inline` });
+    }
+
+    // Check if inline edit is explicitly disabled for this field
     const baseConfig = fieldConfig.config as BaseFieldConfig;
-    if (!baseConfig.inlineEditable) {
+    if (baseConfig.inlineEditable === false) {
         return res.status(403).json({ error: `Field '${fieldName}' is not inline editable` });
     }
 
@@ -49,14 +62,21 @@ export default async function inlineUpdate(req: ReqType, res: ResType) {
         return res.status(403).json({ error: `Field '${fieldName}' has displayModifier and cannot be edited` });
     }
 
+    // Check if field type supports inline editing.
+    // Prefer explicit field config type, fallback to model metadata type.
+    const fieldType = (baseConfig.type || fieldConfig.model?.type || '').toLowerCase();
+    if (!fieldType || !allowedFieldTypes.has(fieldType)) {
+        return res.status(403).json({ error: `Field '${fieldName}' type does not support inline editing` });
+    }
+
     // Validate value
-    const validationError = validateInlineValue(newValue, baseConfig, fieldConfig.model?.type);
+    const validationError = validateInlineValue(newValue, baseConfig, fieldType);
     if (validationError) {
         return res.status(400).json({ error: validationError });
     }
 
     // Convert value based on field type
-    const convertedValue = convertInlineValue(newValue, fieldConfig.model?.type);
+    const convertedValue = convertInlineValue(newValue, fieldType);
 
     // Update record
     const id = req.params.id;

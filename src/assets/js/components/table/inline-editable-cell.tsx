@@ -37,7 +37,10 @@ export function InlineEditableCell({
 
     // Check if field can be edited
     const isFieldTypeAllowed = allowedFieldTypes.includes(fieldType?.toLowerCase() || '');
-    const canEdit = fieldConfig.inlineEditable === true && !hasDisplayModifier && isFieldTypeAllowed;
+    const isInlineEditableEnabled = fieldConfig.inlineEditable !== false;
+    const blockedInlineFields = new Set(['id', 'createdAt', 'updatedAt']);
+    const isSystemBlockedField = blockedInlineFields.has(fieldName);
+    const canEdit = isInlineEditableEnabled && !isSystemBlockedField && !hasDisplayModifier && isFieldTypeAllowed;
 
     // Focus input when editing starts
     useEffect(() => {

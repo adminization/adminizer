@@ -84,7 +84,7 @@ const models: AdminpanelConfig["models"] = {
                 title: 'Title',
                 type: 'string',
                 required: true,
-                inlineEditable: true
+                inlineEditable: false
             },
             description: {
                 title: 'Textarea',
@@ -95,7 +95,7 @@ const models: AdminpanelConfig["models"] = {
             sort: {
                 type: 'boolean',
                 title: 'Boolean',
-                inlineEditable: true
+                // inlineEditable: true
             },
             disabled_text: {
                 title: 'Disabled',
@@ -110,7 +110,7 @@ const models: AdminpanelConfig["models"] = {
                     min: 10,
                     max: 80
                 },
-                inlineEditable: true
+                // inlineEditable: true
             },
             select: {
                 title: 'Select',
@@ -145,7 +145,7 @@ const models: AdminpanelConfig["models"] = {
             number: {
                 title: 'Number',
                 type: 'number',
-                inlineEditable: true
+                // inlineEditable: true
             },
             color: {
                 title: 'color',

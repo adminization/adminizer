@@ -548,8 +548,8 @@ export interface BaseFieldConfig {
 
     /**
      * Allow inline editing of this field in list view
-     * When true, the field can be edited directly in the table
-     * @default false
+     * Inline editing is enabled by default for supported field types.
+     * Set to false to explicitly disable inline editing for this field.
      */
     inlineEditable?: boolean
 

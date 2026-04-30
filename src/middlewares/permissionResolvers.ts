@@ -12,6 +12,8 @@ function extractEntityName(req: ReqType): string | undefined {
     return match?.[1];
 }
 
+export const GROUP_FILTER_VISIBILITY_TOKEN = "manage-group-filter-visibility";
+
 export function modelReadToken(req: ReqType): string | undefined {
     const entityName = extractEntityName(req);
     return entityName ? `read-${entityName}-model` : undefined;
@@ -72,4 +74,8 @@ export function aiModelToken(req: ReqType): string | undefined {
 
 export function historyToken(req: ReqType): string {
     return `history-${req.adminizer.config.history?.adapter ?? "default"}`;
+}
+
+export function groupFilterVisibilityToken(): string {
+    return GROUP_FILTER_VISIBILITY_TOKEN;
 }

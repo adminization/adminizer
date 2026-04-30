@@ -3,6 +3,7 @@ import { FilterService } from "../../lib/filters/FilterService";
 import { FilterAP } from "../../models/FilterAP";
 import { FilterColumnAP } from "../../models/FilterColumnAP";
 import { Adminizer } from "../../lib/Adminizer";
+import { GROUP_FILTER_VISIBILITY_TOKEN } from "../../middlewares/permissionResolvers";
 
 /**
  * GET /adminizer/model/:model/filter/locales
@@ -312,12 +313,14 @@ export async function saveFilter(req: ReqType, res: ResType) {
 
     // Determine visibility and groupIds
     const isAdmin = req.user?.isAdministrator === true;
+    const canManageGroupVisibility =
+        isAdmin || req.adminizer.accessRightsHelper.hasPermission(GROUP_FILTER_VISIBILITY_TOKEN, req.user);
     let effectiveVisibility: 'private' | 'public' | 'groups' = 'private';
     let effectiveGroupIds: number[] | undefined;
 
     if (visibility === 'public' && isAdmin) {
         effectiveVisibility = 'public';
-    } else if (visibility === 'groups') {
+    } else if (visibility === 'groups' && canManageGroupVisibility) {
         // Groups visibility: only if groupIds provided and user has access to those groups
         if (groupIds && Array.isArray(groupIds) && groupIds.length > 0) {
             effectiveVisibility = 'groups';

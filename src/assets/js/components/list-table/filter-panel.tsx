@@ -93,6 +93,17 @@ interface TemporaryFilterPayload {
 }
 
 const TEMPORARY_FILTER_ID = 'temporary';
+const GROUP_FILTER_VISIBILITY_TOKEN = 'manage-group-filter-visibility';
+
+const hasUserToken = (user: any, tokenId: string): boolean => {
+    if (!user || !Array.isArray(user.groups)) {
+        return false;
+    }
+
+    return user.groups.some((group: any) =>
+        Array.isArray(group?.tokens) && group.tokens.includes(tokenId)
+    );
+};
 
 const getRouteUrl = (url?: string) => {
     if (url) {
@@ -197,6 +208,8 @@ const FILTER_ICON_OPTIONS = [
 export function FilterPanel({onApplyFilters}: FilterPanelProps) {
     const page = usePage<any>();
     const user = page.props?.auth?.user;
+    const canManagePublicFilterVisibility = user?.isAdministrator === true;
+    const canManageGroupFilterVisibility = canManagePublicFilterVisibility || hasUserToken(user, GROUP_FILTER_VISIBILITY_TOKEN);
     const activeFilterFromPage = page.props?.activeFilter;
     const {
         modelName,
@@ -481,10 +494,10 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         loadFilterFields();
     }, [modelName]);
 
-    // Загрузка всех групп (для админов)
+    // Загрузка всех групп (для пользователей, которым разрешена групповая видимость)
     useEffect(() => {
         const loadGroups = async () => {
-            if (!user?.isAdministrator) {
+            if (!canManageGroupFilterVisibility) {
                 return;
             }
             try {
@@ -496,7 +509,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         };
 
         loadGroups();
-    }, [user?.isAdministrator]);
+    }, [canManageGroupFilterVisibility]);
 
     // Экспортируем функции наружу через window для доступа из TableToolbar
     useEffect(() => {
@@ -1132,7 +1145,11 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
             icon: filter.icon || 'bookmark',
             color: filter.color || '#3b82f6'
         });
-        setEditVisibility((filter.visibility as 'private' | 'public' | 'groups') || 'private');
+        const incomingVisibility = (filter.visibility as 'private' | 'public' | 'groups') || 'private';
+        const normalizedVisibility = (!canManagePublicFilterVisibility && incomingVisibility === 'public')
+            ? 'private'
+            : incomingVisibility;
+        setEditVisibility(normalizedVisibility);
         setEditGroupIds(filter.groupIds || []);
         setEditApiEnabled(filter.apiEnabled || false);
         setEditApiKey(filter.apiKey || undefined);
@@ -1141,7 +1158,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         setSlide2Mode('edit');
         // Открываем второй слайд (редактирование сохранённого фильтра с метаполя ми)
         filterDialogRef.current?.next();
-    }, [loadFilterIntoPanel]);
+    }, [canManagePublicFilterVisibility, loadFilterIntoPanel]);
 
     /**
      * Удаление фильтра
@@ -2227,8 +2244,8 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                                             />
                                         </div>
 
-                                        {/* Visibility переключатель (только для админов) */}
-                                        {user?.isAdministrator ? (
+                                        {/* Visibility переключатель (для админов и пользователей с токеном) */}
+                                        {canManageGroupFilterVisibility ? (
                                             <div className="space-y-3 p-3 border rounded-lg bg-muted/20">
                                                 <div className="flex items-center gap-2">
                                                     <Users className="h-4 w-4 text-muted-foreground" />
@@ -2310,26 +2327,28 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                                                                     </div>
                                                                 </label>
 
-                                                                <label
-                                                                    className={cn(
-                                                                        "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                                                                        editVisibility === 'public' && "bg-accent"
-                                                                    )}
-                                                                    onClick={() => setEditVisibility('public')}
-                                                                >
-                                                                    <input
-                                                                        type="radio"
-                                                                        name="editVisibility"
-                                                                        checked={editVisibility === 'public'}
-                                                                        onChange={() => setEditVisibility('public')}
-                                                                        className="h-4 w-4"
-                                                                    />
-                                                                    <Globe className="h-4 w-4 text-muted-foreground" />
-                                                                    <div>
-                                                                        <div className="text-sm font-medium">{t('Public')}</div>
-                                                                        <div className="text-xs text-muted-foreground">{t('For all users')}</div>
-                                                                    </div>
-                                                                </label>
+                                                                {canManagePublicFilterVisibility && (
+                                                                    <label
+                                                                        className={cn(
+                                                                            "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+                                                                            editVisibility === 'public' && "bg-accent"
+                                                                        )}
+                                                                        onClick={() => setEditVisibility('public')}
+                                                                    >
+                                                                        <input
+                                                                            type="radio"
+                                                                            name="editVisibility"
+                                                                            checked={editVisibility === 'public'}
+                                                                            onChange={() => setEditVisibility('public')}
+                                                                            className="h-4 w-4"
+                                                                        />
+                                                                        <Globe className="h-4 w-4 text-muted-foreground" />
+                                                                        <div>
+                                                                            <div className="text-sm font-medium">{t('Public')}</div>
+                                                                            <div className="text-xs text-muted-foreground">{t('For all users')}</div>
+                                                                        </div>
+                                                                    </label>
+                                                                )}
                                                             </div>
 
                                                             {/* Выбор групп (показывается только если выбран режим groups) */}
@@ -2602,8 +2621,8 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                                     />
                                 </div>
 
-                                {/* Visibility переключатель (только для админов) */}
-                                {user?.isAdministrator ? (
+                                {/* Visibility переключатель (для админов и пользователей с токеном) */}
+                                {canManageGroupFilterVisibility ? (
                                     <div className="space-y-3 p-3 border rounded-lg bg-muted/20">
                                         <div className="flex items-center gap-2">
                                             <Users className="h-4 w-4 text-muted-foreground" />
@@ -2654,26 +2673,28 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                                                 </div>
                                             </label>
 
-                                            <label
-                                                className={cn(
-                                                    "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                                                    saveVisibility === 'public' && "bg-accent"
-                                                )}
-                                                onClick={() => setSaveVisibility('public')}
-                                            >
-                                                <input
-                                                    type="radio"
-                                                    name="saveVisibility"
-                                                    checked={saveVisibility === 'public'}
-                                                    onChange={() => setSaveVisibility('public')}
-                                                    className="h-4 w-4"
-                                                />
-                                                <Globe className="h-4 w-4 text-muted-foreground" />
-                                                <div>
-                                                    <div className="text-sm font-medium">{t('Public')}</div>
-                                                    <div className="text-xs text-muted-foreground">{t('For all users')}</div>
-                                                </div>
-                                            </label>
+                                            {canManagePublicFilterVisibility && (
+                                                <label
+                                                    className={cn(
+                                                        "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+                                                        saveVisibility === 'public' && "bg-accent"
+                                                    )}
+                                                    onClick={() => setSaveVisibility('public')}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="saveVisibility"
+                                                        checked={saveVisibility === 'public'}
+                                                        onChange={() => setSaveVisibility('public')}
+                                                        className="h-4 w-4"
+                                                    />
+                                                    <Globe className="h-4 w-4 text-muted-foreground" />
+                                                    <div>
+                                                        <div className="text-sm font-medium">{t('Public')}</div>
+                                                        <div className="text-xs text-muted-foreground">{t('For all users')}</div>
+                                                    </div>
+                                                </label>
+                                            )}
                                         </div>
 
                                         {/* Выбор групп (показывается только если выбран режим groups) */}

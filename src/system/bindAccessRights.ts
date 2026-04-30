@@ -1,5 +1,6 @@
 import { GroupAP } from "../models/GroupAP";
 import {Adminizer} from "../lib/Adminizer";
+import { GROUP_FILTER_VISIBILITY_TOKEN } from "../middlewares/permissionResolvers";
 
 export default async function bindAccessRights(adminizer: Adminizer) {
     if (adminizer.config.models) {
@@ -56,6 +57,14 @@ export default async function bindAccessRights(adminizer: Adminizer) {
         name: "Allowed log in",
         description: "Are users allowed to log in to the admin panel?",
         department: "Admin panel"
+    });
+
+    // Filters
+    adminizer.accessRightsHelper.registerToken({
+        id: GROUP_FILTER_VISIBILITY_TOKEN,
+        name: "Manage group filter visibility",
+        description: "Allows setting saved filter visibility to selected groups",
+        department: "Filters"
     });
 
     // Default user group

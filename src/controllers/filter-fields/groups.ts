@@ -1,6 +1,6 @@
 /**
  * GET /adminizer/groups
- * Returns list of all groups (for admin filter visibility settings)
+ * Returns list of all groups (for filter visibility settings)
  */
 export async function getAllGroups(req: ReqType, res: ResType) {
     try {

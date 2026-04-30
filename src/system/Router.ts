@@ -34,7 +34,6 @@ import { AiAssistantController } from "../controllers/ai/AiAssistantController";
 import { HistoryController } from "../controllers/history-actions/HistoryController";
 import listUserFilters from "../controllers/listUserFilters";
 import {
-    requireAdmin,
     requireAnyPermission,
     requireAuthAPI,
     requireAuthEnabled,
@@ -46,6 +45,7 @@ import {
     catalogToken,
     formCreateToken,
     formUpdateToken,
+    groupFilterVisibilityToken,
     historyToken,
     mediaManagerToken,
     modelCreateToken,
@@ -402,7 +402,7 @@ export default class Router {
              */
             adminizer.app.get(
                 `${adminizer.config.routePrefix}/groups`,
-                withGuards(getAllGroups, requireAuthAPI(), requireAdmin())
+                withGuards(getAllGroups, requireAuthAPI(), requirePermission(groupFilterVisibilityToken))
             );
 
             /**

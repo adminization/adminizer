@@ -1,564 +1,316 @@
 # Filters in Adminizer
 
-The filtering system allows creating, saving, and applying filters to model data. Filters support private/public access, condition grouping, sorting, and column display customization.
+This document describes the current filter implementation in the codebase (backend + frontend).
 
----
+## Overview
 
-## Table of Contents
+The filter subsystem allows users to:
 
-1. [Architecture](#architecture)
-2. [Data Models](#data-models)
-3. [Filter Operators](#filter-operators)
-4. [Filter Visibility](#filter-visibility)
-5. [Backend API](#backend-api)
-6. [Frontend Components](#frontend-components)
-7. [Temporary Filters](#temporary-filters)
-8. [Column Management](#column-management)
-9. [Validation and Security](#validation-and-security)
-10. [Filter Migration](#filter-migration)
-11. [Custom Field Handlers](#custom-field-handlers)
-12. [Public Feed API](#public-feed-api)
-13. [Programmatic Filter Creation](#programmatic-filter-creation)
+- build and apply temporary filters;
+- save personal/shared filters with metadata;
+- store per-filter column order;
+- expose private filters as JSON/XML feeds (with API keys);
+- use relation and custom conditions for Sequelize models.
 
----
+Main files:
 
-## Architecture
-
-The filter system consists of the following components:
-
-| Component | Location | Description |
-|-----------|----------|-------------|
-| `FilterAP` | `src/models/FilterAP.ts` | Filter data model |
-| `FilterColumnAP` | `src/models/FilterColumnAP.ts` | Column configuration model |
-| `FilterService` | `src/lib/filters/FilterService.ts` | Main filtering service |
-| `FilterBuilder` | `src/lib/filters/FilterBuilder.ts` | Fluent API for filter creation |
-| `FilterMigrator` | `src/lib/filters/FilterMigrator.ts` | Filter schema migration |
-| `ConditionValidator` | `src/lib/filters/ConditionValidator.ts` | Condition validation |
-| `CustomFieldHandler` | `src/lib/filters/CustomFieldHandler.ts` | Complex field handlers |
-| `ModernQueryBuilder` | `src/lib/query-builder/ModernQueryBuilder.ts` | Query building |
-
----
+- `src/models/FilterAP.ts`
+- `src/models/FilterColumnAP.ts`
+- `src/lib/filters/FilterService.ts`
+- `src/lib/query-builder/ModernQueryBuilder.ts`
+- `src/controllers/filter-fields/*`
+- `src/assets/js/components/list-table/filter-panel.tsx`
 
 ## Data Models
 
-### FilterAP
+### `FilterAP`
 
-The main filter model:
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `string` | UUID |
+| `name` | `string` | Required |
+| `description` | `string?` | Optional |
+| `modelName` | `string` | Required |
+| `conditions` | `FilterCondition[]` | JSON array |
+| `sortField` | `string?` | Optional |
+| `sortDirection` | `'ASC' \| 'DESC'?` | Optional |
+| `visibility` | `'private' \| 'public' \| 'groups' \| 'system'` | Access mode |
+| `ownerId` | `number` | Owner user id |
+| `groupIds` | `number[]?` | Used when visibility is `groups` |
+| `apiEnabled` | `boolean` | Feed enabled flag |
+| `apiKey` | `string?` | Filter API key for feeds |
+| `icon` | `string?` | UI icon |
+| `color` | `string?` | UI color |
+| `version` | `number` | Filter format version (`1`) |
+| `createdAt` / `updatedAt` | `Date` | Auto timestamps |
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Filter UUID |
-| `name` | `string` | Filter name |
-| `description` | `string?` | Description |
-| `modelName` | `string` | Model name |
-| `slug` | `string` | Unique identifier |
-| `conditions` | `FilterCondition[]` | Filter conditions |
-| `sortField` | `string?` | Sort field |
-| `sortDirection` | `'ASC' \| 'DESC'?` | Sort direction |
-| `selectedFields` | `string[]?` | Selected display fields |
-| `ownerId` | `number?` | Owner ID |
-| `visibility` | `FilterVisibility` | Visibility type |
-| `groupIds` | `number[]?` | Group IDs (for `groups`) |
-| `apiKey` | `string?` | Public API key |
-| `apiEnabled` | `boolean` | Public API enabled |
-| `icon` | `string?` | Icon |
-| `color` | `string?` | Color |
-| `metadata` | `object?` | Additional metadata |
-| `schemaVersion` | `number` | Schema version (current: `1`) |
+### `FilterColumnAP`
 
-### FilterCondition
+`FilterColumnAP` stores one row per selected column:
 
-A single filter condition structure:
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `number` | Auto-increment |
+| `filter` | `string \| FilterAP` | Relation to `FilterAP` |
+| `fieldName` | `string` | Model field id |
+| `order` | `number` | Display order |
 
-```typescript
+### `FilterCondition`
+
+```ts
 interface FilterCondition {
-    id: string;                      // Condition UUID
-    field?: string;                  // Field name
-    operator?: FilterOperator;       // Operator
-    value?: any;                     // Value
+  id: string;
+  field?: string;
+  operator?: FilterOperator;
+  value?: any;
 
-    // Nested conditions (groups)
-    logic?: 'AND' | 'OR' | 'NOT';   // Group logic
-    children?: FilterCondition[];    // Child conditions
+  logic?: 'AND' | 'OR' | 'NOT';
+  children?: FilterCondition[];
 
-    // For relations
-    relation?: string;               // Relation name
-    relationField?: string;          // Relation field
+  relation?: string;
+  relationField?: string;
 
-    // Custom handlers
-    customHandler?: string;          // Handler ID
-    customHandlerParams?: any;       // Handler parameters
+  customHandler?: string;
+  customHandlerName?: string;
+  customHandlerParams?: any;
 
-    // Raw SQL
-    rawSQL?: string;                 // Raw SQL condition
-    rawSQLParams?: any[];            // SQL parameters
+  rawSQL?: string;
+  rawSQLParams?: any[];
 }
 ```
 
-### Relation Conditions (Sequelize)
+Usage map (current code):
 
-Relation conditions are supported in the filter UI for Sequelize models.
+| Field | Used in code | Notes |
+|---|---|---|
+| `id` | yes | Condition identity in UI/backend validation |
+| `field` | yes | Standard field filtering path |
+| `operator` | yes | Required for query mapping and validation |
+| `value` | yes | Operator payload |
+| `logic` | yes | Group logic (`AND`/`OR`/`NOT`) in backend/query builder |
+| `children` | yes | Nested group conditions in backend/query builder |
+| `relation` | yes | Relation filter path for Sequelize |
+| `relationField` | yes | Related field in relation filter |
+| `customHandler` | yes | Custom handler ID for custom filter execution |
+| `customHandlerName` | yes | UI display label (optional, fallbacks exist) |
+| `customHandlerParams` | yes | Optional params passed to custom handler execution |
+| `rawSQL` | yes | Advanced raw SQL condition path (validated/executed) |
+| `rawSQLParams` | yes | Parameters for raw SQL placeholders |
 
-- Supported relation types: `association`, `association-many`
-- Condition format: `relation + relationField + operator + value`
-- Allowed operators for relation conditions: `eq`, `neq`
-- Relation field picker includes only simple fields from the related model:
-  - included: string, text, number, integer, float, boolean, date, datetime, select, select-many, etc.
-  - excluded: `association`, `association-many`, `json`, `jsoneditor`, `object`, `array`
-- Waterline relation filtering is not supported in filter conditions.
+There are no currently dead fields in `FilterCondition`. Some fields are optional or advanced, but all are referenced by runtime code and/or UI formatting.
 
-### FilterColumnAP
+## Operators
 
-Column configuration for a filter:
+`FilterOperator` currently includes:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | UUID |
-| `filterId` | `string` | Related filter ID |
-| `columnConfigs` | `object` | Per-column configuration (visibility, order, width, editability) |
+- `eq`, `neq`
+- `gt`, `gte`, `lt`, `lte`
+- `like`, `ilike`, `startsWith`, `endsWith`
+- `in`, `notIn`
+- `between`
+- `today`, `month`, `year`, `monthBetween`, `yearBetween`
+- `isNull`, `isNotNull`
+- `regex`
+- `custom`
 
----
+Type-specific availability is enforced in `ConditionValidator` and `ModernQueryBuilder`.
 
-## Filter Operators
+### Important UI note
 
-| Operator | Description | Applicable Types |
-|----------|-------------|------------------|
-| `eq` | Equals | All |
-| `neq` | Not equals | All |
-| `gt` | Greater than | number, integer, float, date, datetime |
-| `gte` | Greater than or equal | number, integer, float, date, datetime |
-| `lt` | Less than | number, integer, float, date, datetime |
-| `lte` | Less than or equal | number, integer, float, date, datetime |
-| `like` | LIKE %value% | string, text |
-| `ilike` | Case-insensitive LIKE | string, text |
-| `startsWith` | LIKE value% | string, text |
-| `endsWith` | LIKE %value | string, text |
-| `in` | IN (list) | All |
-| `notIn` | NOT IN (list) | All |
-| `between` | BETWEEN val1 AND val2 | number, integer, float, date, datetime |
-| `isNull` | IS NULL | All |
-| `isNotNull` | IS NOT NULL | All |
-| `regex` | Regular expression | string, text |
-| `custom` | Custom handler | Depends on handler |
+The current filter panel supports a flat condition list (combined with `AND`).
+Nested `AND/OR/NOT` groups are supported by backend condition format and query builder, but the standard UI does not provide a group editor.
 
----
+### Relation filter note
 
-## Filter Visibility
+- Relation conditions are available only for Sequelize relation fields.
+- In the current UI and validator flow for relation conditions, allowed operators are `eq` and `neq`.
 
-### Visibility Types
+## Visibility and Permissions
 
-| Type | Description | Who can see |
-|------|-------------|-------------|
-| `private` | Private filter | Owner only |
+Visibility types:
 
----
+- `private` - owner + admin
+- `groups` - users whose groups intersect with `groupIds` + admin
+- `public` - all users with access to the model
+- `system` - visible to all users with model access; excluded from saved filter list by default
 
-## Recent UI Behavior Updates
+Edit/delete rules:
 
-- Saved filters are now auto-applied immediately after a successful save in the filter dialog.
-- Updated saved filters are also auto-applied immediately after saving on the edit slide.
-- The auto-apply step reuses the same frontend flow as selecting a saved filter from the saved filters list.
-- This keeps URL state (`filterId`) and filter panel state synchronized after save.
-| `groups` | Group filter | Users in selected groups |
-| `public` | Public filter | All model users |
-| `system` | System filter | All (not editable) |
+- admins can edit/delete any filter;
+- non-admin users can edit/delete only their own filters.
 
-### Permissions
+Creation rules in `POST /filter`:
 
-| Role | Creation | Edit | Delete |
-|------|----------|------|--------|
-| Admin (`isAdministrator: true`) | Any visibility | All filters | All filters |
-| Regular user | `private` only | Own `private` only | Own `private` only |
+- `public` is allowed only for admins;
+- `groups` is allowed for admins or users with `manage-group-filter-visibility` permission token;
+- otherwise visibility is forced to `private`.
 
-### Notes
-
-- When editing someone else's filter, visibility is preserved (cannot be changed)
-- Group filters are visible to all group members, but only admins can edit them
-- System filters are created programmatically and are not editable by users
-
----
+When editing someone else's filter, visibility is preserved.
 
 ## Backend API
 
-### Get filter fields
+Routes are registered under both `/model/:entityName/...` and `/form/:entityName/...` patterns. In practice, filter UI uses `/model/:model/...`.
 
-```
-GET /adminizer/model/:model/filter-fields
-```
+### Filter metadata and fields
 
-Returns available fields for filtering on a model.
+- `GET /adminizer/model/:model/filter-fields`
+  - Returns available fields for filter UI.
+  - Applies model filter config: `models.<Model>.filters` (or legacy `modelFilters.<Model>`).
+  - Applies `excludeFromFilters`.
+  - Always excludes `id`, `ownerId`, `updatedAt`.
+  - Relation fields are returned only for Sequelize.
+  - Custom filter metadata is returned for Sequelize fields with `customFilter.handlerId`.
 
-Notes for relation fields:
-
-- System fields (`id`, `ownerId`, `updatedAt`) are excluded.
-- `modelFilters.<Model>.excludeFromFilters` is applied before field exposure.
-- If `includeInFilters` is set, it acts as a whitelist over the already filtered set.
-- Relation filters are exposed only for Sequelize.
-- Custom filters are exposed only for Sequelize fields with `customFilter` in field config.
-- For custom fields, API returns additional metadata:
-  - `isCustomFilter: true`
-  - `customFilterHandlerId`
-  - `customFilterLabel` (optional)
+- `GET /adminizer/model/:model/filter/locales`
+  - Returns i18n strings for filter UI.
 
 ### Saved filters
 
-```
-GET /adminizer/model/:model/saved-filters
-```
+- `GET /adminizer/model/:model/saved-filters`
+  - Returns accessible filters with:
+  - owner info (`ownerInfo`)
+  - computed result count (`resultCount`)
 
-Returns the list of saved filters for a model, including owner info and result counts.
+- `POST /adminizer/model/:model/filter`
+  - Creates or updates a saved filter.
+  - Update mode uses `filterId` in body.
+  - Optional: `columns`, `visibility`, `groupIds`, `sortField`, `sortDirection`, `icon`, `color`.
+  - For private owner filters, supports `apiEnabled` and `regenerateApiKey`.
+  - If same-name filter already exists for the same owner and `filterId` is not provided, returns `409` with `requiresConfirmation: true`.
 
-### Create/update filter
+- `DELETE /adminizer/model/:model/filter/:id`
+  - Returns `204` for successful deletion.
+  - Also returns `204` for "not found or access denied" to avoid ownership enumeration.
 
-```
-POST /adminizer/model/:model/filter
-```
+### Temporary filters
 
-**Request body:**
-```json
-{
-    "name": "Name",
-    "description": "Description",
-    "conditions": [...],
-    "sortField": "title",
-    "sortDirection": "ASC",
-    "visibility": "private",
-    "groupIds": [1, 2],
-    "icon": "filter",
-    "color": "blue",
-    "apiKey": "optional-key",
-    "apiEnabled": false
-}
-```
+- `POST /adminizer/model/:model/filter/apply`
+  - Stores temporary filter in server session as `req.session.temporaryFilters[modelName]`.
+  - Returns `filterId: "temporary"`.
 
-### Delete filter
+- `GET /adminizer/model/:model/filter/temporary`
+  - Reads temporary filter from server session.
 
-```
-DELETE /adminizer/model/:model/filter/:id
-```
+Frontend additionally stores temporary filter meta in `sessionStorage` for local UI state; backend source of truth is server session.
 
-### Apply temporary filter
+### Columns
 
-```
-POST /adminizer/model/:model/filter/apply
-```
+- `GET /adminizer/model/:model/columns?filterId=<id|temporary>`
+  - Returns `availableColumns` and current `filterColumns`.
 
-**Request body:**
-```json
-{
-    "name": "Temporary filter",
-    "conditions": [...],
-    "temporary": true
-}
-```
+- `POST /adminizer/model/:model/filter/:filterId/columns`
+  - Replaces column rows for the filter.
 
-Stores the filter in the session for temporary use.
+### Groups
 
-### User groups
+- `GET /adminizer/groups`
+  - Returns group list for group visibility selector.
+  - Protected by `manage-group-filter-visibility` permission token.
 
-```
-GET /adminizer/groups
-```
+### Cross-model user filter list
 
-Returns all system groups (admin only).
-
-### Model columns
-
-```
-GET /adminizer/model/:model/columns
-GET /adminizer/model/:model/filter/:filterId/columns
-POST /adminizer/model/:model/filter/:filterId/columns
-```
-
-Manage column configuration for a filter.
-
-### Public feed
-
-```
-GET /adminizer/api/feed/:apiKey
-```
-
-Public API for exporting filter data in Atom/JSON format.
-
----
-
-## Frontend Components
-
-### Core Components
-
-| Component | File | Description |
-|-----------|------|-------------|
-| `FilterPanel` | `filter-panel.tsx` | Main filter panel component (~2375 lines). Manages dialogs for creating/editing/applying filters. |
-| `SavedFiltersList` | `filter-panel-saved-filters.tsx` | Saved filters list with icons, visibility badges, and result counts. |
-| `GroupVisibilitySelector` | `group-visibility-selector.tsx` | Group picker for group filters. |
-| `TableToolbar` | `table-toolbar.tsx` | Table toolbar with filter dialog button. |
-
-### UI Flow
-
-1. **Open dialog** — "Filters" button in toolbar opens `FilterDialog`
-2. **Select saved filter** — clicking a filter applies it
-3. **Create new filter** — "Add filter" button → `FilterConditionsDialog`
-4. **Configure conditions** — add/remove conditions, select fields/operators/values
-5. **Apply** — filter is applied to data via temporary `filterId`
-6. **Save** — "Save filter" button → `SaveFilterMetaDialog` → save to DB
-
-### Supported Value Types
-
-- **Strings** — text input
-- **Numbers** — numeric input
-- **Boolean** — Yes/No toggle
-- **Date/Time** — date picker
-- **Select** — dropdown with model options
-- **Multi-select** — multiple selection
-- **JSON fields** — via custom field handlers
-
----
-
-## Temporary Filters
-
-Temporary filters are not saved to the database; they are stored in the user's session:
-
-1. User creates a filter with conditions
-2. Filter is applied to data (`filterId=temporary`)
-3. Conditions are stored in `sessionStorage` for the backend
-4. A "Save filter" button appears in the toolbar
-5. Clicking opens the metadata save dialog (name, description, icon, color, visibility)
-6. After saving, the filter appears in the saved filters list
-
-**Limitations:**
-- Temporary filters do not persist between sessions
-- You must click "Save filter" to persist the filter
-
----
-
-## Column Management
-
-Each saved filter can have its own column configuration:
-
-- **Visibility** — show/hide column
-- **Order** — column display order
-- **Width** — fixed column width
-- **Editability** — inline cell editing enabled/disabled
-
-Configuration is stored in `FilterColumnAP` and applied when displaying the table.
-
----
-
-## Validation and Security
-
-### ConditionValidator
-
-Validates filter conditions:
-
-- Field existence in the model
-- Operator validity per field type
-- Value type and format
-- Security limits:
-  - Maximum nesting depth
-  - Maximum conditions per group
-  - Maximum `IN` values
-  - Maximum string length
-- SQL injection detection for raw SQL conditions
-
-### Security Limits
-
-| Parameter | Value |
-|-----------|-------|
-| Maximum nesting depth | 5 |
-| Maximum conditions per group | 20 |
-| Maximum `IN` values | 1000 |
-| Maximum string length | 10000 |
-
----
-
-## Filter Migration
-
-`FilterMigrator` ensures backward compatibility when the filter schema changes:
-
-- Current schema version: `1`
-- Automatic migration of old versions
-- Post-migration condition validation
-- Condition sanitization (remove invalid conditions)
-- Check for removed model fields
-
----
-
-## Custom Field Handlers
-
-`CustomFieldHandler` allows registering handlers for complex fields:
-
-- JSON fields
-- Computed fields
-- Full-text search
-- Geo-spatial queries
-
-### Config-based loading (recommended)
-
-Use `filters.customHandlersPath` in `adminConfig` to load one or many handler files on startup:
-
-```typescript
-{
-    filters: {
-        customHandlersPath: [
-            'fixture/filters/customFilterHandlers.ts'
-        ]
-    }
-}
-```
-
-Each file must export a default function. Adminizer calls it during init.
-If a file is missing or has invalid export, a warning is logged and startup continues.
-
-### Registering a handler
-
-```typescript
-import { CustomFieldHandler } from 'adminizer';
-
-CustomFieldHandler.register('myHandler', {
-    buildCondition: (operator, value, params) => {
-        // Returns criteria/rawSQL/inMemory
-        return { criteria: { title: value } };
-    },
-    validate: (value) => {
-        // Value validation, throw error if invalid
-        if (!value) throw new Error('Value required');
-    }
-});
-```
-
-### Field-level config
-
-Enable custom filter mode on a field:
-
-```typescript
-fields: {
-    json: {
-        type: 'jsoneditor',
-        customFilter: {
-            handlerId: 'Example.json',
-            label: 'Custom filtering'
-        }
-    }
-}
-```
-
-UI behavior for custom filter fields:
-
-- Condition selector shows only one option (`Custom filtering`)
-- A single value input is rendered
-- Saved condition format:
-
-```json
-{
-  "id": "cond-1",
-  "customHandler": "Example.json",
-  "operator": "custom",
-  "value": "search text"
-}
-```
-
----
+- `GET /adminizer/api/all-user-filters`
+  - Returns all filters visible to the current user across models.
+  - Supports query params: `search`, `modelName`, `offset`, `limit`.
 
 ## Public Feed API
 
-Filters with `apiEnabled: true` and a configured `apiKey` are publicly accessible:
+Feed routes:
 
-- **Atom XML** — for RSS readers
-- **JSON** — for programmatic access
+- `GET /adminizer/api/feed/:apiKey`
+- `GET /adminizer/api/feed/:apiKey.:format` (`json` or `xml`)
 
-### Configuration
+Requirements:
 
-```typescript
-{
-    name: "My public filter",
-    modelName: "Example",
-    conditions: [...],
-    apiKey: "my-secret-key",
-    apiEnabled: true
+- filter must be `visibility: 'private'`;
+- filter must have `apiEnabled: true`;
+- caller must provide `userKey` query parameter;
+- auth must be enabled globally (`config.auth.enable`);
+- `userKey` must match an existing user API key (`UserAP.apiKey`).
+
+Helper endpoints for user API keys:
+
+- `GET /adminizer/api/user-key`
+- `POST /adminizer/api/user-key/regenerate`
+
+## Custom Filter Handlers
+
+Custom handler runtime:
+
+- registry class: `CustomFilterHandler`
+- handler base class: `AbstractCustomFilter`
+- handler id format: `ModelName.fieldName`
+
+Register handlers programmatically:
+
+```ts
+adminizer.customFilterHandler.add(new MyFilterHandler(), { force: true });
+```
+
+Attach handler to model field:
+
+```ts
+fields: {
+  myJson: {
+    type: 'jsoneditor',
+    customFilter: {
+      handlerId: 'Example.myJson'
+    }
+  }
 }
 ```
 
-### Access
+Notes:
 
+- custom filter metadata is exposed by `/filter-fields` only for Sequelize fields;
+- handler `inputConfig` supports up to 3 inputs;
+- in UI, custom condition is serialized with `operator: 'custom'` and `customHandler`.
+
+## Validation and Security Limits
+
+Execution-level limits (`FILTER_SECURITY_LIMITS` in `ModernQueryBuilder`):
+
+| Limit | Value |
+|---|---|
+| Max nesting depth | 10 |
+| Max conditions per group | 100 |
+| Max total conditions | 500 |
+| Max `IN` values | 1000 |
+| Max string length | 10000 |
+
+`ConditionValidator` provides extra condition validation helpers (field/type/operator/value checks and raw SQL pattern checks), but it is a utility class and is not the only enforcement layer. Query execution still validates key constraints in `ModernQueryBuilder`.
+
+## Model Configuration
+
+Global switch:
+
+```ts
+filters: {
+  enabled: true
+}
 ```
-GET /adminizer/api/feed/my-secret-key
-```
 
-Public feeds bypass auth and use the `apiKey` for access control.
+Per-model filter configuration:
 
----
-
-## Programmatic Filter Creation
-
-### FilterBuilder (Fluent API)
-
-```typescript
-import { FilterBuilder } from 'adminizer';
-
-await FilterBuilder
-    .forModel('Example')
-    .named('Active records')
-    .where('sort', 'eq', true)
-    .andWhere('title', 'ilike', 'test')
-    .sortBy('createdAt', 'DESC')
-    .asPublic()
-    .save(user);
-```
-
-### Registration via config
-
-```typescript
-import { FilterBuilder, FilterDefinition } from 'adminizer';
-
-const filters: FilterDefinition[] = [
-    {
-        name: 'Active',
-        modelName: 'Example',
-        description: 'Shows only active records',
-        conditions: [
-            { id: '1', field: 'sort', operator: 'eq', value: true }
-        ],
-        visibility: 'system',
-        icon: 'check',
-        color: 'green'
+```ts
+models: {
+  Example: {
+    model: 'Example',
+    title: 'Example',
+    filters: {
+      enabled: true,
+      excludeFromFilters: ['createdAt', 'updatedAt']
     }
-];
-
-FilterBuilder.registerFilters(filters);
+  }
+}
 ```
 
-### Lifecycle Hooks
+Legacy fallback is still supported:
 
-```typescript
-FilterBuilder.on('beforeCreate', async (filter, context) => {
-    console.log('Creating filter:', filter.name);
-    return filter;
-});
-
-FilterBuilder.on('afterCreate', async (filter, context) => {
-    console.log('Created filter:', filter.id);
-});
-```
-
-Available hooks: `beforeCreate`, `afterCreate`, `beforeUpdate`, `afterUpdate`, `beforeDelete`, `afterDelete`, `beforeExecute`, `afterExecute`.
-
----
-
-## Model Integration
-
-To enable filters in model configuration:
-
-```typescript
-{
-    models: {
-        Example: {
-            model: ExampleModel,
-            filtersEnabled: true,
-            modelFilters: {
-                excludeFromFilters: ['disabled_text', 'editor'],  // Exclude fields
-                includeInFilters: ['title', 'sort'],               // Whitelist
-            }
-        }
-    }
+```ts
+modelFilters: {
+  Example: {
+    excludeFromFilters: ['createdAt']
+  }
 }
 ```

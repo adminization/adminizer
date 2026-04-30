@@ -47,10 +47,10 @@ export interface FilterCondition {
 
     // Custom handler (for complex fields like JSON)
     customHandler?: string;          // Custom handler ID
-    customHandlerName?: string;      // Custom handler display name
-    customHandlerParams?: any;       // Handler parameters
+    customHandlerName?: string;      // Optional UI/display label
+    customHandlerParams?: any;       // Optional custom handler runtime params
 
-    // Raw SQL (optional, for maximum flexibility)
+    // Optional advanced path used by query/validator internals
     rawSQL?: string;                 // Raw SQL condition
     rawSQLParams?: any[];            // SQL parameters
 }

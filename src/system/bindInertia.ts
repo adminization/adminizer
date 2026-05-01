@@ -137,7 +137,7 @@ export function bindInertia(adminizer: Adminizer) {
                 return req.flash.flashAll();
             },
             csrf: {
-                enabled: true,
+                enabled: adminizer.configHelper.isCsrfEnabled(),
                 cookieName: 'XSRF-TOKEN',
                 headerName: 'x-xsrf-token'
             }

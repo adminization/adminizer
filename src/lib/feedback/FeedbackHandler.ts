@@ -12,8 +12,8 @@ export class FeedbackHandler {
 
     register(handler: AbstractFeedbackHandler): void {
         this.handler = handler
-        const policies = this.adminizer.config.middlewares ?? []
-        bindFeedbackController(this.adminizer, policies)
+        const middlewares = this.adminizer.config.middlewares ?? []
+        bindFeedbackController(this.adminizer, middlewares)
         Adminizer.log.info('FeedbackHandler registered')
     }
 

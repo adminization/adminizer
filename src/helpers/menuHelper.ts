@@ -27,6 +27,56 @@ export class MenuHelper {
         this.config = config
     }
 
+    private normalizePath(path: string): string {
+        return path.replace(/[?#].*$/, "").replace(/\/+$/, "");
+    }
+
+    private inferCatalogAccessToken(link?: string): string | undefined {
+        if (!link || typeof link !== "string") {
+            return undefined;
+        }
+
+        // Skip external links.
+        if (/^[a-z][a-z0-9+.-]*:/i.test(link) || link.startsWith("//")) {
+            return undefined;
+        }
+
+        const routePrefix = (this.config.routePrefix || "").replace(/\/+$/, "");
+        let normalized = this.normalizePath(link);
+
+        if (routePrefix && normalized.startsWith(`${routePrefix}/`)) {
+            normalized = normalized.slice(routePrefix.length);
+        } else if (routePrefix && normalized === routePrefix) {
+            normalized = "";
+        }
+
+        if (!normalized.startsWith("/")) {
+            normalized = `/${normalized}`;
+        }
+
+        const match = normalized.match(/^\/catalog\/([^/]+)/i);
+        if (!match?.[1]) {
+            return undefined;
+        }
+
+        try {
+            return `catalog-${decodeURIComponent(match[1]).toLowerCase()}`;
+        } catch {
+            return `catalog-${match[1].toLowerCase()}`;
+        }
+    }
+
+    private enrichHrefAccessToken(item: HrefConfig): HrefConfig {
+        const subItems = item.subItems?.map((subItem) => this.enrichHrefAccessToken(subItem));
+        const accessRightsToken = item.accessRightsToken || this.inferCatalogAccessToken(item.link);
+
+        return {
+            ...item,
+            accessRightsToken,
+            subItems
+        };
+    }
+
     /**
      * Get menu brand title
      *
@@ -144,7 +194,7 @@ export class MenuHelper {
 
         const filtersDisabledGlobally = this.config.filters?.enabled === false;
         const staticLinks = this.config.navbar?.additionalLinks ?? [];
-        staticLinks.forEach(function (additionalLink: HrefConfig & { disabled?: any }) {
+        staticLinks.forEach((additionalLink: HrefConfig & { disabled?: any }) => {
                 const additionalLinkPath = typeof additionalLink.link === "string"
                     ? additionalLink.link.replace(/\/+$/, "")
                     : "";
@@ -156,15 +206,16 @@ export class MenuHelper {
             if (!additionalLink.link || !additionalLink.title || additionalLink.disabled) {
                 return;
             }
+            const resolvedLink = this.enrichHrefAccessToken(additionalLink);
             menus.push({
-                link: additionalLink.link,
-                title: additionalLink.title,
-                type: additionalLink.type,
-                id: additionalLink.id || additionalLink.title.replace(" ", "_"),
-                actions: additionalLink.subItems || null,
-                icon: additionalLink.icon || null,
-                accessRightsToken: additionalLink.accessRightsToken || null,
-                section: additionalLink.section || 'Platform',
+                link: resolvedLink.link,
+                title: resolvedLink.title,
+                type: resolvedLink.type,
+                id: resolvedLink.id || resolvedLink.title.replace(" ", "_"),
+                actions: resolvedLink.subItems || null,
+                icon: resolvedLink.icon || null,
+                accessRightsToken: resolvedLink.accessRightsToken || null,
+                section: resolvedLink.section || 'Platform',
             });
         });
 
@@ -192,7 +243,7 @@ export class MenuHelper {
                         link: _this.config.routePrefix + '/model/' + key,
                         title: val.title || key,
                         icon: val.icon || null,
-                        actions: val.tools || null,
+                        actions: val.tools ? val.tools.map((tool) => _this.enrichHrefAccessToken(tool)) : null,
                         id: val.title ? val.title.replace(" ", "_") : key,
                         entityName: key,
                         accessRightsToken: `read-${key}-model`,

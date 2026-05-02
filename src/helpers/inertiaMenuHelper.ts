@@ -12,17 +12,30 @@ export class InertiaMenuHelper {
     public getMenuItems(req: ReqType) {
         const menu: MenuItem[] = []
         for (const menuItem of this.adminizer.menuHelper.getMenuItems(req.user)) {
-            const menuItemTokens = menuItem.actions ? menuItem.actions.map(item => {
+            const filteredActions = this.filterAccessibleItems(menuItem.actions ?? [], req);
+            const menuItemTokens = filteredActions.map(item => {
                 return item.accessRightsToken
             }).filter(item => {
                 return item
-            }) : []
+            })
             if (menuItem.accessRightsToken) menuItemTokens.push(menuItem.accessRightsToken)
             if (this.adminizer.accessRightsHelper.enoughPermissions(menuItemTokens, req.user)) {
-                menu.push(this.translateMenuItem(req, menuItem))
+                menu.push(this.translateMenuItem(req, {
+                    ...menuItem,
+                    actions: filteredActions
+                }))
             }
         }
         return menu
+    }
+
+    private filterAccessibleItems(items: HrefConfig[], req: ReqType): HrefConfig[] {
+        return items
+            .filter((item) => !item.accessRightsToken || this.adminizer.accessRightsHelper.hasPermission(item.accessRightsToken, req.user))
+            .map((item) => ({
+                ...item,
+                subItems: item.subItems ? this.filterAccessibleItems(item.subItems, req) : item.subItems
+            }));
     }
 
     private translateMenuItem(req: ReqType, menuItem: MenuItem): MenuItem {

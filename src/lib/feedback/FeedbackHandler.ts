@@ -12,7 +12,7 @@ export class FeedbackHandler {
 
     register(handler: AbstractFeedbackHandler): void {
         this.handler = handler
-        const policies = this.adminizer.config.policies ?? []
+        const policies = this.adminizer.config.middlewares ?? []
         bindFeedbackController(this.adminizer, policies)
         Adminizer.log.info('FeedbackHandler registered')
     }

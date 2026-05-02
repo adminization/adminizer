@@ -160,7 +160,7 @@ export interface AdminpanelConfig {
     /**
      * Policies that will be executed before going to every page
      * */
-    policies?: MiddlewareType[]
+    middlewares?: MiddlewareType[]
     styles?: string[]
     scripts?: {
         header?: string[]

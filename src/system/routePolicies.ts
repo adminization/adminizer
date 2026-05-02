@@ -1,6 +1,6 @@
 import { Adminizer } from "../lib/Adminizer";
 
-function composeGuards(action: MiddlewareType, guards: MiddlewareType[]): MiddlewareType {
+function composePolicies(action: MiddlewareType, guards: MiddlewareType[]): MiddlewareType {
     return async (req, res, next) => {
         try {
             for (const guard of guards) {
@@ -27,15 +27,15 @@ function composeGuards(action: MiddlewareType, guards: MiddlewareType[]): Middle
     };
 }
 
-export function bindWithPolicies(
+export function bindWithMiddlewares(
     adminizer: Adminizer,
-    policies: MiddlewareType[],
+    middlewares: MiddlewareType[],
     action: MiddlewareType,
-    guards: MiddlewareType[] = []
+    policies: MiddlewareType[] = []
 ): MiddlewareType[] {
-    if (!guards.length) {
-        return adminizer.policyManager.bindPolicies(policies, action);
+    if (!policies.length) {
+        return adminizer.middlewareManager.bindMiddlewares(middlewares, action);
     }
 
-    return adminizer.policyManager.bindPolicies(policies, composeGuards(action, guards));
+    return adminizer.middlewareManager.bindMiddlewares(middlewares, composePolicies(action, policies));
 }

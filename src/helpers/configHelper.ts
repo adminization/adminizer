@@ -1,202 +1,202 @@
-import {AdminpanelConfig, BaseFieldConfig, ModelConfig} from "../interfaces/adminpanelConfig";
-import {Attribute} from "../lib/model/AbstractModel";
-import {Adminizer} from "../lib/Adminizer";
-import {getDefaultConfig} from "../system/defaults";
+import { AdminpanelConfig, BaseFieldConfig, ModelConfig } from "../interfaces/adminpanelConfig";
+import { Attribute } from "../lib/model/AbstractModel";
+import { Adminizer } from "../lib/Adminizer";
+import { getDefaultConfig } from "../system/defaults";
 
 export class ConfigHelper {
 
-  public adminizer: Adminizer;
+	public adminizer: Adminizer;
 
-  constructor(adminizer: Adminizer) {
-    this.adminizer = adminizer;
-  }
+	constructor(adminizer: Adminizer) {
+		this.adminizer = adminizer;
+	}
 
-  public getConfig(): AdminpanelConfig {
-    return this.adminizer.config;
-  }
+	public getConfig(): AdminpanelConfig {
+		return this.adminizer.config;
+	}
 
-  /**
-   * Checks if given field is identifier of model
-   *
-   * @param {Object} field
-   * @param {Object|string=} modelOrName
-   * @returns {boolean}
-   */
-  public isId(field: { config: { key: string; }; }, modelOrName: string): boolean {
-    return (field.config.key == this.getIdentifierField(modelOrName));
-  }
+	/**
+	 * Checks if given field is identifier of model
+	 *
+	 * @param {Object} field
+	 * @param {Object|string=} modelOrName
+	 * @returns {boolean}
+	 */
+	public isId(field: { config: { key: string; }; }, modelOrName: string): boolean {
+		return (field.config.key == this.getIdentifierField(modelOrName));
+	}
 
-  /**
-   * Get configured `identifierField` from adminpanel configuration.
-   *
-   * If not configured and model passed try to guess it using `primaryKey` field in model.
-   * If system couldn't guess will return 'id'.
-   * Model could be object or just name (string).
-   *
-   * **Warning** If you will pass record - method will return 'id'
-   *
-   * @returns {string}
-   * @param modelName
-   */
-  public getIdentifierField(modelName: string): string {
-    if (!modelName) {
-      throw new Error("Model name is not defined")
-    }
+	/**
+	 * Get configured `identifierField` from adminpanel configuration.
+	 *
+	 * If not configured and model passed try to guess it using `primaryKey` field in model.
+	 * If system couldn't guess will return 'id'.
+	 * Model could be object or just name (string).
+	 *
+	 * **Warning** If you will pass record - method will return 'id'
+	 *
+	 * @returns {string}
+	 * @param modelName
+	 */
+	public getIdentifierField(modelName: string): string {
+		if (!modelName) {
+			throw new Error("Model name is not defined")
+		}
 
-    let config = this.adminizer.config;
-    let modelConfig: ModelConfig;
-    Object.keys(config.models).forEach((entityName) => {
-      const model = config.models[entityName];
-      if (typeof model !== "boolean") {
-        if (model.model === modelName.toLowerCase()) {
-          if (typeof config.models[entityName] !== "boolean") {
-            modelConfig = config.models[entityName] as ModelConfig
-          }
-        }
-      }
-    })
+		let config = this.adminizer.config;
+		let modelConfig: ModelConfig;
+		Object.keys(config.models).forEach((entityName) => {
+			const model = config.models[entityName];
+			if (typeof model !== "boolean") {
+				if (model.model === modelName.toLowerCase()) {
+					if (typeof config.models[entityName] !== "boolean") {
+						modelConfig = config.models[entityName] as ModelConfig
+					}
+				}
+			}
+		})
 
-    if (modelConfig && modelConfig.identifierField) {
-      return modelConfig.identifierField;
-    } else if (this.adminizer.modelHandler.model.get(modelName.toLowerCase()).primaryKey) {
-      return this.adminizer.modelHandler.model.get(modelName.toLowerCase()).primaryKey
-    } else {
-      throw new Error("ConfigHelper > Identifier field was not found")
-    }
-  }
+		if (modelConfig && modelConfig.identifierField) {
+			return modelConfig.identifierField;
+		} else if (this.adminizer.modelHandler.model.get(modelName.toLowerCase()).primaryKey) {
+			return this.adminizer.modelHandler.model.get(modelName.toLowerCase()).primaryKey
+		} else {
+			throw new Error("ConfigHelper > Identifier field was not found")
+		}
+	}
 
-  /**
-   * Checks if CSRF protection enabled in website
-   *
-   * @returns {boolean}
-   */
-  public isCsrfEnabled() {
-    return (this.adminizer.config.security.csrf !== false);
-  }
+	/**
+	 * Checks if CSRF protection enabled in website
+	 *
+	 * @returns {boolean}
+	 */
+	public isCsrfEnabled() {
+		return (this.adminizer.config.security.csrf !== false);
+	}
 
-  /**
-   * Normalizes field configuration from various formats.
-   *
-   * @param adminizer
-   * @param config Field configuration in boolean, string, or object notation
-   * @param key Field key name
-   * @param modelField Field model configuration
-   * @returns Normalized field configuration or `false` if the field should be hidden
-   */
-  public normalizeFieldConfig(
-    adminizer: Adminizer,
-    config: string | boolean | BaseFieldConfig,
-    key: string,
-    modelField: Attribute
-  ): false | BaseFieldConfig {
-    if (typeof config === "undefined" || typeof key === "undefined") {
-      throw new Error('No `config` or `key` passed!');
-    }
-    
-    // Boolean notation: `true` means field is visible; `false` means field is hidden.
-    if (typeof config === "boolean") {
-      return config ? {title: key} : { visible: false };
-    }
+	/**
+	 * Normalizes field configuration from various formats.
+	 *
+	 * @param adminizer
+	 * @param config Field configuration in boolean, string, or object notation
+	 * @param key Field key name
+	 * @param modelField Field model configuration
+	 * @returns Normalized field configuration or `false` if the field should be hidden
+	 */
+	public normalizeFieldConfig(
+		adminizer: Adminizer,
+		config: string | boolean | BaseFieldConfig,
+		key: string,
+		modelField: Attribute
+	): false | BaseFieldConfig {
+		if (typeof config === "undefined" || typeof key === "undefined") {
+			throw new Error('No `config` or `key` passed!');
+		}
 
-    // String notation: Interpreted as the field title.
-    if (typeof config === "string") {
-      return {title: config};
-    }
+		// Boolean notation: `true` means field is visible; `false` means field is hidden.
+		if (typeof config === "boolean") {
+			return config ? { title: key } : { visible: false };
+		}
 
-    // Object notation: Allows full customization of the field.
-    if (typeof config === "object" && config !== null) {
-      config.title = config.title || key;
+		// String notation: Interpreted as the field title.
+		if (typeof config === "string") {
+			return { title: config };
+		}
 
-      config.visible = config.visible === undefined ? true : Boolean(config.visible)
-      
-      // For association types, determine display field by checking model attributes.
-      if (["association", "association-many"].includes(config.type)) {
-        let associatedModelAttributes = {};
-        let displayField: string;
+		// Object notation: Allows full customization of the field.
+		if (typeof config === "object" && config !== null) {
+			config.title = config.title || key;
 
-        try {
-          const associatedModelName =
-            config.type === "association"
-              ? modelField.model.toLowerCase()
-              : modelField.collection.toLowerCase();
+			config.visible = config.visible === undefined ? true : Boolean(config.visible)
 
-          const associatedModel = adminizer.modelHandler.model.get(associatedModelName);
-          if (!associatedModel) {
-            throw new Error(`Can not add relations to unloaded models; Config: ${JSON.stringify(config, null, 2)}`)
-          }
+			// For association types, determine display field by checking model attributes.
+			if (["association", "association-many"].includes(config.type)) {
+				let associatedModelAttributes = {};
+				let displayField: string;
 
-          associatedModelAttributes = associatedModel.attributes;
+				try {
+					const associatedModelName =
+						config.type === "association"
+							? modelField.model.toLowerCase()
+							: modelField.collection.toLowerCase();
 
-        } catch (e) {
-          console.error(`Error loading model for field ${key}:`, e);
-        }
+					const associatedModel = adminizer.modelHandler.model.get(associatedModelName);
+					if (!associatedModel) {
+						throw new Error(`Can not add relations to unloaded models; Config: ${JSON.stringify(config, null, 2)}`)
+					}
 
-        displayField = getDisplayField(associatedModelAttributes);
-        config = {
-          ...config,
-          identifierField: "id",
-          displayField: displayField,
-        };
-      }
+					associatedModelAttributes = associatedModel.attributes;
 
-      return config;
-    }
+				} catch (e) {
+					console.error(`Error loading model for field ${key}:`, e);
+				}
 
-    return false;
-  }
+				displayField = getDisplayField(associatedModelAttributes);
+				config = {
+					...config,
+					identifierField: "id",
+					displayField: displayField,
+				};
+			}
 
-  /**
-   * Normalizes the entire adminpanel configuration.
-   * Merges custom config with default config and handles normalization.
-   *
-   * @param config The custom config object
-   * @returns The normalized and merged config
-   */
-  public static normalizeConfig(config: AdminpanelConfig): AdminpanelConfig {
-    const defaultConfig = getDefaultConfig();
+			return config;
+		}
 
-    const {
-        forms: configForms = {} as AdminpanelConfig['forms'],
-        ...restConfig
-    } = config;
+		return false;
+	}
 
-    const {
-        forms: defaultForms = {} as AdminpanelConfig['forms'],
-    } = defaultConfig;
+	/**
+	 * Normalizes the entire adminpanel configuration.
+	 * Merges custom config with default config and handles normalization.
+	 *
+	 * @param config The custom config object
+	 * @returns The normalized and merged config
+	 */
+	public static normalizeConfig(config: AdminpanelConfig): AdminpanelConfig {
+		const defaultConfig = getDefaultConfig();
 
-    const mergedConfig = {
-        ...defaultConfig,
-        ...restConfig,
-        models: {
-            ...defaultConfig.models,
-            ...config.models
-        },
-        navbar: {
-            ...defaultConfig.navbar,
-            ...config.navbar,
-            additionalLinks: [
-                ...(defaultConfig.navbar?.additionalLinks || []),
-                ...(config.navbar?.additionalLinks || [])
-            ]
-        },
-        forms: {
-            path: configForms.path ?? defaultForms.path,
-            data: {
-                ...defaultForms.data,
-                ...configForms.data
-            },
-            get: configForms.get ?? defaultForms.get,
-            set: configForms.set ?? defaultForms.set
-        }
-    };
+		const {
+			forms: configForms = {} as AdminpanelConfig['forms'],
+			...restConfig
+		} = config;
 
-    // Normalize auth config if it's a boolean
-    if (typeof mergedConfig.auth === 'boolean') {
-        mergedConfig.auth = { enable: mergedConfig.auth };
-    }
+		const {
+			forms: defaultForms = {} as AdminpanelConfig['forms'],
+		} = defaultConfig;
 
-    return mergedConfig;
-  }
+		const mergedConfig = {
+			...defaultConfig,
+			...restConfig,
+			models: {
+				...defaultConfig.models,
+				...config.models
+			},
+			navbar: {
+				...defaultConfig.navbar,
+				...config.navbar,
+				additionalLinks: [
+					...(defaultConfig.navbar?.additionalLinks || []),
+					...(config.navbar?.additionalLinks || [])
+				]
+			},
+			forms: {
+				path: configForms.path ?? defaultForms.path,
+				data: {
+					...defaultForms.data,
+					...configForms.data
+				},
+				get: configForms.get ?? defaultForms.get,
+				set: configForms.set ?? defaultForms.set
+			}
+		};
+
+		// Normalize auth config if it's a boolean
+		if (typeof mergedConfig.auth === 'boolean') {
+			mergedConfig.auth = { enable: mergedConfig.auth };
+		}
+
+		return mergedConfig;
+	}
 }
 
 
@@ -208,9 +208,9 @@ export class ConfigHelper {
  * @returns Field name to use as display field
  */
 function getDisplayField(attributes: any): string {
-  return attributes.hasOwnProperty("name")
-    ? "name"
-    : attributes.hasOwnProperty("label")
-      ? "label"
-      : "id";
+	return attributes.hasOwnProperty("name")
+		? "name"
+		: attributes.hasOwnProperty("label")
+			? "label"
+			: "id";
 }

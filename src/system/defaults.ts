@@ -22,7 +22,7 @@ let adminpanelConfig: AdminpanelConfig = {
     /**
      * Policies
      */
-    policies: [],
+    middlewares: [],
 
     /**
      * Base navbar configuration

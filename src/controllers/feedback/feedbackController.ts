@@ -1,7 +1,7 @@
 import multer from 'multer';
 import { Adminizer } from '../../lib/Adminizer';
-import { requireAuthAPI } from '../../middlewares/authGuards';
-import { bindWithPolicies } from '../../system/routeGuards';
+import { requireAuthAPI } from '../../policies/authPolicies';
+import { bindWithMiddlewares } from '../../system/routePolicies';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -10,7 +10,7 @@ const upload = multer({
     limits: { fileSize: MAX_FILE_SIZE },
 });
 
-export function bindFeedbackController(adminizer: Adminizer, policies: MiddlewareType[]) {
+export function bindFeedbackController(adminizer: Adminizer, middlewares: MiddlewareType[]) {
     const { app, config } = adminizer;
     const prefix = config.routePrefix;
 
@@ -69,5 +69,5 @@ export function bindFeedbackController(adminizer: Adminizer, policies: Middlewar
         });
     };
 
-    app.post(`${prefix}/api/feedback`, ...bindWithPolicies(adminizer, policies, handler, [requireAuthAPI()]));
+    app.post(`${prefix}/api/feedback`, ...bindWithMiddlewares(adminizer, middlewares, handler, [requireAuthAPI()]));
 }

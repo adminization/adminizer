@@ -56,9 +56,7 @@ export function widgetsToken(): string {
 export function catalogToken(req: ReqType): string | undefined {
     const slug = req.params?.slug;
     if (!slug) return undefined;
-
-    const id = req.params?.id;
-    return id ? `catalog-${slug}-${id}` : `catalog-${slug}`;
+    return `catalog-${slug}`;
 }
 
 export function mediaManagerToken(req: ReqType): string | undefined {

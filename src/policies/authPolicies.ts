@@ -99,8 +99,10 @@ export function requirePermission(
             return;
         }
 
-        const tokenId = resolveToken(token, req);
+        const tokenId = resolveToken(token, req);      
+          
         const hasPermission = req.adminizer.accessRightsHelper.hasPermission(tokenId, req.user);
+        
         if (!hasPermission) {
             forbidden(req, res, mode);
             return;

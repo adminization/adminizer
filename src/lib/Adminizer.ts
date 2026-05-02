@@ -6,7 +6,7 @@ import chalk from "chalk";
 import EventEmitter from 'events';
 
 import {AdminpanelConfig} from "../interfaces/adminpanelConfig";
-import PolicyManager from "./PolicyManager";
+import MiddlewareManager from "./MiddlewareManager";
 import Router from "./../system/Router";
 import bindAssets from "../system/bindAssets";
 import bindDev from "../system/bindDev";
@@ -62,7 +62,7 @@ export class Adminizer {
     public config!: AdminpanelConfig
     private readonly _emitter: EventEmitter
     ormAdapters: AbstractAdapter[]
-    policyManager!: PolicyManager
+    middlewareManager!: MiddlewareManager
     accessRightsHelper!: AccessRightsHelper
     configHelper!: ConfigHelper
     menuHelper!: MenuHelper
@@ -238,8 +238,8 @@ export class Adminizer {
 
         this.config.rootPath = path.resolve(import.meta.dirname + "/..")
 
-        this.policyManager = new PolicyManager(this);
-        await this.policyManager.loadPolicies();
+        this.middlewareManager = new MiddlewareManager(this);
+        await this.middlewareManager.loadMiddlewares();
 
         // TODO: 'hot reload' problem with deleting access right tokens
         this.accessRightsHelper = new AccessRightsHelper(this);

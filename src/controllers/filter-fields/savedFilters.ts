@@ -3,7 +3,7 @@ import { FilterService } from "../../lib/filters/FilterService";
 import { FilterAP } from "../../models/FilterAP";
 import { FilterColumnAP } from "../../models/FilterColumnAP";
 import { Adminizer } from "../../lib/Adminizer";
-import { GROUP_FILTER_VISIBILITY_TOKEN } from "../../middlewares/permissionResolvers";
+import { GROUP_FILTER_VISIBILITY_TOKEN } from "../../policies/permissionResolvers";
 
 /**
  * GET /adminizer/model/:model/filter/locales

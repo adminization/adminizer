@@ -151,7 +151,7 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
     // Add custom module
     adminizer.emitter.on('adminizer:loaded', () => {
-        let policies = adminizer.config.policies as MiddlewareType[];
+        let policies = adminizer.config.middlewares as MiddlewareType[];
         const module = async (req: ReqType, res: ResType, next: express.NextFunction) => {
             if (req.adminizer.config.auth?.enable) {
                 if (!req.user) {
@@ -178,8 +178,8 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
         }
 
-        adminizer.app.get(`${adminizer.config.routePrefix}/module-test`, adminizer.policyManager.bindPolicies(policies, module));
-        adminizer.app.post(`${adminizer.config.routePrefix}/module-test`, adminizer.policyManager.bindPolicies(policies, async (req: ReqType, res: ResType) => {
+        adminizer.app.get(`${adminizer.config.routePrefix}/module-test`, adminizer.middlewareManager.bindMiddlewares(policies, module));
+        adminizer.app.post(`${adminizer.config.routePrefix}/module-test`, adminizer.middlewareManager.bindMiddlewares(policies, async (req: ReqType, res: ResType) => {
             adminizer.sendNotification({
                 title: "Test notification",
                 message: req.body.message,

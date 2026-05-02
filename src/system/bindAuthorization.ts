@@ -22,7 +22,7 @@ export default async function bindAuthorization(adminizer: Adminizer) {
     /**
      * Router
      */
-    let policies = adminizer.config.policies;
+    let policies = adminizer.config.middlewares;
     let baseRoute = `${adminizer.config.routePrefix}/model/:entity`;
 
 
@@ -88,16 +88,16 @@ export default async function bindAuthorization(adminizer: Adminizer) {
     } else { // try to create one if we don't
         if (adminizer.config.auth.enable) {
             Adminizer.log.debug(`Adminpanel does not have an administrator`)
-            adminizer.config.policies.push(initUserPolicy)
+            adminizer.config.middlewares.push(initUserPolicy)
             //@ts-ignore
             adminizer.app.use(`${adminizer.config.routePrefix}/init_user`, _initUser);
         }
     }
 
     if (adminizer.config.auth.enable) {
-        adminizer.app.use(baseRoute + '/login', adminizer.policyManager.bindPolicies(policies, _login));
-        adminizer.app.use(baseRoute + '/logout', adminizer.policyManager.bindPolicies(policies, _login));
-        adminizer.app.use(baseRoute + '/register', adminizer.policyManager.bindPolicies(policies, _register));
+        adminizer.app.use(baseRoute + '/login', adminizer.middlewareManager.bindMiddlewares(policies, _login));
+        adminizer.app.use(baseRoute + '/logout', adminizer.middlewareManager.bindMiddlewares(policies, _login));
+        adminizer.app.use(baseRoute + '/register', adminizer.middlewareManager.bindMiddlewares(policies, _register));
     }
 };
 

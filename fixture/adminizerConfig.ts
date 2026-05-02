@@ -287,71 +287,71 @@ const models: AdminpanelConfig["models"] = {
                 // code: false,
                 // datatable: false
             },
-            // actions: {
-            //     global: [
-            //         {
-            //             id: "1",
-            //             link: 'https://google.com',
-            //             type: 'blank',
-            //             title: 'Google',
-            //             icon: 'insert_link'
-            //         }, {
-            //             id: "2",
-            //             link: 'https://google.com',
-            //             type: 'blank',
-            //             title: 'Google',
-            //             icon: 'insert_link'
-            //         }, {
-            //             id: "3",
-            //             link: 'https://google.com',
-            //             type: 'blank',
-            //             title: 'Google',
-            //             icon: 'insert_link'
-            //         }, {
-            //             id: "4",
-            //             link: 'https://google.com',
-            //             type: 'blank',
-            //             title: 'Google',
-            //             icon: 'insert_link'
-            //         }, {
-            //             id: "5",
-            //             link: `${routePrefix}/form/global`,
-            //             type: 'self',
-            //             title: 'Form',
-            //             icon: 'insert_link'
-            //         },
-            //     ],
-            //     inline: [
-            //         {
-            //             id: "1",
-            //             link: 'https://google.com',
-            //             type: 'blank',
-            //             title: 'Google',
-            //             icon: 'insert_link'
-            //         },
-            //         {
-            //             id: "2",
-            //             link: 'https://google.com',
-            //             type: 'blank',
-            //             title: 'Google1',
-            //             icon: 'insert_link'
-            //         },
-            //         {
-            //             id: "3",
-            //             link: 'https://google.com',
-            //             type: 'blank',
-            //             title: 'Google2',
-            //             icon: 'insert_link'
-            //         },
-            //         {
-            //             id: "4",
-            //             link: `${routePrefix}/model/example/edit`,
-            //             type: 'self',
-            //             title: 'Test Edit',
-            //             icon: 'insert_link'
-            //         }
-            //     ]
-            // }
+            actions: {
+                global: [
+                    {
+                        id: "1",
+                        link: 'https://google.com',
+                        type: 'blank',
+                        title: 'Google',
+                        icon: 'insert_link'
+                    }, {
+                        id: "2",
+                        link: 'https://google.com',
+                        type: 'blank',
+                        title: 'Google',
+                        icon: 'insert_link'
+                    }, {
+                        id: "3",
+                        link: 'https://google.com',
+                        type: 'blank',
+                        title: 'Google',
+                        icon: 'insert_link'
+                    }, {
+                        id: "4",
+                        link: 'https://google.com',
+                        type: 'blank',
+                        title: 'Google',
+                        icon: 'insert_link'
+                    }, {
+                        id: "5",
+                        link: `${routePrefix}/form/global`,
+                        type: 'self',
+                        title: 'Form',
+                        icon: 'insert_link'
+                    },
+                ],
+                inline: [
+                    {
+                        id: "1",
+                        link: 'https://google.com',
+                        type: 'blank',
+                        title: 'Google',
+                        icon: 'insert_link'
+                    },
+                    {
+                        id: "2",
+                        link: 'https://google.com',
+                        type: 'blank',
+                        title: 'Google1',
+                        icon: 'insert_link'
+                    },
+                    {
+                        id: "3",
+                        link: 'https://google.com',
+                        type: 'blank',
+                        title: 'Google2',
+                        icon: 'insert_link'
+                    },
+                    {
+                        id: "4",
+                        link: `${routePrefix}/model/example/edit`,
+                        type: 'self',
+                        title: 'Test Edit',
+                        icon: 'insert_link'
+                    }
+                ]
+            }
         },
         icon: 'inbox'
     },

@@ -1,6 +1,6 @@
 import { GroupAP } from "../models/GroupAP";
 import {Adminizer} from "../lib/Adminizer";
-import { GROUP_FILTER_VISIBILITY_TOKEN } from "../middlewares/permissionResolvers";
+import { GROUP_FILTER_VISIBILITY_TOKEN } from "../policies/permissionResolvers";
 
 export default async function bindAccessRights(adminizer: Adminizer) {
     if (adminizer.config.models) {

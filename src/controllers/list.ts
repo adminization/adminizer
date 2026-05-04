@@ -9,6 +9,8 @@ import {FilterCondition, FilterAP} from "../models/FilterAP";
 import {FilterColumnAP} from "../models/FilterColumnAP";
 import {FilterService} from "../lib/filters/FilterService";
 import {convertDatetimeConditions} from "../helpers/filterDatetimeHelper";
+import { getUiTranslations } from "../lib/i18n/getUiTranslations";
+import { FILTER_UI_TRANSLATION_KEYS } from "../lib/i18n/uiTranslationKeys";
 
 export default async function list(req: ReqType, res: ResType) {
     let entity = ControllerHelper.findEntityObject(req);
@@ -19,6 +21,7 @@ export default async function list(req: ReqType, res: ResType) {
     let dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "list");
     let fields = dataAccessor.getFieldsConfig();
     const header = inertiaListHelper(entity, req, fields);
+    const i18nPage = getUiTranslations(req, FILTER_UI_TRANSLATION_KEYS);
 
     // Parse pagination
     const page = req.query.page ? parseInt(req.query.page.toString(), 10) : 1;
@@ -259,7 +262,8 @@ export default async function list(req: ReqType, res: ResType) {
                 },
                 activeFilter: activeFilter,
                 filterError: filterError,
-                customColumns: customColumnsConfig
+                customColumns: customColumnsConfig,
+                i18nPage
             }
         });
     } catch (err) {
@@ -278,7 +282,8 @@ export default async function list(req: ReqType, res: ResType) {
                 },
                 activeFilter: null,
                 filterError: filterError || 'Query execution error',
-                customColumns: null
+                customColumns: null,
+                i18nPage
             }
         });
     }

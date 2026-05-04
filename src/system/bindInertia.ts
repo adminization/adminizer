@@ -4,6 +4,8 @@ import fs from "fs";
 import path from "node:path";
 import { Adminizer } from "../lib/Adminizer";
 import { InertiaMenuHelper } from "../helpers/inertiaMenuHelper";
+import { getUiTranslations } from "../lib/i18n/getUiTranslations";
+import { COMMON_UI_TRANSLATION_KEYS } from "../lib/i18n/uiTranslationKeys";
 
 export function bindInertia(adminizer: Adminizer) {
     const escapeHtmlAttribute = (value: string): string => value
@@ -150,9 +152,11 @@ export function bindInertia(adminizer: Adminizer) {
         const defaultLocale = typeof req.adminizer.config.translation !== "boolean"
             ? req.adminizer.config.translation.defaultLocale
             : "en";
+        const locale = req.user?.locale || defaultLocale;
+        const commonMessages = getUiTranslations(req, COMMON_UI_TRANSLATION_KEYS);
 
         req.Inertia.setViewData({
-            lang: req.user?.locale || defaultLocale,
+            lang: locale,
         })
         const menuHelper = new InertiaMenuHelper(adminizer)
 
@@ -161,60 +165,9 @@ export function bindInertia(adminizer: Adminizer) {
                 user: req.session.userPretended ?? req.user
             },
             routePrefix: req.adminizer.config.routePrefix,
-            uiMessages: {
-                Delete: req.i18n.__("Delete"),
-                Diff: req.i18n.__("Diff"),
-                Preview: req.i18n.__("Preview"),
-                Add: req.i18n.__("Add"),
-                Search: req.i18n.__("Search"),
-                Yes: req.i18n.__("Yes"),
-                No: req.i18n.__("No"),
-                On: req.i18n.__("On"),
-                Off: req.i18n.__("Off"),
-                Hide: req.i18n.__("Hide"),
-                Show: req.i18n.__("Show"),
-                "No notifications found": req.i18n.__("No notifications found"),
-                "No widgets found": req.i18n.__("No widgets found"),
-                "Changes not found": req.i18n.__("Changes not found"),
-                Old: req.i18n.__("Old"),
-                New: req.i18n.__("New"),
-                Added: req.i18n.__("Added"),
-                Removed: req.i18n.__("Removed"),
-                Updated: req.i18n.__("Updated"),
-                "changed type": req.i18n.__("changed type"),
-                "Error: Invalid field data": req.i18n.__("Error: Invalid field data"),
-                "Error: Fields data is invalid": req.i18n.__("Error: Fields data is invalid"),
-                "No fields to display": req.i18n.__("No fields to display"),
-                "Error: Some fields are missing required properties (name, type, label)": req.i18n.__(
-                    "Error: Some fields are missing required properties (name, type, label)"
-                ),
-                Edit: req.i18n.__("Edit"),
-                create: req.i18n.__("create"),
-                Clean: req.i18n.__("Clean"),
-                "Are you sure?": req.i18n.__("Are you sure?"),
-                "Select Item type": req.i18n.__("Select Item type"),
-                "Select Ids": req.i18n.__("Select Ids"),
-                "Open in a new window": req.i18n.__("Open in a new window"),
-                Visible: req.i18n.__("Visible"),
-                "Performing an action...": req.i18n.__("Performing an action..."),
-                "Action completed": req.i18n.__("Action completed"),
-                Save: req.i18n.__("Save"),
-                First: req.i18n.__("First"),
-                Last: req.i18n.__("Last"),
-                Previous: req.i18n.__("Previous"),
-                Next: req.i18n.__("Next"),
-                "Send feedback": req.i18n.__("Send feedback"),
-                "Feedback": req.i18n.__("Feedback"),
-                "Title": req.i18n.__("Title"),
-                "Description": req.i18n.__("Description"),
-                "Attach files": req.i18n.__("Attach files"),
-                "Send": req.i18n.__("Send"),
-                "Sending...": req.i18n.__("Sending..."),
-                "Feedback sent successfully": req.i18n.__("Feedback sent successfully"),
-                "Title is required": req.i18n.__("Title is required"),
-                "File size exceeds the 5 MB limit": req.i18n.__("File size exceeds the 5 MB limit"),
-                "Remove file": req.i18n.__("Remove file"),
-                "Max 5 MB per file": req.i18n.__("Max 5 MB per file"),
+            i18n: {
+                locale,
+                common: commonMessages,
             },
             menu: req.user ? menuHelper.getMenuItems(req) : null,
             title: menuHelper.getBrandTitle(),

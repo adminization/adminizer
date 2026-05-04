@@ -7,8 +7,7 @@ import {
     Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Or the correct path to your cn utility
-import { usePage } from '@inertiajs/react';
-import { SharedData } from '@/types';
+import { useI18n } from '@/hooks/use-i18n';
 
 interface Change {
     field: string;
@@ -31,9 +30,8 @@ export const DiffViewer: React.FC<DiffViewerProps> = (
         className = '',
         messages = {},
     }) => {
-    const page = usePage<SharedData>();
-    const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
-    const t = (key: string, fallback: string) => messages[key] || uiMessages[key] || fallback;
+    const { t: translate } = useI18n({ page: messages });
+    const t = (key: string, fallback: string) => translate(key, fallback);
 
     if (!changes || changes.length === 0) {
         return (

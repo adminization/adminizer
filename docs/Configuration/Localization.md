@@ -27,7 +27,9 @@ If you localize Adminizer UI through translation dictionaries, make sure the loc
 * `Visible`
 * `First`, `Last`, `Previous`, `Next`
 
-These keys are passed via shared `uiMessages` in Inertia mode and are used by menu/user controls and pagination UI.
+These keys are passed via shared `i18n.common` in Inertia mode and are used by menu/user controls and pagination UI.
+
+For page-specific dictionaries, Adminizer uses `i18nPage` props, while reusable/common labels stay in `i18n.common`.
 
 ## Locale parity
 

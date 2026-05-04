@@ -161,9 +161,6 @@ Routes are registered under both `/model/:entityName/...` and `/form/:entityName
   - Relation fields are returned only for Sequelize.
   - Custom filter metadata is returned for Sequelize fields with `customFilter.handlerId`.
 
-- `GET /adminizer/model/:model/filter/locales`
-  - Returns i18n strings for filter UI.
-
 ### Saved filters
 
 - `GET /adminizer/model/:model/saved-filters`

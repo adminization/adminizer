@@ -15,6 +15,7 @@ import { format } from "date-fns"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DiffViewer } from "@/components/history/DiffViewer";
 import { enUS, de, ru, es, fr } from 'date-fns/locale';
+import { useI18n } from "@/hooks/use-i18n";
 
 interface HistoryProps extends SharedData {
     title: string,
@@ -24,8 +25,7 @@ interface HistoryProps extends SharedData {
     }[],
     users: {
         name: string
-    }[],
-    messages: Record<string, string>
+    }[]
 }
 
 const getLocaleFromHTML = () => {
@@ -54,9 +54,8 @@ const ViewAll = () => {
     const tableContainerRef = useRef<HTMLTableElement>(null);
     const [selectedUser, setSelectedUser] = useState<string>('all');
     const [date, setDate] = useState<DateRange | undefined>(undefined)
-    const messages = page.props.messages
-    const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
-    const diffLabel = messages?.["Diff"] || uiMessages.Diff || 'Diff';
+    const { t } = useI18n();
+    const diffLabel = t("Diff");
     
     const fetchHistory = async (offset: number, model: string = 'all', user: string = 'all', reset = false, dateRange: DateRange | undefined) => {
         setLoadingMore(true);
@@ -146,7 +145,7 @@ const ViewAll = () => {
             <div className="flex flex-col gap-4">
                 <h1 className="font-bold text-xl">{page.props.title}</h1>
                 <div className="flex flex-col gap-2">
-                    <Label htmlFor="models">{messages["Models"]}</Label>
+                    <Label htmlFor="models">{t("Models")}</Label>
                     <div className="flex flex-wrap gap-4">
                         <div>
                             <Button
@@ -156,7 +155,7 @@ const ViewAll = () => {
                                     handleChange('all', selectedUser)
                                 }}
                             >
-                                {messages["All"]}
+                                {t("All")}
                             </Button>
                         </div>
                         {page.props.models.map(model => (
@@ -176,7 +175,7 @@ const ViewAll = () => {
                 </div>
                 <div className="flex gap-4">
                     {page.props.users.length > 0 && <div className="flex flex-col grow-1 gap-2 max-w-[250px]">
-                        <Label htmlFor="users">{messages["Users"]}</Label>
+                        <Label htmlFor="users">{t("Users")}</Label>
                         <Select
                             onValueChange={(value: string) => {
                                 handleChange(
@@ -187,11 +186,11 @@ const ViewAll = () => {
                             value={selectedUser}
                         >
                             <SelectTrigger className="w-full cursor-pointer min-h-10 scroll-pt-30 scroll-mt-30" id="users">
-                                <SelectValue placeholder={messages["Users"]} />
+                                <SelectValue placeholder={t("Users")} />
                             </SelectTrigger>
                             <SelectContent className="z-[9999999]">
                                 <SelectItem value="all" key="all">
-                                    {messages["All"]}
+                                    {t("All")}
                                 </SelectItem>
                                 {page.props.users.map(user => (
                                     <SelectItem value={String(user.name)} key={String(user.name)}>
@@ -202,7 +201,7 @@ const ViewAll = () => {
                         </Select>
                     </div>}
                     <div className="flex flex-col gap-2">
-                        <Label htmlFor="date-picker-range">{messages["Date"]}</Label>
+                        <Label htmlFor="date-picker-range">{t("Date")}</Label>
                         <div className="flex items-center gap-2">
                             <Popover>
                                 <PopoverTrigger asChild>
@@ -222,7 +221,7 @@ const ViewAll = () => {
                                                 format(date.from, "LLL dd, y")
                                             )
                                         ) : (
-                                            <span>{messages["Pick a date"]}</span>
+                                            <span>{t("Pick a date")}</span>
                                         )}
                                     </Button>
                                 </PopoverTrigger>
@@ -244,7 +243,7 @@ const ViewAll = () => {
                                 className="h-[40px]"
                                 disabled={date === undefined}
                             >
-                                {messages["Search"]}
+                                {t("Search")}
                             </Button>
                             <Button
                                 variant="outline"
@@ -253,7 +252,7 @@ const ViewAll = () => {
                                 className="h-[40px]"
                                 disabled={date === undefined}
                             >
-                                {messages["Reset"]}
+                                {t("Reset")}
                             </Button>
                         </div>
                     </div>
@@ -261,12 +260,12 @@ const ViewAll = () => {
                 <Table wrapperHeight="max-h-[55vh]" ref={tableContainerRef}>
                     <TableHeader className="sticky top-0 bg-background shadow">
                         <TableRow>
-                            <TableHead className="p-2 text-left">{messages["Date"]}</TableHead>
-                            <TableHead className="p-2 text-left">{messages["Model"]}</TableHead>
-                            <TableHead className="p-2 text-left">{messages["Name"]}</TableHead>
-                            <TableHead className="p-2 text-left">{messages["Event"]}</TableHead>
-                            <TableHead className="p-2 text-left">{messages["User"]}</TableHead>
-                            <TableHead className="p-2 text-left">{messages["Diff"]}</TableHead>
+                            <TableHead className="p-2 text-left">{t("Date")}</TableHead>
+                            <TableHead className="p-2 text-left">{t("Model")}</TableHead>
+                            <TableHead className="p-2 text-left">{t("Name")}</TableHead>
+                            <TableHead className="p-2 text-left">{t("Event")}</TableHead>
+                            <TableHead className="p-2 text-left">{t("User")}</TableHead>
+                            <TableHead className="p-2 text-left">{t("Diff")}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -310,7 +309,7 @@ const ViewAll = () => {
                         {!loadingMore && !hasMore && history.length > 0 && (
                             <TableRow>
                                 <TableCell colSpan={6} className="p-4 text-left sm:text-center font-medium text-muted-foreground">
-                                    {messages["The end of the list has been reached"]}
+                                    {t("The end of the list has been reached")}
                                 </TableCell>
                             </TableRow>
                         )}
@@ -318,7 +317,7 @@ const ViewAll = () => {
                         {!loadingMore && !loading && history.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={6} className="p-4 text-left sm:text-center font-medium text-muted-foreground">
-                                    {messages["There are no records to display"]}
+                                    {t("There are no records to display")}
                                 </TableCell>
                             </TableRow>
                         )}
@@ -340,7 +339,6 @@ const ViewAll = () => {
                             <DiffViewer
                                 changes={diffItem}
                                 className="max-h-[80vh] overflow-auto sm:max-w-[60vw] w-full"
-                                messages={{ ...uiMessages, ...messages }}
                             />
                         </DialogContent>
                     </Dialog>

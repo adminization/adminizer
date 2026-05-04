@@ -3,10 +3,10 @@ import axios from "axios";
 import { getDefaultColorByID } from "./colorPallete.ts";
 import { Widget as WidgetData } from "@/types";
 import MaterialIcon from "@/components/material-icon.tsx";
-import { router, usePage } from "@inertiajs/react";
-import { SharedData } from "@/types";
+import { router } from "@inertiajs/react";
 import { ComponentType } from "@/pages/module.tsx";
 import { LoaderCircle } from "lucide-react";
+import { useI18n } from "@/hooks/use-i18n";
 
 type WidgetType = 'info' | 'switcher' | 'action' | 'link' | 'custom' | undefined;
 
@@ -27,8 +27,7 @@ interface WidgetState {
 }
 
 const WidgetItem: React.FC<WidgetProps> = ({ widgets, draggable, ID }) => {
-    const page = usePage<SharedData>();
-    const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
+    const { t } = useI18n();
     const [widgetType, setWidgetType] = useState<WidgetType>(undefined);
     const [widgetState, setWidgetState] = useState<WidgetState>({
         name: null,
@@ -171,7 +170,7 @@ const WidgetItem: React.FC<WidgetProps> = ({ widgets, draggable, ID }) => {
             case 'info':
                 return <div>{widgetState.info}</div>;
             case 'switcher':
-                return <span className="text-lg font-bold">{widgetState.state ? (uiMessages.On || 'On') : (uiMessages.Off || 'Off')}</span>;
+                return <span className="text-lg font-bold">{widgetState.state ? t("On") : t("Off")}</span>;
             default:
                 return null;
         }

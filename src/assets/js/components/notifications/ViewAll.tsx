@@ -9,6 +9,7 @@ import { INotification } from '../../../../interfaces/types';
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { debounce } from "lodash-es";
+import { useI18n } from "@/hooks/use-i18n";
 
 interface NotificationProps extends SharedData {
     title: string
@@ -38,14 +39,12 @@ const ViewAll = () => {
     const [hasMore, setHasMore] = useState(true);
     const [readLoading, setReadLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
+    const { t } = useI18n();
 
     // Use ref to store the current skip
     const currentSkipRef = useRef(20);
 
     const [activeTab, setActiveTab] = useState<string>('');
-    const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
-
-
     useEffect(() => {
         if (!tabs || tabs.length === 0) return;
 
@@ -139,7 +138,7 @@ const ViewAll = () => {
                 hasMore={hasMore}
             />
         } else {
-            return <div className="text-center font-medium mt-8">{uiMessages["No notifications found"] || 'No notifications found'}</div>;
+            return <div className="text-center font-medium mt-8">{messages["No notifications found"] || t("No notifications found")}</div>;
         }
     };
 

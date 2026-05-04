@@ -3,6 +3,7 @@ import { INotification } from '../../../interfaces/types';
 import {usePage} from "@inertiajs/react";
 import {SharedData} from "@/types";
 import {adminApi} from '@/lib/admin-api';
+import { useI18n } from '@/hooks/use-i18n';
 
 interface NotifTabs {
     displayName: string,
@@ -19,7 +20,6 @@ interface NotificationContextType {
     paginateNotifications: (type: string, skip: number) => Promise<INotification[]>;
     search: (s: string, type: string) => Promise<void>;
     getTabs: () => Promise<void>;
-    getLocale: () => Promise<void>;
     messages: Record<string, string>;
     tabs: NotifTabs[] | null;
     initTab: string
@@ -37,7 +37,23 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const [tabs, setTabs] = useState<NotifTabs[] | null>(null);
     const [initTab, setInitTab] = useState<string>('');
     const page = usePage<SharedData>()
-    const [messages, setMessages] = useState<Record<string, string>>({});
+    const { t } = useI18n();
+    const messages = React.useMemo(
+        () => ({
+            "Make read": t("Make read"),
+            "View All": t("View All"),
+            "Search": t("Search"),
+            "Make all read": t("Make all read"),
+            "Title": t("Title"),
+            "Message": t("Message"),
+            "Date": t("Date"),
+            "Diff": t("Diff"),
+            "No notifications": t("No notifications"),
+            "No notifications found": t("No notifications found"),
+            "The end of the list has been reached": t("The end of the list has been reached")
+        }),
+        [t]
+    );
 
     const allNotifications = [...sseNotifications, ...loadedNotifications];
 
@@ -51,15 +67,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             console.error('Error fetching bell notifications:', error);
         }
     };
-
-    const getLocale = async () => {
-        try {
-            const res = await adminApi.postJson<Record<string, string>>(`${window.routePrefix}/notifications`);
-            setMessages(res.data);
-        } catch (error) {
-            console.log(error)
-        }
-    }
 
     const refreshBellNotifications = async () => {
         await fetchBellNotifications();
@@ -127,8 +134,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     useEffect(() => {
         if(!page.props.notifications) return
-
-        getLocale()
 
         fetchBellNotifications();
 
@@ -199,7 +204,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             search,
             markAsRead,
             markAllAsRead,
-            getLocale,
             messages,
             fetchAllNotifications,
             paginateNotifications,

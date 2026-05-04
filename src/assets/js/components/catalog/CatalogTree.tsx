@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
-import {router, usePage} from '@inertiajs/react'
+import {router} from '@inertiajs/react'
 import {
     Tree,
     getBackendOptions,
@@ -45,6 +45,7 @@ import {Toaster} from "@/components/ui/sonner.tsx";
 import {toast} from "sonner";
 import {DropdownMenu} from "@radix-ui/react-dropdown-menu";
 import {DropdownMenuContent, DropdownMenuGroup, DropdownMenuTrigger} from "@/components/ui/dropdown-menu.tsx";
+import { useI18n } from "@/hooks/use-i18n";
 
 const CatalogTree = () => {
     const treeRef = useRef<TreeMethods>(null);
@@ -63,8 +64,10 @@ const CatalogTree = () => {
         movingGroupsRootOnly: false
     })
 
-    const page = usePage<{uiMessages?: Record<string, string>}>()
-    const messages = (page.props.uiMessages || {}) as Record<string, string>
+    const { t } = useI18n();
+    const messages = new Proxy({} as Record<string, string>, {
+        get: (_, key: string) => t(String(key))
+    });
 
     const [items, setItems] = useState<CatalogItem[]>([])
     const [isLoading, setIsLoading] = useState(false)

@@ -43,6 +43,12 @@ export interface SharedData {
     auth: Auth;
     notifications: boolean;
     history: boolean;
+    i18n?: {
+        locale?: string;
+        common?: Record<string, string>;
+        page?: Record<string, string>;
+    };
+    i18nPage?: Record<string, string>;
     aiAssistant?: {
         enabled: boolean;
         defaultModel: string | null;

@@ -7,7 +7,7 @@ import _view from "../controllers/view";
 import _remove from "../controllers/remove";
 import _inlineUpdate from "../controllers/inlineUpdate";
 import _filterFields from "../controllers/filter-fields/filterFields";
-import { getSavedFilters, saveFilter, deleteFilter, applyTemporaryFilter, getTemporaryFilter, getFilterLocales } from "../controllers/filter-fields/savedFilters";
+import { getSavedFilters, saveFilter, deleteFilter, applyTemporaryFilter, getTemporaryFilter } from "../controllers/filter-fields/savedFilters";
 import { getAllUserFilters } from "../controllers/filter-fields/getAllUserFilters";
 import { getModelColumns, updateFilterColumns } from "../controllers/filter-fields/columns";
 import { getAllGroups } from "../controllers/filter-fields/groups";
@@ -261,10 +261,6 @@ export default class Router {
                 `${adminizer.config.routePrefix}/notifications`,
                 withPolicies(NotificationController.viewAll, requireAuthUI())
             );
-            adminizer.app.post(
-                `${adminizer.config.routePrefix}/notifications`,
-                withPolicies(NotificationController.viewAll, requireAuthAPI())
-            );
 
             adminizer.app.get(
                 `${adminizer.config.routePrefix}/notifications/api/stream`,
@@ -375,10 +371,6 @@ export default class Router {
             adminizer.app.get(
                 entityRoutes('/saved-filters'),
                 withPolicies(getSavedFilters, requireAuthAPI(), requirePermission(modelReadToken))
-            );
-            adminizer.app.get(
-                entityRoutes('/filter/locales'),
-                withPolicies(getFilterLocales, requireAuthAPI(), requirePermission(modelReadToken))
             );
             adminizer.app.get(
                 entityRoutes('/filter/temporary'),

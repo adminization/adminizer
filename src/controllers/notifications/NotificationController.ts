@@ -2,6 +2,8 @@ import {Adminizer} from '../../lib/Adminizer';
 import {UserAP} from "../../models/UserAP";
 import {SystemNotificationService} from "../../lib/notifications/SystemNotificationService";
 import {INotification} from "../../interfaces/types";
+import { getUiTranslations } from "../../lib/i18n/getUiTranslations";
+import { NOTIFICATION_UI_TRANSLATION_KEYS } from "../../lib/i18n/uiTranslationKeys";
 
 export class NotificationController {
     static async search(req: ReqType, res: ResType): Promise<void> {
@@ -28,30 +30,12 @@ export class NotificationController {
     static async viewAll(req: ReqType, res: ResType): Promise<void> {
         if (!NotificationController.checkNotifStatus(req, res)) return;
 
-        if (req.method.toUpperCase() === 'POST') {
-            const messages = {
-                "Make read": "",
-                "View All": "",
-                "Search": "",
-                "Make all read": "",
-                "Title": "",
-                "Message": "",
-                "Date": "",
-                "Diff": "",
-                "The end of the list has been reached": "",
-            };
-
-            res.json(Object.fromEntries(
-                Object.keys(messages).map(key => [key, req.i18n.__(key)])
-            ));
-            return;
-        }
-
         if (req.method.toUpperCase() === 'GET') {
             req.Inertia.render({
                 component: 'notification',
                 props: {
                     title: req.i18n.__('Notifications'),
+                    i18nPage: getUiTranslations(req, NOTIFICATION_UI_TRANSLATION_KEYS),
                 }
             });
             return;

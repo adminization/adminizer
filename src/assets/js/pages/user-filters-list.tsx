@@ -21,6 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Lock, Globe, Users, X, ExternalLink } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
+import { useI18n } from '@/hooks/use-i18n';
 
 interface FilterItem {
     id: string;
@@ -51,7 +52,6 @@ interface UserFiltersListProps {
     title: string;
     models: ModelOption[];
     apiEndpoint: string;
-    translations?: Record<string, string>;
 }
 
 const PAGE_SIZE = 50;
@@ -98,8 +98,8 @@ function VisibilityBadge({
     }
 }
 
-function UserFiltersList({ title, models, apiEndpoint, translations = {} }: UserFiltersListProps) {
-    const t = (key: string) => translations[key] || key;
+function UserFiltersList({ title, models, apiEndpoint }: UserFiltersListProps) {
+    const { t } = useI18n();
     const [filters, setFilters] = useState<FilterItem[]>([]);
     const [allModels, setAllModels] = useState<ModelOption[]>(models);
     const [search, setSearch] = useState('');
@@ -348,10 +348,10 @@ function UserFiltersList({ title, models, apiEndpoint, translations = {} }: User
     );
 }
 
-export default function UserFiltersListPage({ title, models, apiEndpoint, translations = {} }: UserFiltersListProps) {
+export default function UserFiltersListPage({ title, models, apiEndpoint }: UserFiltersListProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs} className="overflow-auto h-[calc(100svh-16px)]">
-            <UserFiltersList title={title} models={models} apiEndpoint={apiEndpoint} translations={translations} />
+            <UserFiltersList title={title} models={models} apiEndpoint={apiEndpoint} />
         </AppLayout>
     );
 }

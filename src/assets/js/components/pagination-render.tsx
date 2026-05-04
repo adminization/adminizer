@@ -8,8 +8,7 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination.tsx";
-import {usePage} from "@inertiajs/react";
-import {SharedData} from "@/types";
+import { useI18n } from "@/hooks/use-i18n";
 
 interface PaginationProps {
     pagination: PaginationResult
@@ -18,12 +17,11 @@ interface PaginationProps {
 }
 
 const PaginationRender: FC<PaginationProps> = ({pagination, pageChange, currentPage}) => {
-    const page = usePage<SharedData>();
-    const messages = page.props.uiMessages ?? {};
-    const firstLabel = messages.First || "First";
-    const lastLabel = messages.Last || "Last";
-    const previousLabel = messages.Previous || "Previous";
-    const nextLabel = messages.Next || "Next";
+    const { t } = useI18n();
+    const firstLabel = t("First");
+    const lastLabel = t("Last");
+    const previousLabel = t("Previous");
+    const nextLabel = t("Next");
 
     const showFirstButton = currentPage !== 1 && pagination.last_page > 1;
     const showLastButton = currentPage !== pagination.last_page && pagination.last_page > 1;

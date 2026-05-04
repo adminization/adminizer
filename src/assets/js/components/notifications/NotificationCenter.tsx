@@ -83,7 +83,7 @@ export function NotificationCenter() {
                 <DropdownMenuGroup className={`${Rloading ? 'opacity-50 pointer-events-none' : ''}`}>
                     {bellNotifications.length === 0 ? (
                         <div className="p-4 text-center text-muted-foreground">
-                            No notifications
+                            {messages["No notifications"]}
                         </div>
                     ) : (
                         bellNotifications.map(notification => (

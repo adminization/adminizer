@@ -17,6 +17,7 @@ import axios from "axios";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { DialogStackHandle } from '@/components/ui/dialog-stack';
 import HistoryDialogStack from '@/components/history/HistoryDialogStack';
+import { useI18n } from '@/hooks/use-i18n';
 
 
 export type FieldValue = string | boolean | number | Date | any[] | Content;
@@ -97,7 +98,7 @@ const AddForm: FC<{
     ({ page, catalog, callback, openNewWindow, openNewWindowLabel, isNavigation, DnavVisible, visibleLable }) => {
 
         const { btnBack, btnHistory, view, edit, history, notFound, model, fields } = page.props;
-        const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
+        const { t } = useI18n();
 
         const {
             data,
@@ -153,12 +154,12 @@ const AddForm: FC<{
         // Validation and informative early returns (hooks have already been initialized above)
         if (!Array.isArray(fields)) {
             console.error('Fields is not an array:', fields);
-            return <div className="p-4 text-red-500">{uiMessages["Error: Fields data is invalid"] || 'Error: Fields data is invalid'}</div>;
+            return <div className="p-4 text-red-500">{t("Error: Fields data is invalid")}</div>;
         }
 
         if (fields.length === 0) {
             console.warn('Fields array is empty');
-            return <div className="p-4 text-gray-500">{uiMessages["No fields to display"] || 'No fields to display'}</div>;
+            return <div className="p-4 text-gray-500">{t("No fields to display")}</div>;
         }
 
         // Check each field for required properties
@@ -167,7 +168,7 @@ const AddForm: FC<{
             console.error('Invalid fields found:', invalidFields);
             return (
                 <div className="p-4 text-red-500">
-                    {uiMessages["Error: Some fields are missing required properties (name, type, label)"] || 'Error: Some fields are missing required properties (name, type, label)'}
+                    {t("Error: Some fields are missing required properties (name, type, label)")}
                 </div>
             );
         }
@@ -251,7 +252,7 @@ const AddForm: FC<{
                                                     processing={catalogProcessing || processing || view}
                                                     notFound={notFound}
                                                     search={page.props.search}
-                                                    invalidFieldMessage={uiMessages["Error: Invalid field data"] || 'Error: Invalid field data'}
+                                                    invalidFieldMessage={t("Error: Invalid field data")}
                                                 />
                                             </>
                                             :

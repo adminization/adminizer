@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { SharedData } from '@/types';
+import { useI18n } from '@/hooks/use-i18n';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -25,14 +26,12 @@ interface FeedbackFormProps {
     routePrefix: string
     triggerLabel: string | null
     placeholder: string | null
-    ui: Record<string, string>
+    t: (key: string) => string
     onClose: () => void
 }
 
 // Isolated so that typing in fields does NOT re-render the parent DialogStack
-const FeedbackForm = memo(({ routePrefix, triggerLabel, placeholder, ui, onClose }: FeedbackFormProps) => {
-    const t = (key: string) => ui[key] ?? key;
-
+const FeedbackForm = memo(({ routePrefix, triggerLabel, placeholder, t, onClose }: FeedbackFormProps) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [files, setFiles] = useState<File[]>([]);
@@ -195,7 +194,7 @@ FeedbackForm.displayName = 'FeedbackForm';
 
 export function FeedbackModal() {
     const page = usePage<SharedData>();
-    const ui = (page.props.uiMessages ?? {}) as Record<string, string>;
+    const { t } = useI18n();
     const routePrefix = (page.props as any).routePrefix as string ?? window.routePrefix ?? '';
     const triggerLabel: string | null = (page.props as any).feedbackTriggerLabel ?? null;
     const placeholder: string | null = (page.props as any).feedbackPlaceholder ?? null;
@@ -214,10 +213,10 @@ export function FeedbackModal() {
             <DialogStackTrigger asChild>
                 <button
                     className="flex items-center gap-1.5 text-xs opacity-60 hover:opacity-100 transition-opacity cursor-pointer mt-1 mx-auto"
-                    aria-label={triggerLabel ?? ui['Send feedback'] ?? 'Send feedback'}
+                    aria-label={triggerLabel ?? t('Send feedback')}
                 >
                     <MessageSquarePlus size={13} />
-                    {triggerLabel ?? ui['Send feedback'] ?? 'Send feedback'}
+                    {triggerLabel ?? t('Send feedback')}
                 </button>
             </DialogStackTrigger>
 
@@ -230,7 +229,7 @@ export function FeedbackModal() {
                         routePrefix={routePrefix}
                         triggerLabel={triggerLabel}
                         placeholder={placeholder}
-                        ui={ui}
+                        t={t}
                         onClose={handleClose}
                     />
                 </DialogStackContent>

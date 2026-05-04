@@ -27,8 +27,7 @@ import {
     CommandList,
     CommandSeparator,
 } from "@/components/ui/command";
-import { usePage } from "@inertiajs/react";
-import { SharedData } from "@/types";
+import { useI18n } from "@/hooks/use-i18n";
 
 const multiSelectVariants = cva(
     "m-1 flex items-center border rounded-sm px-1",
@@ -114,8 +113,7 @@ const MultiSelect = React.forwardRef<
         },
         ref
     ) => {
-        const page = usePage<SharedData>();
-        const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
+        const { t } = useI18n();
         const [selectedValues, setSelectedValues] = React.useState<string[]>(defaultValue);
         const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
         const [isAnimating, setIsAnimating] = React.useState(false);
@@ -196,7 +194,7 @@ const MultiSelect = React.forwardRef<
                     }}
                 >
                     <Plus className="mr-1 h-3.5 w-3.5" />
-                    <span>{uiMessages.Add || 'Add'}</span>
+                    <span>{t("Add")}</span>
                 </div>
             );
         };

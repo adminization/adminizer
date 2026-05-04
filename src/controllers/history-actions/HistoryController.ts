@@ -1,6 +1,8 @@
 import { Adminizer } from "../../lib/Adminizer";
 import { AbstractHistoryAdapter } from "../../lib/history-actions/AbstractHistoryAdapter";
 import { UserAP } from "../../models/UserAP";
+import { getUiTranslations } from "../../lib/i18n/getUiTranslations";
+import { HISTORY_UI_TRANSLATION_KEYS } from "../../lib/i18n/uiTranslationKeys";
 
 export class HistoryController {
 
@@ -38,21 +40,7 @@ export class HistoryController {
                 };
             });
 
-            const messages = {
-                "Models": "",
-                "All": "",
-                "Users": "",
-                "Date": "",
-                "Pick a date": "",
-                "Search": "",
-                "Reset": "",
-                "Model": "",
-                "Name": "",
-                "Event": "",
-                "User": "",
-                "The end of the list has been reached": "",
-                "There are no records to display": "",
-            };
+            const i18nPage = getUiTranslations(req, HISTORY_UI_TRANSLATION_KEYS);
 
             return req.Inertia.render({
                 component: 'history',
@@ -62,7 +50,7 @@ export class HistoryController {
                     users: users.map((user: UserAP) => ({
                         name: user.login
                     })),
-                    messages: Object.fromEntries(Object.keys(messages).map(key => [key, req.i18n.__(key)]))
+                    i18nPage
                 }
             });
         }

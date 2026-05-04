@@ -1,10 +1,10 @@
 import {useCallback, useEffect, useState} from "react";
-import {SharedData, Widget} from "@/types";
+import {Widget} from "@/types";
 import {Card, CardFooter, CardHeader, CardTitle} from "@/components/ui/card.tsx";
 import MaterialIcon from "@/components/material-icon.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {Input} from "@/components/ui/input.tsx";
-import { usePage } from "@inertiajs/react";
+import { useI18n } from "@/hooks/use-i18n";
 
 interface AddWidget {
     initWidgets: Widget[];
@@ -19,8 +19,7 @@ type WidgetGroup = Record<string, { items: Widget[], title: string }>;
 type Head = { type: string, title: string };
 
 const AddWidgets = ({initWidgets, onAddWidgets, disabled, searchPlaceholder, actionsTitles}: AddWidget) => {
-    const page = usePage<SharedData>();
-    const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
+    const { t } = useI18n();
     const [widgets, setWidgets] = useState<WidgetGroup>({
         switchers: {items: [], title: ''},
         info: {items: [], title: ''},
@@ -116,7 +115,7 @@ const AddWidgets = ({initWidgets, onAddWidgets, disabled, searchPlaceholder, act
             let newWidgets = {
                     search: {
                         items: [] as Widget[],
-                        title: uiMessages.Search || 'Search',
+                        title: t("Search"),
                     }
                 };
 
@@ -172,11 +171,11 @@ const AddWidgets = ({initWidgets, onAddWidgets, disabled, searchPlaceholder, act
                                         <CardFooter className="justify-end">
                                             {item.added ? (
                                                 <Button variant="destructive" onClick={() => addWidget(item.id)}>
-                                                    {uiMessages.Hide || 'Hide'}
+                                                    {t("Hide")}
                                                 </Button>
                                             ) : (
                                                 <Button onClick={() => addWidget(item.id)}>
-                                                    {uiMessages.Show || 'Show'}
+                                                    {t("Show")}
                                                 </Button>
                                             )}
                                         </CardFooter>
@@ -184,7 +183,7 @@ const AddWidgets = ({initWidgets, onAddWidgets, disabled, searchPlaceholder, act
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-muted-foreground">{uiMessages["No widgets found"] || 'No widgets found'}</p>
+                            <p className="text-muted-foreground">{t("No widgets found")}</p>
                         )}
                     </div>
                 ))}

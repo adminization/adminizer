@@ -20,6 +20,7 @@ export function useTableColumns(
     return useMemo(() => {
         return Object.entries(columnConfigs).map(([key, config]) => ({
             accessorKey: key,
+            meta: config.title,
             header: () => {
                 return (
                     <div

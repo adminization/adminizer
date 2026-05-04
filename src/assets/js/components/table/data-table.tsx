@@ -4,7 +4,9 @@ import {
     getCoreRowModel,
     getPaginationRowModel,
     getSortedRowModel,
+    OnChangeFn,
     useReactTable,
+    VisibilityState,
 } from "@tanstack/react-table"
 
 import {
@@ -18,7 +20,15 @@ import {
 import {Input} from "@/components/ui/input.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {Icon} from "@/components/icon.tsx";
-import {Search} from "lucide-react";
+import {Columns3, Search} from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu.tsx";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -29,6 +39,9 @@ interface DataTableProps<TData, TValue> {
     onGlobalSearch?: (value: string) => void
     handleSearch?: () => void
     searchTxt?: string
+    columnVisibility?: VisibilityState
+    onColumnVisibilityChange?: OnChangeFn<VisibilityState>
+    columnVisibilityLabel: string
 }
 
 export function DataTable<TData, TValue>(
@@ -40,12 +53,19 @@ export function DataTable<TData, TValue>(
         onGlobalSearch,
         searchValue,
         handleSearch,
-        searchTxt
+        searchTxt,
+        columnVisibility,
+        onColumnVisibilityChange,
+        columnVisibilityLabel
     }: DataTableProps<TData, TValue>) {
 
     const table = useReactTable({
         data,
         columns,
+        state: {
+            columnVisibility,
+        },
+        onColumnVisibilityChange,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -56,6 +76,31 @@ export function DataTable<TData, TValue>(
         <div className="rounded-md border">
             {globalSearch && onGlobalSearch && (
                 <div className="flex gap-2 p-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon" title={columnVisibilityLabel}>
+                                <Icon iconNode={Columns3} className="size-5"/>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-56">
+                            <DropdownMenuLabel>{columnVisibilityLabel}</DropdownMenuLabel>
+                            <DropdownMenuSeparator/>
+                            {table
+                                .getAllLeafColumns()
+                                .filter((column) => column.getCanHide())
+                                .map((column) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={column.id}
+                                        className="capitalize"
+                                        checked={column.getIsVisible()}
+                                        onCheckedChange={(checked) => column.toggleVisibility(!!checked)}
+                                    >
+                                        {String(column.columnDef.meta ?? column.id)}
+                                    </DropdownMenuCheckboxItem>
+                                ))
+                            }
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <Input
                         type="text"
                         value={searchValue}
@@ -73,6 +118,36 @@ export function DataTable<TData, TValue>(
                     <Button variant="outline" size="icon" onClick={handleSearch}>
                         <Icon iconNode={Search} className="size-5"/>
                     </Button>
+                </div>
+            )}
+            {!globalSearch && (
+                <div className="flex justify-start p-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                <Icon iconNode={Columns3} className="size-4"/>
+                                {columnVisibilityLabel}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-56">
+                            <DropdownMenuLabel>{columnVisibilityLabel}</DropdownMenuLabel>
+                            <DropdownMenuSeparator/>
+                            {table
+                                .getAllLeafColumns()
+                                .filter((column) => column.getCanHide())
+                                .map((column) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={column.id}
+                                        className="capitalize"
+                                        checked={column.getIsVisible()}
+                                        onCheckedChange={(checked) => column.toggleVisibility(!!checked)}
+                                    >
+                                        {String(column.columnDef.meta ?? column.id)}
+                                    </DropdownMenuCheckboxItem>
+                                ))
+                            }
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             )}
             <Table wrapperHeight="max-h-[65vh]">
@@ -111,7 +186,7 @@ export function DataTable<TData, TValue>(
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={columns.length} className="h-24 text-center">
+                            <TableCell colSpan={table.getVisibleLeafColumns().length || columns.length} className="h-24 text-center">
                                 {notFoundContent}
                             </TableCell>
                         </TableRow>

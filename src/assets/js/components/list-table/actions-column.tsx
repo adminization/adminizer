@@ -13,7 +13,10 @@ interface ActionsColumnOptions {
 
 export function createActionsColumn(options: ActionsColumnOptions): ColumnDef<any> {
     return {
+        id: 'actions',
         accessorKey: 'actions',
+        enableHiding: false,
+        meta: options.thActionsTitle,
         header: () => (
             <div className="text-center">
                 {options.thActionsTitle}

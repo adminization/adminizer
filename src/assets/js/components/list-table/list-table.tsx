@@ -11,12 +11,15 @@ import {useListTable} from './use-list-table';
 import {TableToolbar} from './table-toolbar';
 import {createActionsColumn} from './actions-column';
 import {ExtendedSharedData} from './types';
+import {usePersistedColumnVisibility} from './use-persisted-column-visibility';
+import {useFilterTranslations} from './use-filter-translations';
 
 const ListTable = () => {
     const page = usePage<ExtendedSharedData>();
     const initialData = page.props.data;
     const header = page.props.header;
     const customColumns = page.props.customColumns;
+    const {t} = useFilterTranslations(header.entity.name);
 
     // Store table data in state for inline updates
     const [tableData, setTableData] = useState(initialData.data);
@@ -137,6 +140,11 @@ const ListTable = () => {
         customColumns
     ]);
 
+    const {
+        columnVisibility,
+        onColumnVisibilityChange
+    } = usePersistedColumnVisibility(header.entity.name, tableColumns);
+
     return (
         <>
             <Toaster position="top-center" richColors closeButton/>
@@ -149,12 +157,15 @@ const ListTable = () => {
                 <DataTable
                     columns={tableColumns}
                     data={tableData}
+                    columnVisibility={columnVisibility}
+                    onColumnVisibilityChange={onColumnVisibilityChange}
                     searchValue={searchValue}
                     searchTxt={header.searchBtn}
                     notFoundContent={header.notFoundContent}
                     globalSearch={showSearch}
                     onGlobalSearch={handleGlobalSearch}
                     handleSearch={handleSearch}
+                    columnVisibilityLabel={t('Columns')}
                 />
                 <div className="mt-4 flex flex-wrap justify-center md:justify-between gap-4 items-end">
                     <div

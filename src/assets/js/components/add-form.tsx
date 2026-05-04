@@ -120,14 +120,14 @@ const AddForm: FC<{
 
         // useEffect(() => {
         //     console.log(data);
-            
+
         // }, [data])
 
         // Forcibly updating data when changing passes
         useEffect(() => {
             setNavTargetBlank(openNewWindow ?? false);
             resetFormErrors();
-            
+
             // Populate form state; use a safe fallback when fields is not an array
             setData({
                 ...Object.fromEntries(
@@ -139,7 +139,7 @@ const AddForm: FC<{
                     ])
                 ),
                 jsonPopupCatalog: catalog
-            });           
+            });
 
             return () => resetFormErrors();
         }, [fields, catalog, openNewWindow, setData]);
@@ -201,7 +201,7 @@ const AddForm: FC<{
         return (
             <>
                 {!catalog &&
-                    <div className="w-full sticky z-[1001] top-0 bg-background shadow-md">
+                    <div className="w-full sticky z-[1001] top-0 bg-background shadow-md lg:hidden">
                         <div className="p-4 flex gap-4">
                             <Button className="w-fit" asChild>
                                 <Link href={btnBack.link} preserveScroll={true}>
@@ -215,104 +215,126 @@ const AddForm: FC<{
                                 {catalogProcessing || processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                                 {page.props.btnSave.title}
                             </Button>
+                            {(history && (edit || view)) && <div className={`flex gap-2 justify-start`}>
+                                <Button variant="outline" className="w-fit"
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        dialogRef.current?.open()
+                                    }}
+                                >{btnHistory.title}
+                                </Button>
+                            </div>
+                            }
                         </div>
                     </div>
                 }
                 <div className="p-4 w-full mt-6">
                     <form
-                    id="addUserForm"
-                    onSubmit={submit}
-                    className={view ? 'cursor-not-allowed' : ''}
-                >
-                    <div
-                        className={`grid gap-4 max-w-286 pb-8 lg:grid-cols-[1fr_220px]`}>
-                        <div className="flex flex-col gap-10">
-                            {fields.map((field) => (
-                                <div className={`grid gap-4 w-full ${view ? 'pointer-events-none' : ''}`}
-                                    key={field.name}>
-                                    {field.type === "markdown" || field.type === "table" || field.type === "jsonEditor" || field.type === "codeEditor" || field.type === "geoJson" ?
-                                        <>
-                                            <LabelRenderer field={field} />
-                                            <InputError message={getFieldError(`${field.type}-${field.name}`)} />
-                                            <LazyField
-                                                field={field}
-                                                value={data[field.name]}
-                                                onChange={handleFieldChange}
-                                                processing={catalogProcessing || processing || view}
-                                                notFound={notFound}
-                                                search={page.props.search}
-                                                invalidFieldMessage={uiMessages["Error: Invalid field data"] || 'Error: Invalid field data'}
-                                            />
-                                        </>
-                                        :
-                                        <>
-                                            <LabelRenderer field={field} />
-                                            <InputError message={getFieldError(`${field.type}-${field.name}`)} />
-                                            <FieldRenderer
-                                                field={field}
-                                                value={data[field.name]}
-                                                onChange={handleFieldChange}
-                                                processing={catalogProcessing || processing || view}
-                                                notFound={notFound}
-                                                search={page.props.search}
-                                            />
-                                        </>
-                                    }
-                                </div>
-                            ))}
-                        </div>
+                        id="addUserForm"
+                        onSubmit={submit}
+                        className={view ? 'cursor-not-allowed' : ''}
+                    >
                         <div
-                            className={`p-4 rounded-md h-fit sticky shadow ${catalog ? 'top-0 grid gap-4' : 'top-[84px] hidden lg:block'}`}>
-                            {isNavigation &&
-                                <>
-                                    <div className="flex gap-4 items-center">
-                                        <Checkbox
-                                            id="targetBlank"
-                                            checked={navTargetBlank}
-                                            onCheckedChange={(checked) => setNavTargetBlank(!!checked)}
-                                            className="cursor-pointer size-5"
-                                        />
-                                        <Label htmlFor="targetBlank">{openNewWindowLabel}</Label>
+                            className={`grid gap-4 max-w-286 pb-8 lg:grid-cols-[1fr_220px]`}>
+                            <div className="flex flex-col gap-10">
+                                {fields.map((field) => (
+                                    <div className={`grid gap-4 w-full ${view ? 'pointer-events-none' : ''}`}
+                                        key={field.name}>
+                                        {field.type === "markdown" || field.type === "table" || field.type === "jsonEditor" || field.type === "codeEditor" || field.type === "geoJson" ?
+                                            <>
+                                                <LabelRenderer field={field} />
+                                                <InputError message={getFieldError(`${field.type}-${field.name}`)} />
+                                                <LazyField
+                                                    field={field}
+                                                    value={data[field.name]}
+                                                    onChange={handleFieldChange}
+                                                    processing={catalogProcessing || processing || view}
+                                                    notFound={notFound}
+                                                    search={page.props.search}
+                                                    invalidFieldMessage={uiMessages["Error: Invalid field data"] || 'Error: Invalid field data'}
+                                                />
+                                            </>
+                                            :
+                                            <>
+                                                <LabelRenderer field={field} />
+                                                <InputError message={getFieldError(`${field.type}-${field.name}`)} />
+                                                <FieldRenderer
+                                                    field={field}
+                                                    value={data[field.name]}
+                                                    onChange={handleFieldChange}
+                                                    processing={catalogProcessing || processing || view}
+                                                    notFound={notFound}
+                                                    search={page.props.search}
+                                                />
+                                            </>
+                                        }
                                     </div>
-                                    <div className="flex gap-4 items-center">
-                                        <Checkbox
-                                            id="visible"
-                                            checked={navVisible}
-                                            onCheckedChange={(checked) => setNavVisible(!!checked)}
-                                            className="cursor-pointer size-5"
-                                        />
-                                        <Label htmlFor="visible">{visibleLable}</Label>
-                                    </div>
-                                </>
-                            }
-                            <div className={`flex gap-2 ${(history && (edit || view)) ? 'justify-center' : 'justify-start'}`}>
-                                <Button variant="green" type="submit" className="w-fit"
-                                    disabled={catalogProcessing || processing || page.props.view || hasFormErrors()}>
-                                    {(catalogProcessing || processing) && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                                    {page.props.btnSave.title}
-                                </Button>
-                                {(history && (edit || view)) && <Button variant="outline" className="w-fit"
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        dialogRef.current?.open()
-                                    }}
-                                >{btnHistory.title}</Button>}
+                                ))}
+                            </div>
+                            <div
+                                className={`p-4 rounded-md h-fit sticky shadow ${catalog ? 'top-0 grid gap-4' : 'top-[54px] hidden lg:grid gap-4'}`}>
+                                <div className="flex gap-4">
+                                    {!catalog && (
+                                        <Button className="w-fit" asChild>
+                                            <Link href={btnBack.link} preserveScroll={true}>
+                                                <Icon iconNode={MoveLeft} />
+                                                {btnBack.title}
+                                            </Link>
+                                        </Button>
+                                    )}
+                                    <Button variant="green" type="submit" className="w-fit"
+                                        disabled={catalogProcessing || processing || page.props.view || hasFormErrors()}>
+                                        {(catalogProcessing || processing) && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                                        {page.props.btnSave.title}
+                                    </Button>
+                                </div>
+                                {isNavigation &&
+                                    <>
+                                        <div className="flex gap-4 items-center">
+                                            <Checkbox
+                                                id="targetBlank"
+                                                checked={navTargetBlank}
+                                                onCheckedChange={(checked) => setNavTargetBlank(!!checked)}
+                                                className="cursor-pointer size-5"
+                                            />
+                                            <Label htmlFor="targetBlank">{openNewWindowLabel}</Label>
+                                        </div>
+                                        <div className="flex gap-4 items-center">
+                                            <Checkbox
+                                                id="visible"
+                                                checked={navVisible}
+                                                onCheckedChange={(checked) => setNavVisible(!!checked)}
+                                                className="cursor-pointer size-5"
+                                            />
+                                            <Label htmlFor="visible">{visibleLable}</Label>
+                                        </div>
+                                    </>
+                                }
+                                {(history && (edit || view)) && <div className={`flex gap-2 justify-start`}>
+                                    <Button variant="outline" className="w-fit"
+                                        onClick={(e) => {
+                                            e.preventDefault()
+                                            dialogRef.current?.open()
+                                        }}
+                                    >{btnHistory.title}
+                                    </Button>
+                                </div>
+                                }
                             </div>
                         </div>
-                    </div>
-                </form>
-                {(history && (edit || view)) && <HistoryDialogStack
-                    dialogRef={dialogRef}
-                    modelName={model}
-                    modelId={fields.find(e => e.name === 'id')?.value}
-                    callback={(data) => {
-                        for (const key of Object.keys(data)) {
-                            setData(key, data[key]);
-                        }
-                        dialogRef.current?.close()
-                    }}
-                />}
-            </div>
+                    </form>
+                    {(history && (edit || view)) && <HistoryDialogStack
+                        dialogRef={dialogRef}
+                        modelName={model}
+                        modelId={fields.find(e => e.name === 'id')?.value}
+                        callback={(data) => {
+                            for (const key of Object.keys(data)) {
+                                setData(key, data[key]);
+                            }
+                            dialogRef.current?.close()
+                        }}
+                    />}
+                </div>
             </>
         );
     };

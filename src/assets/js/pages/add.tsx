@@ -2,6 +2,9 @@ import {type BreadcrumbItem, Field} from "@/types";
 import AppLayout from "@/layouts/app-layout.tsx";
 import AddForm from "@/components/add-form.tsx";
 import {usePage} from "@inertiajs/react";
+import {useEffect} from "react";
+import {Toaster} from "@/components/ui/sonner.tsx";
+import {toast} from "sonner";
 
 export interface AddProps {
     actions: {
@@ -34,8 +37,22 @@ const breadcrumbs: BreadcrumbItem[] = [];
 
 export default function Add() {
     const page = usePage<AddProps>();
+
+    useEffect(() => {
+        const flash = page.props.flash as Record<string, string> | undefined;
+        if (!flash) return;
+
+        if (flash.success) {
+            toast.success(flash.success);
+        }
+        if (flash.error) {
+            toast.error(flash.error);
+        }
+    }, [page.props.flash]);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs} className="overflow-auto h-[calc(100svh-16px)]">
+            <Toaster position="top-center" richColors closeButton/>
             <AddForm page={page} catalog={false}/>
         </AppLayout>
     )

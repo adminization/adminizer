@@ -90,6 +90,8 @@ export default async function add(req: ReqType, res: ResType) {
 
         try {
             let record = await entity.model.create(reqData, dataAccessor);
+            const identifierField = entity.config.identifierField || req.adminizer.config.identifierField;
+            const redirectId = (record as Record<string, any>)?.[identifierField] ?? (record as Record<string, any>)?.id;
 
             // save associations media to json
             await saveRelationsMediaManager(req.adminizer, fields, rawReqData, entity.model.identity, record.id)
@@ -103,7 +105,7 @@ export default async function add(req: ReqType, res: ResType) {
                 return res.json({record: record})
             } else {
                 req.flash.setFlashMessage('success', req.i18n.__('New record was created'));
-                return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/${entity.name}`)
+                return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/${entity.name}/edit/${redirectId}`)
             }
         } catch (e) {
             Adminizer.log.error(e);

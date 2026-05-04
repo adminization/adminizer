@@ -20,13 +20,11 @@ type I18nOptions = {
     subdomain?: boolean;
 };
 
-export class I18n {
+export class I18nOld {
     private devMode: boolean;
     private static locales: Record<string, LocaleData> = {};
     private defaultLocale: string;
-    private defaultDirectory: string;
     private directory: string;
-    private customDirectory?: string;
     private extension: string;
     private cookieName: string;
     private sessionVarName: string;
@@ -35,31 +33,20 @@ export class I18n {
     private prefLocale?: string;
 
     static localeCache: Record<string, LocaleData> = {};
-    static resMethods: Array<keyof I18n> = ["__", "__n", "getLocale", "isPreferredLocale"];
+    static resMethods: Array<keyof I18nOld> = ["__", "__n", "getLocale", "isPreferredLocale"];
 
     constructor(options: I18nOptions = {}) {
-        this.devMode = process.env.VITE_ENV === "dev";
+        this.devMode = process.env.NODE_ENV !== "production";
 
         this.defaultLocale = options.defaultLocale || "en";
-        const runtimeDefaultTranslationsPath = path.resolve(import.meta.dirname, "../translations");
-        const sourceTranslationsPath = path.resolve(import.meta.dirname, "../../src/translations");
-        this.defaultDirectory = this.devMode
-            ? (fs.existsSync(sourceTranslationsPath) ? sourceTranslationsPath : runtimeDefaultTranslationsPath)
-            : runtimeDefaultTranslationsPath;
-        this.customDirectory = options.directory ? path.resolve(options.directory) : undefined;
-        this.directory = this.customDirectory || this.defaultDirectory;
+        this.directory = options.directory || path.join(import.meta.filename, "../../translations");
         this.extension = options.extension || ".json";
         this.cookieName = options.cookieName || "lang";
         this.sessionVarName = options.sessionVarName || "locale";
         this.indent = options.indent || "\t";
 
         if (options.locales) {
-            options.locales.forEach((locale) => {
-                this.readFile(locale, this.defaultDirectory);
-                if (this.customDirectory && this.customDirectory !== this.defaultDirectory) {
-                    this.readFile(locale, this.customDirectory);
-                }
-            });
+            options.locales.forEach((locale) => this.readFile(locale));
         }
 
         this.setLocale(this.defaultLocale);
@@ -77,7 +64,7 @@ export class I18n {
     };
 
     setLocale(locale: string): string {
-        if (!I18n.locales[locale]) {
+        if (!I18nOld.locales[locale]) {
             if (this.devMode) {
                 Adminizer.log.warn(`Locale (${locale}) not found.`);
             }
@@ -87,7 +74,7 @@ export class I18n {
     }
 
     registerMethods(helpers: Record<string, any>, req: ReqType): Record<string, any> {
-        I18n.resMethods.forEach(function (method) {
+        I18nOld.resMethods.forEach(function (method) {
             if (req) {
                 helpers[method] = req.i18n[method].bind(req.i18n);
             } else {
@@ -110,55 +97,73 @@ export class I18n {
     }
 
     translate(locale: string, singular: string, plural?: string): any {
-        if (!I18n.locales[locale]) {
+        if (!I18nOld.locales[locale]) {
             if (this.devMode) {
                 Adminizer.log.warn(`WARN: No locale found. Using the default (${this.defaultLocale}) as current locale`);
             }
             locale = this.defaultLocale;
         }
-        const localeDictionary = I18n.locales[locale] || {};
+        const localeDictionary = I18nOld.locales[locale] || {};
         const translation = localeDictionary[singular];
+        if (!translation && this.devMode) {
+            I18nOld.locales[locale] = I18nOld.locales[locale] || {};
+            I18nOld.locales[locale][singular] = plural ? {one: singular, other: plural} : singular;
+            this.writeFile(locale);
+        }
         return translation || (plural ? {one: singular, other: plural} : singular);
     }
 
-    private readFile(locale: string, directory = this.directory): void {
-        const file = this.locateFile(locale, directory);
+    private readFile(locale: string): void {
+        const file = this.locateFile(locale);
 
-        if (!this.devMode && I18n.localeCache[file]) {
-            I18n.locales[locale] = {
-                ...(I18n.locales[locale] || {}),
-                ...I18n.localeCache[file]
-            };
+        if (!this.devMode && I18nOld.localeCache[file]) {
+            I18nOld.locales[locale] = I18nOld.localeCache[file];
             return;
         }
 
         try {
             const data = fs.readFileSync(file, "utf8");
             const parsed = JSON.parse(data);
-            I18n.locales[locale] = {
-                ...(I18n.locales[locale] || {}),
+            I18nOld.locales[locale] = {
+                ...(I18nOld.locales[locale] || {}),
                 ...parsed
             };
             if (!this.devMode) {
-                I18n.localeCache[file] = parsed;
+                I18nOld.localeCache[file] = I18nOld.locales[locale];
             }
         } catch (error) {
             if (this.devMode) {
                 Adminizer.log.warn(`Failed to read locale file ${file}:`, error);
             }
-            I18n.locales[locale] = I18n.locales[locale] || {};
+            I18nOld.locales[locale] = {};
         }
     }
 
-    private locateFile(locale: string, directory = this.directory): string {
-        return path.normalize(`${directory}/${locale}${this.extension}`);
+    private writeFile(locale: string): void {
+        if (!this.devMode) return;
+
+        const file = this.locateFile(locale);
+        const tmpFile = `${file}.tmp`;
+        const dir = path.dirname(file);
+
+        try {
+            fs.mkdirSync(dir, {recursive: true});
+            fs.writeFileSync(tmpFile, JSON.stringify(I18nOld.locales[locale], null, this.indent), "utf8");
+            fs.renameSync(tmpFile, file);
+        } catch (error) {
+            Adminizer.log.error(`Failed to write locale file ${file}:`, error);
+        }
+    }
+
+    private locateFile(locale: string): string {
+        return path.normalize(`${this.directory}/${locale}${this.extension}`);
     }
 
     public static appendLocale(locale: string, data: any) {
-        I18n.locales[locale] = {...I18n.locales[locale], ...data};
+        I18nOld.locales[locale] = {...I18nOld.locales[locale], ...data};
     }
 
     public static getLocales() {
-        return this.locales
+        return this.locales;
     }
 }

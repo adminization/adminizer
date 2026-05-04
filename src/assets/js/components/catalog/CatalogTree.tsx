@@ -343,7 +343,13 @@ const CatalogTree = () => {
                     switch (res.data.type) {
                         case 'model.link':
                             const item = res.data.data.item
-                            const resEdit = await axios.get(`${window.routePrefix}/model/${res.data.data.model}/edit/${item.modelId}?without_layout=true`)
+                            const editModel = res.data.data.model ?? item.type ?? selectedNodes[0]?.data?.type
+                            if (!editModel) {
+                                toast.error('Unable to determine model for edit form')
+                                setFirstRender(false)
+                                break
+                            }
+                            const resEdit = await axios.get(`${window.routePrefix}/model/${editModel}/edit/${item.modelId}?without_layout=true`)
                             setAddProps(resEdit.data)
                             setPopUpTargetBlank(item.targetBlank)
                             setPopUpVisible(item.visible)
@@ -352,7 +358,13 @@ const CatalogTree = () => {
                             break
                         case 'model':
                             const itemModel = res.data.data.item
-                            const resEditModel = await axios.get(`${window.routePrefix}/model/${res.data.data.model}/edit/${itemModel.modelId}?without_layout=true`)
+                            const editModelName = res.data.data.model ?? itemModel.type ?? selectedNodes[0]?.data?.type
+                            if (!editModelName) {
+                                toast.error('Unable to determine model for edit form')
+                                setFirstRender(false)
+                                break
+                            }
+                            const resEditModel = await axios.get(`${window.routePrefix}/model/${editModelName}/edit/${itemModel.modelId}?without_layout=true`)
                             setAddProps(resEditModel.data)
                             setPopUpTargetBlank(itemModel.targetBlank)
                             setPopUpVisible(itemModel.visible)

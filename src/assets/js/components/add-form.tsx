@@ -200,34 +200,34 @@ const AddForm: FC<{
 
         return (
             <>
-                {!catalog &&
-                    <div className="w-full sticky z-[1001] top-0 bg-background shadow-md lg:hidden">
-                        <div className="p-4 flex gap-4">
+                <div className="w-full sticky z-[1001] top-0 bg-background shadow-md lg:hidden">
+                    <div className="p-4 flex gap-4">
+                        {!catalog && (
                             <Button className="w-fit" asChild>
                                 <Link href={btnBack.link} preserveScroll={true}>
                                     <Icon iconNode={MoveLeft} />
                                     {btnBack.title}
                                 </Link>
                             </Button>
-                            <Button variant="green" type="submit" className="w-fit lg:hidden"
-                                form="addUserForm"
-                                disabled={catalogProcessing || processing || page.props.view || hasFormErrors()}>
-                                {catalogProcessing || processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                                {page.props.btnSave.title}
+                        )}
+                        <Button variant="green" type="submit" className="w-fit lg:hidden"
+                            form="addUserForm"
+                            disabled={catalogProcessing || processing || page.props.view || hasFormErrors()}>
+                            {catalogProcessing || processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                            {page.props.btnSave.title}
+                        </Button>
+                        {(history && (edit || view)) && <div className={`flex gap-2 justify-start`}>
+                            <Button variant="outline" className="w-fit"
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    dialogRef.current?.open()
+                                }}
+                            >{btnHistory.title}
                             </Button>
-                            {(history && (edit || view)) && <div className={`flex gap-2 justify-start`}>
-                                <Button variant="outline" className="w-fit"
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        dialogRef.current?.open()
-                                    }}
-                                >{btnHistory.title}
-                                </Button>
-                            </div>
-                            }
                         </div>
+                        }
                     </div>
-                }
+                </div>
                 <div className="p-4 w-full mt-6">
                     <form
                         id="addUserForm"
@@ -271,8 +271,7 @@ const AddForm: FC<{
                                     </div>
                                 ))}
                             </div>
-                            <div
-                                className={`p-4 rounded-md h-fit sticky shadow ${catalog ? 'top-0 grid gap-4' : 'top-[54px] hidden lg:grid gap-4'}`}>
+                            <div className="p-4 rounded-md h-fit sticky top-[54px] hidden lg:grid gap-4 shadow">
                                 <div className="flex gap-4">
                                     {!catalog && (
                                         <Button className="w-fit" asChild>

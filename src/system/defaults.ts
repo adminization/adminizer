@@ -119,7 +119,7 @@ let adminpanelConfig: AdminpanelConfig = {
 
     translation: {
         locales: ['en', 'ru'],
-        path: `config/locales/adminpanel`,
+        directory: `config/locales/adminpanel`,
         defaultLocale: 'en'
     },
 

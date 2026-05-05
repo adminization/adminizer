@@ -9,8 +9,8 @@ import {FilterCondition, FilterAP} from "../models/FilterAP";
 import {FilterColumnAP} from "../models/FilterColumnAP";
 import {FilterService} from "../lib/filters/FilterService";
 import {convertDatetimeConditions} from "../helpers/filterDatetimeHelper";
-import { getUiTranslations } from "../lib/i18n/getUiTranslations";
-import { FILTER_UI_TRANSLATION_KEYS } from "../lib/i18n/uiTranslationKeys";
+import { getUiTranslations } from "../lib/ui-i18n/getUiTranslations";
+import { FILTER_UI_TRANSLATION_KEYS } from "../lib/ui-i18n/uiTranslationKeys";
 
 export default async function list(req: ReqType, res: ResType) {
     let entity = ControllerHelper.findEntityObject(req);

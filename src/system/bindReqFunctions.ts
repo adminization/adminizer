@@ -19,9 +19,19 @@ export default function bindReqFunctions(adminizer: Adminizer) {
             typeof (req as Partial<ReqType>).i18n?.__ === "function";
 
         if (!hasExternalI18n) {
+            const translationDirectory =
+                adminizer.config.translation !== false
+                    ? adminizer.config.translation.directory ?? adminizer.config.translation.path
+                    : null;
+            const missingTranslationDirectory =
+                adminizer.config.translation !== false
+                    ? adminizer.config.translation.missingTranslationDirectory
+                    : null;
+
             req.i18n = new I18n({
                 locales: adminizer.config.translation !== false ? adminizer.config.translation.locales : [],
-                directory: adminizer.config.translation !== false ? adminizer.config.translation.path ?? null : null
+                directory: translationDirectory ?? null,
+                missingDirectory: missingTranslationDirectory ?? null
             });
         }
 

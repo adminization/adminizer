@@ -1,5 +1,5 @@
-import { getUiTranslations } from "../lib/i18n/getUiTranslations";
-import { USER_FILTERS_UI_TRANSLATION_KEYS } from "../lib/i18n/uiTranslationKeys";
+import { getUiTranslations } from "../lib/ui-i18n/getUiTranslations";
+import { USER_FILTERS_UI_TRANSLATION_KEYS } from "../lib/ui-i18n/uiTranslationKeys";
 
 /**
  * GET /adminizer/model/userfilters

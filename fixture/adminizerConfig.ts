@@ -835,7 +835,8 @@ const config: AdminpanelConfig = {
     },
     translation: {
         locales: ['en', 'ru', 'de', 'ua'],
-        path: 'fixture/locales', // relative path to translations directory
+        directory: 'fixture/locales', // relative path to translations directory
+        // missingTranslationDirectory: 'fixture/locales_missing',
         defaultLocale: 'en'
     },
     models: models,

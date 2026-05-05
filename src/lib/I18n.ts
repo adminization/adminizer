@@ -9,6 +9,7 @@ type I18nOptions = {
     locales?: string[];
     defaultLocale?: string;
     directory?: string;
+    missingDirectory?: string;
     extension?: string;
     cookieName?: string;
     sessionVarName?: string;
@@ -27,6 +28,7 @@ export class I18n {
     private defaultDirectory: string;
     private directory: string;
     private customDirectory?: string;
+    private missingDirectory?: string;
     private extension: string;
     private cookieName: string;
     private sessionVarName: string;
@@ -47,6 +49,7 @@ export class I18n {
             ? (fs.existsSync(sourceTranslationsPath) ? sourceTranslationsPath : runtimeDefaultTranslationsPath)
             : runtimeDefaultTranslationsPath;
         this.customDirectory = options.directory ? path.resolve(options.directory) : undefined;
+        this.missingDirectory = options.missingDirectory ? path.resolve(options.missingDirectory) : undefined;
         this.directory = this.customDirectory || this.defaultDirectory;
         this.extension = options.extension || ".json";
         this.cookieName = options.cookieName || "lang";
@@ -118,6 +121,9 @@ export class I18n {
         }
         const localeDictionary = I18n.locales[locale] || {};
         const translation = localeDictionary[singular];
+        if (!translation && this.devMode) {
+            this.writeMissingTranslation(locale, singular, plural);
+        }
         return translation || (plural ? {one: singular, other: plural} : singular);
     }
 
@@ -152,6 +158,35 @@ export class I18n {
 
     private locateFile(locale: string, directory = this.directory): string {
         return path.normalize(`${directory}/${locale}${this.extension}`);
+    }
+
+    private writeMissingTranslation(locale: string, singular: string, plural?: string): void {
+        if (!this.missingDirectory) return;
+
+        const file = this.locateFile(locale, this.missingDirectory);
+        const tmpFile = `${file}.tmp`;
+        const dir = path.dirname(file);
+        const value = plural ? {one: singular, other: plural} : singular;
+
+        try {
+            fs.mkdirSync(dir, {recursive: true});
+
+            let missingTranslations: LocaleData = {};
+            if (fs.existsSync(file)) {
+                const data = fs.readFileSync(file, "utf8");
+                missingTranslations = JSON.parse(data);
+            }
+
+            if (Object.prototype.hasOwnProperty.call(missingTranslations, singular)) {
+                return;
+            }
+
+            missingTranslations[singular] = value;
+            fs.writeFileSync(tmpFile, JSON.stringify(missingTranslations, null, this.indent), "utf8");
+            fs.renameSync(tmpFile, file);
+        } catch (error) {
+            Adminizer.log.error(`Failed to write missing translation file ${file}:`, error);
+        }
     }
 
     public static appendLocale(locale: string, data: any) {

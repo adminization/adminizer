@@ -1,9 +1,7 @@
 import {Adminizer} from '../../lib/Adminizer';
-import {UserAP} from "../../models/UserAP";
-import {SystemNotificationService} from "../../lib/notifications/SystemNotificationService";
 import {INotification} from "../../interfaces/types";
-import { getUiTranslations } from "../../lib/i18n/getUiTranslations";
-import { NOTIFICATION_UI_TRANSLATION_KEYS } from "../../lib/i18n/uiTranslationKeys";
+import { getUiTranslations } from "../../lib/ui-i18n/getUiTranslations";
+import { NOTIFICATION_UI_TRANSLATION_KEYS } from "../../lib/ui-i18n/uiTranslationKeys";
 
 export class NotificationController {
     static async search(req: ReqType, res: ResType): Promise<void> {

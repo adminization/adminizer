@@ -190,6 +190,14 @@ export interface AdminpanelConfig {
         /**
          * Relative path from project root to translations folder
          * */
+        directory?: string
+        /**
+         * Relative path from project root to directory where missing translation keys are written in dev mode
+         * */
+        missingTranslationDirectory?: string
+        /**
+         * @deprecated use `directory`
+         */
         path?: string
         defaultLocale: string
     } | false

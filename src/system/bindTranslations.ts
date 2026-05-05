@@ -12,11 +12,18 @@ export default function bindTranslations(adminizer: Adminizer) {
     }
     return
   }
-  if (fs.existsSync(adminizer.config.translation.path)) {
-    let translationsDir = fs.readdirSync(adminizer.config.translation.path);
+  const translationsDirectory =
+    adminizer.config.translation.directory ?? adminizer.config.translation.path;
+
+  if (!translationsDirectory) {
+    return;
+  }
+
+  if (fs.existsSync(translationsDirectory)) {
+    let translationsDir = fs.readdirSync(translationsDirectory);
     if (translationsDir.length) {
       // load project translations
-      TranslationHelper.loadTranslations(adminizer, `${process.cwd()}/${adminizer.config.translation.path}`);
+      TranslationHelper.loadTranslations(adminizer, `${process.cwd()}/${translationsDirectory}`);
     }
   }
 }

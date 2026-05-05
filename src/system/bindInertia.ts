@@ -4,8 +4,8 @@ import fs from "fs";
 import path from "node:path";
 import { Adminizer } from "../lib/Adminizer";
 import { InertiaMenuHelper } from "../helpers/inertiaMenuHelper";
-import { getUiTranslations } from "../lib/i18n/getUiTranslations";
-import { COMMON_UI_TRANSLATION_KEYS } from "../lib/i18n/uiTranslationKeys";
+import { getUiTranslations } from "../lib/ui-i18n/getUiTranslations";
+import { COMMON_UI_TRANSLATION_KEYS } from "../lib/ui-i18n/uiTranslationKeys";
 
 export function bindInertia(adminizer: Adminizer) {
     const escapeHtmlAttribute = (value: string): string => value

@@ -1,8 +1,8 @@
 import { Adminizer } from "../../lib/Adminizer";
 import { AbstractHistoryAdapter } from "../../lib/history-actions/AbstractHistoryAdapter";
 import { UserAP } from "../../models/UserAP";
-import { getUiTranslations } from "../../lib/i18n/getUiTranslations";
-import { HISTORY_UI_TRANSLATION_KEYS } from "../../lib/i18n/uiTranslationKeys";
+import { getUiTranslations } from "../../lib/ui-i18n/getUiTranslations";
+import { HISTORY_UI_TRANSLATION_KEYS } from "../../lib/ui-i18n/uiTranslationKeys";
 
 export class HistoryController {
 

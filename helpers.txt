@@ -1,2 +1,0 @@
-DROP TABLE category
-DROP TABLE historyactionsap

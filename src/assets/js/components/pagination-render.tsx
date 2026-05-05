@@ -32,7 +32,7 @@ const PaginationRender: FC<PaginationProps> = ({pagination, pageChange, currentP
                 {/* First Item Button - show only when not on the first page */}
                 <PaginationItem className={`${showFirstButton ? '' : 'opacity-40 pointer-events-none'}`}>
                     <PaginationLink
-                        className="px-6 cursor-pointer bg-secondary hover:bg-muted-foreground/15"
+                        className="px-4 w-fit cursor-pointer bg-secondary hover:bg-muted-foreground/15"
                         onClick={(e) => {
                             e.preventDefault()
                             pageChange(1)
@@ -93,7 +93,7 @@ const PaginationRender: FC<PaginationProps> = ({pagination, pageChange, currentP
                 {/* Last Item Button - show only when not on the last page */}
                 <PaginationItem className={`${showLastButton ? '' : 'opacity-40 pointer-events-none'}`}>
                     <PaginationLink
-                        className="px-6 cursor-pointer bg-secondary hover:bg-muted-foreground/15"
+                        className="px-4 w-fit cursor-pointer bg-secondary hover:bg-muted-foreground/15"
                         onClick={(e) => {
                             e.preventDefault()
                             pageChange(pagination.last_page)

@@ -27,11 +27,8 @@ export default function VanillaJSONEditor(props: JSONEditorPropsOptional & Recor
     const [theme, setTheme] = useState<string>('')
 
     useEffect(() => {
-        if (appearance === 'dark') {
-            setTheme('jse-theme-dark');
-        } else {
-            setTheme('');
-        }
+        const isDark = appearance === 'dark' || (appearance === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        setTheme(isDark ? 'jse-theme-dark' : '');
     }, [appearance]);
 
     useEffect(()=>{

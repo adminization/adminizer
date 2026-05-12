@@ -64,7 +64,10 @@ export function TableToolbar({header, showSearch, onToggleSearch}: TableToolbarP
             );
 
             // Create download link
-            const blob = new Blob([response.data]);
+            const contentType = response.headers['content-type'];
+            const blob = response.data instanceof Blob
+                ? response.data
+                : new Blob([response.data], contentType ? {type: contentType} : undefined);
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;

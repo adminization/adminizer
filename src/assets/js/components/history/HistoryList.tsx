@@ -1,12 +1,12 @@
 import { FC, useEffect, useState } from "react"
-import axios from "axios";
+import { apiHttp } from "@/lib/http-client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { HistoryActionsAP } from "src/models/HistoryActionsAP";
+import { HistoryActionsAP } from "../../../../models/HistoryActionsAP";
 import { Button } from "@/components/ui/button";
 import { Braces, LoaderCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DiffViewer } from "@/components/history/DiffViewer";
-import { UserAP } from "src/models/UserAP";
+import { UserAP } from "../../../../models/UserAP";
 import { useI18n } from "@/hooks/use-i18n";
 
 interface HistoryListProps {
@@ -33,7 +33,7 @@ const HistoryList: FC<HistoryListProps> = ({ modelName, modelId, handleWatchHist
         const fetchData = async () => {
             setLoading(true); // Enable the loader before the request
             try {
-                const res = await axios.post(`${window.routePrefix}/history/get-model-history`, {
+                const res = await apiHttp.post<{ data?: HistoryItem[] }>(`${window.routePrefix}/history/get-model-history`, {
                     modelName,
                     modelId
                 });
@@ -52,7 +52,7 @@ const HistoryList: FC<HistoryListProps> = ({ modelName, modelId, handleWatchHist
 
     const watchHistory = async (id: string | number) => {
         try {
-            const res = await axios.post(`${window.routePrefix}/history/get-model-fields`, {
+            const res = await apiHttp.post<{ data?: Record<string, any> }>(`${window.routePrefix}/history/get-model-fields`, {
                 historyId: id
             })
             

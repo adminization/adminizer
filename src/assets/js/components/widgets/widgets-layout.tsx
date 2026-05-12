@@ -14,7 +14,7 @@ import {useCallback, useEffect, useMemo, useState} from "react";
 import {Responsive, WidthProvider} from "react-grid-layout";
 import {SharedData, Widget, WidgetLayoutItem} from "@/types";
 import {initializeWidgets} from "@/lib/widgets-service.ts";
-import axios from "axios";
+import { apiHttp } from "@/lib/http-client";
 import AddWidgets from "@/components/widgets/add-widgets.tsx";
 import WidgetItem from "@/components/widgets/widget-item.tsx";
 
@@ -171,7 +171,7 @@ const WidgetLayout = () => {
     const addWidgetsDB = useCallback(async (updatedWidgets: Widget[], newLayout: WidgetsLayouts) => {
         try {
             const storeWidgets = updatedWidgets.filter(widget => widget.added === true)
-            await axios.post(`${window.routePrefix}/widgets-get-all-db`, {
+            await apiHttp.post(`${window.routePrefix}/widgets-get-all-db`, {
                 widgets: storeWidgets,
                 layout: newLayout
             });

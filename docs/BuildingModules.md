@@ -49,6 +49,8 @@ export default function MyPageModule({ data }: PageModuleProps<{ items: Item[] }
   const handleAction = async (id: number) => {
     setLoading(true);
     try {
+      // Compatibility global for external modules.
+      // Prefer window.adminApi for JSON APIs.
       await window.axios.post(`${window.routePrefix}/api/my-resource/${id}/action`);
       window.sonner.toast.success('Done');
     } catch {
@@ -203,6 +205,8 @@ export default defineConfig({
     viteExternalsPlugin({
       'react':     'React',
       'react-dom': 'ReactDOM',
+      // Optional, only if your external module imports `axios` directly.
+      // Adminizer exposes `window.axios` as a compatibility client.
       'axios':     'axios',
       'sonner':    'sonner',
     }),

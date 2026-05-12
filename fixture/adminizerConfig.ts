@@ -84,7 +84,7 @@ const models: AdminpanelConfig["models"] = {
                 title: 'Title',
                 type: 'string',
                 required: true,
-                inlineEditable: false
+                // inlineEditable: false
             },
             description: {
                 title: 'Textarea',

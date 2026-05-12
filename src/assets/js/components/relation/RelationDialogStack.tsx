@@ -9,7 +9,7 @@ import {
     useRef,
     useState,
 } from "react";
-import axios from "axios";
+import { apiHttp } from "@/lib/http-client";
 import { LoaderCircle } from "lucide-react";
 import {
     DialogStack,
@@ -72,7 +72,7 @@ const RelationDialogStackProvider: FC<{ children: ReactNode }> = ({ children }) 
             const url = id === null
                 ? `${window.routePrefix}/model/${model}/add?without_layout=true`
                 : `${window.routePrefix}/model/${model}/edit/${id}?without_layout=true`;
-            const res = await axios.get(url);
+            const res = await apiHttp.get<any>(url);
             const props = res.data?.props ?? res.data;
             setStack((prev) => {
                 const next = [...prev];

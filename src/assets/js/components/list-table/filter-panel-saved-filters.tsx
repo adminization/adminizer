@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Play, Settings, Lock, Globe, Users, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import axios from 'axios';
+import { apiHttp } from '@/lib/http-client';
 import DeleteModal from '@/components/modals/del-modal';
 import MaterialIcon from '@/components/material-icon.tsx';
 import { useFilterTranslations } from './use-filter-translations';
@@ -73,7 +73,7 @@ export function SavedFiltersList({
     const loadFilters = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`/adminizer/model/${modelName}/saved-filters`);
+            const response = await apiHttp.get<{filters: SavedFilter[]}>(`/adminizer/model/${modelName}/saved-filters`);
             setFilters(response.data.filters || []);
         } catch (error: any) {
             console.error('Error loading saved filters:', error);
@@ -95,7 +95,7 @@ export function SavedFiltersList({
 
     const handleDelete = async (filter: SavedFilter) => {
         try {
-            await axios.delete(`/adminizer/model/${modelName}/filter/${filter.id}`);
+            await apiHttp.delete(`/adminizer/model/${modelName}/filter/${filter.id}`);
             onDeleteFilter?.(filter.id);
             loadFilters(); // Перезагружаем список
         } catch (error: any) {
@@ -119,7 +119,7 @@ export function SavedFiltersList({
     const handleEdit = async (filter: SavedFilter) => {
         try {
             // Fetch fresh filter payload to avoid editing stale conditions from local list cache.
-            const response = await axios.get(`/adminizer/model/${modelName}/saved-filters`);
+            const response = await apiHttp.get<{filters: SavedFilter[]}>(`/adminizer/model/${modelName}/saved-filters`);
             const savedFilters = response.data?.filters || [];
             const freshFilter = savedFilters.find((f: SavedFilter) => String(f.id) === String(filter.id));
             onEditFilter?.(freshFilter || filter);
@@ -152,7 +152,7 @@ export function SavedFiltersList({
         return false;
     };
 
-    const isMaterialIconName = (iconName?: string): iconName is string => {
+    const isMaterialIconName = (iconName: string): iconName is string => {
         return Boolean(iconName) && /^[a-z0-9_]+$/i.test(iconName);
     };
 
@@ -295,3 +295,5 @@ export function SavedFiltersList({
         </div>
     );
 }
+
+

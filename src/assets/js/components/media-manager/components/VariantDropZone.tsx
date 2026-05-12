@@ -1,7 +1,7 @@
 import {Media} from "@/types";
 import React, {useContext, useRef, useState} from "react";
 import {MediaManagerContext} from "@/components/media-manager/media-manager.tsx";
-import axios from "axios";
+import { apiHttp } from '@/lib/http-client';
 import {TriangleAlert, XIcon} from "lucide-react";
 import styles from "@/components/media-manager/components/DropZone.module.css";
 
@@ -55,7 +55,7 @@ const VariantDropZone = ({callback, messages, media, localeId, disabled}: Varian
             form.append("localeId", localeId);
             form.append("file", file);
 
-            const res = await axios.post(`${uploadUrl}/upload-variant`, form, {
+            const res = await apiHttp.post<any>(`${uploadUrl}/upload-variant`, form, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -72,22 +72,24 @@ const VariantDropZone = ({callback, messages, media, localeId, disabled}: Varian
 
         } catch (error) {
             setLoading(false);
+            const httpError = error as {
+                response?: { data?: { error?: string; message?: string } | string; status?: number; statusText?: string };
+                request?: unknown;
+            };
 
-            if (axios.isAxiosError(error)) {
-                if (error.response) {
-                    const errorMessage = error.response.data?.error ||
-                        error.response.data?.message ||
-                        error.response.statusText;
-                    setAlert(errorMessage || `Error: ${error.response.status}`);
-                } else if (error.request) {
-                    setAlert("No response from server");
-                } else {
-                    setAlert("Request setup error");
-                }
+            if (httpError.response) {
+                const responseData = httpError.response.data;
+                const errorMessage = typeof responseData === 'string'
+                    ? responseData
+                    : responseData?.error || responseData?.message || httpError.response.statusText;
+                setAlert(errorMessage || `Error: ${httpError.response.status ?? 'unknown'}`);
+            } else if (httpError.request) {
+                setAlert("No response from server");
             } else {
-                setAlert("Error uploading file");
-                console.error(error);
+                setAlert("Request setup error");
             }
+
+            console.error(error);
         }
     };
 
@@ -165,3 +167,4 @@ const VariantDropZone = ({callback, messages, media, localeId, disabled}: Varian
     )
 }
 export default VariantDropZone
+

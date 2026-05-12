@@ -4,7 +4,7 @@ import {Input} from "@/components/ui/input.tsx";
 import {Checkbox} from "@/components/ui/checkbox.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import React, {useState, useEffect} from "react";
-import axios from "axios";
+import { apiHttp } from '@/lib/http-client';
 import {LoaderCircle} from "lucide-react";
 
 const GroupLinkAdd = ({update = false, type, parentId, ...data}: NavGroupAddProps) => {
@@ -53,7 +53,7 @@ const GroupLinkAdd = ({update = false, type, parentId, ...data}: NavGroupAddProp
             let res = null
 
             if (update) {
-                res = await axios.put('', {
+                res = await apiHttp.put<any>('', {
                     type: data.item?.type,
                     modelId: data.item?.id,
                     data: {
@@ -66,7 +66,7 @@ const GroupLinkAdd = ({update = false, type, parentId, ...data}: NavGroupAddProp
                 });
                 data.callback(res.data.data);
             } else {
-                await axios.post('', {
+                await apiHttp.post('', {
                     data: {
                         ...formData,
                         targetBlank,
@@ -142,3 +142,4 @@ const GroupLinkAdd = ({update = false, type, parentId, ...data}: NavGroupAddProp
 };
 
 export default GroupLinkAdd;
+

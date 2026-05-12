@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, memo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { usePage } from '@inertiajs/react';
 import { MessageSquarePlus, Paperclip, X, Loader2, CheckCircle2 } from 'lucide-react';
-import axios from 'axios';
+import { apiHttp } from '@/lib/http-client';
 import {
     DialogStack,
     DialogStackTrigger,
@@ -21,6 +21,27 @@ import { SharedData } from '@/types';
 import { useI18n } from '@/hooks/use-i18n';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+    const responseData = (error as { response?: { data?: unknown } })?.response?.data;
+    if (!responseData) return fallback;
+
+    if (typeof responseData === 'string') {
+        try {
+            const parsed = JSON.parse(responseData) as { error?: string; message?: string };
+            return parsed.error ?? parsed.message ?? fallback;
+        } catch {
+            return responseData || fallback;
+        }
+    }
+
+    if (typeof responseData === 'object') {
+        const payload = responseData as { error?: string; message?: string };
+        return payload.error ?? payload.message ?? fallback;
+    }
+
+    return fallback;
+};
 
 interface FeedbackFormProps {
     routePrefix: string
@@ -70,10 +91,10 @@ const FeedbackForm = memo(({ routePrefix, triggerLabel, placeholder, t, onClose 
         files.forEach((f) => form.append('files', f));
 
         try {
-            await axios.post(`${routePrefix}/api/feedback`, form);
+            await apiHttp.post(`${routePrefix}/api/feedback`, form);
             setSuccess(true);
-        } catch (err: any) {
-            const msg = err?.response?.data?.error ?? t('Internal server error');
+        } catch (err: unknown) {
+            const msg = getErrorMessage(err, t('Internal server error'));
             setErrors({ _global: msg });
             setSending(false);
         }

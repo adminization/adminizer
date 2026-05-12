@@ -209,8 +209,8 @@ import VanillaJSONEditor from '@/components/VanillaJSONEditor';
 import HandsonTable from '@/components/handsontable';
 import MonacoEditor from '@/components/monaco-editor';
 import MultiSelect from '@/components/multi-select';
-import axios from 'axios';
 import * as sonner from 'sonner';
+import axios from '@/lib/axios-compat';
 
 export function registerUIComponents(): void {
 
@@ -220,9 +220,11 @@ export function registerUIComponents(): void {
     window.JSComponents ??= {};
 
     //@ts-ignore
-    window.axios = axios
     //@ts-ignore
     window.sonner = sonner
+
+    //@ts-ignore
+    window.axios = axios
 
     //@ts-ignore
     Object.assign(window.UIComponents, {

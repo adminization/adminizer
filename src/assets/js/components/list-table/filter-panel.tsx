@@ -1,8 +1,8 @@
-import {useState, useEffect, useRef, useCallback, useMemo} from 'react';
-import {router, usePage} from '@inertiajs/react';
-import axios from 'axios';
-import {format} from 'date-fns';
-import {ru} from 'date-fns/locale';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { router, usePage } from '@inertiajs/react';
+import { apiHttp } from '@/lib/http-client';
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import {
     DialogStack,
     DialogStackBody,
@@ -13,9 +13,9 @@ import {
     DialogStackOverlay,
     DialogStackTitle,
 } from '@/components/ui/dialog-stack.tsx';
-import {Button} from '@/components/ui/button.tsx';
-import {Input} from '@/components/ui/input.tsx';
-import {Textarea} from '@/components/ui/textarea.tsx';
+import { Button } from '@/components/ui/button.tsx';
+import { Input } from '@/components/ui/input.tsx';
+import { Textarea } from '@/components/ui/textarea.tsx';
 import {
     Select,
     SelectContent,
@@ -23,18 +23,19 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select.tsx';
-import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover.tsx';
-import {Calendar} from '@/components/ui/calendar.tsx';
-import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from '@/components/ui/command.tsx';
-import {Checkbox} from '@/components/ui/checkbox.tsx';
-import {Switch} from '@/components/ui/switch.tsx';
-import {SavedFiltersList} from './filter-panel-saved-filters';
-import {GroupVisibilitySelector} from './group-visibility-selector';
-import {Plus, X, Save, Trash2, Play, Settings, Columns3, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock, Globe, Users} from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
+import { Calendar } from '@/components/ui/calendar.tsx';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command.tsx';
+import { Checkbox } from '@/components/ui/checkbox.tsx';
+import { Switch } from '@/components/ui/switch.tsx';
+import { SavedFiltersList } from './filter-panel-saved-filters';
+import { GroupVisibilitySelector } from './group-visibility-selector';
+import { Plus, X, Save, Trash2, Play, Settings, Columns3, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock, Globe, Users } from 'lucide-react';
 import MaterialIcon from '@/components/material-icon.tsx';
-import {toast} from 'sonner';
-import {cn} from '@/lib/utils';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { useFilterTranslations } from './use-filter-translations';
+import { FilterAP } from '../../../../models/FilterAP';
 
 export interface ColumnConfig {
     fieldName: string;
@@ -57,14 +58,14 @@ export interface RelationFilterField {
     id: string;
     label: string;
     type: string;
-    options?: {value: string | number; label: string}[];
+    options?: { value: string | number; label: string }[];
 }
 
 export interface FilterField {
     id: string;
     label: string;
     type: string;
-    options?: {value: string | number; label: string}[];
+    options?: { value: string | number; label: string }[];
     isRelation?: boolean;
     relationFields?: RelationFilterField[];
     isCustomFilter?: boolean;
@@ -205,7 +206,7 @@ const FILTER_ICON_OPTIONS = [
     'tune',
 ] as const;
 
-export function FilterPanel({onApplyFilters}: FilterPanelProps) {
+export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
     const page = usePage<any>();
     const user = page.props?.auth?.user;
     const canManagePublicFilterVisibility = user?.isAdministrator === true;
@@ -225,7 +226,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
     const [selectValue, setSelectValue] = useState('placeholder');
     const [hasTemporaryFilter, setHasTemporaryFilter] = useState(false);
     const [temporaryFilterData, setTemporaryFilterData] = useState<TemporaryFilterMeta | null>(null);
-    
+
     // Meta fields for saving filter
     const [saveMeta, setSaveMeta] = useState({
         name: '',
@@ -274,49 +275,49 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         setColumnsError('');
 
         try {
-            // Для сохранённого фильтра используем его id, для временного - 'temporary'
             const filterId = filterForEdit?.id || (activeFilterId === TEMPORARY_FILTER_ID ? TEMPORARY_FILTER_ID : undefined);
             let url = `/adminizer/model/${modelName}/columns`;
             if (filterId) {
                 url += `?filterId=${filterId}`;
             }
-            const response = await fetch(url);
-            const data = await response.json();
 
-            if (response.ok) {
-                const { availableColumns: backendColumns, filterColumns: filterCols, hasFilterConfig } = data;
+            // Используем apiHttp вместо fetch
+            const response = await apiHttp.get<{
+                availableColumns: ColumnConfig[];
+                filterColumns: ColumnConfig[];
+                hasFilterConfig: boolean;
+            }>(url);
 
-                if (hasFilterConfig && filterCols.length > 0) {
-                    const columnsMap = new Map(backendColumns.map((col: ColumnConfig) => [col.fieldName, col]));
-                    const visible: ColumnConfig[] = [];
-                    const hidden: ColumnConfig[] = [];
+            const { availableColumns: backendColumns, filterColumns: filterCols, hasFilterConfig } = response.data;
 
-                    const sortedFilterColumns = [...filterCols].sort((a, b) => a.order - b.order);
-                    for (const filterCol of sortedFilterColumns) {
-                        const baseCol = columnsMap.get(filterCol.fieldName);
-                        if (baseCol) {
-                            visible.push({ ...baseCol, order: filterCol.order });
-                        }
+            if (hasFilterConfig && filterCols.length > 0) {
+                const columnsMap = new Map(backendColumns.map((col: ColumnConfig) => [col.fieldName, col]));
+                const visible: ColumnConfig[] = [];
+                const hidden: ColumnConfig[] = [];
+
+                const sortedFilterColumns = [...filterCols].sort((a, b) => a.order - b.order);
+                for (const filterCol of sortedFilterColumns) {
+                    const baseCol = columnsMap.get(filterCol.fieldName);
+                    if (baseCol) {
+                        visible.push({ ...baseCol, order: filterCol.order });
                     }
-                    for (const [fieldName, baseCol] of columnsMap) {
-                        if (!visible.find(v => v.fieldName === fieldName)) {
-                            hidden.push({ ...baseCol, order: visible.length + hidden.length });
-                        }
-                    }
-
-                    setColumnsVisible(visible);
-                    setColumnsAvailable(hidden);
-                } else {
-                    const allVisible = backendColumns.map((col: ColumnConfig, index: number) => ({ ...col, order: index }));
-                    setColumnsVisible(allVisible);
-                    setColumnsAvailable([]);
                 }
+                for (const [fieldName, baseCol] of columnsMap) {
+                    if (!visible.find(v => v.fieldName === fieldName)) {
+                        hidden.push({ ...baseCol, order: visible.length + hidden.length });
+                    }
+                }
+
+                setColumnsVisible(visible);
+                setColumnsAvailable(hidden);
             } else {
-                setColumnsError(data.error || t('Error loading columns'));
+                const allVisible = backendColumns.map((col: ColumnConfig, index: number) => ({ ...col, order: index }));
+                setColumnsVisible(allVisible);
+                setColumnsAvailable([]);
             }
         } catch (err: any) {
             console.error('Error loading columns:', err);
-            setColumnsError(t('Network error') + ': ' + err.message);
+            setColumnsError(err.response?.data?.error || err.message || t('Error loading columns'));
         } finally {
             setColumnsLoading(false);
         }
@@ -382,7 +383,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
     const [fromOpen, setFromOpen] = useState(false);
     const [toOpen, setToOpen] = useState(false);
     const [dateOpen, setDateOpen] = useState(false);
-    const previousRouteStateRef = useRef<{modelName: string; activeFilterId?: string} | null>(null);
+    const previousRouteStateRef = useRef<{ modelName: string; activeFilterId?: string } | null>(null);
     const availableFieldsById = useMemo(
         () => new Map(availableFields.map((field) => [field.id, field])),
         [availableFields]
@@ -404,7 +405,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
             setSlide2Mode('edit');
         }
 
-        previousRouteStateRef.current = {modelName, activeFilterId};
+        previousRouteStateRef.current = { modelName, activeFilterId };
     }, [activeFilterId, modelName]);
 
     // Загрузка временного фильтра из sessionStorage при изменении URL/modelName
@@ -483,7 +484,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                     return;
                 }
 
-                const response = await axios.get(`/adminizer/model/${modelName}/filter-fields`);
+                const response = await apiHttp.get<{fields: FilterField[]}>(`/adminizer/model/${modelName}/filter-fields`);
                 const data = response.data;
                 setAvailableFields(data.fields || []);
             } catch (error) {
@@ -501,7 +502,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                 return;
             }
             try {
-                const response = await axios.get('/adminizer/groups');
+                const response = await apiHttp.get<{groups: {id: number, name: string}[]}>('/adminizer/groups');
                 setUserGroups(response.data.groups || []);
             } catch (error) {
                 console.error('Error loading groups:', error);
@@ -554,7 +555,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         filterDialogRef.current?.open();
 
         try {
-            const response = await axios.get(`/adminizer/model/${modelName}/saved-filters`);
+            const response = await apiHttp.get<{filters: FilterAP[]}>(`/adminizer/model/${modelName}/saved-filters`);
             const savedFilters = response.data?.filters || [];
             const targetFilter = savedFilters.find((filter: any) => String(filter.id) === String(targetFilterId));
 
@@ -581,7 +582,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         }
 
         try {
-            const response = await axios.get(`/adminizer/model/${modelName}/filter/temporary`);
+            const response = await apiHttp.get<{filter: FilterAP}>(`/adminizer/model/${modelName}/filter/temporary`);
             const filter = response.data?.filter;
 
             if (!filter) {
@@ -618,7 +619,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
             setFilterForEdit(null);
             setTemporaryFilterData(meta);
             setTempFilterName(currentTemporaryFilter.name);
-            loadFilterIntoPanel({conditions: currentTemporaryFilter.conditions});
+            loadFilterIntoPanel({ conditions: currentTemporaryFilter.conditions });
             filterDialogRef.current?.open();
             requestAnimationFrame(() => {
                 filterDialogRef.current?.next();
@@ -634,7 +635,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
 
         // Закрываем диалог
         filterDialogRef.current?.close();
-        
+
         // Отправляем событие об изменении фильтра
         window.dispatchEvent(new CustomEvent('adminizer:filterChanged'));
     };
@@ -647,7 +648,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
             const currentTemporaryFilter = await loadTemporaryFilterPayload();
 
             if (currentTemporaryFilter) {
-                loadFilterIntoPanel({conditions: currentTemporaryFilter.conditions});
+                loadFilterIntoPanel({ conditions: currentTemporaryFilter.conditions });
                 const meta = getTemporaryFilterMeta(currentTemporaryFilter);
                 setTemporaryFilterData(meta);
                 setTempFilterName(currentTemporaryFilter.name);
@@ -676,7 +677,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
     const loadUserApiKey = async () => {
         if (userKey) return; // Already loaded
         try {
-            const response = await axios.get('/adminizer/api/user-key');
+            const response = await apiHttp.get<{apiKey: string}>('/adminizer/api/user-key');
             setUserKey(response.data.apiKey);
         } catch (error) {
             console.error('Failed to load user API key:', error);
@@ -761,8 +762,8 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         return {
             id: filter.id,
             ...(filter.relationField
-                ? {relation: filter.fieldId, relationField: filter.relationField}
-                : {field: filter.fieldId}),
+                ? { relation: filter.fieldId, relationField: filter.relationField }
+                : { field: filter.fieldId }),
             operator: filter.condition,
             value: convertedValue
         };
@@ -804,14 +805,14 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                     }));
             }
 
-            const response = await axios.post(`/adminizer/model/${modelName}/filter`, payload);
+            const response = await apiHttp.post<{filter: FilterAP}>(`/adminizer/model/${modelName}/filter`, payload);
             const filter = response.data.filter;
 
             // Очищаем временный фильтр после успешного сохранения
             sessionStorage.removeItem(getTemporaryFilterStorageKey(modelName));
             setHasTemporaryFilter(false);
             setTemporaryFilterData(null);
-            
+
             // Сбрасываем состояние
             setActiveFilters([]);
             setFilterForEdit(null);
@@ -853,14 +854,14 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
 
         window.dispatchEvent(new CustomEvent('adminizer:filterChanged'));
         clearActiveFilter();
-        
+
         filterDialogRef.current?.close();
     };
 
     /**
      * Загрузка условий фильтра в панель
      */
-    const loadFilterIntoPanel = useCallback((filterData: {conditions: any[]}) => {
+    const loadFilterIntoPanel = useCallback((filterData: { conditions: any[] }) => {
         const getFallbackFieldIdFromHandler = (handlerId?: string): string | undefined => {
             if (!handlerId) return undefined;
             const byHandler = availableFields.find(
@@ -898,7 +899,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                 return rawValue;
             }
 
-             // Keep month/year operators as plain strings for HTML inputs
+            // Keep month/year operators as plain strings for HTML inputs
             if (['month', 'year', 'monthBetween', 'yearBetween'].includes(cond.operator)) {
                 if (Array.isArray(rawValue)) {
                     return rawValue.map((v: any) => (v === undefined || v === null ? '' : String(v)));
@@ -949,7 +950,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
             alert(t('Error') + ': ' + t('Model not found'));
             return;
         }
-        
+
         try {
             const conditions = filters
                 .filter(f => f.enabled)
@@ -970,7 +971,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
             }
 
             // Отправляем POST запрос на применение временного фильтра
-            const response = await axios.post(`/adminizer/model/${modelName}/filter/apply`, payload);
+            const response = await apiHttp.post<any>(`/adminizer/model/${modelName}/filter/apply`, payload);
             const data = response.data;
 
             if (data.success) {
@@ -988,7 +989,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                     isModified: false
                 });
                 setHasTemporaryFilter(true);
-                
+
                 // Обновляем заголовок второго слайда
                 setTempFilterName(payload.name);
 
@@ -1005,13 +1006,13 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
 
         } catch (error: any) {
             console.error('[FilterPanel] Error applying filter:', error);
-            
+
             if (error.response?.status === 401) {
                 console.error('Session expired, redirecting to login...');
                 window.location.href = '/adminizer/model/userap/login';
                 return;
             }
-            
+
             alert(t('Error applying filter') + ': ' + (error.response?.data?.error || error.message));
         }
     };
@@ -1060,13 +1061,13 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                     }));
             }
 
-            const response = await axios.post(`/adminizer/model/${modelName}/filter`, payload);
+            const response = await apiHttp.post<{filter: FilterAP}>(`/adminizer/model/${modelName}/filter`, payload);
             const filter = response.data.filter;
 
             // Обновляем состояние
             setTempFilterName(filter.name);
             setFilterForEdit(null);
-            
+
             // Сбрасываем активные фильтры
             setActiveFilters([]);
 
@@ -1104,7 +1105,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         setTempFilterName(filter.name);
 
         // Загружаем условия в панель (для возможного редактирования)
-        loadFilterIntoPanel({conditions: filter.conditions});
+        loadFilterIntoPanel({ conditions: filter.conditions });
 
         // Отправляем событие об изменении фильтра
         window.dispatchEvent(new CustomEvent('adminizer:filterChanged'));
@@ -1116,7 +1117,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
     const handleResetFilter = useCallback(() => {
         setActiveFilters([]);
         setTempFilterName('');
-        
+
         // Отправляем событие об изменении фильтра
         window.dispatchEvent(new CustomEvent('adminizer:filterChanged'));
         clearActiveFilter();
@@ -1154,7 +1155,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         setEditApiEnabled(filter.apiEnabled || false);
         setEditApiKey(filter.apiKey || undefined);
         loadUserApiKey(); // Ensure user API key is loaded
-        loadFilterIntoPanel({conditions: filter.conditions});
+        loadFilterIntoPanel({ conditions: filter.conditions });
         setSlide2Mode('edit');
         // Открываем второй слайд (редактирование сохранённого фильтра с метаполя ми)
         filterDialogRef.current?.next();
@@ -1243,9 +1244,9 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
      */
     const handleFilterChange = useCallback((filterId: string, updates: Partial<ActiveFilter>) => {
         setActiveFilters((currentFilters) => currentFilters.map(f =>
-            f.id === filterId ? {...f, ...updates} : f
+            f.id === filterId ? { ...f, ...updates } : f
         ));
-        
+
         // Помечаем временный фильтр как изменённый
         if (hasTemporaryFilter) {
             setTemporaryFilterData((currentTemporaryFilter) => currentTemporaryFilter ? {
@@ -1284,7 +1285,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         const newFilters = [...activeFilters, newFilter];
         setActiveFilters(newFilters);
         setSelectValue('placeholder');
-        
+
         // Помечаем временный фильтр как изменённый
         if (hasTemporaryFilter) {
             setTemporaryFilterData((currentTemporaryFilter) => currentTemporaryFilter ? {
@@ -1342,13 +1343,13 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
     }, []);
 
     const defaultConditionOptions = useMemo<FilterConditionOption[]>(() => [
-        {value: 'eq', label: t('Equal')},
-        {value: 'neq', label: t('Not equal')},
-        {value: 'like', label: t('Contains')},
-        {value: 'startsWith', label: t('Starts with')},
-        {value: 'endsWith', label: t('Ends with')},
-        {value: 'isNull', label: t('Is empty')},
-        {value: 'isNotNull', label: t('Is not empty')},
+        { value: 'eq', label: t('Equal') },
+        { value: 'neq', label: t('Not equal') },
+        { value: 'like', label: t('Contains') },
+        { value: 'startsWith', label: t('Starts with') },
+        { value: 'endsWith', label: t('Ends with') },
+        { value: 'isNull', label: t('Is empty') },
+        { value: 'isNotNull', label: t('Is not empty') },
     ], [t]);
 
     const conditionOptionsByFieldId = useMemo(() => {
@@ -1357,8 +1358,8 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         availableFields.forEach((field) => {
             if (field.isRelation) {
                 optionsByFieldId.set(field.id, [
-                    {value: 'eq', label: t('Equal')},
-                    {value: 'neq', label: t('Not equal')},
+                    { value: 'eq', label: t('Equal') },
+                    { value: 'neq', label: t('Not equal') },
                 ]);
                 return;
             }
@@ -1370,42 +1371,42 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                 case 'integer':
                 case 'float':
                     conditions = [
-                        {value: 'eq', label: t('Equal')},
-                        {value: 'neq', label: t('Not equal')},
-                        {value: 'gt', label: t('Greater than')},
-                        {value: 'gte', label: t('Greater or equal')},
-                        {value: 'lt', label: t('Less than')},
-                        {value: 'lte', label: t('Less or equal')},
-                        {value: 'between', label: t('Between')},
-                        {value: 'isNull', label: t('Is empty')},
-                        {value: 'isNotNull', label: t('Is not empty')},
+                        { value: 'eq', label: t('Equal') },
+                        { value: 'neq', label: t('Not equal') },
+                        { value: 'gt', label: t('Greater than') },
+                        { value: 'gte', label: t('Greater or equal') },
+                        { value: 'lt', label: t('Less than') },
+                        { value: 'lte', label: t('Less or equal') },
+                        { value: 'between', label: t('Between') },
+                        { value: 'isNull', label: t('Is empty') },
+                        { value: 'isNotNull', label: t('Is not empty') },
                     ];
                     break;
                 case 'date':
                 case 'datetime':
                     conditions = [
-                        {value: 'eq', label: t('Equal')},
-                        {value: 'neq', label: t('Not equal')},
-                        {value: 'gt', label: t('After')},
-                        {value: 'gte', label: t('After or equal')},
-                        {value: 'lt', label: t('Before')},
-                        {value: 'lte', label: t('Before or equal')},
-                        {value: 'between', label: t('Between')},
-                        {value: 'today', label: t('Today')},
-                        {value: 'month', label: t('Month')},
-                        {value: 'year', label: t('Year')},
-                        {value: 'monthBetween', label: t('Month range')},
-                        {value: 'yearBetween', label: t('Year range')},
-                        {value: 'isNull', label: t('Is empty')},
-                        {value: 'isNotNull', label: t('Is not empty')},
+                        { value: 'eq', label: t('Equal') },
+                        { value: 'neq', label: t('Not equal') },
+                        { value: 'gt', label: t('After') },
+                        { value: 'gte', label: t('After or equal') },
+                        { value: 'lt', label: t('Before') },
+                        { value: 'lte', label: t('Before or equal') },
+                        { value: 'between', label: t('Between') },
+                        { value: 'today', label: t('Today') },
+                        { value: 'month', label: t('Month') },
+                        { value: 'year', label: t('Year') },
+                        { value: 'monthBetween', label: t('Month range') },
+                        { value: 'yearBetween', label: t('Year range') },
+                        { value: 'isNull', label: t('Is empty') },
+                        { value: 'isNotNull', label: t('Is not empty') },
                     ];
                     break;
                 case 'boolean':
                     conditions = [
-                        {value: 'eq', label: t('Equal')},
-                        {value: 'neq', label: t('Not equal')},
-                        {value: 'isNull', label: t('Is empty')},
-                        {value: 'isNotNull', label: t('Is not empty')},
+                        { value: 'eq', label: t('Equal') },
+                        { value: 'neq', label: t('Not equal') },
+                        { value: 'isNull', label: t('Is empty') },
+                        { value: 'isNotNull', label: t('Is not empty') },
                     ];
                     break;
                 case 'select':
@@ -1413,12 +1414,12 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                 case 'association':
                 case 'association-many':
                     conditions = [
-                        {value: 'eq', label: t('Equal')},
-                        {value: 'neq', label: t('Not equal')},
-                        {value: 'in', label: t('In list')},
-                        {value: 'notIn', label: t('Not in list')},
-                        {value: 'isNull', label: t('Is empty')},
-                        {value: 'isNotNull', label: t('Is not empty')},
+                        { value: 'eq', label: t('Equal') },
+                        { value: 'neq', label: t('Not equal') },
+                        { value: 'in', label: t('In list') },
+                        { value: 'notIn', label: t('Not in list') },
+                        { value: 'isNull', label: t('Is empty') },
+                        { value: 'isNotNull', label: t('Is not empty') },
                     ];
                     break;
                 case 'json':
@@ -1426,8 +1427,8 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                 case 'object':
                 case 'array':
                     conditions = [
-                        {value: 'isNull', label: t('Is empty')},
-                        {value: 'isNotNull', label: t('Is not empty')},
+                        { value: 'isNull', label: t('Is empty') },
+                        { value: 'isNotNull', label: t('Is not empty') },
                     ];
                     break;
                 default:
@@ -1496,7 +1497,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                 <Input
                     type="text"
                     value={String(filter.value ?? '')}
-                    onChange={(e) => handleFilterChange(filter.id, {value: e.target.value})}
+                    onChange={(e) => handleFilterChange(filter.id, { value: e.target.value })}
                     placeholder={t('Value...')}
                     className="w-full sm:w-[220px] h-9"
                 />
@@ -1512,10 +1513,10 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
             return (
                 <Select
                     value={filter.value === true ? 'true' : filter.value === false ? 'false' : ''}
-                    onValueChange={(value) => handleFilterChange(filter.id, {value: value === 'true' ? true : value === 'false' ? false : null})}
+                    onValueChange={(value) => handleFilterChange(filter.id, { value: value === 'true' ? true : value === 'false' ? false : null })}
                 >
                     <SelectTrigger className="w-full sm:w-[120px] h-9" size="sm">
-                        <SelectValue placeholder={t('Select...')}/>
+                        <SelectValue placeholder={t('Select...')} />
                     </SelectTrigger>
                     <SelectContent className="z-[1100]">
                         <SelectItem value="true">{t('Yes')}</SelectItem>
@@ -1876,7 +1877,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                     onValueChange={(value) => handleFilterChange(filter.id, { value })}
                 >
                     <SelectTrigger className="w-full sm:w-[180px] h-9" size="sm">
-                        <SelectValue placeholder={t('Select...')}/>
+                        <SelectValue placeholder={t('Select...')} />
                     </SelectTrigger>
                     <SelectContent className="z-[1100]">
                         {field.options?.map((option) => (
@@ -1940,7 +1941,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         return (
             <Input
                 value={String(filter.value)}
-                onChange={(e) => handleFilterChange(filter.id, {value: e.target.value})}
+                onChange={(e) => handleFilterChange(filter.id, { value: e.target.value })}
                 placeholder={t('Value...')}
                 className="w-full sm:w-[200px] h-9"
             />
@@ -1959,7 +1960,7 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         <>
             {/* Основной DialogStack с каскадными диалогами */}
             <DialogStack ref={filterDialogRef}>
-                <DialogStackOverlay/>
+                <DialogStackOverlay />
                 <DialogStackBody>
                     {/* Первый диалог: список сохранённых фильтров */}
                     <DialogStackContent className="w-[95vw] sm:w-[90vw] max-w-none">
@@ -1977,114 +1978,114 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                                 </DialogStackHeader>
 
                                 <div className="space-y-4 py-4">
-                            {/* Кнопка создания нового фильтра */}
-                            <Button
-                                onClick={() => {
-                                    setFilterForEdit(null);
-                                    setActiveFilters([]);
-                                    setTempFilterName(t('New filter'));
-                                    filterDialogRef.current?.next();
-                                }}
-                                className="w-full"
-                                variant="outline"
-                            >
-                                <Plus className="h-4 w-4 mr-2"/>
-                                {t('Add filter')}
-                            </Button>
+                                    {/* Кнопка создания нового фильтра */}
+                                    <Button
+                                        onClick={() => {
+                                            setFilterForEdit(null);
+                                            setActiveFilters([]);
+                                            setTempFilterName(t('New filter'));
+                                            filterDialogRef.current?.next();
+                                        }}
+                                        className="w-full"
+                                        variant="outline"
+                                    >
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        {t('Add filter')}
+                                    </Button>
 
-                            {/* Временный фильтр (активный) */}
-                            {hasTemporaryFilter && temporaryFilterData && (
-                                <div className="space-y-2">
-                                    <div className="text-xs font-medium text-muted-foreground px-2">
-                                        {t('Active filter')}
-                                    </div>
-                                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 p-3 rounded-md border bg-accent/50 border-accent">
-                                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                                            <span className="text-lg">📝</span>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="font-medium text-sm truncate">
-                                                    {temporaryFilterData.name}
+                                    {/* Временный фильтр (активный) */}
+                                    {hasTemporaryFilter && temporaryFilterData && (
+                                        <div className="space-y-2">
+                                            <div className="text-xs font-medium text-muted-foreground px-2">
+                                                {t('Active filter')}
+                                            </div>
+                                            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 p-3 rounded-md border bg-accent/50 border-accent">
+                                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                    <span className="text-lg">📝</span>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="font-medium text-sm truncate">
+                                                            {temporaryFilterData.name}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {temporaryFilterData.conditionCount} {t('conditions')}
+                                                            {temporaryFilterData.isModified && ` (${t('modified')})`}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    {temporaryFilterData.conditionCount} {t('conditions')}
-                                                    {temporaryFilterData.isModified && ` (${t('modified')})`}
+                                                <div className="flex items-center gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 w-7 p-0"
+                                                        onClick={handleApplyTemporaryFilter}
+                                                        title={t('Apply filter')}
+                                                    >
+                                                        <Play className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 w-7 p-0"
+                                                        onClick={handleEditTemporaryFilter}
+                                                        title={t('Edit')}
+                                                    >
+                                                        <Settings className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 w-7 p-0"
+                                                        onClick={handleSaveTemporaryFilter}
+                                                        title={t('Save')}
+                                                    >
+                                                        <Save className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                                        onClick={handleDiscardTemporaryFilter}
+                                                        title={t('Reset filter')}
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 w-7 p-0"
-                                                onClick={handleApplyTemporaryFilter}
-                                                title={t('Apply filter')}
-                                            >
-                                                <Play className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 w-7 p-0"
-                                                onClick={handleEditTemporaryFilter}
-                                                title={t('Edit')}
-                                            >
-                                                <Settings className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 w-7 p-0"
-                                                onClick={handleSaveTemporaryFilter}
-                                                title={t('Save')}
-                                            >
-                                                <Save className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                                                onClick={handleDiscardTemporaryFilter}
-                                                title={t('Reset filter')}
-                                            >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                                    )}
 
-                            {/* Список сохранённых фильтров */}
-                            {modelName && (
-                                <>
-                                    {!hasTemporaryFilter && (
-                                        <div className="text-xs font-medium text-muted-foreground px-2">
-                                            {t('Saved filters')}
+                                    {/* Список сохранённых фильтров */}
+                                    {modelName && (
+                                        <>
+                                            {!hasTemporaryFilter && (
+                                                <div className="text-xs font-medium text-muted-foreground px-2">
+                                                    {t('Saved filters')}
+                                                </div>
+                                            )}
+                                            <SavedFiltersList
+                                                modelName={modelName}
+                                                activeFilterId={activeFilterId}
+                                                onApplyFilter={handleApplySavedFilter}
+                                                onEditFilter={handleEditFilter}
+                                                onDeleteFilter={handleDeleteFilter}
+                                                user={user}
+                                            />
+                                        </>
+                                    )}
+
+                                    {/* Кнопка сброса активного фильтра */}
+                                    {activeFilterId && activeFilterId !== TEMPORARY_FILTER_ID && (
+                                        <div className="pt-4 border-t">
+                                            <Button
+                                                onClick={handleResetFilter}
+                                                variant="destructive"
+                                                className="w-full"
+                                            >
+                                                <X className="h-4 w-4 mr-2" />
+                                                {t('Reset filter')}
+                                            </Button>
                                         </div>
                                     )}
-                                    <SavedFiltersList
-                                        modelName={modelName}
-                                        activeFilterId={activeFilterId}
-                                        onApplyFilter={handleApplySavedFilter}
-                                        onEditFilter={handleEditFilter}
-                                        onDeleteFilter={handleDeleteFilter}
-                                        user={user}
-                                    />
-                                </>
-                            )}
-
-                            {/* Кнопка сброса активного фильтра */}
-                            {activeFilterId && activeFilterId !== TEMPORARY_FILTER_ID && (
-                                <div className="pt-4 border-t">
-                                    <Button
-                                        onClick={handleResetFilter}
-                                        variant="destructive"
-                                        className="w-full"
-                                    >
-                                        <X className="h-4 w-4 mr-2"/>
-                                        {t('Reset filter')}
-                                    </Button>
-                                </div>
-                            )}
                                 </div>
                             </div>
                         </div>
@@ -2200,627 +2201,627 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
                                     </>
                                 ) : (
                                     <>
-                                    <DialogStackHeader>
-                                    <DialogStackTitle>
-                                        {slide2Mode === 'edit'
-                                            ? (filterForEdit ? `${t('Edit filter')}: ${tempFilterName}` : tempFilterName || t('New filter'))
-                                            : t('Save filter')}
-                                    </DialogStackTitle>
-                                    <DialogStackDescription>
-                                        {slide2Mode === 'edit'
-                                            ? (filterForEdit ? t('Change filter conditions and parameters') : t('Configure filter conditions'))
-                                            : t('Specify name and parameters for saving')}
-                                    </DialogStackDescription>
-                                </DialogStackHeader>
+                                        <DialogStackHeader>
+                                            <DialogStackTitle>
+                                                {slide2Mode === 'edit'
+                                                    ? (filterForEdit ? `${t('Edit filter')}: ${tempFilterName}` : tempFilterName || t('New filter'))
+                                                    : t('Save filter')}
+                                            </DialogStackTitle>
+                                            <DialogStackDescription>
+                                                {slide2Mode === 'edit'
+                                                    ? (filterForEdit ? t('Change filter conditions and parameters') : t('Configure filter conditions'))
+                                                    : t('Specify name and parameters for saving')}
+                                            </DialogStackDescription>
+                                        </DialogStackHeader>
 
-                                {slide2Mode === 'edit' ? (
-                                    /* === РЕЖИМ РЕДАКТИРОВАНИЯ === */
-                                    <div className="space-y-4 py-4">
-                                {/* Метаполя - показываем только для сохранённого фильтра */}
-                                {filterForEdit && (
-                                    <div className="space-y-4 border-b pb-4">
-                                        <h3 className="text-sm font-medium">{t('Filter parameters')}</h3>
+                                        {slide2Mode === 'edit' ? (
+                                            /* === РЕЖИМ РЕДАКТИРОВАНИЯ === */
+                                            <div className="space-y-4 py-4">
+                                                {/* Метаполя - показываем только для сохранённого фильтра */}
+                                                {filterForEdit && (
+                                                    <div className="space-y-4 border-b pb-4">
+                                                        <h3 className="text-sm font-medium">{t('Filter parameters')}</h3>
 
-                                        {/* Название */}
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">
-                                                {t('Name')} <span className="text-destructive">*</span>
-                                            </label>
-                                            <Input
-                                                value={editMeta.name}
-                                                onChange={(e) => setEditMeta({...editMeta, name: e.target.value})}
-                                                placeholder={t('Enter filter name')}
-                                            />
-                                        </div>
+                                                        {/* Название */}
+                                                        <div className="space-y-2">
+                                                            <label className="text-sm font-medium">
+                                                                {t('Name')} <span className="text-destructive">*</span>
+                                                            </label>
+                                                            <Input
+                                                                value={editMeta.name}
+                                                                onChange={(e) => setEditMeta({ ...editMeta, name: e.target.value })}
+                                                                placeholder={t('Enter filter name')}
+                                                            />
+                                                        </div>
 
-                                        {/* Описание */}
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">{t('Description')}</label>
-                                            <Textarea
-                                                value={editMeta.description}
-                                                onChange={(e) => setEditMeta({...editMeta, description: e.target.value})}
-                                                placeholder={t('Description')}
-                                                rows={2}
-                                            />
-                                        </div>
+                                                        {/* Описание */}
+                                                        <div className="space-y-2">
+                                                            <label className="text-sm font-medium">{t('Description')}</label>
+                                                            <Textarea
+                                                                value={editMeta.description}
+                                                                onChange={(e) => setEditMeta({ ...editMeta, description: e.target.value })}
+                                                                placeholder={t('Description')}
+                                                                rows={2}
+                                                            />
+                                                        </div>
 
-                                        {/* Visibility переключатель (для админов и пользователей с токеном) */}
-                                        {canManageGroupFilterVisibility ? (
-                                            <div className="space-y-3 p-3 border rounded-lg bg-muted/20">
-                                                <div className="flex items-center gap-2">
-                                                    <Users className="h-4 w-4 text-muted-foreground" />
-                                                    <span className="text-sm font-medium">{t('Filter visibility')}</span>
-                                                </div>
-
-                                                {/* Проверка: является ли текущий пользователь владельцем */}
-                                                {(() => {
-                                                    const filterOwnerId = filterForEdit?.ownerId || filterForEdit?.ownerInfo?.id;
-                                                    const isOwner = filterOwnerId === user?.id;
-                                                    
-                                                    if (!isOwner) {
-                                                        // Чужой фильтр - показываем информацию о владельце и блокируем
-                                                        const ownerName = filterForEdit?.ownerInfo?.fullName || filterForEdit?.ownerInfo?.login || t('Unknown');
-                                                        return (
-                                                            <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
-                                                                <div className="flex items-start gap-2">
-                                                                    <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                                                                    <div>
-                                                                        <div className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                                                                            {t("Someone else's private filter")}
-                                                                        </div>
-                                                                        <div className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                                                                            {t('Owner')}: {ownerName}
-                                                                        </div>
-                                                                        <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                                                                            {t("You cannot change someone else's filter visibility")}
-                                                                        </div>
-                                                                    </div>
+                                                        {/* Visibility переключатель (для админов и пользователей с токеном) */}
+                                                        {canManageGroupFilterVisibility ? (
+                                                            <div className="space-y-3 p-3 border rounded-lg bg-muted/20">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                                                    <span className="text-sm font-medium">{t('Filter visibility')}</span>
                                                                 </div>
+
+                                                                {/* Проверка: является ли текущий пользователь владельцем */}
+                                                                {(() => {
+                                                                    const filterOwnerId = filterForEdit?.ownerId || filterForEdit?.ownerInfo?.id;
+                                                                    const isOwner = filterOwnerId === user?.id;
+
+                                                                    if (!isOwner) {
+                                                                        // Чужой фильтр - показываем информацию о владельце и блокируем
+                                                                        const ownerName = filterForEdit?.ownerInfo?.fullName || filterForEdit?.ownerInfo?.login || t('Unknown');
+                                                                        return (
+                                                                            <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                                                                                <div className="flex items-start gap-2">
+                                                                                    <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                                                                                    <div>
+                                                                                        <div className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                                                                                            {t("Someone else's private filter")}
+                                                                                        </div>
+                                                                                        <div className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                                                                                            {t('Owner')}: {ownerName}
+                                                                                        </div>
+                                                                                        <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                                                                            {t("You cannot change someone else's filter visibility")}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    }
+
+                                                                    // Свой фильтр - показываем радиокнопки для изменения
+                                                                    return (
+                                                                        <>
+                                                                            {/* Радиокнопки видимости */}
+                                                                            <div className="space-y-2">
+                                                                                <label
+                                                                                    className={cn(
+                                                                                        "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+                                                                                        editVisibility === 'private' && "bg-accent"
+                                                                                    )}
+                                                                                    onClick={() => setEditVisibility('private')}
+                                                                                >
+                                                                                    <input
+                                                                                        type="radio"
+                                                                                        name="editVisibility"
+                                                                                        checked={editVisibility === 'private'}
+                                                                                        onChange={() => setEditVisibility('private')}
+                                                                                        className="h-4 w-4"
+                                                                                    />
+                                                                                    <Lock className="h-4 w-4 text-muted-foreground" />
+                                                                                    <div>
+                                                                                        <div className="text-sm font-medium">{t('Private')}</div>
+                                                                                        <div className="text-xs text-muted-foreground">{t('Only for you')}</div>
+                                                                                    </div>
+                                                                                </label>
+
+                                                                                <label
+                                                                                    className={cn(
+                                                                                        "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+                                                                                        editVisibility === 'groups' && "bg-accent"
+                                                                                    )}
+                                                                                    onClick={() => setEditVisibility('groups')}
+                                                                                >
+                                                                                    <input
+                                                                                        type="radio"
+                                                                                        name="editVisibility"
+                                                                                        checked={editVisibility === 'groups'}
+                                                                                        onChange={() => setEditVisibility('groups')}
+                                                                                        className="h-4 w-4"
+                                                                                    />
+                                                                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                                                                    <div>
+                                                                                        <div className="text-sm font-medium">{t('For groups')}</div>
+                                                                                        <div className="text-xs text-muted-foreground">{t('For selected groups')}</div>
+                                                                                    </div>
+                                                                                </label>
+
+                                                                                {canManagePublicFilterVisibility && (
+                                                                                    <label
+                                                                                        className={cn(
+                                                                                            "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+                                                                                            editVisibility === 'public' && "bg-accent"
+                                                                                        )}
+                                                                                        onClick={() => setEditVisibility('public')}
+                                                                                    >
+                                                                                        <input
+                                                                                            type="radio"
+                                                                                            name="editVisibility"
+                                                                                            checked={editVisibility === 'public'}
+                                                                                            onChange={() => setEditVisibility('public')}
+                                                                                            className="h-4 w-4"
+                                                                                        />
+                                                                                        <Globe className="h-4 w-4 text-muted-foreground" />
+                                                                                        <div>
+                                                                                            <div className="text-sm font-medium">{t('Public')}</div>
+                                                                                            <div className="text-xs text-muted-foreground">{t('For all users')}</div>
+                                                                                        </div>
+                                                                                    </label>
+                                                                                )}
+                                                                            </div>
+
+                                                                            {/* Выбор групп (показывается только если выбран режим groups) */}
+                                                                            {editVisibility === 'groups' && userGroups.length > 0 && (
+                                                                                <div className="pt-2 border-t">
+                                                                                    <GroupVisibilitySelector
+                                                                                        groups={userGroups}
+                                                                                        selectedGroupIds={editGroupIds}
+                                                                                        onGroupsChange={setEditGroupIds}
+                                                                                        modelName={modelName}
+                                                                                    />
+                                                                                </div>
+                                                                            )}
+                                                                        </>
+                                                                    );
+                                                                })()}
                                                             </div>
-                                                        );
-                                                    }
-
-                                                    // Свой фильтр - показываем радиокнопки для изменения
-                                                    return (
-                                                        <>
-                                                            {/* Радиокнопки видимости */}
-                                                            <div className="space-y-2">
-                                                                <label
-                                                                    className={cn(
-                                                                        "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                                                                        editVisibility === 'private' && "bg-accent"
-                                                                    )}
-                                                                    onClick={() => setEditVisibility('private')}
-                                                                >
-                                                                    <input
-                                                                        type="radio"
-                                                                        name="editVisibility"
-                                                                        checked={editVisibility === 'private'}
-                                                                        onChange={() => setEditVisibility('private')}
-                                                                        className="h-4 w-4"
-                                                                    />
-                                                                    <Lock className="h-4 w-4 text-muted-foreground" />
-                                                                    <div>
-                                                                        <div className="text-sm font-medium">{t('Private')}</div>
-                                                                        <div className="text-xs text-muted-foreground">{t('Only for you')}</div>
-                                                                    </div>
-                                                                </label>
-
-                                                                <label
-                                                                    className={cn(
-                                                                        "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                                                                        editVisibility === 'groups' && "bg-accent"
-                                                                    )}
-                                                                    onClick={() => setEditVisibility('groups')}
-                                                                >
-                                                                    <input
-                                                                        type="radio"
-                                                                        name="editVisibility"
-                                                                        checked={editVisibility === 'groups'}
-                                                                        onChange={() => setEditVisibility('groups')}
-                                                                        className="h-4 w-4"
-                                                                    />
+                                                        ) : (
+                                                            // Для обычных пользователей - показываем текущую видимость фильтра
+                                                            editVisibility === 'groups' ? (
+                                                                <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/20">
                                                                     <Users className="h-4 w-4 text-muted-foreground" />
                                                                     <div>
                                                                         <div className="text-sm font-medium">{t('For groups')}</div>
-                                                                        <div className="text-xs text-muted-foreground">{t('For selected groups')}</div>
+                                                                        <div className="text-xs text-muted-foreground">{t('Visible only to your group')}</div>
                                                                     </div>
-                                                                </label>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/20">
+                                                                    <Lock className="h-4 w-4 text-muted-foreground" />
+                                                                    <div>
+                                                                        <div className="text-sm font-medium">{t('Private filter')}</div>
+                                                                        <div className="text-xs text-muted-foreground">{t('Visible only to you')}</div>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        )}
 
-                                                                {canManagePublicFilterVisibility && (
-                                                                    <label
-                                                                        className={cn(
-                                                                            "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                                                                            editVisibility === 'public' && "bg-accent"
-                                                                        )}
-                                                                        onClick={() => setEditVisibility('public')}
-                                                                    >
-                                                                        <input
-                                                                            type="radio"
-                                                                            name="editVisibility"
-                                                                            checked={editVisibility === 'public'}
-                                                                            onChange={() => setEditVisibility('public')}
-                                                                            className="h-4 w-4"
-                                                                        />
-                                                                        <Globe className="h-4 w-4 text-muted-foreground" />
-                                                                        <div>
-                                                                            <div className="text-sm font-medium">{t('Public')}</div>
-                                                                            <div className="text-xs text-muted-foreground">{t('For all users')}</div>
-                                                                        </div>
-                                                                    </label>
-                                                                )}
+                                                        {/* Иконка и цвет в одну строку */}
+                                                        <div className="flex gap-4">
+                                                            {/* Иконка */}
+                                                            <div className="space-y-2 flex-1">
+                                                                <label className="text-sm font-medium">{t('Icon')}</label>
+                                                                <div className="flex gap-1 flex-wrap">
+                                                                    {[...FILTER_ICON_OPTIONS, ''].map((iconName) => (
+                                                                        <Button
+                                                                            key={iconName || 'none'}
+                                                                            variant={editMeta.icon === iconName ? 'default' : 'outline'}
+                                                                            size="sm"
+                                                                            className="h-8 w-8 p-0"
+                                                                            onClick={() => setEditMeta({ ...editMeta, icon: iconName })}
+                                                                        >
+                                                                            {iconName
+                                                                                ? <MaterialIcon name={iconName} className="!text-[18px]" />
+                                                                                : <X className="h-4 w-4" />}
+                                                                        </Button>
+                                                                    ))}
+                                                                </div>
                                                             </div>
 
-                                                            {/* Выбор групп (показывается только если выбран режим groups) */}
-                                                            {editVisibility === 'groups' && userGroups.length > 0 && (
-                                                                <div className="pt-2 border-t">
-                                                                    <GroupVisibilitySelector
-                                                                        groups={userGroups}
-                                                                        selectedGroupIds={editGroupIds}
-                                                                        onGroupsChange={setEditGroupIds}
-                                                                        modelName={modelName}
-                                                                    />
+                                                            {/* Цвет */}
+                                                            <div className="space-y-2 flex-1">
+                                                                <label className="text-sm font-medium">{t('Color')}</label>
+                                                                <div className="flex gap-1 flex-wrap">
+                                                                    {['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'].map((colorOption) => (
+                                                                        <Button
+                                                                            key={colorOption}
+                                                                            variant={editMeta.color === colorOption ? 'default' : 'outline'}
+                                                                            size="sm"
+                                                                            className="h-8 w-8 p-0 rounded-full"
+                                                                            style={{ backgroundColor: editMeta.color === colorOption ? colorOption : 'transparent' }}
+                                                                            onClick={() => setEditMeta({ ...editMeta, color: colorOption })}
+                                                                        />
+                                                                    ))}
                                                                 </div>
-                                                            )}
-                                                        </>
-                                                    );
-                                                })()}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* API Access Section (edit mode) - only for private filters */}
+                                                        {filterForEdit && editVisibility === 'private' && (
+                                                            <div className="border rounded-lg p-3 bg-muted/20 mt-4">
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Switch
+                                                                            checked={editApiEnabled}
+                                                                            onCheckedChange={(checked) => {
+                                                                                if (checked && !userKey) {
+                                                                                    setShowUserKeyRequiredDialog(true);
+                                                                                    setEditApiEnabled(false);
+                                                                                    return;
+                                                                                }
+
+                                                                                setEditApiEnabled(checked);
+                                                                                if (checked && !editApiKey) {
+                                                                                    setEditApiKey(crypto.randomUUID());
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                        <span className="text-sm font-medium">{t('API access (feed)')}</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                {editApiEnabled && editApiKey && (
+                                                                    <div className="flex items-center gap-2 pt-3 border-t mt-3">
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="sm"
+                                                                            onClick={() => copyEditToClipboard(getEditJsonFeedUrl(), t('JSON URL'))}
+                                                                        >
+                                                                            JSON
+                                                                        </Button>
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="sm"
+                                                                            onClick={() => copyEditToClipboard(getEditXmlFeedUrl(), t('XML URL'))}
+                                                                        >
+                                                                            XML
+                                                                        </Button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Условия фильтра */}
+                                                <div className="space-y-4">
+                                                    <h3 className="text-sm font-medium">
+                                                        {filterForEdit ? t('Filter conditions') : t('Add condition')}
+                                                    </h3>
+
+                                                    {/* Добавление условия */}
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <span className="text-sm text-muted-foreground">{t('Add')}:</span>
+                                                        <div className="w-full sm:w-auto">
+                                                            <Select value={selectValue} onValueChange={(value) => {
+                                                                if (value !== 'placeholder') {
+                                                                    handleAddFilter(value);
+                                                                }
+                                                            }} disabled={fieldsAvailableToAdd.length === 0}>
+                                                                <SelectTrigger className="w-full sm:w-[200px] h-8" size="sm">
+                                                                    <SelectValue placeholder={t('Select field')} />
+                                                                </SelectTrigger>
+                                                                <SelectContent className="z-[1100]">
+                                                                    <SelectItem value="placeholder" disabled className="text-muted-foreground">
+                                                                        {fieldsAvailableToAdd.length === 0 ? t('No results') : t('Select field')}
+                                                                    </SelectItem>
+                                                                    {fieldsAvailableToAdd
+                                                                        .map((field) => (
+                                                                            <SelectItem key={field.id} value={field.id}>
+                                                                                {field.label}
+                                                                            </SelectItem>
+                                                                        ))
+                                                                    }
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Список условий */}
+                                                    {activeFilters.length > 0 && (
+                                                        <div className="space-y-2">
+                                                            {activeFilters.map((filter) => {
+                                                                const field = availableFieldsById.get(filter.fieldId);
+                                                                if (!field) return null;
+                                                                const conditions = getConditionsForField(filter.fieldId);
+                                                                const effectiveField = getEffectiveFieldForInput(filter, field);
+
+                                                                return (
+                                                                    <div key={filter.id}
+                                                                        className="flex flex-col items-stretch gap-2 p-2 border rounded-md bg-muted/30 sm:flex-row sm:items-center">
+                                                                        <span className="text-sm font-medium sm:min-w-[120px] truncate"
+                                                                            title={field.label}>
+                                                                            {field.label}
+                                                                        </span>
+
+                                                                        {field.isRelation && (
+                                                                            <Select
+                                                                                value={filter.relationField || ''}
+                                                                                onValueChange={(value) => handleFilterChange(filter.id, {
+                                                                                    relationField: value,
+                                                                                    value: ''
+                                                                                })}
+                                                                            >
+                                                                                <SelectTrigger className="w-full sm:w-[200px] h-9" size="sm">
+                                                                                    <SelectValue placeholder={t('Select field')} />
+                                                                                </SelectTrigger>
+                                                                                <SelectContent className="z-[1100]">
+                                                                                    {(field.relationFields || []).map((relationField) => (
+                                                                                        <SelectItem key={relationField.id} value={relationField.id}>
+                                                                                            {relationField.label}
+                                                                                        </SelectItem>
+                                                                                    ))}
+                                                                                </SelectContent>
+                                                                            </Select>
+                                                                        )}
+
+                                                                        <Select value={filter.condition}
+                                                                            onValueChange={(value) => handleFilterChange(filter.id, {
+                                                                                condition: value,
+                                                                                value: getDefaultValueForCondition(value, filter.value, field)
+                                                                            })}>
+                                                                            <SelectTrigger className="w-full sm:w-[180px] h-9" size="sm">
+                                                                                <SelectValue />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent className="z-[1100]">
+                                                                                {conditions.map((cond) => (
+                                                                                    <SelectItem key={cond.value} value={cond.value}>
+                                                                                        {cond.label}
+                                                                                    </SelectItem>
+                                                                                ))}
+                                                                            </SelectContent>
+                                                                        </Select>
+
+                                                                        <div className="w-full sm:flex-1">
+                                                                            {effectiveField ? renderValueInput(filter, effectiveField) : null}
+                                                                        </div>
+
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="h-6 w-6 p-0 self-end sm:self-auto sm:ml-auto"
+                                                                            onClick={() => handleRemoveFilter(filter.id)}
+                                                                        >
+                                                                            <X className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+
+                                                    {activeFilters.length === 0 && (
+                                                        <p className="text-sm text-muted-foreground text-center py-4">
+                                                            {t('No conditions. Add a condition above.')}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
                                         ) : (
-                                            // Для обычных пользователей - показываем текущую видимость фильтра
-                                            editVisibility === 'groups' ? (
-                                                <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/20">
-                                                    <Users className="h-4 w-4 text-muted-foreground" />
-                                                    <div>
-                                                        <div className="text-sm font-medium">{t('For groups')}</div>
-                                                        <div className="text-xs text-muted-foreground">{t('Visible only to your group')}</div>
+                                            /* === РЕЖИМ СОХРАНЕНИЯ (МЕТА-ДАННЫЕ) === */
+                                            <div className="space-y-4 py-4">
+                                                {/* Название */}
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">
+                                                        {t('Name')} <span className="text-destructive">*</span>
+                                                    </label>
+                                                    <Input
+                                                        value={saveMeta.name}
+                                                        onChange={(e) => {
+                                                            setSaveMeta({ ...saveMeta, name: e.target.value });
+                                                            setIsNameDirty(true);
+                                                        }}
+                                                        placeholder={t('Enter filter name')}
+                                                        autoFocus
+                                                    />
+                                                    {saveError && !saveMeta.name.trim() && (
+                                                        <p className="text-xs text-destructive">{saveError}</p>
+                                                    )}
+                                                </div>
+
+                                                {/* Описание */}
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">{t('Description')}</label>
+                                                    <Textarea
+                                                        value={saveMeta.description}
+                                                        onChange={(e) => setSaveMeta({ ...saveMeta, description: e.target.value })}
+                                                        placeholder={t('Description')}
+                                                        rows={2}
+                                                    />
+                                                </div>
+
+                                                {/* Visibility переключатель (для админов и пользователей с токеном) */}
+                                                {canManageGroupFilterVisibility ? (
+                                                    <div className="space-y-3 p-3 border rounded-lg bg-muted/20">
+                                                        <div className="flex items-center gap-2">
+                                                            <Users className="h-4 w-4 text-muted-foreground" />
+                                                            <span className="text-sm font-medium">{t('Filter visibility')}</span>
+                                                        </div>
+
+                                                        {/* Радиокнопки видимости */}
+                                                        <div className="space-y-2">
+                                                            <label
+                                                                className={cn(
+                                                                    "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+                                                                    saveVisibility === 'private' && "bg-accent"
+                                                                )}
+                                                                onClick={() => setSaveVisibility('private')}
+                                                            >
+                                                                <input
+                                                                    type="radio"
+                                                                    name="saveVisibility"
+                                                                    checked={saveVisibility === 'private'}
+                                                                    onChange={() => setSaveVisibility('private')}
+                                                                    className="h-4 w-4"
+                                                                />
+                                                                <Lock className="h-4 w-4 text-muted-foreground" />
+                                                                <div>
+                                                                    <div className="text-sm font-medium">{t('Private')}</div>
+                                                                    <div className="text-xs text-muted-foreground">{t('Only for you')}</div>
+                                                                </div>
+                                                            </label>
+
+                                                            <label
+                                                                className={cn(
+                                                                    "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+                                                                    saveVisibility === 'groups' && "bg-accent"
+                                                                )}
+                                                                onClick={() => setSaveVisibility('groups')}
+                                                            >
+                                                                <input
+                                                                    type="radio"
+                                                                    name="saveVisibility"
+                                                                    checked={saveVisibility === 'groups'}
+                                                                    onChange={() => setSaveVisibility('groups')}
+                                                                    className="h-4 w-4"
+                                                                />
+                                                                <Users className="h-4 w-4 text-muted-foreground" />
+                                                                <div>
+                                                                    <div className="text-sm font-medium">{t('For groups')}</div>
+                                                                    <div className="text-xs text-muted-foreground">{t('For selected groups')}</div>
+                                                                </div>
+                                                            </label>
+
+                                                            {canManagePublicFilterVisibility && (
+                                                                <label
+                                                                    className={cn(
+                                                                        "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+                                                                        saveVisibility === 'public' && "bg-accent"
+                                                                    )}
+                                                                    onClick={() => setSaveVisibility('public')}
+                                                                >
+                                                                    <input
+                                                                        type="radio"
+                                                                        name="saveVisibility"
+                                                                        checked={saveVisibility === 'public'}
+                                                                        onChange={() => setSaveVisibility('public')}
+                                                                        className="h-4 w-4"
+                                                                    />
+                                                                    <Globe className="h-4 w-4 text-muted-foreground" />
+                                                                    <div>
+                                                                        <div className="text-sm font-medium">{t('Public')}</div>
+                                                                        <div className="text-xs text-muted-foreground">{t('For all users')}</div>
+                                                                    </div>
+                                                                </label>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Выбор групп (показывается только если выбран режим groups) */}
+                                                        {saveVisibility === 'groups' && userGroups.length > 0 && (
+                                                            <div className="pt-2 border-t">
+                                                                <GroupVisibilitySelector
+                                                                    groups={userGroups}
+                                                                    selectedGroupIds={saveGroupIds}
+                                                                    onGroupsChange={setSaveGroupIds}
+                                                                    modelName={modelName}
+                                                                />
+                                                            </div>
+                                                        )}
                                                     </div>
+                                                ) : (
+                                                    // Для обычных пользователей - только приватный
+                                                    <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/20">
+                                                        <Lock className="h-4 w-4 text-muted-foreground" />
+                                                        <div>
+                                                            <div className="text-sm font-medium">{t('Private filter')}</div>
+                                                            <div className="text-xs text-muted-foreground">{t('Visible only to you')}</div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Иконка и цвет в одну строку */}
+                                                <div className="flex gap-4">
+                                                    {/* Иконка */}
+                                                    <div className="space-y-2 flex-1">
+                                                        <label className="text-sm font-medium">{t('Icon')}</label>
+                                                        <div className="flex gap-1 flex-wrap">
+                                                            {[...FILTER_ICON_OPTIONS, ''].map((iconName) => (
+                                                                <Button
+                                                                    key={iconName || 'none'}
+                                                                    variant={saveMeta.icon === iconName ? 'default' : 'outline'}
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() => setSaveMeta({ ...saveMeta, icon: iconName })}
+                                                                >
+                                                                    {iconName
+                                                                        ? <MaterialIcon name={iconName} className="!text-[18px]" />
+                                                                        : <X className="h-4 w-4" />}
+                                                                </Button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Цвет */}
+                                                    <div className="space-y-2 flex-1">
+                                                        <label className="text-sm font-medium">{t('Color')}</label>
+                                                        <div className="flex gap-1 flex-wrap">
+                                                            {['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'].map((colorOption) => (
+                                                                <Button
+                                                                    key={colorOption}
+                                                                    variant={saveMeta.color === colorOption ? 'default' : 'outline'}
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 rounded-full"
+                                                                    style={{ backgroundColor: saveMeta.color === colorOption ? colorOption : 'transparent' }}
+                                                                    onClick={() => setSaveMeta({ ...saveMeta, color: colorOption })}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Ошибка */}
+                                                {saveError && saveMeta.name.trim() && (
+                                                    <div className="text-sm text-destructive bg-destructive/10 p-2 rounded">
+                                                        {saveError}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <DialogStackFooter className="mt-8 pb-4">
+                                            {slide2Mode === 'edit' ? (
+                                                <div className="flex flex-wrap items-center gap-2 w-full">
+                                                    <Button variant="outline" onClick={handleCloseDialog} disabled={activeFilters.length === 0}>
+                                                        {t('Cancel')}
+                                                    </Button>
+                                                    {/* Кнопка «Колонки» */}
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="gap-2"
+                                                        onClick={handleOpenColumnsDialog}
+                                                    >
+                                                        <Columns3 className="h-4 w-4" />
+                                                        {t('Columns')}
+                                                    </Button>
+                                                    <div className="flex-1" />
+                                                    {filterForEdit ? (
+                                                        <Button onClick={handleUpdateSavedFilter} disabled={isSaving || !editMeta.name.trim()}>
+                                                            {isSaving ? t('Saving...') : t('Save changes')}
+                                                        </Button>
+                                                    ) : (
+                                                        <Button onClick={() => handleApplyFilters(activeFilters)} disabled={activeFilters.length === 0}>
+                                                            {t('Apply')}
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/20">
-                                                    <Lock className="h-4 w-4 text-muted-foreground" />
-                                                    <div>
-                                                        <div className="text-sm font-medium">{t('Private filter')}</div>
-                                                        <div className="text-xs text-muted-foreground">{t('Visible only to you')}</div>
-                                                    </div>
-                                                </div>
-                                            )
-                                        )}
-
-                                        {/* Иконка и цвет в одну строку */}
-                                        <div className="flex gap-4">
-                                            {/* Иконка */}
-                                            <div className="space-y-2 flex-1">
-                                                <label className="text-sm font-medium">{t('Icon')}</label>
-                                                <div className="flex gap-1 flex-wrap">
-                                                    {[...FILTER_ICON_OPTIONS, ''].map((iconName) => (
-                                                        <Button
-                                                            key={iconName || 'none'}
-                                                            variant={editMeta.icon === iconName ? 'default' : 'outline'}
-                                                            size="sm"
-                                                            className="h-8 w-8 p-0"
-                                                            onClick={() => setEditMeta({...editMeta, icon: iconName})}
-                                                        >
-                                                            {iconName
-                                                                ? <MaterialIcon name={iconName} className="!text-[18px]" />
-                                                                : <X className="h-4 w-4" />}
-                                                        </Button>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* Цвет */}
-                                            <div className="space-y-2 flex-1">
-                                                <label className="text-sm font-medium">{t('Color')}</label>
-                                                <div className="flex gap-1 flex-wrap">
-                                                    {['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'].map((colorOption) => (
-                                                        <Button
-                                                            key={colorOption}
-                                                            variant={editMeta.color === colorOption ? 'default' : 'outline'}
-                                                            size="sm"
-                                                            className="h-8 w-8 p-0 rounded-full"
-                                                            style={{backgroundColor: editMeta.color === colorOption ? colorOption : 'transparent'}}
-                                                            onClick={() => setEditMeta({...editMeta, color: colorOption})}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* API Access Section (edit mode) - only for private filters */}
-                                        {filterForEdit && editVisibility === 'private' && (
-                                            <div className="border rounded-lg p-3 bg-muted/20 mt-4">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <Switch
-                                                            checked={editApiEnabled}
-                                                            onCheckedChange={(checked) => {
-                                                                if (checked && !userKey) {
-                                                                    setShowUserKeyRequiredDialog(true);
-                                                                    setEditApiEnabled(false);
-                                                                    return;
-                                                                }
-
-                                                                setEditApiEnabled(checked);
-                                                                if (checked && !editApiKey) {
-                                                                    setEditApiKey(crypto.randomUUID());
-                                                                }
-                                                            }}
-                                                        />
-                                                        <span className="text-sm font-medium">{t('API access (feed)')}</span>
-                                                    </div>
-                                                </div>
-
-                                            {editApiEnabled && editApiKey && (
-                                                <div className="flex items-center gap-2 pt-3 border-t mt-3">
+                                                <div className="flex flex-wrap items-center gap-2 w-full">
+                                                    <Button variant="outline" onClick={() => {
+                                                        setSlide2Mode('edit');
+                                                    }} disabled={isSaving}>
+                                                        {t('Back')}
+                                                    </Button>
+                                                    {/* Кнопка «Колонки» */}
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
-                                                        onClick={() => copyEditToClipboard(getEditJsonFeedUrl(), t('JSON URL'))}
+                                                        className="gap-2"
+                                                        onClick={handleOpenColumnsDialog}
                                                     >
-                                                        JSON
+                                                        <Columns3 className="h-4 w-4" />
+                                                        {t('Columns')}
                                                     </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => copyEditToClipboard(getEditXmlFeedUrl(), t('XML URL'))}
-                                                    >
-                                                        XML
+                                                    <div className="flex-1" />
+                                                    <Button onClick={handleSaveFilter} disabled={isSaving || !saveMeta.name.trim()}>
+                                                        {isSaving ? t('Saving...') : t('Save')}
                                                     </Button>
                                                 </div>
                                             )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Условия фильтра */}
-                                <div className="space-y-4">
-                                    <h3 className="text-sm font-medium">
-                                        {filterForEdit ? t('Filter conditions') : t('Add condition')}
-                                    </h3>
-
-                                    {/* Добавление условия */}
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-sm text-muted-foreground">{t('Add')}:</span>
-                                        <div className="w-full sm:w-auto">
-                                            <Select value={selectValue} onValueChange={(value) => {
-                                                if (value !== 'placeholder') {
-                                                    handleAddFilter(value);
-                                                }
-                                            }} disabled={fieldsAvailableToAdd.length === 0}>
-                                                <SelectTrigger className="w-full sm:w-[200px] h-8" size="sm">
-                                                    <SelectValue placeholder={t('Select field')}/>
-                                                </SelectTrigger>
-                                                <SelectContent className="z-[1100]">
-                                                    <SelectItem value="placeholder" disabled className="text-muted-foreground">
-                                                        {fieldsAvailableToAdd.length === 0 ? t('No results') : t('Select field')}
-                                                    </SelectItem>
-                                                    {fieldsAvailableToAdd
-                                                        .map((field) => (
-                                                            <SelectItem key={field.id} value={field.id}>
-                                                                {field.label}
-                                                            </SelectItem>
-                                                        ))
-                                                    }
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-
-                                {/* Список условий */}
-                                {activeFilters.length > 0 && (
-                                    <div className="space-y-2">
-                                        {activeFilters.map((filter) => {
-                                            const field = availableFieldsById.get(filter.fieldId);
-                                            if (!field) return null;
-                                            const conditions = getConditionsForField(filter.fieldId);
-                                            const effectiveField = getEffectiveFieldForInput(filter, field);
-
-                                            return (
-                                                <div key={filter.id}
-                                                     className="flex flex-col items-stretch gap-2 p-2 border rounded-md bg-muted/30 sm:flex-row sm:items-center">
-                                                    <span className="text-sm font-medium sm:min-w-[120px] truncate"
-                                                          title={field.label}>
-                                                        {field.label}
-                                                    </span>
-
-                                                    {field.isRelation && (
-                                                        <Select
-                                                            value={filter.relationField || ''}
-                                                            onValueChange={(value) => handleFilterChange(filter.id, {
-                                                                relationField: value,
-                                                                value: ''
-                                                            })}
-                                                        >
-                                                            <SelectTrigger className="w-full sm:w-[200px] h-9" size="sm">
-                                                                <SelectValue placeholder={t('Select field')}/>
-                                                            </SelectTrigger>
-                                                            <SelectContent className="z-[1100]">
-                                                                {(field.relationFields || []).map((relationField) => (
-                                                                    <SelectItem key={relationField.id} value={relationField.id}>
-                                                                        {relationField.label}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    )}
-
-                                                    <Select value={filter.condition}
-                                                            onValueChange={(value) => handleFilterChange(filter.id, {
-                                                                condition: value,
-                                                                value: getDefaultValueForCondition(value, filter.value, field)
-                                                            })}>
-                                                        <SelectTrigger className="w-full sm:w-[180px] h-9" size="sm">
-                                                            <SelectValue/>
-                                                        </SelectTrigger>
-                                                        <SelectContent className="z-[1100]">
-                                                            {conditions.map((cond) => (
-                                                                <SelectItem key={cond.value} value={cond.value}>
-                                                                    {cond.label}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-
-                                                    <div className="w-full sm:flex-1">
-                                                        {effectiveField ? renderValueInput(filter, effectiveField) : null}
-                                                    </div>
-
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 w-6 p-0 self-end sm:self-auto sm:ml-auto"
-                                                        onClick={() => handleRemoveFilter(filter.id)}
-                                                    >
-                                                        <X className="h-4 w-4"/>
-                                                    </Button>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-
-                                {activeFilters.length === 0 && (
-                                    <p className="text-sm text-muted-foreground text-center py-4">
-                                        {t('No conditions. Add a condition above.')}
-                                    </p>
-                                )}
-                            </div>
-                            </div>
-                        ) : (
-                            /* === РЕЖИМ СОХРАНЕНИЯ (МЕТА-ДАННЫЕ) === */
-                            <div className="space-y-4 py-4">
-                                {/* Название */}
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">
-                                        {t('Name')} <span className="text-destructive">*</span>
-                                    </label>
-                                    <Input
-                                        value={saveMeta.name}
-                                        onChange={(e) => {
-                                            setSaveMeta({...saveMeta, name: e.target.value});
-                                            setIsNameDirty(true);
-                                        }}
-                                        placeholder={t('Enter filter name')}
-                                        autoFocus
-                                    />
-                                    {saveError && !saveMeta.name.trim() && (
-                                        <p className="text-xs text-destructive">{saveError}</p>
-                                    )}
-                                </div>
-
-                                {/* Описание */}
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">{t('Description')}</label>
-                                    <Textarea
-                                        value={saveMeta.description}
-                                        onChange={(e) => setSaveMeta({...saveMeta, description: e.target.value})}
-                                        placeholder={t('Description')}
-                                        rows={2}
-                                    />
-                                </div>
-
-                                {/* Visibility переключатель (для админов и пользователей с токеном) */}
-                                {canManageGroupFilterVisibility ? (
-                                    <div className="space-y-3 p-3 border rounded-lg bg-muted/20">
-                                        <div className="flex items-center gap-2">
-                                            <Users className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm font-medium">{t('Filter visibility')}</span>
-                                        </div>
-
-                                        {/* Радиокнопки видимости */}
-                                        <div className="space-y-2">
-                                            <label
-                                                className={cn(
-                                                    "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                                                    saveVisibility === 'private' && "bg-accent"
-                                                )}
-                                                onClick={() => setSaveVisibility('private')}
-                                            >
-                                                <input
-                                                    type="radio"
-                                                    name="saveVisibility"
-                                                    checked={saveVisibility === 'private'}
-                                                    onChange={() => setSaveVisibility('private')}
-                                                    className="h-4 w-4"
-                                                />
-                                                <Lock className="h-4 w-4 text-muted-foreground" />
-                                                <div>
-                                                    <div className="text-sm font-medium">{t('Private')}</div>
-                                                    <div className="text-xs text-muted-foreground">{t('Only for you')}</div>
-                                                </div>
-                                            </label>
-
-                                            <label
-                                                className={cn(
-                                                    "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                                                    saveVisibility === 'groups' && "bg-accent"
-                                                )}
-                                                onClick={() => setSaveVisibility('groups')}
-                                            >
-                                                <input
-                                                    type="radio"
-                                                    name="saveVisibility"
-                                                    checked={saveVisibility === 'groups'}
-                                                    onChange={() => setSaveVisibility('groups')}
-                                                    className="h-4 w-4"
-                                                />
-                                                <Users className="h-4 w-4 text-muted-foreground" />
-                                                <div>
-                                                    <div className="text-sm font-medium">{t('For groups')}</div>
-                                                    <div className="text-xs text-muted-foreground">{t('For selected groups')}</div>
-                                                </div>
-                                            </label>
-
-                                            {canManagePublicFilterVisibility && (
-                                                <label
-                                                    className={cn(
-                                                        "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                                                        saveVisibility === 'public' && "bg-accent"
-                                                    )}
-                                                    onClick={() => setSaveVisibility('public')}
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name="saveVisibility"
-                                                        checked={saveVisibility === 'public'}
-                                                        onChange={() => setSaveVisibility('public')}
-                                                        className="h-4 w-4"
-                                                    />
-                                                    <Globe className="h-4 w-4 text-muted-foreground" />
-                                                    <div>
-                                                        <div className="text-sm font-medium">{t('Public')}</div>
-                                                        <div className="text-xs text-muted-foreground">{t('For all users')}</div>
-                                                    </div>
-                                                </label>
-                                            )}
-                                        </div>
-
-                                        {/* Выбор групп (показывается только если выбран режим groups) */}
-                                        {saveVisibility === 'groups' && userGroups.length > 0 && (
-                                            <div className="pt-2 border-t">
-                                                <GroupVisibilitySelector
-                                                    groups={userGroups}
-                                                    selectedGroupIds={saveGroupIds}
-                                                    onGroupsChange={setSaveGroupIds}
-                                                    modelName={modelName}
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    // Для обычных пользователей - только приватный
-                                    <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/20">
-                                        <Lock className="h-4 w-4 text-muted-foreground" />
-                                        <div>
-                                            <div className="text-sm font-medium">{t('Private filter')}</div>
-                                            <div className="text-xs text-muted-foreground">{t('Visible only to you')}</div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Иконка и цвет в одну строку */}
-                                <div className="flex gap-4">
-                                    {/* Иконка */}
-                                    <div className="space-y-2 flex-1">
-                                        <label className="text-sm font-medium">{t('Icon')}</label>
-                                        <div className="flex gap-1 flex-wrap">
-                                            {[...FILTER_ICON_OPTIONS, ''].map((iconName) => (
-                                                <Button
-                                                    key={iconName || 'none'}
-                                                    variant={saveMeta.icon === iconName ? 'default' : 'outline'}
-                                                    size="sm"
-                                                    className="h-8 w-8 p-0"
-                                                    onClick={() => setSaveMeta({...saveMeta, icon: iconName})}
-                                                >
-                                                    {iconName
-                                                        ? <MaterialIcon name={iconName} className="!text-[18px]" />
-                                                        : <X className="h-4 w-4" />}
-                                                </Button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Цвет */}
-                                    <div className="space-y-2 flex-1">
-                                        <label className="text-sm font-medium">{t('Color')}</label>
-                                        <div className="flex gap-1 flex-wrap">
-                                            {['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'].map((colorOption) => (
-                                                <Button
-                                                    key={colorOption}
-                                                    variant={saveMeta.color === colorOption ? 'default' : 'outline'}
-                                                    size="sm"
-                                                    className="h-8 w-8 p-0 rounded-full"
-                                                    style={{backgroundColor: saveMeta.color === colorOption ? colorOption : 'transparent'}}
-                                                    onClick={() => setSaveMeta({...saveMeta, color: colorOption})}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Ошибка */}
-                                {saveError && saveMeta.name.trim() && (
-                                    <div className="text-sm text-destructive bg-destructive/10 p-2 rounded">
-                                        {saveError}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        <DialogStackFooter className="mt-8 pb-4">
-                            {slide2Mode === 'edit' ? (
-                                <div className="flex flex-wrap items-center gap-2 w-full">
-                                    <Button variant="outline" onClick={handleCloseDialog} disabled={activeFilters.length === 0}>
-                                        {t('Cancel')}
-                                    </Button>
-                                    {/* Кнопка «Колонки» */}
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="gap-2"
-                                        onClick={handleOpenColumnsDialog}
-                                    >
-                                        <Columns3 className="h-4 w-4" />
-                                        {t('Columns')}
-                                    </Button>
-                                    <div className="flex-1" />
-                                    {filterForEdit ? (
-                                        <Button onClick={handleUpdateSavedFilter} disabled={isSaving || !editMeta.name.trim()}>
-                                            {isSaving ? t('Saving...') : t('Save changes')}
-                                        </Button>
-                                    ) : (
-                                        <Button onClick={() => handleApplyFilters(activeFilters)} disabled={activeFilters.length === 0}>
-                                            {t('Apply')}
-                                        </Button>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="flex flex-wrap items-center gap-2 w-full">
-                                    <Button variant="outline" onClick={() => {
-                                        setSlide2Mode('edit');
-                                    }} disabled={isSaving}>
-                                        {t('Back')}
-                                    </Button>
-                                    {/* Кнопка «Колонки» */}
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="gap-2"
-                                        onClick={handleOpenColumnsDialog}
-                                    >
-                                        <Columns3 className="h-4 w-4" />
-                                        {t('Columns')}
-                                    </Button>
-                                    <div className="flex-1" />
-                                    <Button onClick={handleSaveFilter} disabled={isSaving || !saveMeta.name.trim()}>
-                                        {isSaving ? t('Saving...') : t('Save')}
-                                    </Button>
-                                </div>
-                            )}
-                        </DialogStackFooter>
-                                </>
+                                        </DialogStackFooter>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -2847,6 +2848,8 @@ export function FilterPanel({onApplyFilters}: FilterPanelProps) {
         </>
     );
 }
+
+
 
 
 

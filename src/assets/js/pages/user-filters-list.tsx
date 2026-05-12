@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
+import { apiHttp } from '@/lib/http-client';
 import AppLayout from '@/layouts/app-layout';
 import {
     Table,
@@ -19,7 +19,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Lock, Globe, Users, X, ExternalLink } from 'lucide-react';
+import { Lock, Globe, Users, X } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 import { useI18n } from '@/hooks/use-i18n';
 
@@ -135,7 +135,7 @@ function UserFiltersList({ title, models, apiEndpoint }: UserFiltersListProps) {
                 params.modelName = selectedModel;
             }
 
-            const response = await axios.get<ApiResponse>(apiEndpoint, { params });
+            const response = await apiHttp.get<ApiResponse>(apiEndpoint, { params });
             const data = response.data;
 
             if (reset) {
@@ -355,3 +355,5 @@ export default function UserFiltersListPage({ title, models, apiEndpoint }: User
         </AppLayout>
     );
 }
+
+

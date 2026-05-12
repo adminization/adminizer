@@ -8,7 +8,7 @@ import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/c
 import {MediaManagerContext} from "@/components/media-manager/media-manager.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {LoaderCircle, Trash2} from "lucide-react";
-import axios from "axios";
+import { apiHttp } from '@/lib/http-client';
 import {Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
 
 interface MediaVariantsProps {
@@ -40,7 +40,7 @@ const MediaVariants = ({item, messages, destroy}: MediaVariantsProps) => {
         const fetchVariants = async () => {
             setIsLoading(true)
             try {
-                let res = await axios.post(uploadUrl, {
+                let res = await apiHttp.post<any>(uploadUrl, {
                     _method: "getChildren",
                     item: item
                 })
@@ -77,7 +77,7 @@ const MediaVariants = ({item, messages, destroy}: MediaVariantsProps) => {
     const reversedVariants = [...variants].reverse();
 
     const destroyVariant = async () => {
-        const res = await axios.delete(uploadUrl, {data: {item: destroyItem}});
+        const res = await apiHttp.delete<any>(uploadUrl, {item: destroyItem});
         if (res.data.msg === "ok") {
             destroy(item, destroyItem as Media);
             setVariants((prev) =>
@@ -197,3 +197,4 @@ const MediaVariants = ({item, messages, destroy}: MediaVariantsProps) => {
     )
 }
 export default MediaVariants
+

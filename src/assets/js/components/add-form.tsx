@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { getFieldError, hasFormErrors, resetFormErrors } from '@/hooks/form-state';
 import InputError from "@/components/input-error.tsx";
 import { AddProps } from '@/pages/add';
-import axios from "axios";
+import { apiHttp } from '@/lib/http-client';
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { DialogStackHandle } from '@/components/ui/dialog-stack';
 import HistoryDialogStack from '@/components/history/HistoryDialogStack';
@@ -179,7 +179,7 @@ const AddForm: FC<{
             // return
             if (catalog) {
                 setCatalogProcessing(true)
-                const res = await axios.post(page.props.postLink, data)
+                const res = await apiHttp.post<{ record: any }>(page.props.postLink, data)
                 if (res.status === 200) {
                     if (callback) {
                         isNavigation ? callback(res.data.record, navTargetBlank, navVisible) : callback(res.data.record)

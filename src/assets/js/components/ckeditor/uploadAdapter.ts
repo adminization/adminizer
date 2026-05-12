@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { apiHttp } from '@/lib/http-client';
 
 export default class UploadAdapter {
     private loader: any;
@@ -16,11 +16,7 @@ export default class UploadAdapter {
         data.append("file", file);
 
         try {
-            let response = await axios.post(this.url, data, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            let response = await apiHttp.post<{ msg: string; url: string }>(this.url, data);
 
             let result = {
                 msg: response.data.msg,

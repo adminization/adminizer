@@ -1,7 +1,7 @@
 import React, {useState, useRef, FC, useContext} from 'react';
 import {TriangleAlert, XIcon} from "lucide-react";
 import styles from '@/components/media-manager/components/DropZone.module.css'
-import axios from "axios";
+import { apiHttp } from '@/lib/http-client';
 import {MediaManagerContext} from "@/components/media-manager/media-manager.tsx";
 import {Media} from "@/types";
 
@@ -78,7 +78,7 @@ const DropZone: FC<DropZoneProps> = ({callback, messages, name}) => {
             form.append("group", group);
             form.append("file", file);
 
-            const res = await axios.post(`${uploadUrl}/upload`, form, {
+            const res = await apiHttp.post<any>(`${uploadUrl}/upload`, form, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -95,22 +95,24 @@ const DropZone: FC<DropZoneProps> = ({callback, messages, name}) => {
 
         } catch (error) {
             setLoading(false);
+            const httpError = error as {
+                response?: { data?: { error?: string; message?: string } | string; status?: number; statusText?: string };
+                request?: unknown;
+            };
 
-            if (axios.isAxiosError(error)) {
-                if (error.response) {
-                    const errorMessage = error.response.data?.error ||
-                        error.response.data?.message ||
-                        error.response.statusText;
-                    setAlert(errorMessage || `Error: ${error.response.status}`);
-                } else if (error.request) {
-                    setAlert("No response from server");
-                } else {
-                    setAlert("Request setup error");
-                }
+            if (httpError.response) {
+                const responseData = httpError.response.data;
+                const errorMessage = typeof responseData === 'string'
+                    ? responseData
+                    : responseData?.error || responseData?.message || httpError.response.statusText;
+                setAlert(errorMessage || `Error: ${httpError.response.status ?? 'unknown'}`);
+            } else if (httpError.request) {
+                setAlert("No response from server");
             } else {
-                setAlert("Error uploading file");
-                console.error(error);
+                setAlert("Request setup error");
             }
+
+            console.error(error);
         }
     };
 
@@ -172,3 +174,4 @@ const DropZone: FC<DropZoneProps> = ({callback, messages, name}) => {
     )
 }
 export default DropZone
+

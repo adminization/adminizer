@@ -2,9 +2,9 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { simpleSanitizeHtml } from '@/lib/utils';
-import axios from 'axios';
+import { apiHttp } from '@/lib/http-client';
 import { toast } from 'sonner';
-import { BaseFieldConfig } from '@/types';
+import { BaseFieldConfig } from '../../../../interfaces/adminpanelConfig';
 
 interface InlineEditableCellProps {
     value: any;
@@ -77,7 +77,7 @@ export function InlineEditableCell({
         setIsLoading(true);
 
         try {
-            const response = await axios.patch(
+            const response = await apiHttp.patch<any>(
                 `/adminizer/model/${modelName}/inline/${recordId}`,
                 {
                     field: fieldName,
@@ -246,3 +246,5 @@ function getRangeProps(fieldConfig: BaseFieldConfig): { min?: number; max?: numb
 
     return {};
 }
+
+

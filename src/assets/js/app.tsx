@@ -27,26 +27,15 @@ window.LucideReact = LucideReact
 
 registerUIComponents();
 
-export async function resolvePageComponent<T>(path: string | string[], pages: Record<string, Promise<T> | (() => Promise<T>)>): Promise<T>{
-    for (const p of (Array.isArray(path) ? path : [path])) {
-        const page = pages[p];
-        if (typeof page === 'undefined') {
-            continue;
-        }
-        return typeof page === 'function' ? page() : page;
-    }
-    throw new Error(`Page not found: ${path}`);
-}
-
 // Prevent Inertia from opening iframe for non-Inertia responses
 // When server returns non-Inertia response (HTML redirect), do full page reload instead
 let isNavigating = false;
 
-router.on('navigate', (event) => {
+router.on('navigate', (_event) => {
     isNavigating = true;
 })
 
-router.on('finish', (event) => {
+router.on('finish', (_event) => {
     isNavigating = false;
 })
 
@@ -73,7 +62,11 @@ document.createElement = function(tagName: string, options?: any) {
 
 createInertiaApp({
     title: (title) => `${title}`,
-    resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
+    resolve: async (name) => {
+        const pages = import.meta.glob('./pages/**/*.tsx');
+        const module = await pages[`./pages/${name}.tsx`]() as { default: React.ComponentType<any> };
+        return module.default;
+    },
     setup({el, App, props}) {
         const root = createRoot(el);
         root.render(<App {...props} />);

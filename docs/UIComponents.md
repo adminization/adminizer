@@ -727,5 +727,5 @@ const { VanillaJSONEditor } = window.JSComponents;
 | `window.ReactDOM` | ReactDOM 19 |
 | `window.LucideReact` | All Lucide icons (`window.LucideReact.Pencil`, etc.) |
 | `window.InertiajsReact` | Inertia.js React adapter |
-| `window.axios` | Axios HTTP client |
+| `window.axios` | Axios-compatible HTTP client (compat layer for external modules) |
 | `window.sonner` | Sonner toast API (`toast`, `toast.error`, `toast.promise`, etc.) |

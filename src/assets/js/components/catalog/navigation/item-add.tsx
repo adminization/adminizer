@@ -3,7 +3,7 @@ import {NavItemAddProps} from "@/types";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {Plus} from "lucide-react";
-import axios from "axios";
+import { apiHttp } from '@/lib/http-client';
 import {Checkbox} from "@/components/ui/checkbox.tsx";
 import {useState} from "react";
 
@@ -13,7 +13,7 @@ const ItemAdd = ({type, callback, parentId, isNavigation, ...data}: NavItemAddPr
 
     const handleSelect = async (value: string) => {
         try {
-            const res = await axios.post('', {
+            const res = await apiHttp.post('', {
                 data: {
                     record: value,
                     parentId: parentId,
@@ -81,3 +81,5 @@ const ItemAdd = ({type, callback, parentId, isNavigation, ...data}: NavItemAddPr
 }
 
 export default ItemAdd
+
+

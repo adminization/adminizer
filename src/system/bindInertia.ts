@@ -13,6 +13,12 @@ export function bindInertia(adminizer: Adminizer) {
         .replace(/"/g, "&quot;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
+    const serializePageForScript = (value: unknown): string => JSON.stringify(value)
+        .replace(/</g, "\\u003c")
+        .replace(/>/g, "\\u003e")
+        .replace(/&/g, "\\u0026")
+        .replace(/\u2028/g, "\\u2028")
+        .replace(/\u2029/g, "\\u2029");
 
     const resolveFaviconHref = (): string => {
         const customFavicon = adminizer.config.favicon?.trim();
@@ -106,6 +112,7 @@ export function bindInertia(adminizer: Adminizer) {
 
     const getHtml = (page: Page, _viewData: Record<string, string>) => {
         const faviconHref = escapeHtmlAttribute(resolveFaviconHref());
+        const serializedPage = serializePageForScript(page);
 
         return `
        <!DOCTYPE html><html lang="${_viewData.lang}">
@@ -116,12 +123,8 @@ export function bindInertia(adminizer: Adminizer) {
             ${viteRender()}
             </head>
         <body>
-            <div id="app" data-page='${JSON.stringify(page)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#39;")}'></div>
+            <script data-page="app" type="application/json">${serializedPage}</script>
+            <div id="app"></div>
         </body>
         </html>
         `;

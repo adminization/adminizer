@@ -6,14 +6,11 @@ import {Adminizer} from "../lib/Adminizer";
 import multer from "multer";
 import {I18n} from "../lib/I18n";
 
-export type EntityType = "form" | "model";
-
 export interface Entity {
     name: string
     config?: ModelConfig
     model?: AbstractModel<any>
     uri: string
-    type: EntityType
 }
 
 export interface AccessRightsToken {

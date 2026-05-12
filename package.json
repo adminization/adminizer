@@ -1,7 +1,7 @@
 {
 	"name": "adminizer",
 	"type": "module",
-	"version": "4.6.0",
+	"version": "5.0.0",
 	"main": "index.js",
 	"exports": {
 		".": "./index.js",

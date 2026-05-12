@@ -8,7 +8,7 @@ function extractEntityName(req: ReqType): string | undefined {
     }
 
     const path = req.path || req.originalUrl || "";
-    const match = path.match(/\/(?:model|form)\/([^/]+)/i);
+    const match = path.match(/\/model\/([^/]+)/i);
     return match?.[1];
 }
 
@@ -32,16 +32,6 @@ export function modelUpdateToken(req: ReqType): string | undefined {
 export function modelDeleteToken(req: ReqType): string | undefined {
     const entityName = extractEntityName(req);
     return entityName ? `delete-${entityName}-model` : undefined;
-}
-
-export function formUpdateToken(req: ReqType): string | undefined {
-    const slug = req.params?.slug;
-    return slug ? `update-${slug}-form` : undefined;
-}
-
-export function formCreateToken(req: ReqType): string | undefined {
-    const entityName = extractEntityName(req);
-    return entityName ? `create-${entityName}-form` : undefined;
 }
 
 export function widgetToken(req: ReqType): string | undefined {

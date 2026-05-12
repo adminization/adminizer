@@ -8,7 +8,6 @@ import {
 } from "../AbstractMediaManager"
 import {
     BaseFieldConfig,
-    FieldsForms,
     MediaManagerOptionsField,
     ModelConfig
 } from "../../../interfaces/adminpanelConfig";

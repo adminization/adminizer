@@ -20,7 +20,7 @@ import HistoryDialogStack from '@/components/history/HistoryDialogStack';
 import { useI18n } from '@/hooks/use-i18n';
 
 
-export type FieldValue = string | boolean | number | Date | any[] | Content;
+type FieldValue = string | boolean | number | Date | any[] | Content;
 
 
 const LabelRenderer: FC<{ field: Field }> = memo(({ field }) => {
@@ -338,10 +338,5 @@ const AddForm: FC<{
             </>
         );
     };
-
-export {
-    LazyField,
-    LabelRenderer,
-}
 
 export default AddForm;

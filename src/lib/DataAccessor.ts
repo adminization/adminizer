@@ -16,6 +16,8 @@ import { GroupAP } from "../models/GroupAP";
 import { UserAP } from "../models/UserAP";
 import { isObject } from "../helpers/JsUtils";
 
+const MODEL_TOKEN_SUFFIX = "model";
+
 export class DataAccessor {
     public readonly adminizer: Adminizer;
     user: UserAP;
@@ -59,9 +61,9 @@ export class DataAccessor {
         const fieldsConfig = this.entity.config?.fields || {};
         const modelAttributes = this.entity.model.attributes;
 
-        const tokenId = `${this.actionVerb}-${this.entity.model.modelname}-${this.entity.type}`;
+        const tokenId = `${this.actionVerb}-${this.entity.model.modelname}-${MODEL_TOKEN_SUFFIX}`;
         if (!this.adminizer.accessRightsHelper.hasPermission(tokenId, this.user)) {
-            Adminizer.log.debug(`getFieldsConfig > No access rights to ${this.actionVerb} ${this.entity.type}: ${this.entity.model.modelname}`);
+            Adminizer.log.debug(`getFieldsConfig > No access rights to ${this.actionVerb} model: ${this.entity.model.modelname}`);
             return undefined;
         }
 
@@ -117,9 +119,9 @@ export class DataAccessor {
             if (modelField.type === "association" || modelField.type === "association-many") {
                 const modelName = modelField.model || modelField.collection;
                 
-                const tokenId = `read-${modelName}-${this.entity.type}`;
+                const tokenId = `read-${modelName}-${MODEL_TOKEN_SUFFIX}`;
                 if (!this.adminizer.accessRightsHelper.hasPermission(tokenId, this.user)) {
-                    Adminizer.log.silly(`No access rights to ${this.entity.type}: ${this.entity.model.modelname}`);
+                    Adminizer.log.silly(`No access rights to model: ${this.entity.model.modelname}`);
                     return undefined;
                 }
 
@@ -141,7 +143,7 @@ export class DataAccessor {
 
             // Set required and type attributes
             fldConfig.required = Boolean(fldConfig.required ?? modelField.required);
-            // Default type for field. Could be fetched form config file or file model if not defined in config file.
+            // Default type for field. Could be fetched from config file or model if not defined in config file.
             fldConfig.type = ((fldConfig.type || modelField.type).toLowerCase() as FieldsTypes);
 
             // Normalize final configuration
@@ -164,9 +166,9 @@ export class DataAccessor {
         }
 
         // Check if user has access to the associated model
-        const tokenId = `read-${modelName}-${this.entity.type}`;
+        const tokenId = `read-${modelName}-${MODEL_TOKEN_SUFFIX}`;
         if (!this.adminizer.accessRightsHelper.hasPermission(tokenId, this.user)) {
-            Adminizer.log.debug(`getAssociatedFieldsConfig > No access rights to ${this.actionVerb} ${this.entity.type}: ${modelName}`);
+            Adminizer.log.debug(`getAssociatedFieldsConfig > No access rights to ${this.actionVerb} model: ${modelName}`);
             return undefined;
         }
 

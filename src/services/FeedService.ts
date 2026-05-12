@@ -74,7 +74,7 @@ export class FeedService {
         // Create a minimal request-like object to use ControllerHelper
         const mockReq = {
             adminizer: adminizerInstance,
-            params: { model: modelName, entityType: 'model' },
+            params: { entityName: modelName },
             query: {},
             originalUrl: `/adminizer/model/${modelName}/list`,
             url: `/adminizer/model/${modelName}/list`

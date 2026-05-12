@@ -63,9 +63,6 @@ export type FieldsTypes =
      */
     "geo-polygon"
 
-type SetFunction = (slug: string, key: string, data: any) => Promise<void>;
-type GetFunction = (slug: string, key: string) => Promise<any>;
-
 export type ActionType = "list" | "edit" | "add" | "remove" | "view"
 export type ListPageSize = 5 | 20 | 50
 
@@ -209,32 +206,6 @@ export interface AdminpanelConfig {
         path?: string
         defaultLocale: string
     } | false
-    /**
-     * Forms
-     * */
-    forms?: {
-        /**
-         * You can add forms directly to adminpanel configuration or put them in files with
-         * `.json` extension which should be named as form slug. Put your forms in your
-         * directory and write down path to it in `path` field.
-         */
-        path?: string
-        /**
-         * same for model (need entity config types)
-         * */
-        data: {
-            [key: string]: FieldsForms
-        }
-        /**
-         * Custom getter
-         * */
-        get?: GetFunction
-        /**
-         * Custom setter
-         * */
-        set?: SetFunction
-    }
-
     /**
      * Prime administrator login credentials
      * */
@@ -505,10 +476,6 @@ export interface ModelConfig {
 
 type UserWithGroups = UserAP & { groups: GroupAP[] }
 
-export interface FieldsForms {
-    [key: string]: FormFieldConfig
-}
-
 export type ModelFieldConfig = (BaseFieldConfig | TuiEditorFieldConfig) & { groupsAccessRights?: string[] }
 
 export interface FieldsModels {
@@ -516,12 +483,6 @@ export interface FieldsModels {
         boolean |
         string |
         ModelFieldConfig
-}
-
-interface FormFieldConfig extends BaseFieldConfig {
-    value?: any
-    required?: boolean
-    description?: string
 }
 
 export interface BaseFieldConfig {

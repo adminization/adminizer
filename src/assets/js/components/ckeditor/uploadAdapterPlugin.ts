@@ -9,11 +9,11 @@ class UploadAdapterPlugin extends Plugin {
     init() {
         const editor = this.editor;
         const urlParts = window.location.pathname.split('/').filter(part => part !== '');
-        const entityType = urlParts[1];
-        const entityName = urlParts[2];
+        const modelIndex = urlParts.indexOf('model');
+        const entityName = modelIndex >= 0 ? urlParts[modelIndex + 1] : undefined;
 
         editor.plugins.get('FileRepository').createUploadAdapter = (loader) => {
-            const uploadUrl = `${window.routePrefix}/${entityType}/${entityName}/ckeditor5/upload`;
+            const uploadUrl = `${window.routePrefix}/model/${entityName}/ckeditor5/upload`;
             return new UploadAdapter(loader, uploadUrl);
         };
     }

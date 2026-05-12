@@ -73,7 +73,7 @@ export class FieldsHelper {
 					" please rewrite this part of code in the nearest future");
 				let entity: Entity = {
 					name: modelName, config: req.adminizer.config.models[modelName] as ModelConfig,
-					model: Model, uri: `${req.adminizer.config.routePrefix}/model/${modelName}`, type: "model"
+					model: Model, uri: `${req.adminizer.config.routePrefix}/model/${modelName}`
 				};
 				let dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "view");
 				list = await Model.find({}, dataAccessor);

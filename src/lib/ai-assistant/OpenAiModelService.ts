@@ -163,7 +163,6 @@ export class OpenAiModelService extends AbstractAiModelService {
         return {
             name: configName,
             uri: `${this.adminizer.config.routePrefix}/model/${configName}`,
-            type: 'model',
             config: normalizedConfig,
             model,
         };
@@ -196,7 +195,7 @@ export class OpenAiModelService extends AbstractAiModelService {
     private getPermissionToken(entity: Entity, action: ActionType): string {
         const verb = ACTION_TOKENS[action];
         const modelName = entity.model?.modelname ?? entity.config?.model ?? entity.name;
-        return `${verb}-${modelName}-${entity.type}`.toLowerCase();
+        return `${verb}-${modelName}-model`.toLowerCase();
     }
 
     private extractPrimaryKey(record: Partial<Record<string, unknown>>, entity: Entity): unknown {

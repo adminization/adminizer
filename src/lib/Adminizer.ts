@@ -16,7 +16,6 @@ import bindMediaManager from "../system/bindMediaManager";
 import bindAccessRights from "../system/bindAccessRights";
 import bindAuthorization from "../system/bindAuthorization";
 import bindModels from "../system/bindModels";
-import bindForms from "../system/bindForms";
 import bindTranslations from "../system/bindTranslations";
 import {ModelHandler} from "./model/ModelHandler";
 import {WidgetHandler} from "./widgets/widgetHandler";
@@ -231,9 +230,8 @@ export class Adminizer {
 
         this.modelHandler = new ModelHandler();
 
-        // TODO: 'hot reload' unbind models & unbind forms
+        // TODO: 'hot reload' unbind models
         await bindModels(this);
-        await bindForms(this);
         bindCustomFilterHandlers(this);
 
         this.config.rootPath = path.resolve(import.meta.dirname + "/..")

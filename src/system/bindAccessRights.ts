@@ -14,37 +14,6 @@ export default async function bindAccessRights(adminizer: Adminizer) {
         }
     }
 
-    if (adminizer.config.forms && adminizer.config.forms.data) {
-        let forms = adminizer.config.forms.data;
-        for (let key of Object.keys(forms)) {
-            let department = `Form ${key}`;
-
-            // create
-            adminizer.accessRightsHelper.registerToken({
-                id: `create-${key}-form`, name: "Create",
-                description: "Access to creating form in database", department: department
-            });
-
-            // read
-            adminizer.accessRightsHelper.registerToken({
-                id: `read-${key}-form`, name: "Read",
-                description: "Access to reading form in database", department: department
-            });
-
-            // update
-            adminizer.accessRightsHelper.registerToken({
-                id: `update-${key}-form`, name: "Update",
-                description: "Access to updating form in database", department: department
-            });
-
-            // delete
-            adminizer.accessRightsHelper.registerToken({
-                id: `delete-${key}-form`, name: "Delete",
-                description: "Access to deleting form in database", department: department
-            });
-        }
-    }
-
     // Widgets
     adminizer.accessRightsHelper.registerToken({
         id: `widgets`, name: "Widgets",

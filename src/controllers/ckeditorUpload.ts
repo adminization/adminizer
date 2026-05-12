@@ -1,12 +1,11 @@
 import { ControllerHelper } from "../helpers/controllerHelper";
-import {Entity} from "../interfaces/types";
 import * as fs from "fs";
 import multer from "multer";
 
 export async function ckEditorUpload(req: ReqType, res: ResType) {
 	let entity = ControllerHelper.findEntityObject(req);
 
-    const dirDownload = `uploads/${entity.type}/${entity.name}/ckeditor`;
+    const dirDownload = `uploads/model/${entity.name}/ckeditor`;
 
     await handleUpload(req, res, dirDownload)
 

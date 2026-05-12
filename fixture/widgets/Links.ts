@@ -26,14 +26,6 @@ export class SiteLinks extends LinkBase {
             backgroundCSS: null,
             linkType: "blank"
         },
-        {
-            name: 'Global Settings',
-            description: 'Global Settings',
-            link: '/adminizer/form/global',
-            icon: 'polyline',
-            backgroundCSS: null,
-            linkType: "self"
-        }
 	];
 
 	getLinks(): Promise<Links[]> {

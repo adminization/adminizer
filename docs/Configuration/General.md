@@ -22,7 +22,7 @@ const config: AdminizerConfig = {
 | `favicon` | Custom favicon URL. Relative values are resolved from `routePrefix`; default is `<routePrefix>/files/favicon.png`. |
 | `linkAssets` | Symlink static assets instead of copying them. |
 | `identifierField` | Default primary key for models (usually `id`). |
-| `showORMtime` | Show `createdAt`/`updatedAt` fields in forms. |
+| `showORMtime` | Show `createdAt`/`updatedAt` fields on create/edit pages. |
 | `models` | Object with model definitions. |
 | `dashboard` | Enable dashboard widgets. |
 | `showVersion` | Display Adminizer version in the sidebar. |

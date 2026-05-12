@@ -59,20 +59,6 @@ const models: AdminpanelConfig["models"] = {
         //         title: 'Some new action',
         //         icon: 'reorder',
         //     },
-        //     {
-        //         id: '2',
-        //         link: `${routePrefix}/form/global`,
-        //         type: 'self',
-        //         title: 'Form example',
-        //         icon: 'payment',
-        //     },
-        //     {
-        //         id: '3',
-        //         link: 'https://google.com',
-        //         type: 'blank',
-        //         title: 'Form example from file Form example from file',
-        //         icon: 'touch_app',
-        //     }
         // ],
         fields: {
             createdAt: {
@@ -312,12 +298,6 @@ const models: AdminpanelConfig["models"] = {
                         link: 'https://google.com',
                         type: 'blank',
                         title: 'Google',
-                        icon: 'insert_link'
-                    }, {
-                        id: "5",
-                        link: `${routePrefix}/form/global`,
-                        type: 'self',
-                        title: 'Form',
                         icon: 'insert_link'
                     },
                 ],
@@ -583,152 +563,14 @@ const config: AdminpanelConfig = {
             }
         ],
     },
-    forms: {
-        data: {
-            global: {
-                field1: {
-                    title: 'Field1',
-                    type: 'string',
-                    value: 'Some string',
-                    required: true,
-                },
-                mediamanager: {
-                    title: 'Images',
-                    type: 'mediamanager',
-                    options: {
-                        id: "default",
-                        group: 'form_global_images',
-                        initTab: "table-application",
-                        accept: ["application/pdf", "application/msword"]
-                    },
-                    value: null
-                },
-                field2: {
-                    title: 'Field2',
-                    type: 'text',
-                    value: 'Some text',
-                    required: true,
-                    tooltip: 'tooltip for field2',
-                },
-                json: {
-                    title: 'Json',
-                    type: 'jsoneditor'
-                },
-                text: {
-                    title: 'Editor',
-                    type: 'wysiwyg',
-                },
-                tabs_video: {
-                    "title": "Табы видео",
-                    "type": "table",
-                    "tooltip": "Нажмите на таблице правой клавишей мыши, выберите \"Вставить строку ниже\", в добавленную строку вставьте код полученный на сервисе ВКонтакте или YouTube через кнопку \"Поделиться\"",
-                    "options": {
-                        "config": {
-                            "dataSchema": {
-                                "iframe": null
-                            },
-                            "colHeaders": [
-                                "Iframe"
-                            ],
-                            "rowHeaders": true,
-                            "columns": [
-                                {
-                                    "data": "iframe"
-                                }
-                            ],
-                            "height": "auto",
-                            "width": "100%",
-                            "manualColumnResize": true,
-                            "contextMenu": true,
-                            "licenseKey": "non-commercial-and-evaluation"
-                        }
-                    },
-                    "value": null
-                },
-                tabs_tests: {
-                    "title": "Табы онлайн-тесты",
-                    "tooltip": "Нажмите на таблице правой клавишей мыши, выберите \"Вставить строку ниже\", в соответствующих столбцах вставьте ссылку на тест и его название",
-                    "type": "table",
-                    "options": {
-                        "config": {
-                            "dataSchema": {
-                                "link": null,
-                                "text": null
-                            },
-                            "colHeaders": [
-                                "Ссылка",
-                                "Текст"
-                            ],
-                            "rowHeaders": true,
-                            "columns": [
-                                {
-                                    "data": "link"
-                                },
-                                {
-                                    "data": "text"
-                                }
-                            ],
-                            "height": "auto",
-                            "width": "100%",
-                            "manualColumnResize": true,
-                            "contextMenu": true,
-                            "licenseKey": "non-commercial-and-evaluation"
-                        }
-                    },
-                    "value": null
-                },
-                tabs_links: {
-                    "title": "Табы полезные ссылки",
-                    "type": "table",
-                    "tooltip": "Нажмите на таблице правой клавишей мыши, выберите \"Вставить строку ниже\", в соответствующих столбцах вставьте ссылку на сайт и его название",
-                    "options": {
-                        "config": {
-                            "dataSchema": {
-                                "link": null,
-                                "text": null
-                            },
-                            "colHeaders": [
-                                "Ссылка",
-                                "Текст"
-                            ],
-                            "rowHeaders": true,
-                            "columns": [
-                                {
-                                    "data": "link"
-                                },
-                                {
-                                    "data": "text"
-                                }
-                            ],
-                            "height": "auto",
-                            "width": "100%",
-                            "manualColumnResize": true,
-                            "contextMenu": true,
-                            "licenseKey": "non-commercial-and-evaluation"
-                        }
-                    },
-                    "value": null
-                }
-            }
-        }
-    },
     navbar: {
         additionalLinks: [
-            {
-                id: '1',
-                link: `${routePrefix}/form/global`,
-                title: 'Global Settings',
-                type: 'self',
-                icon: 'build',
-                accessRightsToken: 'read-global-form'
-            },
             {
                 id: '2',
                 link: `${routePrefix}/module-test`,
                 type: 'self',
                 title: 'Test Module',
-                icon: '360',
-                accessRightsToken: 'read-global-form'
+                icon: '360'
             },
             {
                 id: '3',
@@ -774,13 +616,6 @@ const config: AdminpanelConfig = {
                     link: 'https://google.com',
                     type: 'blank',
                     icon: 'share'
-                },
-                {
-                    id: "2",
-                    title: 'Sub 3 Sub 3 Sub 3 Sub 3',
-                    link: `${routePrefix}/form/global`,
-                    type: 'self',
-                    icon: 'insert_link'
                 },
                 {
                     id: "3",

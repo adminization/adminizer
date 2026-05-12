@@ -1,4 +1,4 @@
-import {Entity, EntityType} from "../interfaces/types";
+import {Entity} from "../interfaces/types";
 import {ActionType, CreateUpdateConfig, ModelConfig} from "../interfaces/adminpanelConfig";
 import {AbstractModel} from "../lib/model/AbstractModel";
 import {Adminizer} from "../lib/Adminizer";
@@ -94,28 +94,6 @@ export class ControllerHelper {
     };
 
     /**
-     * Get entity type
-     *
-     * @param {Request} req
-     * @returns {?string}
-     */
-    public static findEntityType(req: ReqType): EntityType {
-        const entityType = req.params.entityType as EntityType | undefined;
-
-        if (!entityType) {
-            const extractedEntityType = req.originalUrl.split('/')[2] as EntityType | undefined;
-
-            if (["form", "model"].includes(extractedEntityType)) {
-                return extractedEntityType;
-            } else {
-                return null;
-            }
-        }
-
-        return entityType;
-    };
-
-    /**
      * Get entity name
      *
      * @param {Request} req
@@ -126,27 +104,19 @@ export class ControllerHelper {
                 return req.params.entityName;
             }
 
+            if (req.params.model) {
+                return req.params.model;
+            }
+
             const urlParts = req.originalUrl.split('/');
-            const entityType = urlParts[2];
             const entityName = urlParts[3];
 
-            if (entityType === 'form') {
-                const forms = req.adminizer.config.forms?.data;
-                if (!forms || !Object.keys(forms).some(key => key.toLowerCase() === entityName.toLowerCase())) {
-                    throw new Error(`Form "${entityName}" not found`);
-                }
-                return Object.keys(forms).find(key => key.toLowerCase() === entityName.toLowerCase());
+            const models = req.adminizer.config.models;
+            if (!models || !Object.keys(models).some(key => key.toLowerCase() === entityName.toLowerCase())) {
+                throw new Error(`Model "${entityName}" not found`);
             }
 
-            if (entityType === 'model') {
-                const models = req.adminizer.config.models;
-                if (!models || !Object.keys(models).some(key => key.toLowerCase() === entityName.toLowerCase())) {
-                    throw new Error(`Model "${entityName}" not found`);
-                }
-                return Object.keys(models).find(key => key.toLowerCase() === entityName.toLowerCase());
-            }
-
-            throw new Error(`Unsupported entity type ${entityType} in URL`);
+            return Object.keys(models).find(key => key.toLowerCase() === entityName.toLowerCase());
         }
 
     /**
@@ -234,29 +204,24 @@ export class ControllerHelper {
      * @returns {Object}
      */
     public static findEntityObject(req: ReqType): Entity {
-        // Retrieve entity name and type based on the request
+        // Retrieve model name based on the request
         const entityName = this.findEntityName(req);
-        const entityType = this.findEntityType(req);
 
         // Construct the entity URI
-        const entityUri = `${req.adminizer.config.routePrefix}/${entityType}/${entityName}`;
+        const entityUri = `${req.adminizer.config.routePrefix}/model/${entityName}`;
 
         // Initialize the Entity object
         const entity: Entity = {
             name: entityName,
             uri: entityUri,
-            type: entityType,
             model: null,
             config: null
         };
-        // If the entity type is "model", add additional properties
-        if (entityType === "model") {
-            // Find and add the model configuration to the entity
-            entity.config = this.findModelConfig(req, entityName);
-            // Find and add the model itself to the entity
-            if (this._isValidModelConfig(entity.config)) {
-                entity.model = req.adminizer.modelHandler.model.get(entity.config.model);
-            }
+        // Find and add the model configuration to the entity
+        entity.config = this.findModelConfig(req, entityName);
+        // Find and add the model itself to the entity
+        if (this._isValidModelConfig(entity.config)) {
+            entity.model = req.adminizer.modelHandler.model.get(entity.config.model);
         }
 
         // Return the completed entity object

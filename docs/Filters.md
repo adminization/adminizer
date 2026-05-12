@@ -149,7 +149,7 @@ When editing someone else's filter, visibility is preserved.
 
 ## Backend API
 
-Routes are registered under both `/model/:entityName/...` and `/form/:entityName/...` patterns. In practice, filter UI uses `/model/:model/...`.
+Routes are registered under `/model/:entityName/...` patterns.
 
 ### Filter metadata and fields
 

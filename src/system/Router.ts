@@ -15,7 +15,6 @@ import { ckEditorUpload } from "../controllers/ckeditorUpload";
 import _exportData from "../controllers/exportData";
 import _feed from "../controllers/feed";
 import { getUserApiKey, regenerateUserApiKey } from "../controllers/userApiKey";
-import _form from "../controllers/form";
 import { CreateUpdateConfig } from "../interfaces/adminpanelConfig";
 import { widgetSwitchController } from "../controllers/widgets/switch";
 import _getAllWidgets from "../controllers/getAllWidgets";
@@ -43,8 +42,6 @@ import {
 import {
     aiModelToken,
     catalogToken,
-    formCreateToken,
-    formUpdateToken,
     groupFilterVisibilityToken,
     historyToken,
     mediaManagerToken,
@@ -189,20 +186,9 @@ export default class Router {
         );
 
         /**
-         * Edit form
-         * */
-        adminizer.app.all(
-            `${adminizer.config.routePrefix}/form/:slug`,
-            withPolicies(_form, requireAuthUI(), requirePermission(formUpdateToken, { mode: "ui" }))
-        );
-
-        /**
          *  Create a base entity route
          */
-        const entityRoutes = (suffix = '') => [
-            `${adminizer.config.routePrefix}/form/:entityName${suffix}`,
-            `${adminizer.config.routePrefix}/model/:entityName${suffix}`,
-        ];
+        const resourceRoute = (suffix = '') => `${adminizer.config.routePrefix}/model/:entityName${suffix}`;
 
         /**
          * Catalog
@@ -237,7 +223,7 @@ export default class Router {
          * Upload images CKeditor5
          */
         adminizer.app.post(
-            entityRoutes('/ckeditor5/upload'),
+            resourceRoute('/ckeditor5/upload'),
             withPolicies(
                 ckEditorUpload,
                 requireAuthUI(),
@@ -245,8 +231,6 @@ export default class Router {
                     [
                         modelUpdateToken,
                         modelCreateToken,
-                        formUpdateToken,
-                        formCreateToken,
                     ],
                     { mode: "ui" }
                 )
@@ -351,7 +335,7 @@ export default class Router {
          * List of records
          */
         adminizer.app.all(
-            entityRoutes(),
+            resourceRoute(),
             withPolicies(_list, requireAuthUI(), requirePermission(modelReadToken, { mode: "ui" }))
         );
 
@@ -361,7 +345,7 @@ export default class Router {
              * Get filter fields for model
              */
             adminizer.app.get(
-                entityRoutes('/filter-fields'),
+                resourceRoute('/filter-fields'),
                 withPolicies(_filterFields, requireAuthAPI(), requirePermission(modelReadToken))
             );
 
@@ -369,23 +353,23 @@ export default class Router {
              * Saved filters
              */
             adminizer.app.get(
-                entityRoutes('/saved-filters'),
+                resourceRoute('/saved-filters'),
                 withPolicies(getSavedFilters, requireAuthAPI(), requirePermission(modelReadToken))
             );
             adminizer.app.get(
-                entityRoutes('/filter/temporary'),
+                resourceRoute('/filter/temporary'),
                 withPolicies(getTemporaryFilter, requireAuthAPI(), requirePermission(modelReadToken))
             );
             adminizer.app.post(
-                entityRoutes('/filter'),
+                resourceRoute('/filter'),
                 withPolicies(saveFilter, requireAuthAPI(), requirePermission(modelReadToken))
             );
             adminizer.app.post(
-                entityRoutes('/filter/apply'),
+                resourceRoute('/filter/apply'),
                 withPolicies(applyTemporaryFilter, requireAuthAPI(), requirePermission(modelReadToken))
             );
             adminizer.app.delete(
-                entityRoutes('/filter/:id'),
+                resourceRoute('/filter/:id'),
                 withPolicies(deleteFilter, requireAuthAPI(), requirePermission(modelReadToken))
             );
 
@@ -401,7 +385,7 @@ export default class Router {
              * Export data (JSON, CSV, XLSX)
              */
             adminizer.app.post(
-                entityRoutes('/export'),
+                resourceRoute('/export'),
                 withPolicies(_exportData, requireAuthAPI(), requirePermission(modelReadToken))
             );
 
@@ -429,7 +413,7 @@ export default class Router {
             * Get model columns (available columns for the model)
             */
             adminizer.app.get(
-                entityRoutes('/columns'),
+                resourceRoute('/columns'),
                 withPolicies(getModelColumns, requireAuthAPI(), requirePermission(modelReadToken))
             );
 
@@ -437,7 +421,7 @@ export default class Router {
              * Update filter columns configuration
              */
             adminizer.app.post(
-                entityRoutes('/filter/:filterId/columns'),
+                resourceRoute('/filter/:filterId/columns'),
                 withPolicies(updateFilterColumns, requireAuthAPI(), requirePermission(modelReadToken))
             );
         }
@@ -472,7 +456,7 @@ export default class Router {
          * Inline update field in list view
          */
         adminizer.app.patch(
-            entityRoutes('/inline/:id'),
+            resourceRoute('/inline/:id'),
             withPolicies(_inlineUpdate, requireAuthAPI(), requirePermission(modelUpdateToken))
         );
 
@@ -480,7 +464,7 @@ export default class Router {
          * View record details
          */
         adminizer.app.all(
-            entityRoutes('/view/:id'),
+            resourceRoute('/view/:id'),
             withPolicies(_view, requireAuthUI(), requirePermission(modelReadToken, { mode: "ui" }))
         );
 
@@ -488,7 +472,7 @@ export default class Router {
          * Remove record
          */
         adminizer.app.all(
-            entityRoutes('/remove/:id'),
+            resourceRoute('/remove/:id'),
             withPolicies(_remove, requireAuthUI(), requirePermission(modelDeleteToken, { mode: "ui" }))
         );
 

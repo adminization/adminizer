@@ -638,13 +638,7 @@ module.exports = config;
         login: string
         password: string
     }
-    // forms
-    forms: {
-        path: string
-        data: object
-        get: ()=>void
-        set: ()=>void
-    }
+    // Legacy configuration-driven forms are no longer used starting with Adminizer 5.
     // Enable/disable displaying createdAt and updatedAt fields in `edit` and `add` sections
     showORMtime: boolean
     package: any // Adminpanel package.json config

@@ -386,14 +386,13 @@ export abstract class AbstractHistoryAdapter {
      * Used to access model configuration and instance.
      *
      * @param history - The history record.
-     * @returns Entity object with name, URI, type, model instance, and config.
+     * @returns Entity object with name, URI, model instance, and config.
      * @protected
      */
     protected findEntityObject(history: HistoryActionsAP): Entity {
         const entityName = history.modelName;
-        const entityType = "model";
 
-        const entityUri = `${this.adminizer.config.routePrefix}/${entityType}/${entityName}`;
+        const entityUri = `${this.adminizer.config.routePrefix}/model/${entityName}`;
         const models = this.adminizer.config.models;
         const foundKey = Object.keys(models).find(
             key => key.toLowerCase() === entityName.toLowerCase()
@@ -402,7 +401,6 @@ export abstract class AbstractHistoryAdapter {
         const entity: Entity = {
             name: entityName,
             uri: entityUri,
-            type: entityType,
             model: this.adminizer.modelHandler.model.get(history.modelName),
             config: models[foundKey]
         };
@@ -450,7 +448,7 @@ export abstract class AbstractHistoryAdapter {
                     " please rewrite this part of code in the nearest future");
                 let entity: Entity = {
                     name: modelName, config: this.adminizer.config.models[modelName] as ModelConfig,
-                    model: Model, uri: `${this.adminizer.config.routePrefix}/model/${modelName}`, type: "model"
+                    model: Model, uri: `${this.adminizer.config.routePrefix}/model/${modelName}`
                 };
                 let dataAccessor = new DataAccessor(this.adminizer, user, entity, "view");
                 list = await Model.find({}, dataAccessor);

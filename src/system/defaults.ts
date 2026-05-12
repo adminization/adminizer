@@ -1,6 +1,5 @@
 'use strict'
 import {AdminpanelConfig} from "../interfaces/adminpanelConfig";
-import {FileStorageHelper} from "../helpers/fileStorageHelper";
 import timezones from "../lib/timezones";
 import addUser from "../controllers/addUser.js";
 import editUser from "../controllers/editUser.js";
@@ -125,17 +124,6 @@ let adminpanelConfig: AdminpanelConfig = {
         locales: ['en', 'ru'],
         directory: `config/locales/adminpanel`,
         defaultLocale: 'en'
-    },
-
-    forms: {
-        path: `api/adminpanel-forms`,
-        data: {},
-        get: async function (slug, key) {
-            return FileStorageHelper.get(slug, key)
-        },
-        set: async function (slug, key, value) {
-            FileStorageHelper.set(slug, key, value)
-        }
     },
 
     /**

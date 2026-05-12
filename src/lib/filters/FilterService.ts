@@ -54,8 +54,7 @@ export class FilterService {
             name: foundKey,
             config,
             model,
-            uri: `${this.adminizer.config.routePrefix}/model/${foundKey}`,
-            type: 'model'
+            uri: `${this.adminizer.config.routePrefix}/model/${foundKey}`
         };
     }
 

@@ -6,7 +6,9 @@ import {BaseFieldConfig, CreateUpdateConfig, MediaManagerOptionsField} from "../
 import {
     detachMediaManagerField,
     getRelationsMediaManager,
-    saveRelationsMediaManager
+    isMediaManagerFieldConfig,
+    saveRelationsMediaManager,
+    updateCurrentHistoryMediaManagerData
 } from "../lib/media-manager/helpers/MediaManagerHelper";
 import {DataAccessor} from "../lib/DataAccessor";
 import {Adminizer} from "../lib/Adminizer";
@@ -90,7 +92,7 @@ export default async function edit(req: ReqType, res: ResType) {
                 }
             }
 
-            if (fieldConfigConfig.type === 'mediamanager') {
+            if (isMediaManagerFieldConfig(fieldConfigConfig)) {
                 detachMediaManagerField(reqData, rawReqData, prop);
                 continue;
             }
@@ -127,6 +129,7 @@ export default async function edit(req: ReqType, res: ResType) {
         try {
             let newRecord = await entity.model.update(params, reqData, dataAccessor);
             await saveRelationsMediaManager(req.adminizer, fields, rawReqData, entity.model.modelname, newRecord[0].id)
+            await updateCurrentHistoryMediaManagerData(req.adminizer, fields, rawReqData, entity.name, newRecord[0].id)
 
 
             Adminizer.log.debug(`Record was updated: `, newRecord);
@@ -159,7 +162,7 @@ export default async function edit(req: ReqType, res: ResType) {
 
     for (const field of Object.keys(fields)) {
         const fieldConfigConfig = fields[field].config as BaseFieldConfig;
-        if (fieldConfigConfig.type === 'mediamanager') {
+        if (isMediaManagerFieldConfig(fieldConfigConfig)) {
             record[field] = await getRelationsMediaManager(req.adminizer, {
                 mediaManagerId: (fieldConfigConfig.options as MediaManagerOptionsField)?.id ?? "default",
                 model: entity.model.modelname,

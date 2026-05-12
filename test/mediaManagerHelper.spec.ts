@@ -1,5 +1,6 @@
 import {describe, expect, it} from "vitest";
 import {
+    collectMediaManagerHistoryData,
     detachMediaManagerField,
     normalizeMediaManagerWidgetData,
 } from "../src/lib/media-manager/helpers/MediaManagerHelper";
@@ -44,5 +45,24 @@ describe("MediaManagerHelper", () => {
         expect(() => normalizeMediaManagerWidgetData("{bad json}", "images")).toThrow(
             "Error assign association-many mediamanager data for images"
         );
+    });
+
+    it("collects media fields for history snapshots", () => {
+        const fields = {
+            images: {config: {type: "mediamanager"}},
+            attachment: {config: {type: "single-file"}},
+            title: {config: {type: "string"}},
+        } as any;
+
+        const data = collectMediaManagerHistoryData(fields, {
+            images: [{id: "file-4"}],
+            attachment: JSON.stringify([{id: "file-5"}]),
+            title: "Dish",
+        });
+
+        expect(data).toEqual({
+            images: [{id: "file-4"}],
+            attachment: [{id: "file-5"}],
+        });
     });
 });

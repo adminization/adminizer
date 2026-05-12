@@ -2,7 +2,12 @@ import {ControllerHelper} from "../helpers/controllerHelper";
 import {RequestProcessor} from "../lib/requestProcessor";
 import {FieldsHelper} from "../helpers/fieldsHelper";
 import {BaseFieldConfig, CreateUpdateConfig} from "../interfaces/adminpanelConfig";
-import {detachMediaManagerField, saveRelationsMediaManager} from "../lib/media-manager/helpers/MediaManagerHelper";
+import {
+    detachMediaManagerField,
+    isMediaManagerFieldConfig,
+    saveRelationsMediaManager,
+    updateCurrentHistoryMediaManagerData
+} from "../lib/media-manager/helpers/MediaManagerHelper";
 import {DataAccessor} from "../lib/DataAccessor";
 import {Adminizer} from "../lib/Adminizer";
 import inertiaAddHelper from "../helpers/inertiaAddHelper";
@@ -55,7 +60,7 @@ export default async function add(req: ReqType, res: ResType) {
                 }
             }
 
-            if (fieldConfigConfig.type === 'mediamanager') {
+            if (isMediaManagerFieldConfig(fieldConfigConfig)) {
                 detachMediaManagerField(reqData, rawReqData, prop);
                 continue;
             }
@@ -95,6 +100,7 @@ export default async function add(req: ReqType, res: ResType) {
 
             // save associations media to json
             await saveRelationsMediaManager(req.adminizer, fields, rawReqData, entity.model.identity, record.id)
+            await updateCurrentHistoryMediaManagerData(req.adminizer, fields, rawReqData, entity.name, record.id)
 
             Adminizer.log.debug(`A new record was created: `, record);
             if (req.body.jsonPopupCatalog) {

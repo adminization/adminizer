@@ -9,6 +9,10 @@ import { isObject } from "../../helpers/JsUtils";
 import { DataAccessor } from "../DataAccessor";
 import { BaseFieldConfig, MediaManagerOptionsField } from "../../interfaces/adminpanelConfig";
 import { setAssociationValues } from "../../helpers/inertiaAddHelper";
+import {
+    isMediaManagerFieldConfig,
+    normalizeMediaManagerWidgetData
+} from "../media-manager/helpers/MediaManagerHelper";
 
 /**
  * Set of model names excluded from history tracking.
@@ -256,12 +260,29 @@ export abstract class AbstractHistoryAdapter {
         let data: Record<string, any> = {};
         for (const field of Object.keys(fields)) {
             const fieldConfigConfig = fields[field].config as BaseFieldConfig;
-            if (fieldConfigConfig.type === 'mediamanager') {
+            if (isMediaManagerFieldConfig(fieldConfigConfig)) {
+                if (!Object.prototype.hasOwnProperty.call(history.data ?? {}, field)) {
+                    continue;
+                }
+
                 const mediaManager = this.adminizer.mediaManagerHandler.get((fieldConfigConfig.options as MediaManagerOptionsField)?.id ?? "default");
                 data[field] = [];
-                if (history.data[field]) {
-                    for (const file of history.data[field]) {
-                        const media = await mediaManager.getFile(file.mimeType, file.id);
+                const files = normalizeMediaManagerWidgetData(history.data[field], field);
+
+                for (const file of files) {
+                    const fileData = file as typeof file & Partial<{ mimeType: string; filename: string; url: string; variants: any[] }>;
+                    if (!fileData?.id) continue;
+
+                    try {
+                        const media = fileData.mimeType
+                            ? await mediaManager.getFile(fileData.mimeType, fileData.id as any)
+                            : null;
+
+                        if (!media) {
+                            data[field].push(fileData);
+                            continue;
+                        }
+
                         data[field].push({
                             id: media.id,
                             mimeType: media.mimeType,
@@ -269,6 +290,8 @@ export abstract class AbstractHistoryAdapter {
                             url: media.url,
                             variants: []
                         });
+                    } catch (_e) {
+                        data[field].push(fileData);
                     }
                 }
 

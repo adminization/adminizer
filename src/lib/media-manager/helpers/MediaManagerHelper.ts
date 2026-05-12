@@ -16,6 +16,10 @@ import {Adminizer} from "../../Adminizer";
 
 type PostParams = Record<string, string | number | boolean | object | string[] | number[] | null>;
 
+export function isMediaManagerFieldConfig(fieldConfig: BaseFieldConfig): boolean {
+    return fieldConfig.type === 'mediamanager' || fieldConfig.type === 'single-file';
+}
+
 export function normalizeMediaManagerWidgetData(
     value: PostParams[string] | undefined,
     prop: string
@@ -82,16 +86,63 @@ export function randomFileName(filenameOrig: string, type: string, prefix: boole
  * @param model
  * @param recordId
  */
-export async function saveRelationsMediaManager(adminizer: Adminizer, fields: Fields, reqData: PostParams, model: string, recordId: number) {
+export async function saveRelationsMediaManager(adminizer: Adminizer, fields: Fields, reqData: PostParams, model: string, recordId: string | number) {
     for (let prop in reqData) {
         let fieldConfigConfig = fields[prop].config as BaseFieldConfig;
         let options = fieldConfigConfig.options as MediaManagerOptionsField;
-        if (fieldConfigConfig.type === 'mediamanager') {
+        if (isMediaManagerFieldConfig(fieldConfigConfig)) {
             const data = normalizeMediaManagerWidgetData(reqData[prop], prop);
             let mediaManager = adminizer.mediaManagerHandler.get(options?.id ?? 'default')
             await mediaManager.setRelations(data, model, recordId, prop)
         }
     }
+}
+
+export function collectMediaManagerHistoryData(fields: Fields, reqData: PostParams): Record<string, MediaManagerWidgetData[]> {
+    const data: Record<string, MediaManagerWidgetData[]> = {};
+
+    for (let prop in reqData) {
+        const field = fields[prop];
+        if (!field) continue;
+
+        const fieldConfigConfig = field.config as BaseFieldConfig;
+        if (!isMediaManagerFieldConfig(fieldConfigConfig)) continue;
+
+        data[prop] = normalizeMediaManagerWidgetData(reqData[prop], prop);
+    }
+
+    return data;
+}
+
+export async function updateCurrentHistoryMediaManagerData(
+    adminizer: Adminizer,
+    fields: Fields,
+    reqData: PostParams,
+    model: string,
+    recordId: string | number
+) {
+    if (!adminizer.config.history?.enabled) return;
+
+    const mediaData = collectMediaManagerHistoryData(fields, reqData);
+    if (!Object.keys(mediaData).length) return;
+
+    const historyModel = adminizer.modelHandler.model.get('historyactionsap');
+    if (!historyModel) return;
+
+    const currentHistory = await historyModel["_findOne"]({
+        where: {
+            modelId: String(recordId),
+            modelName: model.toLowerCase(),
+            isCurrent: true
+        }
+    });
+
+    if (!currentHistory) return;
+
+    await historyModel["_update"](
+        { where: { id: currentHistory.id } },
+        { data: { ...(currentHistory.data ?? {}), ...mediaData } }
+    );
 }
 
 /**
@@ -118,7 +169,7 @@ export async function deleteRelationsMediaManager(adminizer: Adminizer, model: s
     let config = adminizer.config.models[model] as ModelConfig
     for (const key of Object.keys(record[0])) {
         let field = config.fields[key] as BaseFieldConfig
-        if (field && field.type === 'mediamanager') {
+        if (field && isMediaManagerFieldConfig(field)) {
             const option = field.options as MediaManagerOptionsField
             let mediaManager = adminizer.mediaManagerHandler.get(option?.id ?? 'default')
             let emptyData: MediaManagerWidgetData[] = []

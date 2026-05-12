@@ -1,7 +1,7 @@
 import { FilterAP } from "./FilterAP";
 
 /**
- * FilterColumnAP model schema for Waterline/Sequelize
+ * FilterColumnAP model schema
  * Represents column configuration for a filter
  */
 export default {

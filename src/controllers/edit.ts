@@ -80,8 +80,7 @@ export default async function edit(req: ReqType, res: ResType) {
             let fieldConfigConfig = fields[prop].config as BaseFieldConfig;
 
 
-            // delete property from association-many and association if empty
-            // TODO check if adding and deleting associations works for other orm (this code was written for waterline)
+            // Normalize empty association payloads before passing them to the adapter
             if (fields[prop] && fields[prop].model && (fields[prop].model.type === 'association-many' || fields[prop].model.type === 'association')) {
                 if (!reqData[prop] || !(reqData[prop] as string[]).length) {
                     reqData[prop] = fields[prop].model.type === 'association' ? null : [];

@@ -61,7 +61,7 @@ export interface FilterCondition {
 export type FilterVisibility = 'private' | 'public' | 'groups' | 'system';
 
 /**
- * Filter model schema for Waterline/Sequelize
+ * Filter model schema
  */
 export default {
     id: {

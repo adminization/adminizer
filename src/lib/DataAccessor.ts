@@ -74,7 +74,7 @@ export class DataAccessor {
                 return undefined
             }
             
-            // Checks for short type in Waterline: fieldName: 'string'
+            // Supports shorthand model attributes: fieldName: 'string'
             if (typeof modelField === "string") {
                 modelField = {type: modelField};
             }
@@ -390,7 +390,7 @@ export class DataAccessor {
                     }
                 }
 
-                /** Warning: code was not tested, need further processing in waterline (intersects does not support in waterline) */
+                /** Warning: collection relation access is not supported and needs adapter-level processing */
                 if (relation.collection) {
                     Adminizer.log.warn(`Collection relation is not supported and was not tested. You may have an error here: ${JSON.stringify(relation, null, 2)}`)
                     if (relation.collection.toLowerCase() === 'userap') {
@@ -438,7 +438,6 @@ export class DataAccessor {
             }
         }
 
-        // TODO fix types when deleting waterline (temporary decision here)
         let _criteria = criteria as { where?: Record<string, unknown> }
         if (_criteria.where) {
             _criteria.where = {..._criteria.where, ...sanitizedCriteria};

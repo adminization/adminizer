@@ -1,5 +1,4 @@
 import {DataAccessor} from "../DataAccessor";
-import Waterline from "waterline";
 import {formatChanges, sanitizeForDiff} from "../../helpers/diffHelpers";
 import {diff} from "deep-object-diff";
 import { HistoryActionsAP } from "../../models/HistoryActionsAP";
@@ -52,7 +51,6 @@ export abstract class AbstractModel<T> {
         this.identity = identity;
     }
 
-    // TODO Partial<T> should be changed to WaterlineCriteria
     protected abstract _create(data: Partial<T>): Promise<T>;
 
     protected abstract _findOne(criteria: Partial<T>): Promise<T | null>;
@@ -346,7 +344,7 @@ export abstract class AbstractAdapter {
     abstract get models(): Record<string, any>
 
     /** This function should return constant type from any adapter (for adminizer proper work) */
-    abstract getAttributes(modelName: string): Waterline.Attributes;
+    abstract getAttributes(modelName: string): ModelAttributes | undefined;
 
     /** Return full model object */
     abstract getModel(modelName: string): any;

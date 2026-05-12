@@ -1,4 +1,4 @@
-import { faker, tr } from '@faker-js/faker';
+import { faker } from '@faker-js/faker';
 import { generate } from 'password-hash';
 import { UserAP } from '../../src';
 import { Example } from '../models/sequelize/Example';
@@ -19,10 +19,9 @@ export async function seedDatabase(
 
 
   const isSequelize = typeof exampleModel?.bulkCreate === 'function';
-  const isWaterline = typeof exampleModel?.createEach === 'function';
 
-  if (!exampleModel || !userModel || !groupModel || (!isSequelize && !isWaterline)) {
-    throw new Error('Models should support the ORM interface (Sequelize or Waterline)');
+  if (!exampleModel || !userModel || !groupModel || !isSequelize) {
+    throw new Error('Models should support the Sequelize interface');
   }
 
   // ------------------ Groups ------------------ //
@@ -51,16 +50,10 @@ export async function seedDatabase(
   ];
 
   for (const group of groupNames) {
-    const exists = isSequelize
-      ? await groupModel.findOne({ where: { name: group.name } })
-      : await groupModel.find({ name: group.name });
+    const exists = await groupModel.findOne({ where: { name: group.name } });
 
-    if (!exists || (Array.isArray(exists) && exists.length === 0)) {
-      if (isSequelize) {
-        await groupModel.create(group);
-      } else {
-        await groupModel.create(group).fetch();
-      }
+    if (!exists) {
+      await groupModel.create(group);
     }
   }
 
@@ -76,11 +69,9 @@ export async function seedDatabase(
   ];
 
   for (const u of users) {
-    const exists = isSequelize
-      ? await userModel.findOne({ where: { login: u.login } })
-      : await userModel.find({ login: u.login });
+    const exists = await userModel.findOne({ where: { login: u.login } });
 
-    if (!exists || (Array.isArray(exists) && exists.length === 0)) {
+    if (!exists) {
       const userData = {
         login: u.login,
         password: u.password,
@@ -91,35 +82,25 @@ export async function seedDatabase(
         isConfirmed: u.isConfirmed
       };
 
-      const userInstance = isSequelize
-        ? await userModel.create(userData)
-        : await userModel.create(userData).fetch();
+      const userInstance = await userModel.create(userData);
 
 
       // Linking to groups (simplified logic)
       const groupName = u.isAdministrator ? 'Admins' : 'Users';
 
-      const group = isSequelize
-        ? await groupModel.findOne({ where: { name: groupName } })
-        : (await groupModel.find({ name: groupName }))[0];
+      const group = await groupModel.findOne({ where: { name: groupName } });
 
       if (group && group.addUser) {
-        await group.addUser(userInstance); // Sequelize M:N
-      } else if (isWaterline && group && typeof groupModel.addToCollection === 'function') {
-        await groupModel.addToCollection(group.id, 'users', userInstance.id);
+        await group.addUser(userInstance);
       }
     }
   }
 
 
   // ------------------ Example Records ------------------ //
-  const exampleCount = isSequelize
-    ? await exampleModel.count()
-    : await exampleModel.count({});
+  const exampleCount = await exampleModel.count();
 
-  const allUsers: UserAP[] = isSequelize
-    ? await userModel.findAll()
-    : await userModel.find();
+  const allUsers: UserAP[] = await userModel.findAll();
 
     if (exampleCount === 0) {
       // Helper function to get ISO week number (YYYY-Www format)
@@ -134,117 +115,64 @@ export async function seedDatabase(
 
       const fakeExamples = Array.from({ length: count }, () => {
         const randomUser = faker.helpers.arrayElement(allUsers);
-        if(isSequelize) {
-          return {
-            title:         faker.lorem.word(),
-            description:   faker.lorem.paragraph(),
-            disabled_text: faker.lorem.sentence(),
-            sort:          faker.datatype.boolean(),
-            time:          getRandomTime(),
-            number:        faker.number.int(300),
-            color:         faker.color.rgb(),
-            range:         faker.number.int({ min: 10, max: 80 }),
-            date:          faker.date.past(),
-            month:         faker.date.past().toISOString().slice(0, 7),
-            week:          getWeekNumber(faker.date.past()),
-            datetime:      faker.date.recent().toISOString().slice(0, 16),
-            code:          faker.lorem.paragraphs(2),
-            editor:        faker.lorem.paragraphs(3),
-            selectMany:    faker.helpers.arrayElements(['Sone', 'Stwo', 'Sthree', 'Sfour', 'Sfive'], 2),
-            select:        faker.helpers.arrayElement(['decrease', 'increase', 'none']),
-            tui:           faker.lorem.paragraphs(2),
-            datatable:     [
-              { name: faker.commerce.product(), footage: faker.number.int(100), price: faker.number.int(1000) },
-              { name: faker.commerce.product(), footage: faker.number.int(100), price: faker.number.int(1000) }
-            ],
-            json:          { key: faker.lorem.word(), value: faker.lorem.word(), count: faker.number.int(100) },
-            ownerId:       randomUser.id,
-          }
-        } else {
-          return {
-            title:         faker.lorem.word(),
-            description:   faker.lorem.paragraph(),
-            disabled_text: faker.lorem.sentence(),
-            sort:          faker.datatype.boolean(),
-            time:          getRandomTime(),
-            owner:         randomUser.id,
-            ownerId:       randomUser.id,
-            number:        faker.number.int(300),
-            color:         faker.color.rgb(),
-            range:         faker.number.int({ min: 10, max: 80 }),
-            date:          faker.date.past(),
-            month:         faker.date.past().toISOString().slice(0, 7),
-            week:          getWeekNumber(faker.date.past()),
-            datetime:      faker.date.recent().toISOString().slice(0, 16),
-            code:          faker.lorem.paragraphs(2),
-            editor:        faker.lorem.paragraphs(3),
-            selectMany:    faker.helpers.arrayElements(['Sone', 'Stwo', 'Sthree', 'Sfour', 'Sfive'], 2),
-            select:        faker.helpers.arrayElement(['decrease', 'increase', 'none']),
-            tui:           faker.lorem.paragraphs(2),
-            datatable:     [
-              { name: faker.commerce.product(), footage: faker.number.int(100), price: faker.number.int(1000) },
-              { name: faker.commerce.product(), footage: faker.number.int(100), price: faker.number.int(1000) }
-            ],
-            json:          { key: faker.lorem.word(), value: faker.lorem.word(), count: faker.number.int(100) },
-          }
+        return {
+          title:         faker.lorem.word(),
+          description:   faker.lorem.paragraph(),
+          disabled_text: faker.lorem.sentence(),
+          sort:          faker.datatype.boolean(),
+          time:          getRandomTime(),
+          number:        faker.number.int(300),
+          color:         faker.color.rgb(),
+          range:         faker.number.int({ min: 10, max: 80 }),
+          date:          faker.date.past(),
+          month:         faker.date.past().toISOString().slice(0, 7),
+          week:          getWeekNumber(faker.date.past()),
+          datetime:      faker.date.recent().toISOString().slice(0, 16),
+          code:          faker.lorem.paragraphs(2),
+          editor:        faker.lorem.paragraphs(3),
+          selectMany:    faker.helpers.arrayElements(['Sone', 'Stwo', 'Sthree', 'Sfour', 'Sfive'], 2),
+          select:        faker.helpers.arrayElement(['decrease', 'increase', 'none']),
+          tui:           faker.lorem.paragraphs(2),
+          datatable:     [
+            { name: faker.commerce.product(), footage: faker.number.int(100), price: faker.number.int(1000) },
+            { name: faker.commerce.product(), footage: faker.number.int(100), price: faker.number.int(1000) }
+          ],
+          json:          { key: faker.lorem.word(), value: faker.lorem.word(), count: faker.number.int(100) },
+          ownerId:       randomUser.id,
         }
       }
   );
 
-    if (isSequelize) {
-      await exampleModel.bulkCreate(fakeExamples);
-    } else {
-      await exampleModel.createEach(fakeExamples).fetch();
-    }
+    await exampleModel.bulkCreate(fakeExamples);
   }
 
     // ------------------ Tests ------------------ //
-    const testCount = isSequelize
-    ? await testModel.count()
-    : await testModel.count({});
+    const testCount = await testModel.count();
 
   if (testCount === 0) {
-    const allUsers: UserAP[] = isSequelize
-      ? await userModel.findAll()
-      : await userModel.find();
+    const allUsers: UserAP[] = await userModel.findAll();
 
-    const allExamples: Example[] = isSequelize
-      ? await exampleModel.findAll()
-      : await exampleModel.find();
+    const allExamples: Example[] = await exampleModel.findAll();
 
     const fakeTests = Array.from({ length: count }, () => {
       const randomUser = faker.helpers.arrayElement(allUsers);
       const randomExample = faker.helpers.arrayElement(allExamples);
 
-      if(isSequelize) {
-        return {
-          title: faker.lorem.words(3),
-          ownerId: randomUser.id,
-          exampleId: randomExample?.id ?? null,
-        };
-      } else {
-        return {
-          title: faker.lorem.words(3),
-          owner: randomUser.id,
-          example: randomExample?.id ?? null,
-        }
-      }
+      return {
+        title: faker.lorem.words(3),
+        ownerId: randomUser.id,
+        exampleId: randomExample?.id ?? null,
+      };
     });
 
-    if (isSequelize) {
-      await testModel.bulkCreate(fakeTests);
-    } else {
-      await testModel.createEach(fakeTests).fetch();
-    }
+    await testModel.bulkCreate(fakeTests);
   }
 
 
     // ------------------ JsonSchemas ------------------ //
   const jsonSchemaModel = collections.jsonschema ?? collections.JsonSchema;
 
-  const schemaCount = isSequelize
-    ? await jsonSchemaModel.count()
-    : await jsonSchemaModel.count({});
+  const schemaCount = await jsonSchemaModel.count();
 
   if (schemaCount === 0) {
     const fakeSchemas = Array.from({ length: 3 }, () => {
@@ -262,10 +190,6 @@ export async function seedDatabase(
       return schemaData;
     });
 
-    if (isSequelize) {
-      await jsonSchemaModel.bulkCreate(fakeSchemas);
-    } else {
-      await jsonSchemaModel.createEach(fakeSchemas).fetch();
-    }
+    await jsonSchemaModel.bulkCreate(fakeSchemas);
   }
 }

@@ -5,14 +5,6 @@ dotenv.config();
 import { Adminizer } from "../dist";
 import { bindNavigation } from "../dist";
 import http from 'http';
-import { WaterlineAdapter, WaterlineModel } from "../dist/lib/model/adapter/waterline";
-import Waterline from "waterline";
-import waterlineConfig from "./waterlineConfig";
-import ExampleWaterline from "./models/Example";
-import TestWaterline from "./models/Test";
-import TestCatalogWaterline from "./models/TestCatalog";
-import JsonSchemaWaterline from "./models/JsonSchema";
-import CategoryWaterline from "./models/Category";
 import adminpanelConfig from "./adminizerConfig";
 import { AdminpanelConfig } from "../dist/interfaces/adminpanelConfig";
 import { sendNotificationsWithDelay } from "./helpers/notifications";
@@ -21,10 +13,8 @@ import cors from 'cors';
 
 import { ReactQuill } from "../modules/controls/wysiwyg/ReactQuill";
 
-// Waterline imports
-import { Sequelize } from "sequelize-typescript";
-
 // Sequelize imports
+import { Sequelize } from "sequelize-typescript";
 import fs from 'fs/promises';
 import path from 'path';
 import { Example as ExampleSequelize } from "./models/sequelize/Example";
@@ -58,41 +48,16 @@ process.env.AP_PASSWORD_SALT = "FIXTURE"
 // Clean temp folder
 if (!process.env.NO_SEED_DATA || process.env.CLEAN_TMP) await cleanTempFolder();
 process.env.JWT_SECRET = "fixture-jwt-secret"
-// https://sailsjs.com/documentation/concepts/models-and-orm/standalone-waterline-usage
 
 
 const ormType = process.env.ORM ?? "sequelize";
 let adminizer: Adminizer;
 
-if (ormType === "waterline") {
-    const orm = new Waterline();
-    await WaterlineAdapter.registerSystemModels(orm);
-    orm.registerModel(ExampleWaterline);
-    orm.registerModel(TestWaterline);
-    orm.registerModel(JsonSchemaWaterline);
-    orm.registerModel(CategoryWaterline);
-    orm.registerModel(TestCatalogWaterline);
+if (ormType !== "sequelize") {
+    throw new Error(`Unsupported fixture ORM "${ormType}". Supported ORM: sequelize`);
+}
 
-    const ontology = await new Promise<any>((resolve, reject) => {
-        orm.initialize(waterlineConfig as any, (err, ontology) => {
-            if (err) return reject(err);
-            resolve(ontology);
-        });
-    });
-
-    const waterlineAdapter = new WaterlineAdapter({ orm, ontology });
-    adminizer = new Adminizer([waterlineAdapter]);
-    await ormSharedFixtureLift(adminizer);
-
-    if (!process.env.NO_SEED_DATA) {
-        try {
-            await seedDatabase(waterlineAdapter.models, 13);
-            console.log("Database seeded with random data!");
-        } catch (seedErr) {
-            console.error("Error during database seeding:", seedErr);
-        }
-    }
-} else {
+{
     const tmpDir = path.join(process.cwd(), ".tmp");
     const dbPath = path.join(tmpDir, "adminizer_fixture.sqlite");
     const orm = new Sequelize({
@@ -143,7 +108,7 @@ async function cleanTempFolder() {
 }
 
 /**
- * Shared method for all orm's
+ * Shared fixture setup
  * @param adminizer
  */
 async function ormSharedFixtureLift(adminizer: Adminizer) {

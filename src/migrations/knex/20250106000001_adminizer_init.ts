@@ -147,7 +147,7 @@ export async function up(knex: Knex): Promise<void> {
   });
 
   // M:N join: GroupAP <-> UserAP via "groupap_users__userap_groups"
-  // Waterline naming convention: {model1}_{collection1}__{model2}_{collection2}
+  // Historical join table name: {model1}_{collection1}__{model2}_{collection2}
   // GroupAP.users -> UserAP.groups => groupap_users__userap_groups
   // Column naming: {model}_{collection} references the TARGET model
   await knex.schema.createTable("groupap_users__userap_groups", (table) => {

@@ -109,7 +109,14 @@ function resolveType(type: any): Attribute["type"] {
     const sqlType = typeof type.toString === "function"
         ? type.toString().toLowerCase()
         : "";
-    if (sqlType.includes("string") || sqlType.includes("uuid")) return "string";
+    if (
+        sqlType.includes("string") ||
+        sqlType.includes("uuid") ||
+        sqlType.includes("char") ||
+        sqlType.includes("text")
+    ) {
+        return "string";
+    }
     // tinyint(1) is used by MySQL/MariaDB for BOOLEAN
     if (sqlType.includes("bool") || sqlType === "tinyint(1)") return "boolean";
     if (sqlType.includes("int") || sqlType.includes("float") || sqlType.includes("decimal")) return "number";
@@ -118,7 +125,7 @@ function resolveType(type: any): Attribute["type"] {
     return "ref";
 }
 
-export function mapSequelizeToWaterline(model: ModelStatic<any>): Record<string, Attribute> {
+export function mapSequelizeToAdminizerAttributes(model: ModelStatic<any>): Record<string, Attribute> {
     const result: Record<string, Attribute> = {};
 
 
@@ -214,7 +221,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
     constructor(modelName: string, model: ModelStatic<any>) {
         super(
             modelName,
-            mapSequelizeToWaterline(model),
+            mapSequelizeToAdminizerAttributes(model),
             model.primaryKeyAttribute,
             model.name
         );
@@ -319,7 +326,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                                desc.includes('startsWith') || desc.includes('endsWith') || desc.includes('is') || desc.includes('not');
                     }
                     
-                    // Check string operators (legacy Waterline format)
+                    // Check string operators used by Adminizer's adapter-neutral criteria format
                     return op === '$gt' || op === '$gte' || op === '$lt' || op === '$lte' ||
                            op === '$eq' || op === '$ne' || op === '$in' || op === '$notIn' ||
                            op === '$like' || op === '$iLike' || op === '$between' ||
@@ -336,7 +343,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                     continue;
                 }
 
-                // Handle operator objects like {contains: 'val'} (legacy Waterline format)
+                // Handle operator objects like {contains: 'val'} from Adminizer's criteria format
                 for (const [op, val] of Object.entries(value)) {
                     if (val === undefined || val === null) continue;
 
@@ -422,23 +429,23 @@ export class SequelizeModel<T> extends AbstractModel<T> {
     }
 
 
-    _convertWaterlineCriteriaToSequelizeOptions(criteria: any): {
+    _convertAdminizerCriteriaToSequelizeOptions(criteria: any): {
         where?: any;
         limit?: number;
         offset?: number;
         order?: any[];
     } {
-        // For Sequelize: Extract Waterline pagination/ordering params.
+        // For Sequelize: extract adapter-neutral pagination and ordering params.
         // Everything else is WHERE criteria.
-        // 'sort' as string = Waterline ordering ("field direction") — goes to ORDER BY
+        // 'sort' as string = ordering ("field direction") — goes to ORDER BY
         // 'sort' as boolean/object = model field — goes to WHERE
         const criteriaSortValue = 'sort' in criteria ? (criteria as any).sort : undefined;
-        const isWaterlineSort = typeof criteriaSortValue === 'string';
+        const isOrderingSort = typeof criteriaSortValue === 'string';
 
-        const {where: nestedWhere, skip, limit, sort: _wSort, select, ...rest} = criteria;
+        const {where: nestedWhere, skip, limit, sort: criteriaSort, select, ...rest} = criteria;
 
-        // If 'sort' is a model field (not a Waterline ordering string), put it back
-        if (!isWaterlineSort && criteriaSortValue !== undefined) {
+        // If 'sort' is a model field (not an ordering string), put it back
+        if (!isOrderingSort && criteriaSortValue !== undefined) {
             rest.sort = criteriaSortValue;
         }
 
@@ -450,9 +457,6 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
         // If there's an explicit 'where' key, use it. Otherwise use rest (field conditions).
         const rawWhere = hasNestedWhereKeys ? nestedWhere : rest;
-
-        // console.debug("WATERLINE CRITERIA: using rawWhere =", rawWhere);
-
 
         const where = this._convertCriteriaToSequelize(rawWhere);
 
@@ -466,8 +470,8 @@ export class SequelizeModel<T> extends AbstractModel<T> {
             result.limit = limit;
             // console.debug("→ limit =", limit);
         }
-        if (typeof _wSort === "string") {
-            const [field, dir] = _wSort.trim().split(/\s+/);
+        if (typeof criteriaSort === "string") {
+            const [field, dir] = criteriaSort.trim().split(/\s+/);
             result.order = [[field, dir?.toUpperCase() === "DESC" ? "DESC" : "ASC"]];
             // console.debug("→ order =", result.order);
         }
@@ -591,7 +595,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
     protected async _findOne(criteria: Partial<T>): Promise<T | null> {
         // console.debug(">> _findOne: input criteria:", criteria);
 
-        const {where} = this._convertWaterlineCriteriaToSequelizeOptions(criteria);
+        const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
         const includes = this._buildIncludes();
         // console.debug(">> _findOne: converted where:", where);
         // console.debug(">> _findOne: includes:", includes);
@@ -623,7 +627,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         const assocNames = Object.keys(this.model.associations);
         // console.debug(">> _find: input criteria:", criteria, "options:", options);
 
-        const {where, limit, offset, order} = this._convertWaterlineCriteriaToSequelizeOptions(criteria);
+        const {where, limit, offset, order} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
         const hasRelationPathCondition = this._hasRelationPathCondition(where);
         const usedRelationAliases = hasRelationPathCondition
             ? this._extractRelationAliasesFromWhere(where)
@@ -680,7 +684,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
     /**
      * Public method for raw SQL where clauses (Sequelize.literal support)
-     * Bypasses Waterline criteria conversion for direct Sequelize usage
+     * Bypasses Adminizer criteria conversion for direct Sequelize usage
      */
     async findWithRawWhere(
         where: any,
@@ -719,7 +723,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
     // --- UPDATE ONE ---
     protected async _updateOne(criteria: Partial<T>, data: Partial<T>): Promise<T | null> {
-        const {where} = this._convertWaterlineCriteriaToSequelizeOptions(criteria);
+        const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
 
         const record = await this.model.findOne({where});
         if (!record) return null;
@@ -753,7 +757,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
     // --- UPDATE MANY ---
     protected async _update(criteria: Partial<T>, data: Partial<T>): Promise<T[]> {
-        const {where} = this._convertWaterlineCriteriaToSequelizeOptions(criteria);
+        const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
 
         const assocNames = Object.keys(this.model.associations);
         const plainData: Record<string, any> = {};
@@ -793,7 +797,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
     // --- DESTROY ONE ---
     protected async _destroyOne(criteria: Partial<T>): Promise<T | null> {
-        const {where} = this._convertWaterlineCriteriaToSequelizeOptions(criteria);
+        const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
         const record = await this.model.findOne({where});
 
         if (!record) return null;
@@ -835,7 +839,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
     // --- DESTROY MANY ---
     protected async _destroy(criteria: Partial<T>): Promise<T[]> {
-        const {where} = this._convertWaterlineCriteriaToSequelizeOptions(criteria);
+        const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
 
         const records = await this.model.findAll({where});
         const assocNames = Object.keys(this.model.associations);
@@ -879,7 +883,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
     // --- COUNT ---
     protected async _count(criteria: Partial<T> = {}): Promise<number> {
-        const {where} = this._convertWaterlineCriteriaToSequelizeOptions(criteria);
+        const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
         const assocNames = Object.keys(this.model.associations);
         const include = assocNames.map((association) => ({ association }));
 
@@ -1062,7 +1066,7 @@ export class SequelizeAdapter extends AbstractAdapter {
     }
 }
 
-/**Generation of the SEQUELIZE model from the definition, analogue of Waterinecollection.extenD*/
+/** Generation of the Sequelize model from Adminizer's model definition */
 function generateSequelizeModel(
     sequelize: Sequelize,
     modelName: string,

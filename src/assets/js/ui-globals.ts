@@ -189,6 +189,12 @@ import { Slider } from '@/components/ui/slider.tsx';
 import { Toaster } from '@/components/ui/sonner.tsx';
 import { Switch } from '@/components/ui/switch.tsx';
 import {
+    Tabs,
+    TabsList,
+    TabsTrigger,
+    TabsContent,
+} from '@/components/ui/tabs.tsx';
+import {
     Table,
     TableHeader,
     TableBody,
@@ -388,6 +394,10 @@ export function registerUIComponents(): void {
         Slider,
         Toaster,
         Switch,
+        Tabs,
+        TabsList,
+        TabsTrigger,
+        TabsContent,
         Table,
         TableHeader,
         TableBody,
@@ -412,4 +422,3 @@ export function registerUIComponents(): void {
         MultiSelect
     });
 }
-

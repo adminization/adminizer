@@ -1,5 +1,5 @@
 import {router, usePage} from '@inertiajs/react';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {HeaderConfig} from './types';
 
 interface UseListTableOptions {
@@ -12,8 +12,12 @@ export interface QueryColumn {
     value: string;
 }
 
-export function useListTable({header, initialCount = '5'}: UseListTableOptions) {
+export function useListTable({header, initialCount = String(header.defaultPageSize)}: UseListTableOptions) {
     const page = usePage();
+    const countOptions = useMemo(() => header.pageSizeOptions.map(String), [header.pageSizeOptions]);
+    const normalizeCount = useCallback((value: string | null) => (
+        value && countOptions.includes(value) ? value : initialCount
+    ), [countOptions, initialCount]);
     const [loading, setLoading] = useState(false);
     const [searchValue, setSearchValue] = useState('');
     const [showSearch, setShowSearch] = useState(false);
@@ -31,7 +35,7 @@ export function useListTable({header, initialCount = '5'}: UseListTableOptions) 
         setSearchValue(searchParams.get('globalSearch') || '');
         setShowSearch(!!searchParams.get('globalSearch'));
         setCurrentPage(parseInt(searchParams.get('page') || '1'));
-        setCount(searchParams.get('count') || initialCount);
+        setCount(normalizeCount(searchParams.get('count')));
         setSortColumn(searchParams.get('column') || '1');
         setSortDirection(searchParams.get('direction') || 'desc');
 
@@ -41,7 +45,7 @@ export function useListTable({header, initialCount = '5'}: UseListTableOptions) 
             key: col,
             value: searchValues[i]
         }));
-    }, [initialCount]);  // ← Только при монтировании
+    }, [normalizeCount]);
 
     useEffect(() => {
         document.body.removeAttribute('style');
@@ -130,14 +134,15 @@ export function useListTable({header, initialCount = '5'}: UseListTableOptions) 
     );
 
     const changeCount = useCallback((newCount: string) => {
-        setCount(newCount);
+        const normalizedCount = normalizeCount(newCount);
+        setCount(normalizedCount);
         setCurrentPage(1);
         // Сохраняем filterId при изменении count
         const searchParams = new URLSearchParams(window.location.search);
         const filterId = searchParams.get('filterId');
         const filterIdParam = filterId ? `&filterId=${filterId}` : '';
-        navigate(`count=${newCount}&page=1${filterIdParam}`);
-    }, [navigate]);
+        navigate(`count=${normalizedCount}&page=1${filterIdParam}`);
+    }, [navigate, normalizeCount]);
 
     const handlePageChange = useCallback((value: number) => {
         setCurrentPage(value);

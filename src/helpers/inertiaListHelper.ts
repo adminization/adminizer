@@ -26,6 +26,8 @@ interface listProps extends Record<string | number | symbol, unknown> {
     inlineActions: Actions[],
     filtersEnabled?: boolean,
     activeFilterName?: string
+    defaultPageSize: number
+    pageSizeOptions: number[]
 }
 
 export function inertiaListHelper(entity: Entity, req: ReqType, fields: Fields, activeFilterName?: string) {
@@ -59,6 +61,8 @@ export function inertiaListHelper(entity: Entity, req: ReqType, fields: Fields, 
         notFoundContent: req.i18n.__('No records found !'),
         searchBtn: req.i18n.__('Search'),
         resetBtn: req.i18n.__('Reset'),
+        defaultPageSize: req.adminizer.config.list?.defaultPageSize ?? 50,
+        pageSizeOptions: [5, 20, 50],
     } as listProps
 
     if (entity.config.add && req.adminizer.accessRightsHelper.hasPermission(`create-${entity.name}-model`, req.user, `CRUD create on model "${entity.name}"`)) {

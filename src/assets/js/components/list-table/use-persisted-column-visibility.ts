@@ -40,9 +40,40 @@ function normalizeVisibilityState(
     return normalized;
 }
 
-export function usePersistedColumnVisibility(modelName: string, columns: ColumnDef<any>[]) {
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+function readVisibilityState(
+    storageKey: string,
+    allColumnIds: Set<string>,
+    lockedColumnIds: Set<string>
+): VisibilityState {
+    if (typeof window === 'undefined') {
+        return {};
+    }
 
+    try {
+        const raw = window.localStorage.getItem(storageKey);
+        if (!raw) {
+            return {};
+        }
+
+        return normalizeVisibilityState(JSON.parse(raw), allColumnIds, lockedColumnIds);
+    } catch {
+        return {};
+    }
+}
+
+function writeVisibilityState(storageKey: string, state: VisibilityState) {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    try {
+        window.localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch {
+        // Ignore unavailable storage, for example in restricted browser contexts.
+    }
+}
+
+export function usePersistedColumnVisibility(modelName: string, columns: ColumnDef<any>[]) {
     const storageKey = useMemo(
         () => `adminizer:list:${modelName}:columns:${STORAGE_VERSION}`,
         [modelName]
@@ -72,41 +103,22 @@ export function usePersistedColumnVisibility(modelName: string, columns: ColumnD
         return ids;
     }, [columns]);
 
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => (
+        readVisibilityState(storageKey, allColumnIds, lockedColumnIds)
+    ));
+
     useEffect(() => {
-        if (typeof window === 'undefined') {
-            return;
-        }
-
-        try {
-            const raw = window.localStorage.getItem(storageKey);
-            if (!raw) {
-                setColumnVisibility({});
-                return;
-            }
-
-            const parsed = JSON.parse(raw);
-            const normalized = normalizeVisibilityState(parsed, allColumnIds, lockedColumnIds);
-            setColumnVisibility(normalized);
-        } catch {
-            setColumnVisibility({});
-        }
+        setColumnVisibility(readVisibilityState(storageKey, allColumnIds, lockedColumnIds));
     }, [storageKey, allColumnIds, lockedColumnIds]);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') {
-            return;
-        }
-
-        const normalized = normalizeVisibilityState(columnVisibility, allColumnIds, lockedColumnIds);
-        window.localStorage.setItem(storageKey, JSON.stringify(normalized));
-    }, [columnVisibility, storageKey, allColumnIds, lockedColumnIds]);
 
     const handleColumnVisibilityChange = useCallback((updater: Updater<VisibilityState>) => {
         setColumnVisibility((prev) => {
             const next = typeof updater === 'function' ? updater(prev) : updater;
-            return normalizeVisibilityState(next, allColumnIds, lockedColumnIds);
+            const normalized = normalizeVisibilityState(next, allColumnIds, lockedColumnIds);
+            writeVisibilityState(storageKey, normalized);
+            return normalized;
         });
-    }, [allColumnIds, lockedColumnIds]);
+    }, [allColumnIds, lockedColumnIds, storageKey]);
 
     return {
         columnVisibility,

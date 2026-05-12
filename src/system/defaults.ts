@@ -14,6 +14,10 @@ let adminpanelConfig: AdminpanelConfig = {
     /** Default route prefix */
     routePrefix: '/adminizer',
 
+    list: {
+        defaultPageSize: 50
+    },
+
     /**
      * Name of model identifier field
      */

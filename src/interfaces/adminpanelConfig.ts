@@ -67,6 +67,7 @@ type SetFunction = (slug: string, key: string, data: any) => Promise<void>;
 type GetFunction = (slug: string, key: string) => Promise<any>;
 
 export type ActionType = "list" | "edit" | "add" | "remove" | "view"
+export type ListPageSize = 5 | 20 | 50
 
 interface DashboardConfig {
     autoloadWidgetsPath: string
@@ -82,6 +83,13 @@ interface DashboardConfig {
 // TODO fields that can be both object and boolean should be divided into main field and "fieldnameEnable" - type boolean
 export interface AdminpanelConfig {
     routePrefix: string
+    list?: {
+        /**
+         * Default records count per list page.
+         * @default 50
+         */
+        defaultPageSize?: ListPageSize
+    }
     /**
      * Custom favicon URL for admin pages.
      * - absolute URL is used as-is (`https://...`, `//...`, `data:...`)

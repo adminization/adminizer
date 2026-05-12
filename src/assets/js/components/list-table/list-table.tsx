@@ -20,6 +20,7 @@ const ListTable = () => {
     const header = page.props.header;
     const customColumns = page.props.customColumns;
     const {t} = useFilterTranslations(header.entity.name);
+    const pageSizeOptions = header.pageSizeOptions.map(String);
 
     // Store table data in state for inline updates
     const [tableData, setTableData] = useState(initialData.data);
@@ -166,38 +167,43 @@ const ListTable = () => {
                     onGlobalSearch={handleGlobalSearch}
                     handleSearch={handleSearch}
                     columnVisibilityLabel={t('Columns')}
-                />
-                <div className="mt-4 flex flex-wrap justify-center md:justify-between gap-4 items-end">
-                    <div
-                        className="grid grid-cols-2 md:grid-cols-1 gap-4 items-center justify-items-center md:justify-items-normal">
-                        <p className="text-sm text-foreground/70">
-                            Show {pagination.from} - {pagination.to} of {pagination.total}
-                        </p>
-                        <div className="max-w-fit">
-                            <Select onValueChange={(value) => changeCount(value)} value={count}>
-                                <SelectTrigger className="w-full cursor-pointer">
-                                    <SelectValue placeholder={count}/>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {['5', '10', '50'].map((option) => (
-                                        <SelectItem value={option} key={option}>
-                                            {option}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                    footer={(renderColumnVisibilityControl) => (
+                        <div className="mt-4 flex flex-wrap justify-center md:justify-between gap-4 items-end">
+                            <div
+                                className="grid grid-cols-2 md:grid-cols-1 gap-4 items-center justify-items-center md:justify-items-normal">
+                                <p className="text-sm text-foreground/70">
+                                    Show {pagination.from} - {pagination.to} of {pagination.total}
+                                </p>
+                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                                    {renderColumnVisibilityControl({side: 'top'})}
+                                    <div className="max-w-fit">
+                                        <Select onValueChange={(value) => changeCount(value)} value={count}>
+                                            <SelectTrigger className="w-full cursor-pointer">
+                                                <SelectValue placeholder={count}/>
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {pageSizeOptions.map((option) => (
+                                                    <SelectItem value={option} key={option}>
+                                                        {option}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                {tableData.length > 0 && (
+                                    <PaginationRender
+                                        pagination={pagination}
+                                        pageChange={handlePageChange}
+                                        currentPage={currentPage}
+                                    />
+                                )}
+                            </div>
                         </div>
-                    </div>
-                    <div>
-                        {tableData.length > 0 && (
-                            <PaginationRender
-                                pagination={pagination}
-                                pageChange={handlePageChange}
-                                currentPage={currentPage}
-                            />
-                        )}
-                    </div>
-                </div>
+                    )}
+                />
             </div>
         </>
     );

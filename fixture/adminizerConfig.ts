@@ -484,6 +484,9 @@ const models: AdminpanelConfig["models"] = {
 }
 
 const config: AdminpanelConfig = {
+    list: {
+        defaultPageSize: 5
+    },
     filters: {
         enabled: true
     },

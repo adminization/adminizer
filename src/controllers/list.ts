@@ -24,8 +24,9 @@ export default async function list(req: ReqType, res: ResType) {
     const i18nPage = getUiTranslations(req, FILTER_UI_TRANSLATION_KEYS);
 
     // Parse pagination
+    const defaultPageSize = req.adminizer.config.list?.defaultPageSize ?? 50;
     const page = req.query.page ? parseInt(req.query.page.toString(), 10) : 1;
-    const limit = req.query.count ? parseInt(req.query.count.toString(), 10) : 5;
+    const limit = req.query.count ? parseInt(req.query.count.toString(), 10) : defaultPageSize;
 
     // Parse sorting
     const orderColumn = req.query.column ? req.query.column.toString() : undefined;

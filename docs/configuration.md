@@ -73,6 +73,22 @@ Admin panel configuration consist of this options:
 | `identifierField` | Default identifier field into models. This field will be used as identifier. Default: `id`
 | `models`       | Configuration for models. Read below...
 | `showORMtime`     | Set `true` for enable showing fields createdAt and updatedAt in edit and add sections
+
+### List defaults
+
+Use the global `list.defaultPageSize` option to set how many records are shown on model list pages by default. Supported values are `5`, `20`, and `50`; the default value is `50`.
+
+```typescript
+const config: AdminizerConfig = {
+  list: {
+    defaultPageSize: 20,
+  },
+  models: {
+    // ...
+  },
+};
+```
+
 ## Models
 
 Admin panel divided into `models` and this is a main part of configuration.

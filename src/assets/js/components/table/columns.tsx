@@ -5,7 +5,6 @@ import {ArrowDown, ArrowUp, ArrowUpDown} from "lucide-react";
 import {Button} from "@/components/ui/button.tsx";
 import {Icon} from "@/components/icon.tsx";
 import {Columns} from "@/types";
-import {simpleSanitizeHtml} from "@/lib/utils.ts";
 import {InlineEditableCell} from "@/components/table/inline-editable-cell";
 
 export function useTableColumns(

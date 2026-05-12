@@ -1,5 +1,7 @@
 import {SharedData} from '@/types';
 
+export type ListPageSize = 5 | 20 | 50;
+
 export interface Action {
     id: string;
     title: string;
@@ -44,12 +46,15 @@ export interface HeaderConfig {
         icon?: string;
         color?: string;
     };
+    defaultPageSize: ListPageSize;
+    pageSizeOptions: ListPageSize[];
 }
 
 export interface ListTableData {
     data: any[];
     recordsTotal: number;
     recordsFiltered: number;
+    page: number;
 }
 
 export interface FilterColumnConfig {

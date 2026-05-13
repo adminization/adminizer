@@ -40,7 +40,7 @@ export class I18n {
     static resMethods: Array<keyof I18n> = ["__", "__n", "getLocale", "isPreferredLocale"];
 
     constructor(options: I18nOptions = {}) {
-        this.devMode = process.env.VITE_ENV === "dev";
+        this.devMode = process.env.ADMINIZER_ENV === "dev";
 
         this.defaultLocale = options.defaultLocale || "en";
         const runtimeDefaultTranslationsPath = path.resolve(import.meta.dirname, "../translations");

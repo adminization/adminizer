@@ -1,5 +1,5 @@
 import { Widget, WidgetLayoutItem } from "@/types";
-import { apiHttp } from "@/lib/http-client";
+import { adminApi } from "@/lib/admin-api";
 
 export interface WidgetsLayouts {
     lg: WidgetLayoutItem[],
@@ -40,7 +40,7 @@ export async function initializeWidgets(): Promise<{
             }
         }
 
-        const widgetsDBResponse = await apiHttp.get<{ widgetsDB?: { widgets?: Widget[]; layout?: WidgetsLayouts; defaultWidgets?: string[] } }>(`${window.routePrefix}/widgets-get-all-db`);
+        const widgetsDBResponse = await adminApi.get<{ widgetsDB?: { widgets?: Widget[]; layout?: WidgetsLayouts; defaultWidgets?: string[] } }>(`${window.routePrefix}/widgets-get-all-db`);
         let widgetsDB = widgetsDBResponse.data?.widgetsDB?.widgets as Widget[] ?? [];
         let layoutDB = widgetsDBResponse.data?.widgetsDB?.layout ?? {
             lg: [],
@@ -51,7 +51,7 @@ export async function initializeWidgets(): Promise<{
         };
         const defaultWidgetIds = widgetsDBResponse.data?.widgetsDB?.defaultWidgets as string[] ?? [];
 
-        const widgetsResponse = await apiHttp.get<{ widgets: Widget[] }>(`${window.routePrefix}/widgets-get-all`);
+        const widgetsResponse = await adminApi.get<{ widgets: Widget[] }>(`${window.routePrefix}/widgets-get-all`);
         const allWidgets = widgetsResponse.data.widgets as Widget[];
 
         // Check if user has saved widgets in database (no defaultWidgetIds means user has saved widgets)

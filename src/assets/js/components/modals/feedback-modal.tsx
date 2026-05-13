@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, memo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { usePage } from '@inertiajs/react';
 import { MessageSquarePlus, Paperclip, X, Loader2, CheckCircle2 } from 'lucide-react';
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import {
     DialogStack,
     DialogStackTrigger,
@@ -91,7 +91,7 @@ const FeedbackForm = memo(({ routePrefix, triggerLabel, placeholder, t, onClose 
         files.forEach((f) => form.append('files', f));
 
         try {
-            await apiHttp.post(`${routePrefix}/api/feedback`, form);
+            await adminApi.post(`${routePrefix}/api/feedback`, form);
             setSuccess(true);
         } catch (err: unknown) {
             const msg = getErrorMessage(err, t('Internal server error'));

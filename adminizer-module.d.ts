@@ -12,7 +12,6 @@
  */
 
 import type { FC, ReactNode, ComponentProps, RefObject } from 'react';
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // ---------------------------------------------------------------------------
 // Sonner toast API (subset exposed via window.sonner)
@@ -41,25 +40,52 @@ interface SonnerToast {
 // adminApi — typed HTTP client (mirrors src/assets/js/lib/admin-api.ts)
 // ---------------------------------------------------------------------------
 
+type QueryParams = Record<string, unknown>;
+
+interface HttpRequestOptions {
+    headers?: Record<string, string | number | boolean | null | undefined>;
+    params?: QueryParams;
+    signal?: AbortSignal;
+    responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text';
+}
+
+interface HttpResponse<T = unknown> {
+    data: T;
+    status: number;
+    headers: Record<string, string>;
+}
+
 /**
  * Typed HTTP client for backend calls.
  *
  * Always sends no-cache headers and appends `_ts` query param to bust caches.
- * Throws a human-readable error if the session expired and server returned HTML.
+ * Use `*Json` methods when the endpoint must return JSON; they throw a
+ * human-readable error if the session expired and server returned HTML.
  *
  * @example
  * const { data } = await adminApi.getJson<{ items: Item[] }>('/admin/api/items');
  * await adminApi.postJson('/admin/api/items', { name: 'New item' });
  */
 interface AdminApi {
-    /** GET request, returns typed AxiosResponse */
-    getJson<T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>>;
-    /** POST request with JSON body */
-    postJson<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>>;
-    /** PUT request with JSON body */
-    putJson<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>>;
-    /** DELETE request */
-    deleteJson<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>>;
+    get<T>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+    post<T>(url: string, data?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+    put<T>(url: string, data?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+    patch<T>(url: string, data?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+    delete<T>(url: string, data?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+    getJson<T>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+    postJson<T>(url: string, data?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+    putJson<T>(url: string, data?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+    patchJson<T>(url: string, data?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+    deleteJson<T>(url: string, data?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+}
+
+interface AxiosCompat {
+    get<T = unknown>(url: string, config?: HttpRequestOptions): Promise<HttpResponse<T>>;
+    post<T = unknown>(url: string, data?: unknown, config?: HttpRequestOptions): Promise<HttpResponse<T>>;
+    put<T = unknown>(url: string, data?: unknown, config?: HttpRequestOptions): Promise<HttpResponse<T>>;
+    patch<T = unknown>(url: string, data?: unknown, config?: HttpRequestOptions): Promise<HttpResponse<T>>;
+    delete<T = unknown>(url: string, config?: HttpRequestOptions & { data?: unknown }): Promise<HttpResponse<T>>;
+    isAxiosError(error: unknown): boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -206,8 +232,9 @@ declare global {
         routePrefix: string;
 
         /**
-         * Typed HTTP client. Use instead of raw `window.axios` for backend calls.
-         * Adds no-cache headers, cache-buster param, and throws on HTML responses.
+         * Typed HTTP client. Use instead of legacy `window.axios` for backend calls.
+         * Adds no-cache headers and cache-buster params. Use `*Json` methods for
+         * JSON endpoints that should reject HTML responses.
          *
          * @example
          * const { data } = await window.adminApi.getJson<{ rows: Row[] }>(`${window.routePrefix}/api/rows`);
@@ -215,9 +242,9 @@ declare global {
         adminApi: AdminApi;
 
         /**
-         * Raw Axios instance. Prefer `window.adminApi` for JSON API calls.
+         * Legacy Axios-compatible client. Prefer `window.adminApi`.
          */
-        axios: AxiosInstance;
+        axios: AxiosCompat;
 
         /**
          * Sonner toast API.

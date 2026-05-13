@@ -9,6 +9,15 @@ export interface ComponentType {
 }
 
 const breadcrumbs: BreadcrumbItem[] = [];
+const getModuleImportUrl = (moduleComponent: string): string => {
+    if (!import.meta.env.DEV) {
+        return moduleComponent;
+    }
+
+    const separator = moduleComponent.includes('?') ? '&' : '?';
+    return `${moduleComponent}${separator}t=${Date.now()}`;
+};
+
 export default function Module() {
     const page = usePage<SharedData>();
     const [Component, setComponent] = useState<React.ReactElement | null>(null);
@@ -16,7 +25,8 @@ export default function Module() {
     useEffect(() => {
         const initModule = async () => {
             // Loading the JS component
-            const Module = await import(/* @vite-ignore */ page.props.moduleComponent as string);
+            const moduleComponent = getModuleImportUrl(page.props.moduleComponent as string);
+            const Module = await import(/* @vite-ignore */ moduleComponent);
             const Component = Module.default as ComponentType["default"];
             const { moduleComponent: _mc, moduleComponentCSS: _css, ...componentProps } = page.props as any;
             setComponent(<Component {...componentProps} />);

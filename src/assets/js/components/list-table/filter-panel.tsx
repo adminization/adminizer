@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import {
@@ -281,8 +281,8 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
                 url += `?filterId=${filterId}`;
             }
 
-            // Используем apiHttp вместо fetch
-            const response = await apiHttp.get<{
+            // Используем adminApi вместо fetch
+            const response = await adminApi.get<{
                 availableColumns: ColumnConfig[];
                 filterColumns: ColumnConfig[];
                 hasFilterConfig: boolean;
@@ -484,7 +484,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
                     return;
                 }
 
-                const response = await apiHttp.get<{fields: FilterField[]}>(`/adminizer/model/${modelName}/filter-fields`);
+                const response = await adminApi.get<{fields: FilterField[]}>(`/adminizer/model/${modelName}/filter-fields`);
                 const data = response.data;
                 setAvailableFields(data.fields || []);
             } catch (error) {
@@ -502,7 +502,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
                 return;
             }
             try {
-                const response = await apiHttp.get<{groups: {id: number, name: string}[]}>('/adminizer/groups');
+                const response = await adminApi.get<{groups: {id: number, name: string}[]}>('/adminizer/groups');
                 setUserGroups(response.data.groups || []);
             } catch (error) {
                 console.error('Error loading groups:', error);
@@ -555,7 +555,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
         filterDialogRef.current?.open();
 
         try {
-            const response = await apiHttp.get<{filters: FilterAP[]}>(`/adminizer/model/${modelName}/saved-filters`);
+            const response = await adminApi.get<{filters: FilterAP[]}>(`/adminizer/model/${modelName}/saved-filters`);
             const savedFilters = response.data?.filters || [];
             const targetFilter = savedFilters.find((filter: any) => String(filter.id) === String(targetFilterId));
 
@@ -582,7 +582,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
         }
 
         try {
-            const response = await apiHttp.get<{filter: FilterAP}>(`/adminizer/model/${modelName}/filter/temporary`);
+            const response = await adminApi.get<{filter: FilterAP}>(`/adminizer/model/${modelName}/filter/temporary`);
             const filter = response.data?.filter;
 
             if (!filter) {
@@ -677,7 +677,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
     const loadUserApiKey = async () => {
         if (userKey) return; // Already loaded
         try {
-            const response = await apiHttp.get<{apiKey: string}>('/adminizer/api/user-key');
+            const response = await adminApi.get<{apiKey: string}>('/adminizer/api/user-key');
             setUserKey(response.data.apiKey);
         } catch (error) {
             console.error('Failed to load user API key:', error);
@@ -805,7 +805,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
                     }));
             }
 
-            const response = await apiHttp.post<{filter: FilterAP}>(`/adminizer/model/${modelName}/filter`, payload);
+            const response = await adminApi.post<{filter: FilterAP}>(`/adminizer/model/${modelName}/filter`, payload);
             const filter = response.data.filter;
 
             // Очищаем временный фильтр после успешного сохранения
@@ -971,7 +971,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
             }
 
             // Отправляем POST запрос на применение временного фильтра
-            const response = await apiHttp.post<any>(`/adminizer/model/${modelName}/filter/apply`, payload);
+            const response = await adminApi.post<any>(`/adminizer/model/${modelName}/filter/apply`, payload);
             const data = response.data;
 
             if (data.success) {
@@ -1061,7 +1061,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
                     }));
             }
 
-            const response = await apiHttp.post<{filter: FilterAP}>(`/adminizer/model/${modelName}/filter`, payload);
+            const response = await adminApi.post<{filter: FilterAP}>(`/adminizer/model/${modelName}/filter`, payload);
             const filter = response.data.filter;
 
             // Обновляем состояние

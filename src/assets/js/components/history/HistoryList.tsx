@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from "react"
-import { apiHttp } from "@/lib/http-client";
+import { adminApi } from "@/lib/admin-api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HistoryActionsAP } from "../../../../models/HistoryActionsAP";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ const HistoryList: FC<HistoryListProps> = ({ modelName, modelId, handleWatchHist
         const fetchData = async () => {
             setLoading(true); // Enable the loader before the request
             try {
-                const res = await apiHttp.post<{ data?: HistoryItem[] }>(`${window.routePrefix}/history/get-model-history`, {
+                const res = await adminApi.post<{ data?: HistoryItem[] }>(`${window.routePrefix}/history/get-model-history`, {
                     modelName,
                     modelId
                 });
@@ -52,7 +52,7 @@ const HistoryList: FC<HistoryListProps> = ({ modelName, modelId, handleWatchHist
 
     const watchHistory = async (id: string | number) => {
         try {
-            const res = await apiHttp.post<{ data?: Record<string, any> }>(`${window.routePrefix}/history/get-model-fields`, {
+            const res = await adminApi.post<{ data?: Record<string, any> }>(`${window.routePrefix}/history/get-model-fields`, {
                 historyId: id
             })
             

@@ -97,7 +97,7 @@ adminizer.app.post(`${baseRoute}/export`, adminizer.policyManager.bindPolicies(p
 ### Frontend: `src/assets/js/components/list-table/table-toolbar.tsx`
 
 The export dropdown:
-- Uses Adminizer HTTP client (`apiHttp`) for export requests and creates a `Blob` for download
+- Uses Adminizer HTTP client (`adminApi`) for export requests and creates a `Blob` for download
 - Reads `filterId` from URL to preserve filter state
 - Extracts filename from `Content-Disposition` header
 - Shows toast notifications for success/error

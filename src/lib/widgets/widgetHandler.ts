@@ -256,7 +256,7 @@ export class WidgetHandler {
                             name: i18n.__(widget.name),
                             backgroundCSS: widget.backgroundCSS ?? null,
                             size: widget.size ?? null,
-                            scriptUrl: process.env.VITE_ENV === 'dev' ? widget.jsPath.dev : widget.jsPath.production,
+                            scriptUrl: process.env.ADMINIZER_ENV === 'dev' ? widget.jsPath.dev : widget.jsPath.production,
                         })
                     }
                 } else {

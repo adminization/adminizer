@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import AppLayout from '@/layouts/app-layout';
 import {
     Table,
@@ -135,7 +135,7 @@ function UserFiltersList({ title, models, apiEndpoint }: UserFiltersListProps) {
                 params.modelName = selectedModel;
             }
 
-            const response = await apiHttp.get<ApiResponse>(apiEndpoint, { params });
+            const response = await adminApi.get<ApiResponse>(apiEndpoint, { params });
             const data = response.data;
 
             if (reset) {

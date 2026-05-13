@@ -1,7 +1,7 @@
 import React, {useState, useRef, FC, useContext} from 'react';
 import {TriangleAlert, XIcon} from "lucide-react";
 import styles from '@/components/media-manager/components/DropZone.module.css'
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import {MediaManagerContext} from "@/components/media-manager/media-manager.tsx";
 import {Media} from "@/types";
 
@@ -78,7 +78,7 @@ const DropZone: FC<DropZoneProps> = ({callback, messages, name}) => {
             form.append("group", group);
             form.append("file", file);
 
-            const res = await apiHttp.post<any>(`${uploadUrl}/upload`, form, {
+            const res = await adminApi.post<any>(`${uploadUrl}/upload`, form, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }

@@ -222,7 +222,7 @@ export class Adminizer {
 
 
         // Set vite middleware
-        const isViteDev = process.env.VITE_ENV === "dev";
+        const isViteDev = process.env.ADMINIZER_ENV === "dev";
         if (isViteDev) await this.viteMiddleware()
 
         this.emitter.emit('adminizer:init');

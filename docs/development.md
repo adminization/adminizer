@@ -7,6 +7,9 @@
 - **`npm run watch:backend`**  
   Watches for changes in backend files and recompiles TypeScript continuously.
 
+Adminizer uses `ADMINIZER_ENV=dev` to switch on development behavior such as
+Vite middleware and dev module paths.
+
 ## Build Commands
 - **`npm run build:assets`**  
   Builds frontend assets using Vite.

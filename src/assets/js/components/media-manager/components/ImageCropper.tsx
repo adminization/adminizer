@@ -13,7 +13,7 @@ import {
     DialogTitle,
     DialogTrigger
 } from "@/components/ui/dialog.tsx";
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import {Media} from "@/types";
 
 interface ImageCropperProps {
@@ -123,7 +123,7 @@ const ImageCropper = ({
                 form.append("file", blob);
 
                 try {
-                    const res = await apiHttp.post<any>(`${uploadUrl}/upload-variant?isCropped="true"`, form, {
+                    const res = await adminApi.post<any>(`${uploadUrl}/upload-variant?isCropped="true"`, form, {
                         headers: {
                             "Content-Type": "multipart/form-data",
                         },

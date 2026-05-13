@@ -9,7 +9,7 @@ import {
     DragLayerMonitorProps, DropOptions
 } from "@minoru/react-dnd-treeview";
 import {DndProvider} from "react-dnd";
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {Badge} from "@/components/ui/badge.tsx";
@@ -110,7 +110,7 @@ const CatalogTree = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            const res = await apiHttp.post<any>('', {
+            const res = await adminApi.post<any>('', {
                 _method: 'getCatalog'
             });
             const {catalog: resCatalog, items, toolsActions} = res.data;
@@ -195,7 +195,7 @@ const CatalogTree = () => {
             };
             setTreeData(newTree);
 
-            await apiHttp.put('', requestData);
+            await adminApi.put('', requestData);
 
         } catch (error) {
             console.error('Error updating tree:', error);
@@ -210,7 +210,7 @@ const CatalogTree = () => {
         try {
             setLoadingNodeId(id);
             const node = treeData.find(node => node.id === id);
-            const res = await apiHttp.post<any>('', {data: node, _method: 'getChilds'});
+            const res = await adminApi.post<any>('', {data: node, _method: 'getChilds'});
             const newChildNodes = res.data.data;
 
             setTreeData(prevTree => {
@@ -238,7 +238,7 @@ const CatalogTree = () => {
 
     const updateCatalog = useCallback(async () => {
         try {
-            const res = await apiHttp.post<any>('', {
+            const res = await adminApi.post<any>('', {
                 _method: 'getCatalog'
             });
             const {catalog: resCatalog} = res.data;
@@ -307,7 +307,7 @@ const CatalogTree = () => {
     const selectCatalogItem = useCallback(async (type: string) => {
         setItemType(type)
         setFirstRender(true)
-        const res = await apiHttp.post<any>('', {type: type, _method: 'getAddTemplate'})
+        const res = await adminApi.post<any>('', {type: type, _method: 'getAddTemplate'})
         if (res.data.type === 'model') {
             // For 'model', directly get the add form
             setPopupType('model')
@@ -322,7 +322,7 @@ const CatalogTree = () => {
     const initUpdateItem = useCallback(async () => {
         try {
             setFirstRender(true)
-            const res = await apiHttp.post<any>('', {
+            const res = await adminApi.post<any>('', {
                 type: selectedNodes[0]?.data?.type,
                 modelId: selectedNodes[0]?.data?.modelId ?? null,
                 id: selectedNodes[0]?.data?.id,
@@ -352,7 +352,7 @@ const CatalogTree = () => {
                                 setFirstRender(false)
                                 break
                             }
-                            const resEdit = await apiHttp.get<any>(`${window.routePrefix}/model/${editModel}/edit/${item.modelId}?without_layout=true`)
+                            const resEdit = await adminApi.get<any>(`${window.routePrefix}/model/${editModel}/edit/${item.modelId}?without_layout=true`)
                             setAddProps(resEdit.data)
                             setPopUpTargetBlank(item.targetBlank)
                             setPopUpVisible(item.visible)
@@ -367,7 +367,7 @@ const CatalogTree = () => {
                                 setFirstRender(false)
                                 break
                             }
-                            const resEditModel = await apiHttp.get<any>(`${window.routePrefix}/model/${editModelName}/edit/${itemModel.modelId}?without_layout=true`)
+                            const resEditModel = await adminApi.get<any>(`${window.routePrefix}/model/${editModelName}/edit/${itemModel.modelId}?without_layout=true`)
                             setAddProps(resEditModel.data)
                             setPopUpTargetBlank(itemModel.targetBlank)
                             setPopUpVisible(itemModel.visible)
@@ -405,7 +405,7 @@ const CatalogTree = () => {
 
         try {
             for (const selectedNode of selectedNodes) {
-                const res = await apiHttp.delete<any>('', selectedNode);
+                const res = await adminApi.delete<any>('', selectedNode);
 
                 if (res.data.data.ok) {
                     // Create a copy of the current treeData for modification
@@ -496,7 +496,7 @@ const CatalogTree = () => {
 
     const getAddModelJSON = useCallback(async (model: string) => {
         setSecondRender(true)
-        const res = await apiHttp.get<any>(`${window.routePrefix}/model/${model}/add?without_layout=true'`)
+        const res = await adminApi.get<any>(`${window.routePrefix}/model/${model}/add?without_layout=true'`)
         setAddProps(res.data)
         dialogRef.current?.next()
         setSecondRender(false)
@@ -506,7 +506,7 @@ const CatalogTree = () => {
         if (targetBlank) record.targetBlank = targetBlank
         if(visible) record.visible = visible
         try {
-            await apiHttp.post('', {
+            await adminApi.post('', {
                 data: {
                     record: record,
                     parentId: parentid,
@@ -529,7 +529,7 @@ const CatalogTree = () => {
         record[0].treeId = selectedNodes[0]?.data?.id;
 
         try {
-            const res = await apiHttp.put<any>('', {
+            const res = await adminApi.put<any>('', {
                 type: selectedNodes[0]?.data?.type,
                 data: {record: record[0]},
                 modelId: selectedNodes[0]?.data?.modelId,
@@ -576,7 +576,7 @@ const CatalogTree = () => {
         setSelectedNodes([])
         setSearching(true)
         if (!s.trim()) {
-            const res = await apiHttp.post<any>('', {
+            const res = await adminApi.post<any>('', {
                 _method: 'getCatalog'
             });
             const {catalog: resCatalog} = res.data;
@@ -594,7 +594,7 @@ const CatalogTree = () => {
             return;
         }
         try {
-            const res = await apiHttp.post<any>('', {s: s, _method: 'search'})
+            const res = await adminApi.post<any>('', {s: s, _method: 'search'})
             setTreeData(res.data.data)
 
             // We are waiting for two rendering cycles
@@ -633,7 +633,7 @@ const CatalogTree = () => {
         setActionsContext([])
         setActionLoading(true)
         try {
-            const res = await apiHttp.post<any>('', {
+            const res = await adminApi.post<any>('', {
                 items: [node],
                 type: 'context',
                 _method: 'getActions'
@@ -655,7 +655,7 @@ const CatalogTree = () => {
         switch (action.type) {
             case 'link':
                 try {
-                    res = await apiHttp.put<any>('', {actionId: action.id, _method: 'getLink'})
+                    res = await adminApi.put<any>('', {actionId: action.id, _method: 'getLink'})
                     if (res.data) window.open(`${res.data.data}`, '_blank')?.focus()
                 } catch (e) {
                     console.error(e)
@@ -669,7 +669,7 @@ const CatalogTree = () => {
                 }
                 try {
                     toast.warning(messages['Performing an action...'])
-                    await apiHttp.put('', {data: data, _method: 'handleAction'})
+                    await adminApi.put('', {data: data, _method: 'handleAction'})
                 } catch (e) {
                     console.error(e)
                 } finally {
@@ -678,7 +678,7 @@ const CatalogTree = () => {
                 break
             case 'external':
                 try {
-                    const res = await apiHttp.put<any>('', {actionId: action.id, _method: 'getPopUpTemplate'})
+                    const res = await adminApi.put<any>('', {actionId: action.id, _method: 'getPopUpTemplate'})
                     if (res.data) {
                         const initModule = async () => {
                             const Module = await import(/* @vite-ignore */ res.data.data as string);

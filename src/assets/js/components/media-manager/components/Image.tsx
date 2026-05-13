@@ -12,7 +12,7 @@ import {
     DialogTitle
 } from "@/components/ui/dialog.tsx";
 import {Button} from "@/components/ui/button.tsx";
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 
 const imagesTypes = new Set([
     "image/gif",
@@ -42,7 +42,7 @@ const Image = ({media, className, messages, openMeta, crop, openVariant, destroy
     }
 
     const destroyItem = async () => {
-        const res = await apiHttp.delete<any>(uploadUrl, {item: media});
+        const res = await adminApi.delete<any>(uploadUrl, {item: media});
         if (res.data.type === "success"){
             destroy(media);
         } else {

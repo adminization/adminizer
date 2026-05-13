@@ -1,4 +1,4 @@
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 
 export default class UploadAdapter {
     private loader: any;
@@ -16,7 +16,7 @@ export default class UploadAdapter {
         data.append("file", file);
 
         try {
-            let response = await apiHttp.post<{ msg: string; url: string }>(this.url, data);
+            let response = await adminApi.post<{ msg: string; url: string }>(this.url, data);
 
             let result = {
                 msg: response.data.msg,

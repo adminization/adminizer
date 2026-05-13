@@ -15,7 +15,7 @@ import {FilterPanel} from './filter-panel.tsx';
 import {Badge} from '@/components/ui/badge.tsx';
 import {cn} from '@/lib/utils';
 import {useState} from 'react';
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import {toast} from 'sonner';
 import { useFilterTranslations } from './use-filter-translations';
 
@@ -52,7 +52,7 @@ export function TableToolbar({header, showSearch, onToggleSearch}: TableToolbarP
             const urlParams = new URLSearchParams(window.location.search);
             const filterId = urlParams.get('filterId') || undefined;
 
-            const response = await apiHttp.post<any>(
+            const response = await adminApi.post<any>(
                 `${header.entity.uri}/export`,
                 {
                     format,

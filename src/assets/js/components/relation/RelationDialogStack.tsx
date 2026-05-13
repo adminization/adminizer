@@ -9,7 +9,7 @@ import {
     useRef,
     useState,
 } from "react";
-import { apiHttp } from "@/lib/http-client";
+import { adminApi } from "@/lib/admin-api";
 import { LoaderCircle } from "lucide-react";
 import {
     DialogStack,
@@ -72,7 +72,7 @@ const RelationDialogStackProvider: FC<{ children: ReactNode }> = ({ children }) 
             const url = id === null
                 ? `${window.routePrefix}/model/${model}/add?without_layout=true`
                 : `${window.routePrefix}/model/${model}/edit/${id}?without_layout=true`;
-            const res = await apiHttp.get<any>(url);
+            const res = await adminApi.get<any>(url);
             const props = res.data?.props ?? res.data;
             setStack((prev) => {
                 const next = [...prev];

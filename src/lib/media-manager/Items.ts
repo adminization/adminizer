@@ -30,12 +30,22 @@ export class ImageItem extends File<MediaManagerItem> {
         next: boolean
     }> {
         // TODO refactor CRUD functions for DataAccessor usage
-        let data: MediaManagerItem[] = await this.adminizer.modelHandler.model.get(this.model)["_find"]({
-            where: { parent: null, mimeType: { contains: this.type }, group: group },
-            limit: limit,
-            skip: skip,
-            sort: sort,
-        }, { populate: [["variants", { sort: sort }], ["meta", {}]] })
+        let data: MediaManagerItem[] = await this.adminizer.modelHandler.model.get(this.model)["_find"](
+            {
+                where: { parent: null, mimeType: { contains: this.type }, group: group },
+                limit: limit,
+                skip: skip,
+                sort: sort,
+                //populate:{...}
+                //select: {...}
+            },
+            {
+                populate: [
+                    ["variants", { sort: sort }],
+                    ["meta", {}]
+                ]
+            },
+        )
 
         let next = await this.adminizer.modelHandler.model.get(this.model)['_find']({
             where: { parent: null, mimeType: { contains: this.type }, group: group },
@@ -144,7 +154,7 @@ export class ImageItem extends File<MediaManagerItem> {
         return (await this.adminizer.modelHandler.model.get(this.model)["_findOne"]({ where: { id: id } })).path;
     }
 
-    public async getFile(id: number): Promise<MediaManagerItem> {        
+    public async getFile(id: number): Promise<MediaManagerItem> {
         let item = await this.adminizer.modelHandler.model.get(this.model)["_findOne"]({ where: { id: id } });
         item.variants = await populateVariants(this.adminizer, item.variants, this.model)
         return item

@@ -21,6 +21,17 @@ export interface AxiosError<T = unknown> extends Error {
     response?: AxiosResponse<T>;
 }
 
+let hasWarnedAboutLegacyAxios = false;
+
+const warnAboutLegacyAxios = (): void => {
+    if (hasWarnedAboutLegacyAxios) {
+        return;
+    }
+
+    hasWarnedAboutLegacyAxios = true;
+    console.warn('window.axios is a legacy compatibility API. Please use apiHttp instead.');
+};
+
 const toAxiosError = (error: unknown): AxiosError => {
     if (typeof error === 'object' && error !== null && 'isAxiosError' in error) {
         return error as AxiosError;
@@ -40,6 +51,8 @@ const toAxiosError = (error: unknown): AxiosError => {
 
 const axios = {
     async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+        warnAboutLegacyAxios();
+
         try {
             return await apiHttp.get<T>(url, config);
         } catch (error) {
@@ -48,6 +61,8 @@ const axios = {
     },
 
     async post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+        warnAboutLegacyAxios();
+
         try {
             return await apiHttp.post<T>(url, data, config);
         } catch (error) {
@@ -56,6 +71,8 @@ const axios = {
     },
 
     async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+        warnAboutLegacyAxios();
+
         try {
             return await apiHttp.put<T>(url, data, config);
         } catch (error) {
@@ -64,6 +81,8 @@ const axios = {
     },
 
     async patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+        warnAboutLegacyAxios();
+
         try {
             return await apiHttp.patch<T>(url, data, config);
         } catch (error) {
@@ -72,6 +91,8 @@ const axios = {
     },
 
     async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+        warnAboutLegacyAxios();
+
         try {
             return await apiHttp.delete<T>(url, config?.data, config);
         } catch (error) {

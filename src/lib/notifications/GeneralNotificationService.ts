@@ -32,7 +32,7 @@ export class GeneralNotificationService extends AbstractNotificationService {
                             if (this.adminizer.accessRightsHelper.hasPermission(`notification-${this.notificationClass}`, user)) {
                                 await this.createUserNotification(notificationDB.id, user.id);
                             } else {
-                                Adminizer.log.error(`[${this.notificationClass}] User ${user.id} doesn't have permission to receive this notification`)
+                                Adminizer.log.warn(`[${this.notificationClass}] User ${user.id} doesn't have permission to receive this notification`)
                             }
                         } catch (error) {
                             Adminizer.log.error('Error creating UserNotificationAP:', error);

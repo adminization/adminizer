@@ -149,7 +149,7 @@ const ListTable = () => {
     return (
         <>
             <Toaster position="top-center" richColors closeButton/>
-            <div className={`flex h-auto flex-1 flex-col gap-4 rounded-xl p-4 ${loading ? 'opacity-50' : ''}`}>
+            <div className={`flex h-full min-h-0 flex-1 flex-col gap-4 rounded-xl p-4 ${loading ? 'opacity-50' : ''}`}>
                 <TableToolbar
                     header={header}
                     showSearch={showSearch}
@@ -168,14 +168,14 @@ const ListTable = () => {
                     handleSearch={handleSearch}
                     columnVisibilityLabel={t('Columns')}
                     footer={(renderColumnVisibilityControl) => (
-                        <div className="mt-4 flex flex-wrap justify-center md:justify-between gap-4 items-end">
+                        <div className="mt-4 mb-4 flex flex-wrap justify-center md:justify-between gap-4 items-end">
                             <div
                                 className="grid grid-cols-2 md:grid-cols-1 gap-4 items-center justify-items-center md:justify-items-normal">
                                 <p className="text-sm text-foreground/70">
                                     Show {pagination.from} - {pagination.to} of {pagination.total}
                                 </p>
                                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-                                    {renderColumnVisibilityControl({side: 'top'})}
+                                    {renderColumnVisibilityControl({display: 'icon', side: 'top'})}
                                     <div className="max-w-fit">
                                         <Select onValueChange={(value) => changeCount(value)} value={count}>
                                             <SelectTrigger className="w-full cursor-pointer">

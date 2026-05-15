@@ -13,8 +13,8 @@ export async function bindNavigation(adminizer: Adminizer) {
                     controller: '../controllers/navigation/edit',
                 },
                 fields: {
-                    createdAt: false,
-                    updatedAt: false
+                    createdAt: { visible: false },
+                    updatedAt: { visible: false }
                 },
                 navbar: {
                     visible: false
@@ -23,8 +23,8 @@ export async function bindNavigation(adminizer: Adminizer) {
                 identifierField: "",
                 list: {
                     fields: {
-                        tree: false,
-                        id: false,
+                        tree: { visible: false },
+                        id: { visible: false },
                     },
                 },
                 model: adminizer.config.navigation.model.toLowerCase(),

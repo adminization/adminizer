@@ -76,8 +76,6 @@ interface DashboardConfig {
 }
 
 
-// TODO make fields (complexType | boolean into 2 different fields, manually changing config or somehow programmatically)
-// TODO fields that can be both object and boolean should be divided into main field and "fieldnameEnable" - type boolean
 export interface AdminpanelConfig {
     routePrefix: string
     list?: {
@@ -479,10 +477,7 @@ type UserWithGroups = UserAP & { groups: GroupAP[] }
 export type ModelFieldConfig = (BaseFieldConfig | TuiEditorFieldConfig) & { groupsAccessRights?: string[] }
 
 export interface FieldsModels {
-    [key: string]:
-        boolean |
-        string |
-        ModelFieldConfig
+    [key: string]: ModelFieldConfig
 }
 
 export interface BaseFieldConfig {

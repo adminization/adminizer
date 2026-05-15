@@ -91,25 +91,25 @@ export class DataAccessor {
             let fldConfig: Field["config"] = {key: key, title: key};
             let associatedModelConfig: ModelConfig = undefined;
 
-            /** Combine the field configuration from global and action-specific configs
-             *  (now combine it before check, earlier was opposite).
-             *  Action-specific config should overwrite the global one */
-                // merge configs if they are both objects or pick priority one if not
-            const combinedFieldConfig =
-                    typeof fieldsConfig[key] === "object" && typeof actionConfig.fields[key] === "object"
-                        ? {...fieldsConfig[key], ...actionConfig.fields[key]}
-                        : actionConfig.fields[key] !== undefined
-                            ? actionConfig.fields[key]
-                            : fieldsConfig[key];
+            // Action-specific config has priority over global; merge if both are objects
+            const globalFieldConfig = typeof fieldsConfig[key] === "object" ? fieldsConfig[key] as object : {};
+            const actionFieldConfig = actionConfig.fields?.[key];
+
+            let combinedFieldConfig;
+            if (actionFieldConfig === undefined) {
+                combinedFieldConfig = fieldsConfig[key];
+            } else if (typeof actionFieldConfig === "object") {
+                combinedFieldConfig = { ...globalFieldConfig, ...actionFieldConfig };
+            } else {
+                combinedFieldConfig = actionFieldConfig; // boolean or string — normalizeFieldConfig handles it
+            }
 
             if (combinedFieldConfig !== undefined) {
-                /** Access rights check (check groupsAccessRights field if exists, if not - allow to all except default user group) */
-                let hasAccess = this.checkFieldAccess(key, combinedFieldConfig);
-                if (!hasAccess) {
+                const normalizedFieldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, combinedFieldConfig, key, modelField);
+                if (!this.checkFieldAccess(key, normalizedFieldConfig)) {
                     return;
                 }
-
-                fldConfig = {...fldConfig, ...this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, combinedFieldConfig, key, modelField)};
+                fldConfig = { ...fldConfig, ...normalizedFieldConfig };
             }
 
             // Populate associated fields configuration if field is an association
@@ -208,11 +208,9 @@ export class DataAccessor {
 
             // If fieldConfig exists, normalize it and merge with the basic config
             if (fieldConfig) {
-                const hasAccess = this.checkFieldAccess(key, fieldConfig);
-
-                // Skip the field if access is denied
-                if (!hasAccess) return;
-                fldConfig = {...fldConfig, ...this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fieldConfig, key, modelField)};
+                const normalizedFieldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fieldConfig, key, modelField);
+                if (!this.checkFieldAccess(key, normalizedFieldConfig)) return;
+                fldConfig = { ...fldConfig, ...normalizedFieldConfig };
             }
 
             // Add the field to associatedFields regardless of config presence

@@ -34,9 +34,9 @@ const config: AdminizerConfig = {
       },
       list: {
         fields: {
-          id: true,
-          name: true,
-          createdAt: true,
+          id: {},
+          name: {},
+          createdAt: {},
         }
       },
       add: true,
@@ -150,37 +150,27 @@ models: {
 
 ## Fields configuration
 
-For now AdminPanel hook supports 3 notations into field configuration:
-
-+ Boolean notation
-
-```
-fieldName: true // will enable field showing/editing
-fieldName: false // will remove field from showing. Could be usefull for actions like edit
-```
-
-+ String natation
-
-```
-fieldName: "Field Ttitle"
-```
-
-+ Object notation
+Each field is configured with an **object** (`ModelFieldConfig`):
 
 ```
 fieldName: {
-    title: "Field title", // You can overwrite field title
-    type: "string", //you can overwrite default field type in admin panel
-    required: true, // you can mark field required or not
-    tooltip: 'tooltip for field', // You can define tooltip for field
-    editor: true, // you can add WYSTYG editor for the field in admin panel
+    title: "Field title", // overwrite field title
+    type: "string", // overwrite default field type in admin panel
+    required: true, // mark field required or not
+    tooltip: 'tooltip for field', // tooltip for field
+    editor: true, // add WYSIWYG editor for the field in admin panel
+    visible: false, // hide field (e.g. on a specific action)
 }
 ```
+
+To hide a field, set `visible: false`. To override only the title, pass `{ title: "Field title" }`.
+
+> **Breaking change in v5:** the boolean (`field: true`/`false`) and string (`field: "Title"`) shorthand notations were removed. Use the object form. A primitive value will be ignored at runtime with a warning.
 
 **There are several places for field config definition and an inheritance of field configs.**
 
 + You could use a global `fields` property into `config/adminpanel.js` file into `models` section.
-+ You could use `fields` property into `models:action` confguration. This config will overwrite global one
++ You could use `fields` property into `models:action` configuration. Action level config is shallow-merged on top of the global one.
 
 ```
 module.exports.adminpanel = {
@@ -190,10 +180,10 @@ module.exports.adminpanel = {
             model: 'User', // Model definition for model
 
             fields: {
-                email: 'User Email', // It will define title for this field in all actions (list/add/edit/view)
-                createdAt: false, // Will hide createdAt field in all actions
+                email: { title: 'User Email' }, // define title for this field in all actions (list/add/edit/view)
+                createdAt: { visible: false }, // hide createdAt field in all actions
                 avatar: {
-                    displayModifier: function (img) { // Only for list view  look callback.md for get more info
+                    displayModifier: function (img) { // Only for list view, look callback.md for more info
                         return `<img src="${img}">`
                     }
                 },
@@ -201,15 +191,19 @@ module.exports.adminpanel = {
                     title: 'User bio',
                     type: 'text', // LOOK BELOW FOR TYPES DESCRIPTION
                     editor: true
-                } // will set title `User bio` for the field and add editor into add/edit actions. Could be combined only with `text` type
+                } // sets title `User bio` and adds editor in add/edit actions. Could be combined only with `text` type
             },
             // Action level config
             list: {
-                bio: false // will hide bio field into list view
+                fields: {
+                    bio: { visible: false } // hide bio field in list view
+                }
             },
 
             edit: {
-                createdAt: 'Created at' //will enable field `createdAt` and set title to `Created at`
+                fields: {
+                    createdAt: { title: 'Created at' } // override title for createdAt in edit
+                }
             }
         }
     }
@@ -233,7 +227,7 @@ module.exports.adminpanel = {
 ```
 
 ## Ignored fields
-You could add ignored fields to action using `fields` config option.
+You can hide fields from all actions by setting `visible: false`.
 
 ```javascript
 module.exports.adminpanel = {
@@ -242,11 +236,11 @@ module.exports.adminpanel = {
             title: 'Users', // Menu title for model
             model: 'User', // Model definition for model
 
-            // this fields will be ignored into all actions
+            // these fields will be hidden in all actions
             fields: {
-                'admin': false,
-                'someAnotherField': false,
-                'encryptedPassword': false
+                'admin': { visible: false },
+                'someAnotherField': { visible: false },
+                'encryptedPassword': { visible: false }
             }
         }
     }
@@ -435,9 +429,9 @@ const config = {
       },
       list: {
         fields: {
-          id: true,
-          name: true,
-          createdAt: true,
+          id: {},
+          name: {},
+          createdAt: {},
         }
       },
       add: true,

@@ -4,7 +4,6 @@
 import {Entity} from "../interfaces/types";
 import {
     ActionType,
-    BaseFieldConfig,
     FieldsModels,
     FieldsTypes,
     ModelConfig,
@@ -91,21 +90,16 @@ export class DataAccessor {
             let fldConfig: Field["config"] = {key: key, title: key};
             let associatedModelConfig: ModelConfig = undefined;
 
-            // Action-specific config has priority over global; merge if both are objects
-            const globalFieldConfig = typeof fieldsConfig[key] === "object" ? fieldsConfig[key] as object : {};
+            // Action-specific config has priority over global; objects are merged
+            const globalFieldConfig = fieldsConfig[key];
             const actionFieldConfig = actionConfig.fields?.[key];
 
-            let combinedFieldConfig;
-            if (actionFieldConfig === undefined) {
-                combinedFieldConfig = fieldsConfig[key];
-            } else if (typeof actionFieldConfig === "object") {
-                combinedFieldConfig = { ...globalFieldConfig, ...actionFieldConfig };
-            } else {
-                combinedFieldConfig = actionFieldConfig; // boolean or string — normalizeFieldConfig handles it
-            }
-
-            if (combinedFieldConfig !== undefined) {
-                const normalizedFieldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, combinedFieldConfig, key, modelField);
+            if (globalFieldConfig || actionFieldConfig) {
+                const rawFieldConfig = { ...globalFieldConfig, ...actionFieldConfig };
+                const normalizedFieldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, rawFieldConfig, key, modelField);
+                if (!normalizedFieldConfig) {
+                    return;
+                }
                 if (!this.checkFieldAccess(key, normalizedFieldConfig)) {
                     return;
                 }
@@ -144,8 +138,8 @@ export class DataAccessor {
             // Default type for field. Could be fetched form config file or file model if not defined in config file.
             fldConfig.type = ((fldConfig.type || modelField.type).toLowerCase() as FieldsTypes);
 
-            // Normalize final configuration
-            fldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fldConfig, key, modelField);
+            // Normalize final configuration (fldConfig is always an object here, normalize never returns undefined)
+            fldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fldConfig, key, modelField)!;
 
             // Add new field to result set
             result[key] = {config: fldConfig, model: modelField, populated: populatedModelFieldsConfig, modelConfig: associatedModelConfig };
@@ -175,27 +169,28 @@ export class DataAccessor {
         const fieldsConfig = modelConfig.fields || {};
 
         // Merge action-specific fields configuration if it exists
+        const addCfg = typeof modelConfig.add === "object" ? modelConfig.add : undefined;
+        const editCfg = typeof modelConfig.edit === "object" ? modelConfig.edit : undefined;
+        const listCfg = typeof modelConfig.list === "object" ? modelConfig.list : undefined;
         let actionSpecificConfig: FieldsModels = {};
-        if (modelConfig && typeof modelConfig === "object" && typeof modelConfig['add'] !== "boolean" && typeof modelConfig['edit'] !== "boolean" && typeof modelConfig['list'] !== "boolean") {
-            switch (this.action) {
-                case "add":
-                    actionSpecificConfig = modelConfig['add']?.fields || {};
-                    break;
-                case "edit":
-                    actionSpecificConfig = modelConfig['edit']?.fields || {};
-                    break;
-                case "list":
-                    actionSpecificConfig = modelConfig['list']?.fields || {};
-                    break;
-                case "view":
-                    actionSpecificConfig = modelConfig['edit']?.fields || {};
-                    break;
-                case "remove":
-                    actionSpecificConfig = {}
-                    break;
-                default:
-                    throw `Action type error: unknown type [${this.action}]`
-            }
+        switch (this.action) {
+            case "add":
+                actionSpecificConfig = addCfg?.fields || {};
+                break;
+            case "edit":
+                actionSpecificConfig = editCfg?.fields || {};
+                break;
+            case "list":
+                actionSpecificConfig = listCfg?.fields || {};
+                break;
+            case "view":
+                actionSpecificConfig = editCfg?.fields || {};
+                break;
+            case "remove":
+                actionSpecificConfig = {}
+                break;
+            default:
+                throw `Action type error: unknown type [${this.action}]`
         }
         const mergedFieldsConfig = {...fieldsConfig, ...actionSpecificConfig};
 
@@ -209,6 +204,7 @@ export class DataAccessor {
             // If fieldConfig exists, normalize it and merge with the basic config
             if (fieldConfig) {
                 const normalizedFieldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fieldConfig, key, modelField);
+                if (!normalizedFieldConfig) return;
                 if (!this.checkFieldAccess(key, normalizedFieldConfig)) return;
                 fldConfig = { ...fldConfig, ...normalizedFieldConfig };
             }
@@ -226,20 +222,11 @@ export class DataAccessor {
     }
 
     private checkFieldAccess(key: string, fieldConfig: Field["config"]): boolean {
-        // If config is set to false skip this field
-        if (fieldConfig === false) {
-            return false;
-        }
-
         if (this.entity.model.primaryKey === key) {
             return true;
         }
 
         if (this.user.isAdministrator) {
-            return true;
-        }
-
-        if (typeof fieldConfig !== "object") {
             return true;
         }
 
@@ -276,8 +263,7 @@ export class DataAccessor {
 
             // Check access to the field
             if (this.checkFieldAccess(fieldKey, fieldConfig.config)) {
-                const fieldConfigConfig = fieldConfig.config as BaseFieldConfig; // in this.fields configs are only objects
-                const fieldType = fieldConfigConfig.type;
+                const fieldType = fieldConfig.config.type;
                 // Handle fields that are not associations
                 if (fieldType !== 'association' && fieldType !== 'association-many') {
                     filteredRecord[fieldKey] = fieldValue;

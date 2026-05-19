@@ -15,6 +15,13 @@ import { v4 as uuid } from "uuid";
 import { AbstractAdapter, AbstractModel, Attribute, ModelAttributes } from "../AbstractModel";
 import { CriteriaPopulate, CriteriaSelect, QueryCriteria } from "../../../interfaces/queryCriteria";
 
+/**
+ * Experimental TypeORM adapter.
+ *
+ * This implementation is intentionally kept isolated from the core runtime and fixture wiring.
+ * It has not been validated in production yet; Sequelize remains the primary and recommended
+ * adapter for real projects until TypeORM coverage is expanded through runtime testing.
+ */
 type AdminizerSchema = Record<string, any>;
 type TypeOrmEntity = Function | string | EntitySchema;
 

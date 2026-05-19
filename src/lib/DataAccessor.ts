@@ -189,8 +189,33 @@ export class DataAccessor {
             result[key] = {config: fldConfig, model: modelField, populated: populatedModelFieldsConfig, modelConfig: associatedModelConfig };
         });
 
-        this.fields = result;
-        return result;
+        this.fields = this.orderFieldsByConfig(result, fieldsConfig, actionConfig.fields);
+        return this.fields;
+    }
+
+    private orderFieldsByConfig(
+        fields: Fields,
+        globalFieldsConfig: FieldsModels = {},
+        actionFieldsConfig: FieldsModels = {}
+    ): Fields {
+        const orderedFields: Fields = {};
+        const appendField = (fieldName: string) => {
+            if (!Object.prototype.hasOwnProperty.call(fields, fieldName)) {
+                return;
+            }
+
+            if (Object.prototype.hasOwnProperty.call(orderedFields, fieldName)) {
+                return;
+            }
+
+            orderedFields[fieldName] = fields[fieldName];
+        };
+
+        Object.keys(actionFieldsConfig || {}).forEach(appendField);
+        Object.keys(globalFieldsConfig || {}).forEach(appendField);
+        Object.keys(fields).forEach(appendField);
+
+        return orderedFields;
     }
 
     private getAssociatedFieldsConfig(modelName: string): { [fieldName: string]: Field } | undefined {

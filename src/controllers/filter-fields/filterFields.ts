@@ -88,15 +88,12 @@ export default async function filterFields(req: ReqType, res: ResType) {
     // Get filter config for this model (optional)
     // Preferred: model-level `models.<Model>.filters`; fallback: legacy top-level `modelFilters.<Model>`
     const filterConfig = entity.config?.filters ?? req.adminizer.config.modelFilters?.[entity.name];
-    const ormType = req.adminizer.ormAdapters?.[0]?.ormType;
-    const isSequelize = ormType === 'sequelize';
-
     const filterFields: FilterField[] = [];
 
     for (const [fieldName, field] of Object.entries(fields)) {
         const type = getFieldType(field);
         const cfg = typeof field.config === 'object' && field.config !== null ? field.config as any : null;
-        const customFilterHandlerId = isSequelize && cfg?.customFilter?.handlerId
+        const customFilterHandlerId = cfg?.customFilter?.handlerId
             ? String(cfg.customFilter.handlerId)
             : undefined;
         const customFilterHandler = customFilterHandlerId
@@ -143,6 +140,9 @@ export default async function filterFields(req: ReqType, res: ResType) {
             });
             continue;
         }
+
+        const ormType = req.adminizer.ormAdapters?.[0]?.ormType;
+        const isSequelize = ormType === 'sequelize';
 
         // Relations in filter UI are supported only for Sequelize
         if (!isSequelize) {

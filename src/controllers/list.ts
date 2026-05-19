@@ -133,13 +133,13 @@ export default async function list(req: ReqType, res: ResType) {
     }
 
     // Apply custom columns if filter has them
-    let displayFields = fields;
+    let displayFields = getVisibleFields(fields);
     let customColumnsConfig: FilterColumnAP[] | null = null;
 
     if (savedColumns.length > 0) {
         customColumnsConfig = savedColumns;
         // Filter and reorder fields based on custom column configuration
-        displayFields = applyCustomColumns(fields, savedColumns);
+        displayFields = applyCustomColumns(displayFields, savedColumns);
     }
 
     // Add column search conditions (with datetime conversion)
@@ -318,6 +318,18 @@ function applyCustomColumns(fields: Fields, columns: FilterColumnAP[]): Fields {
     }
 
     return result;
+}
+
+function getVisibleFields(fields: Fields): Fields {
+    return Object.entries(fields).reduce<Fields>((result, [key, field]) => {
+        const config = field?.config as BaseFieldConfig | undefined;
+        if (config?.visible === false) {
+            return result;
+        }
+
+        result[key] = field;
+        return result;
+    }, {});
 }
 
 /**

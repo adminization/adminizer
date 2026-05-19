@@ -21,6 +21,7 @@ export * from "./interfaces/MaaterialIcons"
 export * from "./lib/model/AbstractModel";
 export * from "./lib/model/InternalModelAccessFactory";
 export * from "./lib/model/adapter/sequelize"
+export * from "./lib/model/adapter/typeorm"
 export * from "./lib/media-manager/AbstractMediaManager";
 export * from "./lib/controls/AbstractControls";
 export * from "./lib/controls/ControlsHandler";

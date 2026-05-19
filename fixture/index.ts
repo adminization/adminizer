@@ -188,11 +188,23 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
         adminizer.app.get(`${adminizer.config.routePrefix}/module-test`, adminizer.middlewareManager.bindMiddlewares(policies, module));
         adminizer.app.post(`${adminizer.config.routePrefix}/module-test`, adminizer.middlewareManager.bindMiddlewares(policies, async (req: ReqType, res: ResType) => {
-            adminizer.sendNotification({
+            const rawUserId = req.body.userId;
+            const userId = req.body.sendToAll
+                ? undefined
+                : Number(rawUserId);
+
+            if (!req.body.sendToAll && (!Number.isInteger(userId) || userId <= 0)) {
+                return res.status(400).json({
+                    error: 'Invalid userId'
+                });
+            }
+
+            await adminizer.sendNotification({
                 title: "Test notification",
                 message: req.body.message,
                 notificationClass: 'general',
-                channel: ''
+                channel: '',
+                ...(userId ? { userId } : {})
             })
             res.json({
                 test: req.body

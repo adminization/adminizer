@@ -8,10 +8,12 @@ import { generateUserApiKey } from "../helpers/apiKeyHelper";
 
 export default async function (req: ReqType, res: ResType) {
     let entity = ControllerHelper.findEntityObject(req);
+    const internalUsers = req.adminizer.modelHandler.internal("users");
+    const groupModel = internalUsers.get<GroupAP>("GroupAP");
+    const userModel = internalUsers.get<UserAP>("UserAP");
     let groups: GroupAP[];
     try {
-        // TODO refactor CRUD functions for DataAccessor usage
-        groups = await req.adminizer.modelHandler.model.get("GroupAP")["_find"]({});
+        groups = await groupModel.find({});
     } catch (e) {
         Adminizer.log.error(e)
     }
@@ -41,8 +43,7 @@ export default async function (req: ReqType, res: ResType) {
         try {
             let passwordHashed = generate(req.body.login + req.body.userPassword + process.env.AP_PASSWORD_SALT);
             let password = 'masked';
-            // TODO refactor CRUD functions for DataAccessor usage
-            user = await req.adminizer.modelHandler.model.get("UserAP")["_create"]({
+            user = await userModel.create({
                 login: req.body.login, fullName: req.body.fullName, email: req.body.email,
                 passwordHashed: passwordHashed, timezone: req.body.timezone, expires: req.body.date,
                 locale: locale, isAdministrator: isAdministrator, isConfirmed: isConfirmed, groups: userGroups,

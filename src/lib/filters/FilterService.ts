@@ -1,12 +1,13 @@
 import { Adminizer } from '../Adminizer';
 import { DataAccessor } from '../DataAccessor';
-import { ModernQueryBuilder, QueryParams, QueryResult } from '../query-builder/ModernQueryBuilder';
+import { QueryBuilder } from '../query-builder/QueryBuilder';
 import { FilterAP, FilterCondition } from '../../models/FilterAP';
 import { FilterColumnAP } from '../../models/FilterColumnAP';
 import { UserAP } from '../../models/UserAP';
 import { Entity } from '../../interfaces/types';
 import { ModelConfig, ModelFiltersConfig } from '../../interfaces/adminpanelConfig';
 import { convertDatetimeConditions } from '../../helpers/filterDatetimeHelper';
+import { QueryBuilderParams } from '../../interfaces/queryBuilder';
 
 /**
  * FilterService - manages filter operations
@@ -14,7 +15,7 @@ import { convertDatetimeConditions } from '../../helpers/filterDatetimeHelper';
  * Key responsibilities:
  * - Check if filters are enabled for a model
  * - Apply saved filters to queries
- * - Integrate with ModernQueryBuilder
+ * - Integrate with QueryBuilder
  * - Handle filter access control
  */
 export class FilterService {
@@ -65,13 +66,8 @@ export class FilterService {
      * Returns null when filter is not found or user has no access.
      */
     async getFilterById(filterId: string, user: UserAP): Promise<FilterAP | null> {
-        const filterModel = this.adminizer.modelHandler.model.get('filterap');
-
-        if (!filterModel) {
-            throw new Error('FilterAP model not found');
-        }
-
-        const filter = await filterModel["_findOne"]({ id: filterId });
+        const filterModel = this.adminizer.modelHandler.internal('filters').get<FilterAP>('FilterAP');
+        const filter = await filterModel.findOne({where: {id: filterId}});
 
         if (!filter) {
             return null;
@@ -96,11 +92,7 @@ export class FilterService {
             includeSystem?: boolean;
         }
     ): Promise<FilterAP[]> {
-        const filterModel = this.adminizer.modelHandler.model.get('filterap');
-
-        if (!filterModel) {
-            throw new Error('FilterAP model not found');
-        }
+        const filterModel = this.adminizer.modelHandler.internal('filters').get<FilterAP>('FilterAP');
 
         const filters: FilterAP[] = [];
 
@@ -108,18 +100,22 @@ export class FilterService {
         const baseCriteria: any = { modelName };
 
         // 1. Get user's own filters
-        const ownFilters = await filterModel["_find"]({
-            ...baseCriteria,
-            ownerId: user.id
-        }) as FilterAP[];
+        const ownFilters = await filterModel.find({
+            where: {
+                ...baseCriteria,
+                ownerId: user.id
+            }
+        });
         filters.push(...ownFilters);
 
         // 2. Get public filters (if requested)
         if (options?.includePublic !== false) {
-            const publicFilters = await filterModel["_find"]({
-                ...baseCriteria,
-                visibility: 'public'
-            }) as FilterAP[];
+            const publicFilters = await filterModel.find({
+                where: {
+                    ...baseCriteria,
+                    visibility: 'public'
+                }
+            });
 
             // Deduplicate
             for (const filter of publicFilters) {
@@ -133,10 +129,12 @@ export class FilterService {
         if (user.groups && user.groups.length > 0) {
             const groupIds = user.groups.map(g => g.id);
 
-            const groupFilters = await filterModel["_find"]({
-                ...baseCriteria,
-                visibility: 'groups'
-            }) as FilterAP[];
+            const groupFilters = await filterModel.find({
+                where: {
+                    ...baseCriteria,
+                    visibility: 'groups'
+                }
+            });
 
             // Check if user's groups intersect with filter's groups
             for (const filter of groupFilters) {
@@ -150,7 +148,7 @@ export class FilterService {
 
         // 4. Admin sees all filters
         if (user.isAdministrator) {
-            const allFilters = await filterModel["_find"](baseCriteria) as FilterAP[];
+            const allFilters = await filterModel.find({where: baseCriteria});
 
             for (const filter of allFilters) {
                 if (!filters.find(f => f.id === filter.id)) {
@@ -240,13 +238,13 @@ export class FilterService {
             // Convert datetime conditions to date ranges
             const convertedConditions = convertDatetimeConditions(filter.conditions || []);
 
-            const queryParams: QueryParams = {
+            const queryParams: QueryBuilderParams = {
                 page: 1,
                 limit: 1, // We only need count
                 filters: convertedConditions
             };
 
-            const queryBuilder = new ModernQueryBuilder(
+            const queryBuilder = new QueryBuilder(
                 entity.model,
                 fields,
                 dataAccessor,
@@ -268,11 +266,7 @@ export class FilterService {
         data: Partial<FilterAP>,
         user: UserAP
     ): Promise<FilterAP> {
-        const filterModel = this.adminizer.modelHandler.model.get('filterap');
-
-        if (!filterModel) {
-            throw new Error('FilterAP model not found');
-        }
+        const filterModel = this.adminizer.modelHandler.internal('filters').get<FilterAP>('FilterAP');
 
         // Generate UUID if not provided
         if (!data.id) {
@@ -288,8 +282,7 @@ export class FilterService {
         data.apiEnabled = data.apiEnabled || false;
         data.conditions = data.conditions || [];
 
-        const filter = await filterModel["_create"](data);
-        return filter as FilterAP;
+        return await filterModel.create(data);
     }
 
     /**
@@ -310,16 +303,13 @@ export class FilterService {
             throw new Error('Access denied');
         }
 
-        const filterModel = this.adminizer.modelHandler.model.get('filterap');
-        if (!filterModel) {
-            throw new Error('FilterAP model not found');
-        }
+        const filterModel = this.adminizer.modelHandler.internal('filters').get<FilterAP>('FilterAP');
 
         // Don't allow changing owner
         delete data.ownerId;
         delete data.id;
 
-        await filterModel["_updateOne"]({ id: filterId }, data);
+        await filterModel.updateOne({where: {id: filterId}}, data);
 
         const updated = await this.getFilterById(filterId, user);
         if (!updated) {
@@ -343,22 +333,22 @@ export class FilterService {
         }
 
         // Delete columns first - find by filter association and delete by ID
-        const columnModel = this.adminizer.modelHandler.model.get('filtercolumnap');
+        const columnModel = this.adminizer.modelHandler.internal('filters').get<FilterColumnAP>('FilterColumnAP');
         if (columnModel) {
             // Find columns for this filter
-            const columns = await columnModel["_find"]({ filter: filterId });
+            const columns = await columnModel.find({where: {filter: filterId}});
             
             // Delete each column by ID to avoid cascade issues
             for (const column of columns) {
-                await columnModel["_destroyOne"]({ id: column.id });
+                await columnModel.destroyOne({where: {id: column.id}});
             }
         }
 
         // Delete filter by ID only
-        const filterModel = this.adminizer.modelHandler.model.get('filterap');
+        const filterModel = this.adminizer.modelHandler.internal('filters').get<FilterAP>('FilterAP');
         if (filterModel) {
             // Use destroyOne with explicit ID to avoid cascade
-            await filterModel["_destroyOne"]({ id: filterId });
+            await filterModel.destroyOne({where: {id: filterId}});
         }
         
     }
@@ -367,13 +357,9 @@ export class FilterService {
      * Get columns for a filter
      */
     async getFilterColumns(filterId: string): Promise<FilterColumnAP[]> {
-        const columnModel = this.adminizer.modelHandler.model.get('filtercolumnap');
+        const columnModel = this.adminizer.modelHandler.internal('filters').get<FilterColumnAP>('FilterColumnAP');
 
-        if (!columnModel) {
-            return [];
-        }
-
-        const columns = await columnModel["_find"]({ filter: filterId });
+        const columns = await columnModel.find({where: {filter: filterId}});
 
         // Sort by order
         return (columns as FilterColumnAP[]).sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -397,20 +383,16 @@ export class FilterService {
             throw new Error('Access denied');
         }
 
-        const columnModel = this.adminizer.modelHandler.model.get('filtercolumnap');
-
-        if (!columnModel) {
-            throw new Error('FilterColumnAP model not found');
-        }
+        const columnModel = this.adminizer.modelHandler.internal('filters').get<FilterColumnAP>('FilterColumnAP');
 
         // Delete existing columns
-        await columnModel["_destroy"]({ filter: filterId });
+        await columnModel.destroy({where: {filter: filterId}});
 
         // Create new columns
         if (columns.length > 0) {
             for (let i = 0; i < columns.length; i++) {
                 const col = columns[i];
-                await columnModel["_create"]({
+                await columnModel.create({
                     filter: filterId,
                     fieldName: col.fieldName,
                     order: col.order ?? i

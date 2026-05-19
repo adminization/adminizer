@@ -162,11 +162,17 @@ Read the `navigationap` record for the section you need. The `tree` field is rea
 // index.ts
 mainApp.get('/api/navigation', async (req, res) => {
   try {
-    const header = await adminizer.modelHandler.model
-      .get('navigationap')['_findOne']({ label: 'header' });
+    const navigationModel = adminizer.modelHandler
+      .internal('navigation')
+      .get('NavigationAP');
 
-    const footer = await adminizer.modelHandler.model
-      .get('navigationap')['_findOne']({ label: 'footer' });
+    const header = await navigationModel.findOne({
+      where: { label: 'header' }
+    });
+
+    const footer = await navigationModel.findOne({
+      where: { label: 'footer' }
+    });
 
     res.json({
       header: header?.tree ?? [],

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { simpleSanitizeHtml } from '@/lib/utils';
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import { toast } from 'sonner';
 import { BaseFieldConfig } from '../../../../interfaces/adminpanelConfig';
 
@@ -77,7 +77,7 @@ export function InlineEditableCell({
         setIsLoading(true);
 
         try {
-            const response = await apiHttp.patch<any>(
+            const response = await adminApi.patch<any>(
                 `/adminizer/model/${modelName}/inline/${recordId}`,
                 {
                     field: fieldName,

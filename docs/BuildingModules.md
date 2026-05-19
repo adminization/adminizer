@@ -49,9 +49,7 @@ export default function MyPageModule({ data }: PageModuleProps<{ items: Item[] }
   const handleAction = async (id: number) => {
     setLoading(true);
     try {
-      // Compatibility global for external modules.
-      // Prefer window.adminApi for JSON APIs.
-      await window.axios.post(`${window.routePrefix}/api/my-resource/${id}/action`);
+      await window.adminApi.postJson(`${window.routePrefix}/api/my-resource/${id}/action`);
       window.sonner.toast.success('Done');
     } catch {
       window.sonner.toast.error('Failed');
@@ -155,7 +153,7 @@ export class MyEditor extends AbstractControls {
 
   getName()    { return this.name; }
   getConfig()  { return this.config; }
-  getJsPath()  { return process.env.VITE_ENV === 'dev' ? this.path.jsPath.dev : this.path.jsPath.production; }
+  getJsPath()  { return process.env.ADMINIZER_ENV === 'dev' ? this.path.jsPath.dev : this.path.jsPath.production; }
   getCssPath() { return this.path.cssPath || undefined; }
 }
 ```
@@ -206,7 +204,8 @@ export default defineConfig({
       'react':     'React',
       'react-dom': 'ReactDOM',
       // Optional, only if your external module imports `axios` directly.
-      // Adminizer exposes `window.axios` as a compatibility client.
+      // Adminizer exposes `window.axios` as a legacy compatibility client.
+      // Prefer `window.adminApi` for new code.
       'axios':     'axios',
       'sonner':    'sonner',
     }),
@@ -273,7 +272,7 @@ const { Pencil, Trash2, Plus } = window.LucideReact;
 - Never `import` shadcn, Radix, or Lucide directly — use the globals above.
 - Wrap your root with `<Toaster />` once if you use `window.sonner.toast`.
 - Wrap with `<TooltipProvider>` once if you use `<Tooltip>`.
-- Use `window.adminApi` instead of raw `window.axios` for JSON API calls — it adds no-cache headers and throws a readable error if the session expires.
+- Use `window.adminApi` instead of legacy `window.axios` for API calls. Prefer `*Json` methods for JSON endpoints — they add no-cache headers and throw a readable error if the session expires.
 
 ---
 
@@ -287,6 +286,7 @@ const { data } = await window.adminApi.getJson<{ rows: Row[] }>(
 
 await window.adminApi.postJson(`${window.routePrefix}/api/my-resource`, { name: 'New' });
 await window.adminApi.putJson(`${window.routePrefix}/api/my-resource/${id}`, payload);
+await window.adminApi.patchJson(`${window.routePrefix}/api/my-resource/${id}`, patch);
 await window.adminApi.deleteJson(`${window.routePrefix}/api/my-resource/${id}`);
 ```
 

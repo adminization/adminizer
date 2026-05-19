@@ -1,4 +1,4 @@
-﻿# Adminizer - Project Context
+# Adminizer - Project Context
 
 ## Project Overview
 
@@ -93,7 +93,7 @@ Important variables include:
 - `AP_PASSWORD_SALT`
 - `ORM`
 - `NO_SEED_DATA`
-- `VITE_ENV`
+- `ADMINIZER_ENV`
 
 ## Development Conventions
 

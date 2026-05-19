@@ -1,6 +1,7 @@
 import {ControllerHelper} from "../helpers/controllerHelper";
 import {DataAccessor} from "../lib/DataAccessor";
-import {ModernQueryBuilder, QueryParams, QueryResult} from "../lib/query-builder/ModernQueryBuilder";
+import {QueryBuilder} from "../lib/query-builder/QueryBuilder";
+import {QueryBuilderParams} from "../interfaces/queryBuilder";
 import {Adminizer} from "../lib/Adminizer";
 import {inertiaListHelper} from "../helpers/inertiaListHelper";
 import {Field, Fields} from "../helpers/fieldsHelper";
@@ -163,7 +164,7 @@ export default async function list(req: ReqType, res: ResType) {
     }
 
     // Build query parameters
-    const queryParams: QueryParams = {
+    const queryParams: QueryBuilderParams = {
         page,
         limit,
         sort: effectiveSortField,
@@ -172,8 +173,8 @@ export default async function list(req: ReqType, res: ResType) {
         globalSearch: globalSearch || undefined
     };
 
-    // Execute query using ModernQueryBuilder (use original fields for query, displayFields for output)
-    const queryBuilder = new ModernQueryBuilder(
+    // Execute query using QueryBuilder (use original fields for query, displayFields for output)
+    const queryBuilder = new QueryBuilder(
         entity.model,
         fields,
         dataAccessor,

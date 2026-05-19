@@ -26,6 +26,7 @@ const config: AdminizerConfig = {
 | `models` | Object with model definitions. |
 | `dashboard` | Enable dashboard widgets. |
 | `showVersion` | Display Adminizer version in the sidebar. |
+| `system.internalModelAccess` | Extend allowlisted internal model access scopes for trusted system modules. |
 
 Additional options like `welcome`, `translation` and `administrator` credentials can also be provided.
 
@@ -44,3 +45,29 @@ favicon: "files/my-custom-favicon.png" // -> /admin/files/my-custom-favicon.png
 // 4) full external URL:
 favicon: "https://cdn.example.com/admin/favicon.svg"
 ```
+
+## Internal Model Access
+
+Adminizer system modules can use `modelHandler.internal(scope)` to access selected internal models without `DataAccessor` user filtering. Built-in scopes cover Adminizer's own modules; projects can add custom scopes through `system.internalModelAccess`.
+
+```ts
+const config: AdminizerConfig = {
+  routePrefix: "/admin",
+  system: {
+    internalModelAccess: {
+      "my-module": ["UserAP", "FilterAP"]
+    }
+  }
+};
+```
+
+Usage:
+
+```ts
+const filters = await adminizer.modelHandler
+  .internal("my-module")
+  .get("FilterAP")
+  .find({ where: { modelName: "Example" } });
+```
+
+Use this only for trusted system-level code. Normal user-facing operations should continue to use model methods with `DataAccessor`.

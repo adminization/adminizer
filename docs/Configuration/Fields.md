@@ -1,29 +1,21 @@
 # Field Options
 
-Fields in a model can be configured in several ways.
+Each field in a model is configured with an object (`ModelFieldConfig`):
 
-### Notation
+```js
+bio: {
+  title: 'Biography',
+  type: 'text',
+  required: true,
+  tooltip: 'Shown on profile',
+}
+```
 
-* **Boolean** – include or exclude the field
-  ```js
-  email: true,
-  password: false,
-  ```
-* **String** – overrides the field title
-  ```js
-  name: "User Name",
-  ```
-* **Object** – full configuration
-  ```js
-  bio: {
-    title: 'Biography',
-    type: 'text',
-    required: true,
-    tooltip: 'Shown on profile',
-  }
-  ```
+To hide a field, set `visible: false` instead of omitting it. To override only the title, pass `{ title: 'User Name' }`.
 
-Field definitions can be placed globally under `models.fields` or inside an action (`list.fields`, `edit.fields`, etc.). Action level settings override the global ones.
+> **Breaking change in v5:** the boolean (`field: true`/`false`) and string (`field: 'Title'`) shorthand notations were removed. Use the object form. A primitive value will be ignored at runtime with a warning.
+
+Field definitions can be placed globally under `models.fields` or inside an action (`list.fields`, `edit.fields`, etc.). Action level settings override the global ones; objects are merged shallowly.
 
 ### Types
 

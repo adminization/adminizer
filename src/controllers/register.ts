@@ -8,6 +8,9 @@ export default async function register(req: ReqType, res: ResType) {
     if (!req.adminizer.config.auth.enable || req.adminizer.config.registration?.enable !== true) {
         return res.redirect(`${req.adminizer.config.routePrefix}/`);
     }
+    const authModels = req.adminizer.modelHandler.internal("auth");
+    const userModel = authModels.get<UserAP>("UserAP");
+    const groupModel = authModels.get<GroupAP>("GroupAP");
 
     if (req.method.toUpperCase() === "POST") {
         
@@ -28,8 +31,7 @@ export default async function register(req: ReqType, res: ResType) {
 
         let user: UserAP;
         try {
-            // TODO refactor CRUD functions for DataAccessor usage
-            user = await req.adminizer.modelHandler.model.get("UserAP")["_findOne"]({login: req.body.login});
+            user = await userModel.findOne({where: {login: req.body.login}});
         } catch (e) {
             return res.status(500).send({error: e.message || 'Internal Server Error'});
         }
@@ -48,8 +50,7 @@ export default async function register(req: ReqType, res: ResType) {
             try {
                 let passwordHashed = generate(req.body.login + req.body.password + process.env.AP_PASSWORD_SALT);
                 let password = 'masked';
-                // TODO refactor CRUD functions for DataAccessor usage
-                let userap: UserAP = await req.adminizer.modelHandler.model.get("UserAP")["_create"]({
+                let userap: UserAP = await userModel.create({
                     login: req.body.login,
                     passwordHashed: passwordHashed,
                     fullName: req.body.fullName,
@@ -57,11 +58,9 @@ export default async function register(req: ReqType, res: ResType) {
                     locale: req.body.locale,
                     apiKey: generateUserApiKey()
                 });
-                // TODO refactor CRUD functions for DataAccessor usage
-                let defaultUserGroup: GroupAP = await req.adminizer.modelHandler.model.get("GroupAP")["_findOne"]({name: req.adminizer.config.registration.defaultUserGroup});
+                let defaultUserGroup: GroupAP = await groupModel.findOne({where: {name: req.adminizer.config.registration.defaultUserGroup}});
                 
-                // TODO refactor CRUD functions for DataAccessor usage
-                await req.adminizer.modelHandler.model.get("UserAP")["_updateOne"]({id: userap.id}, {
+                await userModel.updateOne({where: {id: userap.id}}, {
                     groups: [defaultUserGroup.id]
                 }); // instead of UserAP.addToCollection;
 

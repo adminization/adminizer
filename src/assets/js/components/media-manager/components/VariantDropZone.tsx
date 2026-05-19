@@ -1,7 +1,7 @@
 import {Media} from "@/types";
 import React, {useContext, useRef, useState} from "react";
 import {MediaManagerContext} from "@/components/media-manager/media-manager.tsx";
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import {TriangleAlert, XIcon} from "lucide-react";
 import styles from "@/components/media-manager/components/DropZone.module.css";
 
@@ -55,7 +55,7 @@ const VariantDropZone = ({callback, messages, media, localeId, disabled}: Varian
             form.append("localeId", localeId);
             form.append("file", file);
 
-            const res = await apiHttp.post<any>(`${uploadUrl}/upload-variant`, form, {
+            const res = await adminApi.post<any>(`${uploadUrl}/upload-variant`, form, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }

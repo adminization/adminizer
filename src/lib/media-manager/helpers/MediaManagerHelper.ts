@@ -125,10 +125,9 @@ export async function updateCurrentHistoryMediaManagerData(
     const mediaData = collectMediaManagerHistoryData(fields, reqData);
     if (!Object.keys(mediaData).length) return;
 
-    const historyModel = adminizer.modelHandler.model.get('historyactionsap');
-    if (!historyModel) return;
+    const historyModel = adminizer.modelHandler.internal("history").get("HistoryActionsAP");
 
-    const currentHistory = await historyModel["_findOne"]({
+    const currentHistory = await historyModel.findOne({
         where: {
             modelId: String(recordId),
             modelName: model.toLowerCase(),
@@ -138,7 +137,7 @@ export async function updateCurrentHistoryMediaManagerData(
 
     if (!currentHistory) return;
 
-    await historyModel["_update"](
+    await historyModel.update(
         { where: { id: currentHistory.id } },
         { data: { ...(currentHistory.data ?? {}), ...mediaData } }
     );
@@ -184,9 +183,9 @@ export async function deleteRelationsMediaManager(adminizer: Adminizer, model: s
  */
 export async function populateVariants(adminizer: Adminizer, variants: MediaManagerItem[], model: string): Promise<MediaManagerItem[]> {
     let items: MediaManagerItem[] = []
+    const mediaModel = adminizer.modelHandler.internal("media-manager").get<MediaManagerItem>(model);
     for (let variant of variants) {
-        // TODO refactor CRUD functions for DataAccessor usage
-        variant = await adminizer.modelHandler.model.get(model)["_findOne"]({where: {id: variant.id}})
+        variant = await mediaModel.findOne({where: {id: variant.id}})
         items.push(variant)
     }
     return items;

@@ -10,6 +10,9 @@
 - **`npm run watch:backend`**  
   Watches for changes in backend files and recompiles TypeScript continuously.
 
+Development mode is detected with `ADMINIZER_ENV=dev`. The bundled `dev`
+scripts set it automatically; use the same variable for custom local commands.
+
 ## Build Commands
 - **`npm run build:assets`**  
   Builds frontend assets using Vite.

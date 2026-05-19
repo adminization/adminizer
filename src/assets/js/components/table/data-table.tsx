@@ -8,8 +8,8 @@ import {
     useReactTable,
     VisibilityState,
 } from "@tanstack/react-table"
-import {useEffect, useRef, useState} from "react"
-import type {ReactNode} from "react"
+import { useEffect, useRef, useState } from "react"
+import type { ReactNode } from "react"
 
 import {
     Table,
@@ -19,10 +19,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import {Input} from "@/components/ui/input.tsx";
-import {Button} from "@/components/ui/button.tsx";
-import {Icon} from "@/components/icon.tsx";
-import {Columns3, Search} from "lucide-react";
+import { Input } from "@/components/ui/input.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { Icon } from "@/components/icon.tsx";
+import { Columns3, Search } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -195,9 +195,9 @@ export function DataTable<TData, TValue>(
 
         updateFloatingHeader();
 
-        scrollContainer?.addEventListener('scroll', scheduleUpdate, {passive: true});
-        tableContainer.addEventListener('scroll', scheduleUpdate, {passive: true});
-        window.addEventListener('scroll', scheduleUpdate, {passive: true});
+        scrollContainer?.addEventListener('scroll', scheduleUpdate, { passive: true });
+        tableContainer.addEventListener('scroll', scheduleUpdate, { passive: true });
+        window.addEventListener('scroll', scheduleUpdate, { passive: true });
         window.addEventListener('resize', scheduleUpdate);
 
         const resizeObserver = new ResizeObserver(scheduleUpdate);
@@ -230,13 +230,13 @@ export function DataTable<TData, TValue>(
                     size={display === 'icon' ? 'icon' : 'sm'}
                     title={columnVisibilityLabel}
                 >
-                    <Icon iconNode={Columns3} className={display === 'icon' ? 'size-5' : 'size-4'}/>
+                    <Icon iconNode={Columns3} className={display === 'icon' ? 'size-5' : 'size-4'} />
                     {display === 'label' && columnVisibilityLabel}
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align={align} side={side} className="w-56">
                 <DropdownMenuLabel>{columnVisibilityLabel}</DropdownMenuLabel>
-                <DropdownMenuSeparator/>
+                <DropdownMenuSeparator />
                 {table
                     .getAllLeafColumns()
                     .filter((column) => column.getCanHide())
@@ -257,155 +257,155 @@ export function DataTable<TData, TValue>(
 
     return (
         <div className="flex flex-1 flex-col">
-        <div className="flex flex-1 flex-col">
-            {globalSearch && onGlobalSearch && (
-                <div className="flex gap-2 p-2">
-                    {!footer && renderColumnVisibilityControl({display: 'icon'})}
-                    <Input
-                        type="text"
-                        value={searchValue}
-                        placeholder={searchTxt}
-                        className="w-full max-w-[200px] p-2 border rounded"
-                        onChange={(e) => {
-                            onGlobalSearch(e.target.value)
-                        }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && handleSearch) {
-                                handleSearch()
-                            }
-                        }}
-                    />
-                    <Button variant="outline" size="icon" onClick={handleSearch}>
-                        <Icon iconNode={Search} className="size-5"/>
-                    </Button>
-                </div>
-            )}
-            {!globalSearch && !footer && (
-                <div className="flex justify-start p-2">
-                    {renderColumnVisibilityControl()}
-                </div>
-            )}
-            <div className="relative min-h-full flex-1 overflow-hidden rounded-md border bg-background">
-            <Table
-                className="border-separate border-spacing-0"
-                wrapperHeight="min-h-full flex-1"
-                ref={tableContainerRef}
-            >
-                <TableHeader ref={tableHeaderRef} className="bg-background shadow">
-                    {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id} className="transition-none hover:bg-transparent">
-                            {headerGroup.headers.map((header, headerIndex) => {
-                                const edgeRadius = [
-                                    headerIndex === 0 ? 'rounded-tl-md' : '',
-                                    headerIndex === headerGroup.headers.length - 1 ? 'rounded-tr-md' : ''
-                                ].filter(Boolean).join(' ');
-
-                                return (
-                                    <TableHead
-                                        key={header.id}
-                                        className={`bg-background ${edgeRadius}`}
-                                    >
-                                        {header.isPlaceholder
-                                            ? null
-                                            : flexRender(
-                                                header.column.columnDef.header,
-                                                header.getContext()
-                                            )}
-                                    </TableHead>
-                                )
-                            })}
-                        </TableRow>
-                    ))}
-                </TableHeader>
-                <TableBody>
-                    {table.getRowModel().rows?.length ? (
-                        table.getRowModel().rows.map((row, rowIndex) => (
-                            <TableRow
-                                key={row.id}
-                                data-state={row.getIsSelected() && "selected"}
-                            >
-                                {row.getVisibleCells().map((cell, cellIndex) => {
-                                    const visibleCells = row.getVisibleCells();
-                                    const isLastRow = rowIndex === table.getRowModel().rows.length - 1;
-                                    const edgeRadius = [
-                                        isLastRow && cellIndex === 0 ? 'rounded-bl-md' : '',
-                                        isLastRow && cellIndex === visibleCells.length - 1 ? 'rounded-br-md' : ''
-                                    ].filter(Boolean).join(' ');
-                                    const edgeBackground = edgeRadius ? 'bg-background' : '';
-
-                                    return (
-                                    <TableCell key={cell.id}
-                                               className={`${cell.column.getIndex() === 0 ? "sticky left-0 bg-background" : ""} ${edgeRadius} ${edgeBackground}`}>
-                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                    </TableCell>
-                                    )
-                                })}
-                            </TableRow>
-                        ))
-                    ) : (
-                        <TableRow>
-                            <TableCell colSpan={table.getVisibleLeafColumns().length || columns.length} className="h-24 rounded-b-md bg-background text-center">
-                                {notFoundContent}
-                            </TableCell>
-                        </TableRow>
-                    )}
-                </TableBody>
-            </Table>
-            <div
-                className="pointer-events-none absolute inset-x-0 z-20 h-px bg-border shadow-[0_1px_0_0_var(--border)]"
-                style={{top: tableHeaderRef.current?.getBoundingClientRect().height ?? undefined}}
-            />
-            </div>
-            {floatingHeader.visible && (
-                <div
-                    className="fixed z-50 overflow-hidden bg-background shadow-md transition-none"
-                    style={{
-                        top: floatingHeader.top,
-                        left: floatingHeader.left,
-                        width: floatingHeader.width,
-                        height: floatingHeader.headerHeight
-                    }}
-                >
-                    <div
-                        className="transition-none"
-                        style={{
-                            width: floatingHeader.tableWidth,
-                            transform: `translateX(${-floatingHeader.scrollLeft}px)`
-                        }}
+            <div className="flex flex-none flex-col">
+                {globalSearch && onGlobalSearch && (
+                    <div className="flex gap-2 p-2">
+                        {!footer && renderColumnVisibilityControl({ display: 'icon' })}
+                        <Input
+                            type="text"
+                            value={searchValue}
+                            placeholder={searchTxt}
+                            className="w-full max-w-[200px] p-2 border rounded"
+                            onChange={(e) => {
+                                onGlobalSearch(e.target.value)
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && handleSearch) {
+                                    handleSearch()
+                                }
+                            }}
+                        />
+                        <Button variant="outline" size="icon" onClick={handleSearch}>
+                            <Icon iconNode={Search} className="size-5" />
+                        </Button>
+                    </div>
+                )}
+                {!globalSearch && !footer && (
+                    <div className="flex justify-start p-2">
+                        {renderColumnVisibilityControl()}
+                    </div>
+                )}
+                <div className="relative min-h-full flex-1 overflow-hidden rounded-md border bg-background">
+                    <Table
+                        className="border-separate border-spacing-0"
+                        wrapperHeight="min-h-full flex-1"
+                        ref={tableContainerRef}
                     >
-                        <table className="caption-bottom border-separate border-spacing-0 text-sm transition-none" style={{width: floatingHeader.tableWidth}}>
-                            <colgroup>
-                                {floatingHeader.columnWidths.map((width, index) => (
-                                    <col key={index} style={{width}}/>
-                                ))}
-                            </colgroup>
-                            <TableHeader className="bg-background">
-                                {table.getHeaderGroups().map((headerGroup) => (
-                                    <TableRow key={headerGroup.id} className="transition-none hover:bg-transparent">
-                                        {headerGroup.headers.map((header) => {
+                        <TableHeader ref={tableHeaderRef} className="bg-background shadow">
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <TableRow key={headerGroup.id} className="transition-none hover:bg-transparent">
+                                    {headerGroup.headers.map((header, headerIndex) => {
+                                        const edgeRadius = [
+                                            headerIndex === 0 ? 'rounded-tl-md' : '',
+                                            headerIndex === headerGroup.headers.length - 1 ? 'rounded-tr-md' : ''
+                                        ].filter(Boolean).join(' ');
+
+                                        return (
+                                            <TableHead
+                                                key={header.id}
+                                                className={`bg-background ${edgeRadius}`}
+                                            >
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(
+                                                        header.column.columnDef.header,
+                                                        header.getContext()
+                                                    )}
+                                            </TableHead>
+                                        )
+                                    })}
+                                </TableRow>
+                            ))}
+                        </TableHeader>
+                        <TableBody>
+                            {table.getRowModel().rows?.length ? (
+                                table.getRowModel().rows.map((row, rowIndex) => (
+                                    <TableRow
+                                        key={row.id}
+                                        data-state={row.getIsSelected() && "selected"}
+                                    >
+                                        {row.getVisibleCells().map((cell, cellIndex) => {
+                                            const visibleCells = row.getVisibleCells();
+                                            const isLastRow = rowIndex === table.getRowModel().rows.length - 1;
+                                            const edgeRadius = [
+                                                isLastRow && cellIndex === 0 ? 'rounded-bl-md' : '',
+                                                isLastRow && cellIndex === visibleCells.length - 1 ? 'rounded-br-md' : ''
+                                            ].filter(Boolean).join(' ');
+                                            const edgeBackground = edgeRadius ? 'bg-background' : '';
+
                                             return (
-                                                <TableHead
-                                                    key={header.id}
-                                                    className="border-b bg-background shadow-[0_2px_0_0_var(--border)] transition-none"
-                                                >
-                                                    {header.isPlaceholder
-                                                        ? null
-                                                        : flexRender(
-                                                            header.column.columnDef.header,
-                                                            header.getContext()
-                                                        )}
-                                                </TableHead>
+                                                <TableCell key={cell.id}
+                                                    className={`${cell.column.getIndex() === 0 ? "sticky left-0 bg-background" : ""} ${edgeRadius} ${edgeBackground}`}>
+                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                </TableCell>
                                             )
                                         })}
                                     </TableRow>
-                                ))}
-                            </TableHeader>
-                        </table>
-                    </div>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={table.getVisibleLeafColumns().length || columns.length} className="h-24 rounded-b-md bg-background text-center">
+                                        {notFoundContent}
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                    <div
+                        className="pointer-events-none absolute inset-x-0 z-20 h-px bg-border shadow-[0_1px_0_0_var(--border)]"
+                        style={{ top: tableHeaderRef.current?.getBoundingClientRect().height ?? undefined }}
+                    />
                 </div>
-            )}
-        </div>
-        {footer?.(renderColumnVisibilityControl)}
+                {floatingHeader.visible && (
+                    <div
+                        className="fixed z-50 overflow-hidden bg-background shadow-md transition-none"
+                        style={{
+                            top: floatingHeader.top,
+                            left: floatingHeader.left,
+                            width: floatingHeader.width,
+                            height: floatingHeader.headerHeight
+                        }}
+                    >
+                        <div
+                            className="transition-none"
+                            style={{
+                                width: floatingHeader.tableWidth,
+                                transform: `translateX(${-floatingHeader.scrollLeft}px)`
+                            }}
+                        >
+                            <table className="caption-bottom border-separate border-spacing-0 text-sm transition-none" style={{ width: floatingHeader.tableWidth }}>
+                                <colgroup>
+                                    {floatingHeader.columnWidths.map((width, index) => (
+                                        <col key={index} style={{ width }} />
+                                    ))}
+                                </colgroup>
+                                <TableHeader className="bg-background">
+                                    {table.getHeaderGroups().map((headerGroup) => (
+                                        <TableRow key={headerGroup.id} className="transition-none hover:bg-transparent">
+                                            {headerGroup.headers.map((header) => {
+                                                return (
+                                                    <TableHead
+                                                        key={header.id}
+                                                        className="border-b bg-background shadow-[0_2px_0_0_var(--border)] transition-none"
+                                                    >
+                                                        {header.isPlaceholder
+                                                            ? null
+                                                            : flexRender(
+                                                                header.column.columnDef.header,
+                                                                header.getContext()
+                                                            )}
+                                                    </TableHead>
+                                                )
+                                            })}
+                                        </TableRow>
+                                    ))}
+                                </TableHeader>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
+            {footer?.(renderColumnVisibilityControl)}
         </div>
     )
 }

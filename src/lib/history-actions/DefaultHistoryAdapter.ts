@@ -13,6 +13,14 @@ export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
 
     }
 
+    private historyModel() {
+        return this.adminizer.modelHandler.internal("history").get<HistoryActionsAP>(this.model);
+    }
+
+    private userModel() {
+        return this.adminizer.modelHandler.internal("history").get<UserAP>("UserAP");
+    }
+
     public async getAllHistory(
         user: UserAP,
         forUserName: string,
@@ -25,7 +33,7 @@ export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
 
         let userId = null;
         if (forUserName !== 'all') {
-            const foundUser = await this.adminizer.modelHandler.model.get('userap')["_findOne"]({ login: forUserName });
+            const foundUser = await this.userModel().findOne({where: {login: forUserName}});
             if (!foundUser) {
                 throw new Error("User not found");
             }
@@ -54,7 +62,7 @@ export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
             // We request with a reserve to reduce the number of requests to the database
             const fetchLimit = Math.min(limit * 2, 50);
 
-            const history = await this.adminizer.modelHandler.model.get(this.model)["_find"]({
+            const history = await this.historyModel().find({
                 where: query,
                 sort: "createdAt DESC",
                 limit: fetchLimit,
@@ -90,7 +98,7 @@ export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
 
     public async getAllModelHistory(modelId: string | number, modelName: string, user: UserAP): Promise<HistoryActionsAP[]> {
         try {
-            const history = await this.adminizer.modelHandler.model.get(this.model)["_find"]({
+            const history = await this.historyModel().find({
                 where: { modelName: modelName, modelId: String(modelId) },
                 sort: "createdAt DESC"
             })
@@ -102,14 +110,14 @@ export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
     }
 
     public async getModelFieldsHistory(historyId: number, user: UserAP): Promise<Record<string, any>> {
-        const history = await this.adminizer.modelHandler.model.get(this.model)["_findOne"]({ id: historyId })
+        const history = await this.historyModel().findOne({where: {id: historyId}})
 
         return await this._getModelFieldsHistory(history, user)
     }
 
     public async setHistory(data: Omit<HistoryActionsAP, "createdAt" | "updatedAt" | "user"> & { user: string | number }): Promise<void> {
         try {
-            await this.adminizer.modelHandler.model.get(this.model)["_update"](
+            await this.historyModel().update(
                 {
                     where: {
                         modelId: String(data.modelId),
@@ -119,7 +127,7 @@ export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
                 },
                 { isCurrent: false }
             )
-            await this.adminizer.modelHandler.model.get(this.model)["_create"]({
+            await this.historyModel().create({
                 ...data,
                 modelId: String(data.modelId),
                 isCurrent: true

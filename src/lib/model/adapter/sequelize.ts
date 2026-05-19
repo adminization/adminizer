@@ -10,7 +10,8 @@ import {
     BelongsToMany,
     HasOne
 } from "sequelize";
-import {AbstractAdapter, AbstractModel, Attribute, FindOptions} from "../AbstractModel";
+import {AbstractAdapter, AbstractModel, Attribute} from "../AbstractModel";
+import { CriteriaPopulate, CriteriaSelect, QueryCriteria } from "../../../interfaces/queryCriteria";
 import path from "path";
 import fs from "fs";
 import {pathToFileURL} from "url";
@@ -228,6 +229,16 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         this.model = model;
     }
 
+    private _buildJsonContainsCondition(targetKey: string, item: unknown): any {
+        const pattern = `%${JSON.stringify(item).replace(/[%_]/g, "\\$&")}%`;
+        const attribute = this.model.rawAttributes?.[targetKey];
+        const columnName = typeof attribute?.field === "string" ? attribute.field : targetKey;
+
+        return Sequelize.where(
+            Sequelize.cast(Sequelize.col(`${this.model.name}.${columnName}`), "TEXT"),
+            {[Op.like as any]: pattern}
+        );
+    }
 
     _convertCriteriaToSequelize(criteria: any): any {
         // Special handling for Sequelize.literal() at the top level
@@ -348,6 +359,24 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                     if (val === undefined || val === null) continue;
 
                     switch (op) {
+                        case "eq":
+                            result[targetKey] = {[Op.eq as any]: val};
+                            break;
+                        case "ne":
+                            result[targetKey] = {[Op.ne as any]: val};
+                            break;
+                        case "gt":
+                            result[targetKey] = {[Op.gt as any]: val};
+                            break;
+                        case "gte":
+                            result[targetKey] = {[Op.gte as any]: val};
+                            break;
+                        case "lt":
+                            result[targetKey] = {[Op.lt as any]: val};
+                            break;
+                        case "lte":
+                            result[targetKey] = {[Op.lte as any]: val};
+                            break;
                         case "contains":
                             // Check if field is a date/datetime type
                             const attr = this.model.rawAttributes?.[targetKey as string];
@@ -401,9 +430,37 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                         case "in":
                             result[targetKey] = {[Op.in as any]: val};
                             break;
+                        case "notIn":
+                            result[targetKey] = {[Op.notIn as any]: val};
+                            break;
                         case "nin":
                             result[targetKey] = {[Op.notIn as any]: val};
                             break;
+                        case "between":
+                            result[targetKey] = {[Op.between as any]: val};
+                            break;
+                        case "isNull":
+                            if (val) {
+                                result[targetKey] = {[Op.is as any]: null};
+                            }
+                            break;
+                        case "isNotNull":
+                            if (val) {
+                                result[targetKey] = {[Op.not as any]: null};
+                            }
+                            break;
+                        case "regex":
+                            result[targetKey] = {[Op.regexp as any]: val};
+                            break;
+                        case "jsonContains": {
+                            const values = Array.isArray(val) ? val : [val];
+                            const clauses = values.map((item) => this._buildJsonContainsCondition(targetKey as string, item));
+                            result[Op.and as any] = [
+                                ...(result[Op.and as any] ?? []),
+                                ...clauses
+                            ];
+                            break;
+                        }
                         case "$is":
                             result[targetKey] = {[Op.is as any]: val};
                             break;
@@ -434,6 +491,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         limit?: number;
         offset?: number;
         order?: any[];
+        attributes?: string[];
     } {
         // For Sequelize: extract adapter-neutral pagination and ordering params.
         // Everything else is WHERE criteria.
@@ -442,7 +500,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         const criteriaSortValue = 'sort' in criteria ? (criteria as any).sort : undefined;
         const isOrderingSort = typeof criteriaSortValue === 'string';
 
-        const {where: nestedWhere, skip, limit, sort: criteriaSort, select, ...rest} = criteria;
+        const {where: nestedWhere, skip, limit, sort: criteriaSort, select, populate, ...rest} = criteria;
 
         // If 'sort' is a model field (not an ordering string), put it back
         if (!isOrderingSort && criteriaSortValue !== undefined) {
@@ -474,6 +532,16 @@ export class SequelizeModel<T> extends AbstractModel<T> {
             const [field, dir] = criteriaSort.trim().split(/\s+/);
             result.order = [[field, dir?.toUpperCase() === "DESC" ? "DESC" : "ASC"]];
             // console.debug("→ order =", result.order);
+        } else if (criteriaSort && typeof criteriaSort === "object") {
+            result.order = Object.entries(criteriaSort).map(([field, dir]) => [
+                field,
+                String(dir).toUpperCase() === "DESC" ? "DESC" : "ASC"
+            ]);
+        }
+
+        const attributes = this._buildAttributes(select);
+        if (attributes) {
+            result.attributes = attributes;
         }
 
         return result;
@@ -592,17 +660,19 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
 
     // --- FIND ONE ---
-    protected async _findOne(criteria: Partial<T>): Promise<T | null> {
+    protected async _findOne(criteria: QueryCriteria): Promise<T | null> {
         // console.debug(">> _findOne: input criteria:", criteria);
 
-        const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
-        const includes = this._buildIncludes();
+        const {where, attributes} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
+        const includes = criteria.populate
+            ? this._buildCriteriaIncludes(criteria.populate)
+            : this._buildIncludes();
         // console.debug(">> _findOne: converted where:", where);
         // console.debug(">> _findOne: includes:", includes);
 
         let instance = null;
         try {
-            instance = await this.model.findOne({where, include: includes});
+            instance = await this.model.findOne({where, attributes, include: includes});
             // console.debug(">> _findOne: raw instance:", instance ? instance.toJSON() : null);
         } catch (err) {
             // console.error("!! _findOne: error when calling findOne:", err);
@@ -621,20 +691,19 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
     // --- FIND MANY ---
     protected async _find(
-        criteria: Partial<T> = {},
-        options: FindOptions = {}
+        criteria: QueryCriteria = {},
     ): Promise<T[]> {
         const assocNames = Object.keys(this.model.associations);
         // console.debug(">> _find: input criteria:", criteria, "options:", options);
 
-        const {where, limit, offset, order} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
+        const {where, limit, offset, order, attributes} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
         const hasRelationPathCondition = this._hasRelationPathCondition(where);
         const usedRelationAliases = hasRelationPathCondition
             ? this._extractRelationAliasesFromWhere(where)
             : new Set<string>();
 
-        const includes = options.populate
-            ? options.populate.map(([field, opts]) => ({association: field, ...opts}))
+        const includes = criteria.populate
+            ? this._buildCriteriaIncludes(criteria.populate)
             : assocNames.map((alias) => this._buildListInclude(alias, usedRelationAliases, hasRelationPathCondition));
 
         // console.debug(">> _find: where, limit, offset, order, includes:", {
@@ -648,6 +717,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         let instances: any[];
         instances = await this.model.findAll({
             where,
+            attributes,
             limit,
             offset,
             order,
@@ -722,7 +792,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
     }
 
     // --- UPDATE ONE ---
-    protected async _updateOne(criteria: Partial<T>, data: Partial<T>): Promise<T | null> {
+    protected async _updateOne(criteria: QueryCriteria, data: Partial<T>): Promise<T | null> {
         const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
 
         const record = await this.model.findOne({where});
@@ -756,7 +826,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
     }
 
     // --- UPDATE MANY ---
-    protected async _update(criteria: Partial<T>, data: Partial<T>): Promise<T[]> {
+    protected async _update(criteria: QueryCriteria, data: Partial<T>): Promise<T[]> {
         const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
 
         const assocNames = Object.keys(this.model.associations);
@@ -796,7 +866,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
 
     // --- DESTROY ONE ---
-    protected async _destroyOne(criteria: Partial<T>): Promise<T | null> {
+    protected async _destroyOne(criteria: QueryCriteria): Promise<T | null> {
         const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
         const record = await this.model.findOne({where});
 
@@ -838,7 +908,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
 
     // --- DESTROY MANY ---
-    protected async _destroy(criteria: Partial<T>): Promise<T[]> {
+    protected async _destroy(criteria: QueryCriteria): Promise<T[]> {
         const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
 
         const records = await this.model.findAll({where});
@@ -882,7 +952,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
 
     // --- COUNT ---
-    protected async _count(criteria: Partial<T> = {}): Promise<number> {
+    protected async _count(criteria: QueryCriteria = {}): Promise<number> {
         const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
         const assocNames = Object.keys(this.model.associations);
         const include = assocNames.map((association) => ({ association }));
@@ -984,6 +1054,58 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
     private _buildIncludes(): IncludeOptions[] {
         return Object.keys(this.model.associations).map(key => ({association: key}));
+    }
+
+    private _buildAttributes(select?: CriteriaSelect): string[] | undefined {
+        if (!select) {
+            return undefined;
+        }
+
+        if (Array.isArray(select)) {
+            const attributes = select.filter((field) => this.model.rawAttributes?.[field]);
+            return attributes.length ? attributes : undefined;
+        }
+
+        const attributes = Object.entries(select)
+            .filter(([field, enabled]) => enabled && this.model.rawAttributes?.[field])
+            .map(([field]) => field);
+
+        return attributes.length ? attributes : undefined;
+    }
+
+    private _buildCriteriaIncludes(populate: CriteriaPopulate): IncludeOptions[] {
+        return Object.entries(populate).map(([association, nestedCriteria]) => {
+            if (nestedCriteria === true) {
+                return {association};
+            }
+
+            const {
+                where,
+                attributes,
+                order,
+                limit,
+            } = this._convertAdminizerCriteriaToSequelizeOptions(nestedCriteria);
+
+            const include: IncludeOptions = {association};
+
+            if (where && (Object.keys(where).length > 0 || Object.getOwnPropertySymbols(where).length > 0)) {
+                include.where = where;
+            }
+            if (attributes) {
+                include.attributes = attributes;
+            }
+            if (order) {
+                include.order = order;
+            }
+            if (typeof limit === "number") {
+                include.limit = limit;
+            }
+            if (nestedCriteria.populate) {
+                include.include = this._buildCriteriaIncludes(nestedCriteria.populate);
+            }
+
+            return include;
+        });
     }
 }
 

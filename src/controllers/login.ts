@@ -18,11 +18,11 @@ export default async function login(req: ReqType, res: ResType) {
             let login = req.body.login;
             let password = req.body.password;
             let captchaSolution = req.body.captchaSolution;
+            const userModel = req.adminizer.modelHandler.internal("auth").get<UserAP>("UserAP");
 
             let user: UserAP;
             try {
-                // TODO refactor CRUD functions for DataAccessor usage
-                user = await req.adminizer.modelHandler.model.get("UserAP")["_findOne"]({ login: login });
+                user = await userModel.findOne({where: {login: login}});
             } catch (e) {
                 return res.status(500).send({ error: e.message || 'Internal Server Error' });
             }

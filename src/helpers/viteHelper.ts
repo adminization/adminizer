@@ -3,7 +3,7 @@ import fs from "fs";
 import chalk from "chalk";
 
 export function viteRender(routePrefix: string, assetName: string): string {
-    const isViteDev = process.env.VITE_ENV === "dev";
+    const isViteDev = process.env.ADMINIZER_ENV === "dev";
     if (isViteDev) {
         return `/${assetName}`
     } else {

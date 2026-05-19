@@ -1,5 +1,5 @@
 import type { HttpRequestHeaders } from '@inertiajs/core';
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 
 type QueryParams = Record<string, unknown>;
 
@@ -21,16 +21,13 @@ export interface AxiosError<T = unknown> extends Error {
     response?: AxiosResponse<T>;
 }
 
-let hasWarnedAboutLegacyAxios = false;
+const legacyAxiosMessage = 'axios-compat is a legacy compatibility API. Please use adminApi from @/lib/admin-api instead.';
 
 const warnAboutLegacyAxios = (): void => {
-    if (hasWarnedAboutLegacyAxios) {
-        return;
-    }
-
-    hasWarnedAboutLegacyAxios = true;
-    console.warn('window.axios is a legacy compatibility API. Please use apiHttp instead.');
+    console.log(legacyAxiosMessage);
 };
+
+warnAboutLegacyAxios();
 
 const toAxiosError = (error: unknown): AxiosError => {
     if (typeof error === 'object' && error !== null && 'isAxiosError' in error) {
@@ -54,7 +51,7 @@ const axios = {
         warnAboutLegacyAxios();
 
         try {
-            return await apiHttp.get<T>(url, config);
+            return await adminApi.get<T>(url, config);
         } catch (error) {
             throw toAxiosError(error);
         }
@@ -64,7 +61,7 @@ const axios = {
         warnAboutLegacyAxios();
 
         try {
-            return await apiHttp.post<T>(url, data, config);
+            return await adminApi.post<T>(url, data, config);
         } catch (error) {
             throw toAxiosError(error);
         }
@@ -74,7 +71,7 @@ const axios = {
         warnAboutLegacyAxios();
 
         try {
-            return await apiHttp.put<T>(url, data, config);
+            return await adminApi.put<T>(url, data, config);
         } catch (error) {
             throw toAxiosError(error);
         }
@@ -84,7 +81,7 @@ const axios = {
         warnAboutLegacyAxios();
 
         try {
-            return await apiHttp.patch<T>(url, data, config);
+            return await adminApi.patch<T>(url, data, config);
         } catch (error) {
             throw toAxiosError(error);
         }
@@ -94,7 +91,7 @@ const axios = {
         warnAboutLegacyAxios();
 
         try {
-            return await apiHttp.delete<T>(url, config?.data, config);
+            return await adminApi.delete<T>(url, config?.data, config);
         } catch (error) {
             throw toAxiosError(error);
         }

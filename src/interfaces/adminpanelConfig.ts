@@ -4,6 +4,7 @@ import {EditorOptions} from "@toast-ui/editor/types/editor";
 import {GridSettings as HandsontableSettings} from "handsontable/settings";
 import {GroupAP} from "../models/GroupAP";
 import {UserAP} from "../models/UserAP";
+import {InternalModelAccessMap} from "./internalModelAccess";
 
 /**
  * Controller function type - async function that handles requests and returns a response
@@ -76,8 +77,6 @@ interface DashboardConfig {
 }
 
 
-// TODO make fields (complexType | boolean into 2 different fields, manually changing config or somehow programmatically)
-// TODO fields that can be both object and boolean should be divided into main field and "fieldnameEnable" - type boolean
 export interface AdminpanelConfig {
     routePrefix: string
     list?: {
@@ -266,6 +265,11 @@ export interface AdminpanelConfig {
     system?: {
         /** Default ORM adapter for system models */
         defaultORM: string
+        /**
+         * Extra internal model access scopes for modules and project code.
+         * Built-in scopes are registered by Adminizer.
+         */
+        internalModelAccess?: InternalModelAccessMap
     }
 
     bind?: {
@@ -479,10 +483,7 @@ type UserWithGroups = UserAP & { groups: GroupAP[] }
 export type ModelFieldConfig = (BaseFieldConfig | TuiEditorFieldConfig) & { groupsAccessRights?: string[] }
 
 export interface FieldsModels {
-    [key: string]:
-        boolean |
-        string |
-        ModelFieldConfig
+    [key: string]: ModelFieldConfig
 }
 
 export interface BaseFieldConfig {

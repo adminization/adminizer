@@ -2,7 +2,7 @@ import {Input} from "@/components/ui/input.tsx";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs.tsx"
 import {useContext, useEffect, useState, forwardRef, useImperativeHandle,} from "react";
 import {MediaManagerContext} from "@/components/media-manager/media-manager.tsx";
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import Tile from "@/components/media-manager/components/Tile.tsx";
 import MediaTable from "@/components/media-manager/components/MediaTable.tsx";
 import {Media} from "@/types";
@@ -35,7 +35,7 @@ const Gallery = forwardRef<GalleryRef, GalleryProps>(({openMeta, crop, openVaria
     const [pendingTab, setPendingTab] = useState<string | null>(null);
 
     const fetchData = async (type:string) => {
-        const {data} = await apiHttp.get<any>(`${uploadUrl}?count=${count}&skip=0&type=${type}&group=${group}`);
+        const {data} = await adminApi.get<any>(`${uploadUrl}?count=${count}&skip=0&type=${type}&group=${group}`);
         setMediaList(data.data);
         setLoading(false);
         setIsLoadMore(data.next);
@@ -101,7 +101,7 @@ const Gallery = forwardRef<GalleryRef, GalleryProps>(({openMeta, crop, openVaria
         setSkip(0);
         setMediaType(type);
         try {
-            const {data} = await apiHttp.get(`${uploadUrl}?count=${count}&skip=0&type=${type}&group=${group}`);
+            const {data} = await adminApi.get(`${uploadUrl}?count=${count}&skip=0&type=${type}&group=${group}`);
             setMediaList(data.data);
             setIsLoadMore(data.next);
             setActiveTab(tabValue); // Change active tab
@@ -117,7 +117,7 @@ const Gallery = forwardRef<GalleryRef, GalleryProps>(({openMeta, crop, openVaria
         setLoading(true);
         try {
             const newSkip = skip + count;
-            const {data} = await apiHttp.get(`${uploadUrl}?count=${count}&skip=${newSkip}&type=${mediaType}&group=${group}`);
+            const {data} = await adminApi.get(`${uploadUrl}?count=${count}&skip=${newSkip}&type=${mediaType}&group=${group}`);
             setMediaList(prev => [...prev, ...data.data]);
             setIsLoadMore(data.next);
             setSkip(newSkip);
@@ -139,7 +139,7 @@ const Gallery = forwardRef<GalleryRef, GalleryProps>(({openMeta, crop, openVaria
             setIsLoadMore(false);
             setSkip(0)
             try {
-                let res = await apiHttp.post(uploadUrl, {
+                let res = await adminApi.post(uploadUrl, {
                     _method: "search",
                     type: mediaType,
                     group: group,

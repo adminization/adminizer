@@ -104,6 +104,7 @@ declare global {
     interface Window {
         routePrefix: string;
         bindPublic: boolean;
+        adminApi: typeof import('@/lib/admin-api').adminApi;
         __adminizerAiAssistantState__?: {
             isOpen: boolean;
             activeModel?: string;

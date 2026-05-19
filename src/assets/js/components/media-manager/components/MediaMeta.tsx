@@ -1,6 +1,6 @@
 import React, {useContext, useEffect, useState} from "react";
 import {MediaManagerContext} from "@/components/media-manager/media-manager.tsx";
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import {Media, MediaMeta} from "@/types";
 import {Label} from "@/components/ui/label.tsx";
 import {Input} from "@/components/ui/input.tsx";
@@ -21,7 +21,7 @@ const MediaMetaForm = ({media, callback}: MediaMetaProps) => {
         setMetaItems([]);
         const getMeta = async () => {
             try {
-                const res = await apiHttp.post<any>(uploadUrl, {
+                const res = await adminApi.post<any>(uploadUrl, {
                     item: media,
                     _method: 'getMeta'
                 })
@@ -48,7 +48,7 @@ const MediaMetaForm = ({media, callback}: MediaMetaProps) => {
         const formData = new FormData(e.currentTarget);
         const data = Object.fromEntries(formData.entries());
         try {
-            let res = await apiHttp.post(uploadUrl, {
+            let res = await adminApi.post(uploadUrl, {
                 item: media,
                 data,
                 _method: 'addMeta'

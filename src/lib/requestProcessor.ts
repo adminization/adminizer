@@ -1,4 +1,3 @@
-import { isObject } from "../helpers/JsUtils";
 import {Fields} from "../helpers/fieldsHelper";
 import {Adminizer} from "./Adminizer";
 
@@ -43,7 +42,7 @@ export class RequestProcessor {
             // }
 
             if (field.model.type === 'number') {
-                if(isObject(field.config) && field.config.type === "boolean" && typeof postParams[key] === "boolean") {
+                if (field.config.type === "boolean" && typeof postParams[key] === "boolean") {
                     postParams[key] = postParams[key] ? 1 : 0
                 }
                 postParams[key] = parseFloat(postParams[key] as string);

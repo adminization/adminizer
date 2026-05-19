@@ -36,7 +36,7 @@ import { Grid2x2Plus } from "lucide-react";
 import { DialogStackHandle } from "@/components/ui/dialog-stack.tsx";
 import MediaDialogStack from "@/components/media-manager/components/MediaDialogStack.tsx";
 import { Media } from "@/types";
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import DropZone from "@/components/media-manager/components/DropZone.tsx";
 
 interface Props {
@@ -146,7 +146,7 @@ const MediaManager = ({ layout, config, type, onChange, value, name }: Props) =>
         const initLocales = async () => {
             try {
                 // Use GET request instead of POST to get data
-                let res = await apiHttp.get<any>(uploadUrl, {
+                let res = await adminApi.get<any>(uploadUrl, {
                     params: {
                         _method: 'getLocales'
                     }

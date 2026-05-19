@@ -18,6 +18,7 @@
 * [Icons](Icons.md)
 * [Notifications](Notifications.md)
 * [History-Actions](HistoryActions.md)
+* [Internal Queries](InternalQueries.md)
 ## 3. Frontend Integration
 
 * [Inertia Adapter & Flash](InertiaAdapter.md)
@@ -28,6 +29,9 @@
 
 * [Admin Controls](Controls.md)
 * [Navigation Catalog](Navigation.md)
+* [Filters](Filters.md)
+* [Export](Export.md)
+* [Feed Export](FeedExport.md)
 
 ## 5. Access Control
 

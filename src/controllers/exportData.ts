@@ -1,6 +1,7 @@
 import { ControllerHelper } from "../helpers/controllerHelper";
 import { DataAccessor } from "../lib/DataAccessor";
-import { ModernQueryBuilder, QueryParams } from "../lib/query-builder/ModernQueryBuilder";
+import { QueryBuilder } from "../lib/query-builder/QueryBuilder";
+import { QueryBuilderParams } from "../interfaces/queryBuilder";
 import { Adminizer } from "../lib/Adminizer";
 import { Field, Fields } from "../helpers/fieldsHelper";
 import { FilterCondition } from "../models/FilterAP";
@@ -93,7 +94,7 @@ export default async function exportData(req: ReqType, res: ResType) {
     }
 
     // Fetch ALL data (no pagination)
-    const queryParams: QueryParams = {
+    const queryParams: QueryBuilderParams = {
         page: 1,
         limit: 10000, // Large limit to get all records
         filters: filters.length > 0 ? filters : undefined,
@@ -102,7 +103,7 @@ export default async function exportData(req: ReqType, res: ResType) {
         fields: Object.keys(displayFields)
     };
 
-    const queryBuilder = new ModernQueryBuilder(
+    const queryBuilder = new QueryBuilder(
         entity.model,
         fields,
         dataAccessor,

@@ -89,14 +89,11 @@ export class WidgetHandler {
             return user;
         }
 
-        const userModel = this.adminizer.modelHandler.model.get("UserAP");
-        if (!userModel) {
-            return null;
-        }
-
         const adminLogin = this.adminizer.config.administrator?.login ?? "admin";
-        // TODO refactor CRUD functions for DataAccessor usage
-        const fallbackUser = await userModel["_findOne"]({ login: adminLogin });
+        const fallbackUser = await this.adminizer.modelHandler
+            .internal("widgets")
+            .get<UserAP>("UserAP")
+            .findOne({where: {login: adminLogin}});
         return fallbackUser ?? null;
     }
 
@@ -256,7 +253,7 @@ export class WidgetHandler {
                             name: i18n.__(widget.name),
                             backgroundCSS: widget.backgroundCSS ?? null,
                             size: widget.size ?? null,
-                            scriptUrl: process.env.VITE_ENV === 'dev' ? widget.jsPath.dev : widget.jsPath.production,
+                            scriptUrl: process.env.ADMINIZER_ENV === 'dev' ? widget.jsPath.dev : widget.jsPath.production,
                         })
                     }
                 } else {
@@ -288,13 +285,12 @@ export class WidgetHandler {
             widgets: [],
             layout: { lg: [], md: [], sm: [], xs: [], xxs: [] }
         };
+        const userModel = this.adminizer.modelHandler.internal("widgets").get<UserAP>("UserAP");
 
         if (!auth) {
-            // TODO refactor CRUD functions for DataAccessor usage
-            user = await this.adminizer.modelHandler.model.get("UserAP")?.["_findOne"]({ login: this.adminizer.config.administrator?.login ?? 'admin' });
+            user = await userModel.findOne({where: {login: this.adminizer.config.administrator?.login ?? 'admin'}});
         } else {
-            // TODO refactor CRUD functions for DataAccessor usage
-            user = await this.adminizer.modelHandler.model.get("UserAP")?.["_findOne"]({ id: id });
+            user = await userModel.findOne({where: {id: id}});
         }
 
         if (!user || !user.widgets || user.widgets.widgets.length === 0) {
@@ -320,13 +316,13 @@ export class WidgetHandler {
         widgets: WidgetConfig[],
         layout: WidgetLayoutItem[]
     }, auth: boolean): Promise<number> {
+        const userModel = this.adminizer.modelHandler.internal("widgets").get<UserAP>("UserAP");
+
         if (!auth) {
-            // TODO refactor CRUD functions for DataAccessor usage
-            let updatedUser: UserAP = await this.adminizer.modelHandler.model.get("UserAP")?.["_updateOne"]({ login: this.adminizer.config.administrator?.login ?? 'admin' }, { widgets: body })
+            let updatedUser: UserAP = await userModel.updateOne({where: {login: this.adminizer.config.administrator?.login ?? 'admin'}}, { widgets: body })
             return updatedUser.id
         } else {
-            // TODO refactor CRUD functions for DataAccessor usage
-            let updatedUser: UserAP = await this.adminizer.modelHandler.model.get("UserAP")?.["_updateOne"]({ id: id }, { widgets: body })
+            let updatedUser: UserAP = await userModel.updateOne({where: {id: id}}, { widgets: body })
             return updatedUser.id
         }
 

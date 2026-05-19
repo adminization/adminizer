@@ -47,6 +47,7 @@ import bindHistory from "../system/bindHistory";
 import bindCustomFilterHandlers from "../system/bindCustomFilterHandlers";
 import { CustomFilterHandler } from "./filters/CustomFilterHandler";
 import { FeedbackHandler } from "./feedback/FeedbackHandler";
+import { buildInternalModelAccess } from "./model/buildInternalModelAccess";
 
 export class Adminizer {
     // Preconfigures
@@ -222,7 +223,7 @@ export class Adminizer {
 
 
         // Set vite middleware
-        const isViteDev = process.env.VITE_ENV === "dev";
+        const isViteDev = process.env.ADMINIZER_ENV === "dev";
         if (isViteDev) await this.viteMiddleware()
 
         this.emitter.emit('adminizer:init');
@@ -232,6 +233,7 @@ export class Adminizer {
 
         // TODO: 'hot reload' unbind models
         await bindModels(this);
+        this.modelHandler.configureInternalAccess(buildInternalModelAccess(this.config, this.modelHandler));
         bindCustomFilterHandlers(this);
 
         this.config.rootPath = path.resolve(import.meta.dirname + "/..")

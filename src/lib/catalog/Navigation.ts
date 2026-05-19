@@ -3,6 +3,7 @@ import {AdminpanelConfig, ModelConfig, NavigationConfig} from "../../interfaces/
 
 import {v4 as uuid} from "uuid";
 import {Adminizer} from "../Adminizer";
+import {NavigationAP} from "../../models/NavigationAP";
 
 export interface NavItem extends Item {
 	urlPath?: string;
@@ -25,16 +26,18 @@ export class StorageService {
 		this.ready = this.initModel()
 	}
 
+	private navigationModel() {
+		return this.adminizer.modelHandler.internal("navigation").get<NavigationAP>(this.model);
+	}
+
 	public async initModel() {
-		// Direct call by model adapter
-		const navigation = await this.adminizer.modelHandler.model.get(this.model)["_findOne"]({ label: this.id });
+		const navigation = await this.navigationModel().findOne({where: {label: this.id}});
 		if (navigation) {
 			Adminizer.log.info(`Found existing navigation: ${this.id}`);
-			await this.populateFromTree(navigation.tree);
+			await this.populateFromTree(navigation.tree as unknown as any[]);
 		} else {
 			const newNavigation = { label: this.id, tree: [] as any };
-			// Direct call by model adapter
-			await this.adminizer.modelHandler.model.get(this.model)["_create"](newNavigation);
+			await this.navigationModel().create(newNavigation);
 			Adminizer.log.info(`Created a new navigation: ${this.id}`);
 		}
 	}
@@ -127,9 +130,8 @@ export class StorageService {
 		let tree = await this.buildTree()
 
 		try {
-			// Direct call by model adapter
-           await this.adminizer.modelHandler.model.get(this.model)["_update"](
-				{label: this.id},
+           await this.navigationModel().update(
+				{where: {label: this.id}},
 				{tree: tree}
 			)
 		} catch (e) {
@@ -265,12 +267,15 @@ class NavigationItem extends AbstractItem<NavItem> {
         this.storageServices = storageServices
 	}
 
+	private contentModel() {
+		return this.adminizer.modelHandler.internal("navigation").get<any>(this.model);
+	}
+
 	async create(data: any, catalogId: string): Promise<NavItem> {
 		let storage = this.storageServices.get(catalogId)
 		let storageData = null
 		if (data._method === 'select') {
-			// Direct call by model adapter
-			let record = await this.adminizer.modelHandler.model.get(this.model)["_findOne"]({id: data.record})
+			let record = await this.contentModel().findOne({where: {id: data.record}})
 			storageData = await this.dataPreparation({
 				record: record,
 				parentId: data.parentId,
@@ -346,10 +351,9 @@ class NavigationItem extends AbstractItem<NavItem> {
             model: string,
             labels?: Record<string, string>,
         }
-    }> {
+	}> {
 		let type: 'model.link' = 'model.link'
-		// Direct call by model adapter
-		let itemsDB = await this.adminizer.modelHandler.model.get(this.model)["_find"]({})
+		let itemsDB = await this.contentModel().find({})
         let items = itemsDB.map((item: any) => {
             return{
                 id: item.id,

@@ -14,8 +14,12 @@ export * from "./lib/media-manager/MediaManagerHandler";
 export * from "./controllers/media-manager/mediaManagerAdapter"
 export * from "./interfaces/adminpanelConfig";
 export * from "./interfaces/types";
+export * from "./interfaces/queryCriteria";
+export * from "./interfaces/queryBuilder";
+export * from "./interfaces/internalModelAccess";
 export * from "./interfaces/MaaterialIcons"
 export * from "./lib/model/AbstractModel";
+export * from "./lib/model/InternalModelAccessFactory";
 export * from "./lib/model/adapter/sequelize"
 export * from "./lib/media-manager/AbstractMediaManager";
 export * from "./lib/controls/AbstractControls";

@@ -3,6 +3,7 @@ import {Adminizer} from '../Adminizer';
 import {INotification, INotificationEvent} from '../../interfaces/types';
 import {NotificationAPModel} from "../../models/NotificationAP";
 import {UserAP} from "../../models/UserAP";
+import {UserNotificationAP} from "../../models/UserNotificationAP";
 
 
 /**
@@ -62,6 +63,18 @@ export abstract class AbstractNotificationService extends EventEmitter {
         super();
         this.adminizer = adminizer;
         this._bindAccessRight()
+    }
+
+    protected notificationModel() {
+        return this.adminizer.modelHandler.internal("notifications").get<any>("NotificationAP");
+    }
+
+    protected userNotificationModel() {
+        return this.adminizer.modelHandler.internal("notifications").get<any>("UserNotificationAP");
+    }
+
+    protected userModel() {
+        return this.adminizer.modelHandler.internal("notifications").get<UserAP>("UserAP");
     }
 
     private _bindAccessRight() {
@@ -207,9 +220,9 @@ export abstract class AbstractNotificationService extends EventEmitter {
      * @returns {Promise<void>} A promise that resolves when the record is created or an error is logged.
      */
     protected async createUserNotification(notificationId: string, userId?: number): Promise<void> {
-        if (this.adminizer.modelHandler.model.has('usernotificationap') && userId) {
+        if (userId) {
             try {
-                await this.adminizer.modelHandler.model.get('usernotificationap')["_create"]({
+                await this.userNotificationModel().create({
                     userId: userId,
                     notificationId: notificationId,
                     read: false
@@ -228,17 +241,14 @@ export abstract class AbstractNotificationService extends EventEmitter {
      * @returns {Promise<any>} A promise that resolves with the found record or null if not found or an error occurs.
      */
     protected async getUserNotification(notificationId: string, userId: number): Promise<any> {
-        if (this.adminizer.modelHandler.model.has('usernotificationap')) {
-            try {
-                return await this.adminizer.modelHandler.model.get('usernotificationap')["_findOne"]({
-                    where: {notificationId: notificationId, userId: userId}
-                });
-            } catch (error) {
-                Adminizer.log.error(`Error getting user notification:`, error);
-                return null;
-            }
+        try {
+            return await this.userNotificationModel().findOne({
+                where: {notificationId: notificationId, userId: userId}
+            });
+        } catch (error) {
+            Adminizer.log.error(`Error getting user notification:`, error);
+            return null;
         }
-        return null;
     }
 
     /**
@@ -250,19 +260,16 @@ export abstract class AbstractNotificationService extends EventEmitter {
      * @returns {Promise<INotification[]>} A promise that resolves with an array of notification objects.
      */
     async getNotifications(userId: number, limit: number = 20, skip: number = 0, unreadOnly: boolean = false): Promise<INotification[]> {
-        if (!this.adminizer.modelHandler.model.has('notificationap')) {
-            return [];
-        }
-
         try {
             let query: any = {notificationClass: this.notificationClass};
 
             // If notifications are requested for a specific user, we obtain the user's notification ID
-            const userNotifications = await this.adminizer.modelHandler.model.get('usernotificationap')["_find"]({
+            const userNotifications = await this.userNotificationModel().find({
                 where: {
                     userId: userId
-                }
-            }, {populate: [['notificationId', {}]]});
+                },
+                populate: {notificationId: true}
+            });
 
             const notificationIds = userNotifications.map((un: any) => un.notificationId.id);
 
@@ -277,7 +284,7 @@ export abstract class AbstractNotificationService extends EventEmitter {
 
             if (query.id.length === 0) return []
 
-            const notificationsDB: NotificationAPModel[] = await this.adminizer.modelHandler.model.get('notificationap')["_find"]({
+            const notificationsDB: NotificationAPModel[] = await this.notificationModel().find({
                 where: query,
                 sort: 'createdAt DESC',
                 limit: limit,
@@ -329,17 +336,18 @@ export abstract class AbstractNotificationService extends EventEmitter {
      */
     async search(s: string, userId: number): Promise<INotification[]> {
         try {
-            const userNotifications = await this.adminizer.modelHandler.model.get('usernotificationap')["_find"]({
+            const userNotifications = await this.userNotificationModel().find({
                 where: {
                     userId: userId
-                }
-            }, {populate: [['notificationId', {}]]});
+                },
+                populate: {notificationId: true}
+            });
 
             const notificationIds = userNotifications.map((un: any) => un.notificationId.id);
 
             if (notificationIds.length === 0) return []
 
-            const notificationsDB: NotificationAPModel[] = await this.adminizer.modelHandler.model.get('notificationap')["_find"]({
+            const notificationsDB: NotificationAPModel[] = await this.notificationModel().find({
                 where: {
                     message: {contains: s},
                     id: notificationIds,
@@ -365,8 +373,8 @@ export abstract class AbstractNotificationService extends EventEmitter {
         try {
             const userNotification = await this.getUserNotification(id, userId);
             if (userNotification) {
-                await this.adminizer.modelHandler.model.get('usernotificationap')["_update"]({
-                    id: userNotification.id
+                await this.userNotificationModel().update({
+                    where: {id: userNotification.id}
                 }, {read: true});
             }
         } catch (error) {
@@ -381,11 +389,11 @@ export abstract class AbstractNotificationService extends EventEmitter {
      */
     async markAllAsRead(userId: number): Promise<void> {
         try {
-            const userNotifications = await this.adminizer.modelHandler.model.get('usernotificationap')["_find"]({
+            const userNotifications = await this.userNotificationModel().find({
                 where: {userId: userId}
             });
             for (const userNotification of userNotifications) {
-                await this.adminizer.modelHandler.model.get('usernotificationap')["_update"]({
+                await this.userNotificationModel().update({
                     where: {id: userNotification.id},
                 }, {read: true});
             }
@@ -417,9 +425,10 @@ export abstract class AbstractNotificationService extends EventEmitter {
             // if unreadOnly = false - we get ALL records (both read and not)
 
             // We receive all user-notification communications
-            const userNotifications = await this.adminizer.modelHandler.model.get('usernotificationap')["_find"]({
-                where: whereClause
-            }, { populate: [['notificationId', {}]] });
+            const userNotifications = await this.userNotificationModel().find({
+                where: whereClause,
+                populate: {notificationId: true}
+            });
 
             if (userNotifications.length === 0) return 0;
 
@@ -431,9 +440,11 @@ export abstract class AbstractNotificationService extends EventEmitter {
             if (validNotificationIds.length === 0) return 0;
 
             // We recalculate only those whose notificationClass matches
-            return await this.adminizer.modelHandler.model.get('notificationap')["_count"]({
-                id: validNotificationIds,
-                notificationClass: this.notificationClass
+            return await this.notificationModel().count({
+                where: {
+                    id: validNotificationIds,
+                    notificationClass: this.notificationClass
+                }
             });
         } catch (error) {
             Adminizer.log.error(`Error counting ${unreadOnly ? 'unread' : 'all'} notifications:`, error);

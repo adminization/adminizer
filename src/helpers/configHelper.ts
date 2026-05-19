@@ -75,74 +75,66 @@ export class ConfigHelper {
 	}
 
 	/**
-	 * Normalizes field configuration from various formats.
+	 * Normalizes field configuration: fills in default title/visibility and
+	 * resolves identifier/display fields for association types.
 	 *
 	 * @param adminizer
-	 * @param config Field configuration in boolean, string, or object notation
+	 * @param config Field configuration object
 	 * @param key Field key name
 	 * @param modelField Field model configuration
-	 * @returns Normalized field configuration or `false` if the field should be hidden
+	 * @returns Normalized field configuration
 	 */
 	public normalizeFieldConfig(
 		adminizer: Adminizer,
-		config: string | boolean | BaseFieldConfig,
+		config: BaseFieldConfig,
 		key: string,
 		modelField: Attribute
-	): false | BaseFieldConfig {
-		if (typeof config === "undefined" || typeof key === "undefined") {
-			throw new Error('No `config` or `key` passed!');
+	): BaseFieldConfig | undefined {
+		if (typeof config !== "object" || config === null) {
+			Adminizer.log.warn(
+				`Field "${key}" config is a primitive (${typeof config}) and will be ignored. ` +
+				`Since v5 field configs must be objects (ModelFieldConfig); the boolean/string shorthand has been removed.`
+			);
+			return undefined;
 		}
 
-		// Boolean notation: `true` means field is visible; `false` means field is hidden.
-		if (typeof config === "boolean") {
-			return config ? { title: key } : { visible: false };
-		}
+		config.title = config.title || key;
+		config.visible = config.visible === undefined ? true : Boolean(config.visible);
 
-		// String notation: Interpreted as the field title.
-		if (typeof config === "string") {
-			return { title: config };
-		}
+		if (["association", "association-many"].includes(config.type)) {
+			let associatedModelAttributes = {};
+			let displayField: string;
 
-		// Object notation: Allows full customization of the field.
-		if (typeof config === "object" && config !== null) {
-			config.title = config.title || key;
+			try {
+				const associatedModelName =
+					config.type === "association"
+						? modelField.model?.toLowerCase()
+						: modelField.collection?.toLowerCase();
 
-			config.visible = config.visible === undefined ? true : Boolean(config.visible)
-
-			// For association types, determine display field by checking model attributes.
-			if (["association", "association-many"].includes(config.type)) {
-				let associatedModelAttributes = {};
-				let displayField: string;
-
-				try {
-					const associatedModelName =
-						config.type === "association"
-							? modelField.model.toLowerCase()
-							: modelField.collection.toLowerCase();
-
-					const associatedModel = adminizer.modelHandler.model.get(associatedModelName);
-					if (!associatedModel) {
-						throw new Error(`Can not add relations to unloaded models; Config: ${JSON.stringify(config, null, 2)}`)
-					}
-
-					associatedModelAttributes = associatedModel.attributes;
-
-				} catch (e) {
-					console.error(`Error loading model for field ${key}:`, e);
+				if (!associatedModelName) {
+					throw new Error(`No model/collection defined for association field: ${key}`);
 				}
 
-				displayField = getDisplayField(associatedModelAttributes);
-				config = {
-					...config,
-					identifierField: "id",
-					displayField: displayField,
-				};
+				const associatedModel = adminizer.modelHandler.model.get(associatedModelName);
+				if (!associatedModel) {
+					throw new Error(`Can not add relations to unloaded models; Config: ${JSON.stringify(config, null, 2)}`)
+				}
+
+				associatedModelAttributes = associatedModel.attributes;
+
+			} catch (e) {
+				console.error(`Error loading model for field ${key}:`, e);
 			}
 
-			return config;
+			displayField = getDisplayField(associatedModelAttributes);
+			config = {
+				...config,
+				identifierField: "id",
+				displayField: displayField,
+			};
 		}
 
-		return false;
+		return config;
 	}
 
 	/**

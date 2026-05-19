@@ -38,11 +38,10 @@ export default async function bindAccessRights(adminizer: Adminizer) {
 
     // Default user group
     if (adminizer.config.registration && adminizer.config.registration.enable) {
-        // TODO refactor CRUD functions for DataAccessor usage
-        let defaultUserGroupRecord: GroupAP = await adminizer.modelHandler.model.get("GroupAP")["_findOne"]({name: adminizer.config.registration.defaultUserGroup});
+        const groupModel = adminizer.modelHandler.internal("access-rights").get<GroupAP>("GroupAP");
+        let defaultUserGroupRecord: GroupAP = await groupModel.findOne({where: {name: adminizer.config.registration.defaultUserGroup}});
         if (!defaultUserGroupRecord) {
-            // TODO refactor CRUD functions for DataAccessor usage
-            await adminizer.modelHandler.model.get("GroupAP")?.["_create"]({
+            await groupModel.create({
                 name: adminizer.config.registration.defaultUserGroup,
                 description: "Group for default users (guests) who dont have access to fields"
             })

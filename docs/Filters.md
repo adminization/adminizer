@@ -10,14 +10,15 @@ The filter subsystem allows users to:
 - save personal/shared filters with metadata;
 - store per-filter column order;
 - expose private filters as JSON/XML feeds (with API keys);
-- use relation and custom conditions for Sequelize models.
+- use relation and custom conditions through Adminizer's internal query language.
 
 Main files:
 
 - `src/models/FilterAP.ts`
 - `src/models/FilterColumnAP.ts`
 - `src/lib/filters/FilterService.ts`
-- `src/lib/query-builder/ModernQueryBuilder.ts`
+- `src/lib/query-builder/QueryBuilder.ts`
+- `src/interfaces/queryCriteria.ts`
 - `src/controllers/filter-fields/*`
 - `src/assets/js/components/list-table/filter-panel.tsx`
 
@@ -74,7 +75,7 @@ interface FilterCondition {
   customHandlerName?: string;
   customHandlerParams?: any;
 
-  rawSQL?: string;
+  rawSQL?: string; // legacy shape, not executed by QueryCriteria
   rawSQLParams?: any[];
 }
 ```
@@ -89,15 +90,15 @@ Usage map (current code):
 | `value` | yes | Operator payload |
 | `logic` | yes | Group logic (`AND`/`OR`/`NOT`) in backend/query builder |
 | `children` | yes | Nested group conditions in backend/query builder |
-| `relation` | yes | Relation filter path for Sequelize |
+| `relation` | yes | Relation filter path, converted to adapter-neutral criteria |
 | `relationField` | yes | Related field in relation filter |
 | `customHandler` | yes | Custom handler ID for custom filter execution |
 | `customHandlerName` | yes | UI display label (optional, fallbacks exist) |
 | `customHandlerParams` | yes | Optional params passed to custom handler execution |
-| `rawSQL` | yes | Advanced raw SQL condition path (validated/executed) |
-| `rawSQLParams` | yes | Parameters for raw SQL placeholders |
+| `rawSQL` | legacy | Not executed by `QueryCriteria`; use a custom handler that returns `criteria` |
+| `rawSQLParams` | legacy | Kept for compatibility with older condition payloads |
 
-There are no currently dead fields in `FilterCondition`. Some fields are optional or advanced, but all are referenced by runtime code and/or UI formatting.
+`FilterCondition` is a UI/saved-filter format. Runtime execution converts it into `QueryCriteria`; ORM adapters do not receive `FilterCondition` directly.
 
 ## Operators
 
@@ -113,7 +114,20 @@ There are no currently dead fields in `FilterCondition`. Some fields are optiona
 - `regex`
 - `custom`
 
-Type-specific availability is enforced in `ConditionValidator` and `ModernQueryBuilder`.
+Type-specific availability is enforced in `ConditionValidator` and `QueryBuilder`.
+
+## Query Execution
+
+Filters are not passed to ORM adapters directly. The execution path is:
+
+```text
+FilterCondition[] + list/search params
+  -> QueryBuilder
+  -> QueryCriteria
+  -> ORM adapter
+```
+
+`QueryCriteria` is documented in [Internal Queries](InternalQueries.md). It contains only adapter-neutral fields such as `where`, `select`, `populate`, `sort`, `limit`, and `skip`. UI concepts such as `filters`, `globalSearch`, and visible table columns stay outside the internal query language.
 
 ### Important UI note
 
@@ -122,7 +136,7 @@ Nested `AND/OR/NOT` groups are supported by backend condition format and query b
 
 ### Relation filter note
 
-- Relation conditions are available only for Sequelize relation fields.
+- Relation conditions are converted to adapter-neutral relation criteria.
 - In the current UI and validator flow for relation conditions, allowed operators are `eq` and `neq`.
 
 ## Visibility and Permissions
@@ -265,7 +279,7 @@ Notes:
 
 ## Validation and Security Limits
 
-Execution-level limits (`FILTER_SECURITY_LIMITS` in `ModernQueryBuilder`):
+Execution-level limits (`FILTER_SECURITY_LIMITS` in `QueryBuilder`):
 
 | Limit | Value |
 |---|---|
@@ -275,7 +289,7 @@ Execution-level limits (`FILTER_SECURITY_LIMITS` in `ModernQueryBuilder`):
 | Max `IN` values | 1000 |
 | Max string length | 10000 |
 
-`ConditionValidator` provides extra condition validation helpers (field/type/operator/value checks and raw SQL pattern checks), but it is a utility class and is not the only enforcement layer. Query execution still validates key constraints in `ModernQueryBuilder`.
+`ConditionValidator` provides extra condition validation helpers (field/type/operator/value checks and legacy raw SQL pattern checks), but it is a utility class and is not the only enforcement layer. Query execution still validates key constraints in `QueryBuilder`.
 
 ## Model Configuration
 

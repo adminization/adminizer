@@ -82,9 +82,11 @@ The export controller:
 2. Loads the saved filter (if `filterId` is provided)
 3. Converts datetime conditions from HTML5 format to UTC
 4. Applies custom column configuration from filter
-5. Executes a query with no pagination (large limit)
-6. Formats data based on field types (relationships, booleans, dates, JSON)
-7. Generates the file and sends it as a download
+5. Converts filter conditions through `QueryBuilder` into internal `QueryCriteria`
+6. Executes a query with no pagination (large limit)
+7. Selects only real database columns at SQL level; relation/display fields are loaded and formatted after records are fetched
+8. Formats data based on field types (relationships, booleans, dates, JSON)
+9. Generates the file and sends it as a download
 
 ### Route Registration: `src/system/Router.ts`
 
@@ -97,7 +99,7 @@ adminizer.app.post(`${baseRoute}/export`, adminizer.policyManager.bindPolicies(p
 ### Frontend: `src/assets/js/components/list-table/table-toolbar.tsx`
 
 The export dropdown:
-- Uses Adminizer HTTP client (`apiHttp`) for export requests and creates a `Blob` for download
+- Uses Adminizer HTTP client (`adminApi`) for export requests and creates a `Blob` for download
 - Reads `filterId` from URL to preserve filter state
 - Extracts filename from `Content-Disposition` header
 - Shows toast notifications for success/error

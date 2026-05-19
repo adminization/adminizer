@@ -95,7 +95,7 @@ export async function getSavedFilters(req: ReqType, res: ResType) {
             let ownerInfo = null;
             if (userModel && filter.ownerId) {
                 try {
-                    const owner = await userModel['_findOne']({ id: filter.ownerId });
+                    const owner = await userModel['_findOne']({where: {id: filter.ownerId}});
                     if (owner) {
                         ownerInfo = {
                             id: owner.id,

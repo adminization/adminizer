@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/tooltip"
 import InputError from "@/components/input-error.tsx";
 import MaterialIcon from "@/components/material-icon.tsx";
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import { toast } from "sonner";
 
 type value = string | boolean | Date | Record<string, string>[]
@@ -82,7 +82,7 @@ export default function AddUserForm() {
 
     useEffect(() => {
         const getTimezones = async () => {
-            const data = await apiHttp.get<any>(`${window.routePrefix}/get-timezones`)
+            const data = await adminApi.get<any>(`${window.routePrefix}/get-timezones`)
             setTimezones(data.data.timezones)
         }
         getTimezones()
@@ -108,7 +108,7 @@ export default function AddUserForm() {
 
     const handleRegenerateApiKey = async () => {
         try {
-            const response = await apiHttp.post<any>('/adminizer/api/user-key/regenerate');
+            const response = await adminApi.post<any>('/adminizer/api/user-key/regenerate');
             setCurrentApiKey(response.data.apiKey);
             toast.success('User API key regenerated');
         } catch (error) {

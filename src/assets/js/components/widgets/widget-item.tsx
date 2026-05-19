@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { apiHttp } from "@/lib/http-client";
+import { adminApi } from "@/lib/admin-api";
 import { getDefaultColorByID } from "./colorPallete.ts";
 import { Widget as WidgetData } from "@/types";
 import MaterialIcon from "@/components/material-icon.tsx";
@@ -80,7 +80,7 @@ const WidgetItem: React.FC<WidgetProps> = ({ widgets, draggable, ID }) => {
 
     const getInfo = async (api: string) => {
         try {
-            const response = await apiHttp.get<any>(api);
+            const response = await adminApi.get<any>(api);
             setWidgetState((prev) => ({ ...prev, info: response.data }));
         } catch (error) {
             console.error('Error fetching widget info:', error);
@@ -89,7 +89,7 @@ const WidgetItem: React.FC<WidgetProps> = ({ widgets, draggable, ID }) => {
 
     const getState = async (api: string) => {
         try {
-            const response = await apiHttp.get<{ state: boolean }>(api);
+            const response = await adminApi.get<{ state: boolean }>(api);
             setWidgetState((prev) => ({ ...prev, state: response.data.state }));
         } catch (error) {
             console.error('Error fetching widget state:', error);
@@ -109,7 +109,7 @@ const WidgetItem: React.FC<WidgetProps> = ({ widgets, draggable, ID }) => {
 
     const handleSwitcherWidget = async (api: string) => {
         try {
-            const response = await apiHttp.post<{ state: boolean }>(api);
+            const response = await adminApi.post<{ state: boolean }>(api);
             setWidgetState((prev) => ({ ...prev, state: response.data.state }));
         } catch (error) {
             console.error('Error switching widget state:', error);
@@ -118,7 +118,7 @@ const WidgetItem: React.FC<WidgetProps> = ({ widgets, draggable, ID }) => {
 
     const handleActionWidget = async (api: string) => {
         try {
-            await apiHttp.post(api);
+            await adminApi.post(api);
         } catch (error) {
             console.error('Error performing widget action:', error);
         }

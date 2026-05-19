@@ -217,6 +217,7 @@ import MonacoEditor from '@/components/monaco-editor';
 import MultiSelect from '@/components/multi-select';
 import * as sonner from 'sonner';
 import axios from '@/lib/axios-compat';
+import { adminApi } from '@/lib/admin-api';
 
 export function registerUIComponents(): void {
 
@@ -231,6 +232,9 @@ export function registerUIComponents(): void {
 
     //@ts-ignore
     window.axios = axios
+
+    //@ts-ignore
+    window.adminApi = adminApi
 
     //@ts-ignore
     Object.assign(window.UIComponents, {

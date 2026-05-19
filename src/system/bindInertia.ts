@@ -38,7 +38,7 @@ export function bindInertia(adminizer: Adminizer) {
     };
 
     const viteRender = () => {
-        if (process.env.VITE_ENV === 'dev') {
+        if (process.env.ADMINIZER_ENV === 'dev') {
             return `
                     <script type="module">
                         import RefreshRuntime from "/@react-refresh"

@@ -8,11 +8,11 @@ import { UserAP } from "../models/UserAP";
 import { generateUserApiKey } from "../helpers/apiKeyHelper";
 
 export default async function bindAuthorization(adminizer: Adminizer) {
+    const userModel = adminizer.modelHandler.internal("auth").get<UserAP>("UserAP");
 
     let admins: UserAP[];
     try {
-        // TODO refactor CRUD functions for DataAccessor usage
-        admins = await adminizer.modelHandler.model.get("UserAP")?.["_find"]({isAdministrator: true});
+        admins = await userModel.find({where: {isAdministrator: true}});
     } catch (e) {
         Adminizer.log.error("Error trying to find administrator", e)
         return;
@@ -56,8 +56,7 @@ export default async function bindAuthorization(adminizer: Adminizer) {
         try {
             let passwordHashed = generate(adminData.login + adminData.password + process.env.AP_PASSWORD_SALT);
             let password = 'masked';
-            // TODO refactor CRUD functions for DataAccessor usage
-            await adminizer.modelHandler.model.get("UserAP")?.["_create"]({
+            await userModel.create({
                 login: adminData.login, passwordHashed: passwordHashed, fullName: "Administrator",
                 isActive: true, isAdministrator: true,
                 apiKey: generateUserApiKey()
@@ -75,8 +74,7 @@ export default async function bindAuthorization(adminizer: Adminizer) {
         try {
             let passwordHashed = generate("demodemo" + process.env.AP_PASSWORD_SALT);
             let password = 'masked';
-            // TODO refactor CRUD functions for DataAccessor usage
-            await adminizer.modelHandler.model.get("UserAP")?.["_create"]({
+            await userModel.create({
                 login: 'demo', password: 'demo', passwordHashed: passwordHashed, fullName: "Administrator",
                 isActive: true, isAdministrator: true,
                 apiKey: generateUserApiKey()
@@ -109,8 +107,7 @@ function getRandomInt(min: number, max: number) {
 
 
 async function initUserPolicy(req: ReqType, res: ResType, proceed: any) {
-    // TODO refactor CRUD functions for DataAccessor usage
-    let admins: UserAP[] = await req.adminizer.modelHandler.model.get("UserAP")?.["_find"]({isAdministrator: true});
+    let admins: UserAP[] = await req.adminizer.modelHandler.internal("auth").get<UserAP>("UserAP").find({where: {isAdministrator: true}});
     if (!admins || !admins.length) {
         return res.redirect(`${req.adminizer.config.routePrefix}/init_user`)
     }

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { SharedData } from "@/types";
 import { usePage } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
-import { apiHttp } from '@/lib/http-client';
+import { adminApi } from '@/lib/admin-api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Braces, CalendarIcon, LoaderCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -60,7 +60,7 @@ const ViewAll = () => {
     const fetchHistory = async (offset: number, model: string = 'all', user: string = 'all', reset = false, dateRange: DateRange | undefined) => {
         setLoadingMore(true);
         try {
-            const res = await apiHttp.post<any>(`${window.routePrefix}/history/view-all`, {
+            const res = await adminApi.post<any>(`${window.routePrefix}/history/view-all`, {
                 model,
                 offset,
                 limit,

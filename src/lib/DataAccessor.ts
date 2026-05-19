@@ -4,7 +4,6 @@
 import {Entity} from "../interfaces/types";
 import {
     ActionType,
-    BaseFieldConfig,
     FieldsModels,
     FieldsTypes,
     ModelConfig,
@@ -15,8 +14,46 @@ import {Adminizer} from "./Adminizer";
 import { GroupAP } from "../models/GroupAP";
 import { UserAP } from "../models/UserAP";
 import { isObject } from "../helpers/JsUtils";
+import { CriteriaWhere, QueryCriteria } from "../interfaces/queryCriteria";
 
 const MODEL_TOKEN_SUFFIX = "model";
+
+function hasCriteriaContent(criteria: CriteriaWhere): boolean {
+    return Object.keys(criteria).length > 0 || Object.getOwnPropertySymbols(criteria).length > 0;
+}
+
+function isPlainCriteriaWhere(where: unknown): where is CriteriaWhere {
+    if (!isObject(where)) {
+        return false;
+    }
+
+    const prototype = Object.getPrototypeOf(where);
+    return prototype === Object.prototype || prototype === null;
+}
+
+function mergeCriteriaWhere(criteriaWhere: QueryCriteria["where"], sanitizedCriteria: CriteriaWhere): QueryCriteria["where"] {
+    if (!hasCriteriaContent(sanitizedCriteria)) {
+        return criteriaWhere;
+    }
+
+    if (!criteriaWhere) {
+        return sanitizedCriteria;
+    }
+
+    if (isPlainCriteriaWhere(criteriaWhere)) {
+        return {
+            ...criteriaWhere,
+            ...sanitizedCriteria
+        };
+    }
+
+    return {
+        and: [
+            criteriaWhere as CriteriaWhere,
+            sanitizedCriteria
+        ]
+    };
+}
 
 export class DataAccessor {
     public readonly adminizer: Adminizer;
@@ -40,6 +77,10 @@ export class DataAccessor {
             .find(([key]) => key.toLowerCase() === modelName.toLowerCase());
         const config = entry ? entry[1] : undefined;
         return isObject(config) ? config as ModelConfig : undefined;
+    }
+
+    private accessRelationModel<T = any>(modelName: string) {
+        return this.adminizer.modelHandler.internal("data-accessor").get<T>(modelName);
     }
 
     /**
@@ -93,25 +134,20 @@ export class DataAccessor {
             let fldConfig: Field["config"] = {key: key, title: key};
             let associatedModelConfig: ModelConfig = undefined;
 
-            /** Combine the field configuration from global and action-specific configs
-             *  (now combine it before check, earlier was opposite).
-             *  Action-specific config should overwrite the global one */
-                // merge configs if they are both objects or pick priority one if not
-            const combinedFieldConfig =
-                    typeof fieldsConfig[key] === "object" && typeof actionConfig.fields[key] === "object"
-                        ? {...fieldsConfig[key], ...actionConfig.fields[key]}
-                        : actionConfig.fields[key] !== undefined
-                            ? actionConfig.fields[key]
-                            : fieldsConfig[key];
+            // Action-specific config has priority over global; objects are merged
+            const globalFieldConfig = fieldsConfig[key];
+            const actionFieldConfig = actionConfig.fields?.[key];
 
-            if (combinedFieldConfig !== undefined) {
-                /** Access rights check (check groupsAccessRights field if exists, if not - allow to all except default user group) */
-                let hasAccess = this.checkFieldAccess(key, combinedFieldConfig);
-                if (!hasAccess) {
+            if (globalFieldConfig || actionFieldConfig) {
+                const rawFieldConfig = { ...globalFieldConfig, ...actionFieldConfig };
+                const normalizedFieldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, rawFieldConfig, key, modelField);
+                if (!normalizedFieldConfig) {
                     return;
                 }
-
-                fldConfig = {...fldConfig, ...this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, combinedFieldConfig, key, modelField)};
+                if (!this.checkFieldAccess(key, normalizedFieldConfig)) {
+                    return;
+                }
+                fldConfig = { ...fldConfig, ...normalizedFieldConfig };
             }
 
             // Populate associated fields configuration if field is an association
@@ -146,8 +182,8 @@ export class DataAccessor {
             // Default type for field. Could be fetched from config file or model if not defined in config file.
             fldConfig.type = ((fldConfig.type || modelField.type).toLowerCase() as FieldsTypes);
 
-            // Normalize final configuration
-            fldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fldConfig, key, modelField);
+            // Normalize final configuration (fldConfig is always an object here, normalize never returns undefined)
+            fldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fldConfig, key, modelField)!;
 
             // Add new field to result set
             result[key] = {config: fldConfig, model: modelField, populated: populatedModelFieldsConfig, modelConfig: associatedModelConfig };
@@ -177,27 +213,28 @@ export class DataAccessor {
         const fieldsConfig = modelConfig.fields || {};
 
         // Merge action-specific fields configuration if it exists
+        const addCfg = typeof modelConfig.add === "object" ? modelConfig.add : undefined;
+        const editCfg = typeof modelConfig.edit === "object" ? modelConfig.edit : undefined;
+        const listCfg = typeof modelConfig.list === "object" ? modelConfig.list : undefined;
         let actionSpecificConfig: FieldsModels = {};
-        if (modelConfig && typeof modelConfig === "object" && typeof modelConfig['add'] !== "boolean" && typeof modelConfig['edit'] !== "boolean" && typeof modelConfig['list'] !== "boolean") {
-            switch (this.action) {
-                case "add":
-                    actionSpecificConfig = modelConfig['add']?.fields || {};
-                    break;
-                case "edit":
-                    actionSpecificConfig = modelConfig['edit']?.fields || {};
-                    break;
-                case "list":
-                    actionSpecificConfig = modelConfig['list']?.fields || {};
-                    break;
-                case "view":
-                    actionSpecificConfig = modelConfig['edit']?.fields || {};
-                    break;
-                case "remove":
-                    actionSpecificConfig = {}
-                    break;
-                default:
-                    throw `Action type error: unknown type [${this.action}]`
-            }
+        switch (this.action) {
+            case "add":
+                actionSpecificConfig = addCfg?.fields || {};
+                break;
+            case "edit":
+                actionSpecificConfig = editCfg?.fields || {};
+                break;
+            case "list":
+                actionSpecificConfig = listCfg?.fields || {};
+                break;
+            case "view":
+                actionSpecificConfig = editCfg?.fields || {};
+                break;
+            case "remove":
+                actionSpecificConfig = {}
+                break;
+            default:
+                throw `Action type error: unknown type [${this.action}]`
         }
         const mergedFieldsConfig = {...fieldsConfig, ...actionSpecificConfig};
 
@@ -210,11 +247,10 @@ export class DataAccessor {
 
             // If fieldConfig exists, normalize it and merge with the basic config
             if (fieldConfig) {
-                const hasAccess = this.checkFieldAccess(key, fieldConfig);
-
-                // Skip the field if access is denied
-                if (!hasAccess) return;
-                fldConfig = {...fldConfig, ...this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fieldConfig, key, modelField)};
+                const normalizedFieldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fieldConfig, key, modelField);
+                if (!normalizedFieldConfig) return;
+                if (!this.checkFieldAccess(key, normalizedFieldConfig)) return;
+                fldConfig = { ...fldConfig, ...normalizedFieldConfig };
             }
 
             // Add the field to associatedFields regardless of config presence
@@ -230,20 +266,11 @@ export class DataAccessor {
     }
 
     private checkFieldAccess(key: string, fieldConfig: Field["config"]): boolean {
-        // If config is set to false skip this field
-        if (fieldConfig === false) {
-            return false;
-        }
-
         if (this.entity.model.primaryKey === key) {
             return true;
         }
 
         if (this.user.isAdministrator) {
-            return true;
-        }
-
-        if (typeof fieldConfig !== "object") {
             return true;
         }
 
@@ -280,8 +307,7 @@ export class DataAccessor {
 
             // Check access to the field
             if (this.checkFieldAccess(fieldKey, fieldConfig.config)) {
-                const fieldConfigConfig = fieldConfig.config as BaseFieldConfig; // in this.fields configs are only objects
-                const fieldType = fieldConfigConfig.type;
+                const fieldType = fieldConfig.config.type;
                 // Handle fields that are not associations
                 if (fieldType !== 'association' && fieldType !== 'association-many') {
                     filteredRecord[fieldKey] = fieldValue;
@@ -352,8 +378,8 @@ export class DataAccessor {
         return records.map(record => this.process(record));
     }
 
-    public async sanitizeUserRelationAccess<T>(criteria: T): Promise<Partial<T>> {
-        let sanitizedCriteria: Partial<T> = {};
+    public async sanitizeUserRelationAccess(criteria: QueryCriteria = {}): Promise<QueryCriteria> {
+        let sanitizedCriteria: CriteriaWhere = {};
 
         // Retrieve model configuration from adminpanel config
         const modelName = this.entity.model.modelname;
@@ -431,21 +457,17 @@ export class DataAccessor {
                 }
 
                 // Fetch all intermediate records associated with the user
-                const intermediateRecords = await intermediateModel["_find"]({[via]: this.user.id});
+                const intermediateRecords = await this.accessRelationModel(intermediateRelation.model).find({where: {[via]: this.user.id}});
                 const intermediateIds = (intermediateRecords || []).map((r) => r.id);
                 // Filter main model by all matching intermediate record IDs
                 sanitizedCriteria = {...sanitizedCriteria, [field]: {in: intermediateIds}};
             }
         }
 
-        let _criteria = criteria as { where?: Record<string, unknown> }
-        if (_criteria.where) {
-            _criteria.where = {..._criteria.where, ...sanitizedCriteria};
-        } else {
-            _criteria = {..._criteria, ...sanitizedCriteria}
-        }
-
-        return _criteria as Partial<T>;
+        return {
+            ...criteria,
+            where: mergeCriteriaWhere(criteria.where, sanitizedCriteria)
+        };
     }
 
     public async setUserRelationAccess<T>(record: T): Promise<Partial<T>> {
@@ -514,7 +536,7 @@ export class DataAccessor {
                     const chosenId = typeof updatedRecord[field as keyof T] === 'object'
                         ? (updatedRecord[field as keyof T] as Record<string, unknown>)[intermediatePk]
                         : updatedRecord[field as keyof T];
-                    const record = await intermediateModel["_findOne"]({[intermediatePk]: chosenId, [via]: this.user.id});
+                    const record = await this.accessRelationModel(intermediateRelation.model).findOne({where: {[intermediatePk]: chosenId, [via]: this.user.id}});
                     if (!record) {
                         throw new Error(`Access denied: "${field}" does not belong to the current user`);
                     }

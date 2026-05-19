@@ -65,14 +65,21 @@ The system supports various notification types through separate services. Each t
 The system provides seamless user interaction by delivering important information in real time while maintaining history for future reference.
 
 
-## System Initialization
+## Configuration
 
-The notification system is initialized when the application starts through the `bindNotifications()` function, which:
+Notifications are disabled by default. Enable them in `AdminpanelConfig`:
 
-1. **Creates a handler** - central coordinator for all notifications
-2. **Registers services** - connects various notification types:
-    - `GeneralNotificationService` - general notifications
-    - `SystemNotificationService` - system events and notifications
+```ts
+notifications: {
+    enabled: true,
+    enableGeneral: true,
+    initTab: 'general',
+}
+```
+
+The notification system is initialized through `bindNotifications()`. It creates a `NotificationHandler` and registers `GeneralNotificationService` when `notifications.enableGeneral` is enabled.
+
+`SystemNotificationService` exists in the codebase, but it is not registered by default.
 
 ## Integration with Adminizer
 
@@ -93,20 +100,7 @@ await adminizer.sendNotification({
 });
 ```
 
-#### 2. System Events
-```typescript
-// General system event
-await adminizer.logSystemEvent(
-    'System Update', 
-    'The system has been successfully updated',
-    { version: '2.0.0' }
-);
-
-// CRUD operation events
-await adminizer.logSystemCreatedEvent('New User', 'User John Doe created');
-await adminizer.logSystemUpdatedEvent('Profile Update', 'User profile updated');
-await adminizer.logSystemDeletedEvent('Record Deletion', 'Record deleted from database');
-```
+For custom notification classes, create a service that extends `AbstractNotificationService` and register it with `adminizer.notificationHandler.registerService(...)` after notifications are initialized.
 
 ## Default Notification Service Types
 
@@ -116,7 +110,7 @@ await adminizer.logSystemDeletedEvent('Record Deletion', 'Record deleted from da
 
 ### SystemNotificationService
 - **Purpose**: System events and automatic notifications
-- **Usage**: System events, audit trails, action logging
+- **Status**: Available in code, but not registered by default
 
 ## Access Rights
 

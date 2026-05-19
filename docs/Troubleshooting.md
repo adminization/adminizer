@@ -1,4 +1,4 @@
-### 🔧 Issue with Model Name Casing in Config (Waterline, Sequelize, TypeORM)
+### Issue with Model Name Casing in Config (Sequelize, TypeORM)
 
 **Description:**
 
@@ -19,12 +19,12 @@ models: {
 }
 ```
 
-The configuration system looks up the model config by exact key match. If the key casing doesn't match what the ERM uses internally, the config is not found, and an error is thrown.
+The configuration system looks up the model config by exact key match. If the key casing doesn't match what the ORM adapter uses internally, the config is not found, and an error is thrown.
 
 **Temporary Rule:**
 
 * Use **lowercase model names** as keys in the `models` config section.
-* Match the model name exactly as it is referenced internally by your ERM (Waterline, Sequelize, TypeORM).
+* Match the model name exactly as it is referenced internally by your ORM adapter (Sequelize or TypeORM).
 
 **Planned Improvements:**
 

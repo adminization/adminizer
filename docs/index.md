@@ -14,11 +14,15 @@
 
 ## Other
 
+* [Commands](Commands.md)
+* [Development](development.md)
 * [Localization](Configuration/Localization.md)
 * [Icons](Icons.md)
 * [Notifications](Notifications.md)
 * [History-Actions](HistoryActions.md)
 * [Internal Queries](InternalQueries.md)
+* [AI Assistant](AiAssistant.md)
+* [Feedback](Feedback.md)
 ## 3. Frontend Integration
 
 * [Inertia Adapter & Flash](InertiaAdapter.md)
@@ -32,11 +36,13 @@
 * [Filters](Filters.md)
 * [Export](Export.md)
 * [Feed Export](FeedExport.md)
+* [Widgets](Configuration/Widgets.md)
 
 ## 5. Access Control
 
-* [Model-Level Permissions](AccessControl/ModelPermissions.md)
-* [Field-Level Restrictions](AccessControl/FieldRestrictions.md)
-* [Role & Group Management](AccessControl/RoleGroups.md)
+* [Authorization](Authorization.md)
+* [Access Rights Tokens](AccessRights/access-rights-tokens.md)
+* [Field-Level Restrictions](AccessRights/AccessRightsModelFields.md)
+* [User-Owned Records](AccessRights/user-owned-records.md)
 * [Global UI Components](GlobalUI.md)
 * [UI Component List](UIComponents.md)

@@ -8,7 +8,7 @@ import { AdminizerConfig } from "adminizer";
 const config: AdminizerConfig = {
   routePrefix: "/admin",
   favicon: "/brand/admin-favicon.ico",
-  auth: true,
+  auth: { enable: true },
   dashboard: true,
   models: {},
 };
@@ -20,6 +20,7 @@ const config: AdminizerConfig = {
 |--------|-------------|
 | `routePrefix` | Base URL for the panel. Defaults to `/admin`. |
 | `favicon` | Custom favicon URL. Relative values are resolved from `routePrefix`; default is `<routePrefix>/files/favicon.png`. |
+| `auth` | Authentication settings, for example `{ enable: true, captcha: true }`. |
 | `linkAssets` | Symlink static assets instead of copying them. |
 | `identifierField` | Default primary key for models (usually `id`). |
 | `showORMtime` | Show `createdAt`/`updatedAt` fields on create/edit pages. |

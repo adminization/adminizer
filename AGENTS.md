@@ -11,13 +11,13 @@ It includes a TypeScript backend and a React frontend, and can be integrated int
 - Backend: TypeScript (ESM)
 - Frontend: React + TypeScript + Vite
 - UI stack: Radix UI, Tailwind CSS v4, shadcn/ui style components
-- ORM support: Sequelize (active), Waterline (legacy)
+- ORM support: Sequelize (active), TypeORM (experimental)
 - License: MIT
 
 ## Current Development Focus
 
 - Primary ORM: Sequelize
-- Waterline is legacy and should not receive new features
+- TypeORM support exists but is experimental; keep Sequelize as the default recommendation
 - For model adapter changes, prioritize `src/lib/model/adapter/sequelize.ts`
 
 ## Directory Structure
@@ -51,7 +51,8 @@ adminizer/
 ```bash
 npm run dev
 npm run dev:no-seed
-npm run dev:waterline
+npm run dev:typeorm
+npm run dev:typeorm:no-seed
 npm run dev:cors
 ```
 
@@ -60,7 +61,8 @@ npm run dev:cors
 ```bash
 npm run start
 npm run start:seed
-npm run start:waterline
+npm run start:typeorm
+npm run start:typeorm:seed
 ```
 
 ### Build

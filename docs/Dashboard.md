@@ -48,18 +48,17 @@ module.exports.adminpanel = {
  * link [LinkBase] - provide link logic in widget
  * custom [CustomBase] - mount JS/html widget into dashboard widget
  
-Widgets have magic on loading sails project such as model or service. This function work on 
-`sails.config.adminpanel.autoloadWidgetsPath: string`. A widget class is created from an abstract base and passed to `WidgetHandler.add`.
+Widgets are registered on the Adminizer instance through `adminizer.widgetHandler.add(widget)`. The dashboard config can also define `autoloadWidgetsPath` for project-specific widget loading.
 
  > ⚠️ Any new widget type must be added to `WidgetType` inside `/lib/widgets/widgetHandller.ts`. Within this handler you also need to implement the logic for the new type in the `getAll` method.
 
-> ⚠️ You can access widget handler by call method of admin panel `sails.hooks.adminpanel.getWidgetHandler()`
+> ⚠️ You can access the widget handler as `adminizer.widgetHandler`.
 
- > ⚠️ You can add a widget by calling `sails.hooks.adminpanel.addDashboardWidget(widget: WidgetType)`.
+ > ⚠️ You can add a widget by calling `adminizer.widgetHandler.add(widget)`.
 
 
 WidgetBase instance has this props:
-- `ID`: string, required 
+- `id`: string, required 
 - `name`: string, 
 - `description`: string, 
 - `icon`: string | null, default = null
@@ -118,11 +117,11 @@ public abstract readonly widgetType:
 Next Handling Custom Widgets. Add logic to `getAll` method:
 
             else if (widget instanceof CustomBase) {
-				if (AccessRightsHelper.havePermission(`widget-${widget.ID}`, user)) {
+				if (adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, user)) {
 					widgets.push({
-						id: `${widget.ID}_${id_key}`,
+						id: `${widget.id}_${id_key}`,
 						type: widget.widgetType,
-						api: `${config.routePrefix}/widgets-custom/${widget.ID}`,
+						api: `${config.routePrefix}/widgets-custom/${widget.id}`,
 						description: widget.description,
 						icon: widget.icon,
 						name: widget.name,
@@ -134,7 +133,7 @@ Next Handling Custom Widgets. Add logic to `getAll` method:
 Then we`ll create Instance of this widget type
 
 class CustomOne extends CustomBase {
-	readonly ID: string = 'site_custom';
+	readonly id: string = 'site_custom';
 	readonly department: string = 'test';
 	readonly description: string = 'Widget Custom One';
 	readonly icon: string = 'dog';
@@ -146,13 +145,13 @@ class CustomOne extends CustomBase {
 
 And export it as function which create our instances
 
-const setCustomsWidgets = () => {
-	WidgetHandler.add(new CustomOne())
+const setCustomsWidgets = (adminizer) => {
+	adminizer.widgetHandler.add(new CustomOne())
 }
 
 `module.exports = { setCustomsWidgets }`
 
-Then call `setCustomsWidgets` inside `bootstrap.js`
+Then call `setCustomsWidgets(adminizer)` after Adminizer is initialized.
 
 
 ### customizable and programmable promotion

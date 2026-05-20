@@ -47,7 +47,7 @@ import bindHistory from "../system/bindHistory";
 import bindCustomFilterHandlers from "../system/bindCustomFilterHandlers";
 import { CustomFilterHandler } from "./filters/CustomFilterHandler";
 import { FeedbackHandler } from "./feedback/FeedbackHandler";
-import { buildInternalModelAccess } from "./model/buildInternalModelAccess";
+import { buildInternalModelAccess } from "../system/buildInternalModelAccess";
 
 export class Adminizer {
     // Preconfigures

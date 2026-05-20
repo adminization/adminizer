@@ -1,6 +1,6 @@
-import { AdminpanelConfig } from "../../interfaces/adminpanelConfig";
-import { InternalModelAccessMap } from "../../interfaces/internalModelAccess";
-import { ModelHandler } from "./ModelHandler";
+import { AdminpanelConfig } from "../interfaces/adminpanelConfig";
+import { InternalModelAccessMap } from "../interfaces/internalModelAccess";
+import { ModelHandler } from "../lib/model/ModelHandler";
 
 export function buildInternalModelAccess(
     config: AdminpanelConfig,

@@ -25,16 +25,20 @@ class TestCatalogStorageService {
     }
 
     protected async initModel() {
-        // Direct call by model adapter
-        const model = await this.adminizer.modelHandler.model.get(this.model)["_findOne"]({});
+        const model = await this.adminizer.modelHandler
+            .internal("test-catalog")
+            .get(this.model)
+            .findOne({});
         
         if (model) {
             Adminizer.log.info(`Found existing text catalog model`);
             await this.populateFromTree(model.tree);
         } else {
             const tree = {tree: [] as any};
-            // Direct call by model adapter
-            await this.adminizer.modelHandler.model.get(this.model)["_create"](tree);
+            await this.adminizer.modelHandler
+                .internal("test-catalog")
+                .get(this.model)
+                .create(tree);
             Adminizer.log.info(`Created a new test catalog model`);
         }
     }
@@ -120,11 +124,10 @@ class TestCatalogStorageService {
     public async saveToDB() {
         let tree = await this.buildTree()
         try {
-            // Direct call by model adapter
-            await this.adminizer.modelHandler.model.get(this.model)["_updateOne"](
-                {},
-                {tree: tree}
-            )
+            await this.adminizer.modelHandler
+                .internal("test-catalog")
+                .get(this.model)
+                .updateOne({}, {tree: tree})
         } catch (e) {
             console.log(e)
             throw 'test catalog model update error'
@@ -338,8 +341,10 @@ class TestItemM extends AbstractItem<TestItem> {
         let storage = StorageHandler.getStorage()
         let storageData = null
         if (data._method === 'select') {
-            // Direct call by model adapter
-            let record = await this.adminizer.modelHandler.model.get(this.model)["_findOne"]({id: data.record})
+            let record = await this.adminizer.modelHandler
+                .internal("test-catalog")
+                .get(this.model)
+                .findOne({where: {id: data.record}})
             storageData = await this.dataPreparation({
                 record: record,
                 parentId: data.parentId,
@@ -378,8 +383,10 @@ class TestItemM extends AbstractItem<TestItem> {
         }
     }> {
         let type: 'model.link' = 'model.link'
-        // Direct call by model adapter
-        let itemsDB = await this.adminizer.modelHandler.model.get(this.model)["_find"]({})
+        let itemsDB = await this.adminizer.modelHandler
+            .internal("test-catalog")
+            .get(this.model)
+            .find({})
         let items = itemsDB.map((item: any) => {
             return {
                 id: item.id,

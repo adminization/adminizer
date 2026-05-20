@@ -478,6 +478,11 @@ const config: AdminpanelConfig = {
     filters: {
         enabled: true
     },
+    system: {
+        internalModelAccess: {
+            "test-catalog": ["TestCatalog"]
+        }
+    },
     mediamanager: {
         fileStoragePath: '.tmp/public',
         allowMIME: ['image/*', 'application/*', 'text/*', 'video/*'],
@@ -688,13 +693,6 @@ const config: AdminpanelConfig = {
     models: models,
     //@ts-ignore
     generator: {},
-    globalSettings: { // Global project settings
-        enableMigrations: true
-    },
-    migrations: {
-        path: 'mg_path', // path to migrations
-        //config: string | object // db-migrate config
-    },
     showVersion: {
         link: 'https://docs.adminizer.org',
         hint: 'Adminizer documentation',

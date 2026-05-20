@@ -123,7 +123,7 @@ The editor provides:
 
 ## Database
 
-The navigation tree is stored in the `navigationap` table, created by migration `20240804191001-added-navigationap.js`.
+The navigation tree is stored in the `navigationap` table. Starting with Adminizer 5, built-in migrations are not supported; create or update this table through your project's own database workflow.
 
 | column      | type   | description                                    |
 |-------------|--------|------------------------------------------------|

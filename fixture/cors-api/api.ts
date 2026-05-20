@@ -54,7 +54,10 @@ export function corsApi(adminizer: Adminizer) {
     adminizer.app.post(`${routePrefix}/api/auth/login`, async (req: any, res: any) => {
         try {
             const {login, password} = req.body;
-            const user = await req.adminizer.modelHandler.model.get("UserAP")["_findOne"]({login: login}) as UserAP;
+            const user = await adminizer.modelHandler
+                .internal("auth")
+                .get<UserAP>("UserAP")
+                .findOne({where: {login: login}});
 
             const token = signUser(user, frontendJwtSecret);
 

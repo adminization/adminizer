@@ -30,7 +30,6 @@ adminizer/
 |   |-- helpers/            # Utilities
 |   |-- interfaces/         # Types/interfaces
 |   |-- lib/                # Core modules
-|   |-- migrations/         # DB migrations
 |   |-- models/             # Internal models
 |   |-- policies/           # Access policies
 |   |-- system/             # System wiring

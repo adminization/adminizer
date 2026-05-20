@@ -31,6 +31,10 @@ const config: AdminizerConfig = {
 
 Additional options like `welcome`, `translation` and `administrator` credentials can also be provided.
 
+## Migrations
+
+Starting with Adminizer 5, built-in migrations are not supported. Projects should manage database schema changes with their own ORM or migration tool. For Sequelize projects, register Adminizer system models and synchronize or migrate them through the host application's database workflow.
+
 **`favicon` examples**
 
 ```ts

@@ -1,5 +1,5 @@
 {
 	"watch": ["dist", "fixture"],
 	"ext": "js, ts",
-	"ignore": ["dist/assets/**/*.*", "dist/migrations/**/*.*"]
+	"ignore": ["dist/assets/**/*.*"]
 }

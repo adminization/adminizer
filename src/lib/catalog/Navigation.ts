@@ -341,7 +341,7 @@ class NavigationItem extends AbstractItem<NavItem> {
 	}
 
 	/**
-	 * @deprecated reason: migration for intertia
+	 * @deprecated reason: transition to Inertia
 	* // TODO: need passing custom React module 
 	*/
 	async getAddTemplate(req: ReqType): Promise<{

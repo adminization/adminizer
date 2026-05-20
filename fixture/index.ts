@@ -333,7 +333,10 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
     // Custom route
     mainApp.get('/nav', async (req, res) => {
         try {
-            const header = await adminizer.modelHandler.model.get('navigationap')["_findOne"]({ label: 'header' });
+            const header = await adminizer.modelHandler
+                .internal('navigation')
+                .get('navigationap')
+                .findOne({ where: { label: 'header' } });
             res.json({ header: header });
         } catch (error) {
             res.status(500).json({ error: 'Internal server error' });
@@ -374,7 +377,10 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
 
 async function getNavigationSection(section: string): Promise<NavTreeNode[]> {
-    const navigationRecord = await adminizer.modelHandler.model.get('navigationap')["_findOne"]({ label: section });
+    const navigationRecord = await adminizer.modelHandler
+        .internal('navigation')
+        .get<{ tree?: NavTreeNode[] }>('navigationap')
+        .findOne({ where: { label: section } });
     return navigationRecord?.tree ?? [];
 }
 

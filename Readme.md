@@ -40,6 +40,18 @@ Key features:
 
 ---
 
+## Architecture: Handler Registry pattern
+
+Extension points in Adminizer follow the **Handler Registry** pattern — a combination of *Strategy*, *Template Method* and *Registry*:
+
+- An **abstract handler** (e.g. `AbstractFeedbackHandler`, `AbstractCustomFilter`) declares the contract — abstract methods the user must implement, plus optional template methods built on top of them.
+- A **registry** (e.g. `FeedbackHandler`, `CustomFilterHandler`) stores registered handlers by ID and dispatches calls to the matching strategy at runtime.
+- Users plug in their own subclasses as runtime extensions — no rebuilds, no core changes.
+
+This keeps the core framework-agnostic while letting every integration swap in its own behavior.
+
+---
+
 > All agents must read the **AGENTS.md** file before proceeding. It contains important guidelines and responsibilities required for proper operation.
 
 [Go to the documentation](https://github.com/adminization/adminizer/blob/main/docs/index.md)

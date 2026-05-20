@@ -6,19 +6,19 @@ export type CriteriaSelect = string[] | Record<string, boolean>;
 
 export type CriteriaSort = string | Record<string, CriteriaSortDirection>;
 
-export interface CriteriaOperatorValue {
-    eq?: unknown;
-    ne?: unknown;
-    gt?: unknown;
-    gte?: unknown;
-    lt?: unknown;
-    lte?: unknown;
-    contains?: unknown;
-    startsWith?: unknown;
-    endsWith?: unknown;
-    in?: unknown[];
-    notIn?: unknown[];
-    between?: [unknown, unknown];
+export interface CriteriaOperatorValue<TValue = unknown> {
+    eq?: TValue;
+    ne?: TValue;
+    gt?: TValue;
+    gte?: TValue;
+    lt?: TValue;
+    lte?: TValue;
+    contains?: TValue;
+    startsWith?: TValue;
+    endsWith?: TValue;
+    in?: TValue[];
+    notIn?: TValue[];
+    between?: [TValue, TValue];
     isNull?: boolean;
     isNotNull?: boolean;
     regex?: unknown;
@@ -27,24 +27,40 @@ export interface CriteriaOperatorValue {
     jsonContains?: unknown;
 }
 
-export type CriteriaFieldValue =
+export type CriteriaFieldInput<TValue = unknown> =
+    TValue extends Array<infer Item>
+        ? Item | Item[] | TValue
+        : TValue;
+
+export type CriteriaFieldValue<TValue = unknown> =
     | CriteriaPrimitive
     | CriteriaPrimitive[]
-    | CriteriaOperatorValue;
+    | CriteriaFieldInput<TValue>
+    | CriteriaOperatorValue<CriteriaFieldInput<TValue>>;
 
-export interface CriteriaWhere {
-    and?: CriteriaWhere[];
-    or?: CriteriaWhere[];
-    not?: CriteriaWhere;
-    [field: string]: CriteriaFieldValue | CriteriaWhere | CriteriaWhere[] | undefined;
+export type CriteriaKnownFields<TModel = any> = {
+    [Field in Extract<keyof TModel, string>]?: CriteriaFieldValue<TModel[Field]>;
+};
+
+export interface CriteriaWhereLogic<TModel = any> {
+    and?: CriteriaWhere<TModel>[];
+    or?: CriteriaWhere<TModel>[];
+    not?: CriteriaWhere<TModel>;
 }
 
-export type CriteriaPopulate = Record<string, true | QueryCriteria>;
+export type CriteriaWhere<TModel = any> =
+    CriteriaWhereLogic<TModel>
+    & CriteriaKnownFields<TModel>
+    & {
+        [field: string]: CriteriaFieldValue | CriteriaWhere<TModel> | CriteriaWhere<TModel>[] | undefined;
+    };
 
-export interface QueryCriteria {
-    where?: CriteriaWhere;
+export type CriteriaPopulate<TModel = any> = Record<string, true | QueryCriteria<any>>;
+
+export interface QueryCriteria<TModel = any> {
+    where?: CriteriaWhere<TModel>;
     select?: CriteriaSelect;
-    populate?: CriteriaPopulate;
+    populate?: CriteriaPopulate<TModel>;
     sort?: CriteriaSort;
     limit?: number;
     skip?: number;

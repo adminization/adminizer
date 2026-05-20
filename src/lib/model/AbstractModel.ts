@@ -49,19 +49,19 @@ export abstract class AbstractModel<T> {
 
     protected abstract _create(data: Partial<T>): Promise<T>;
 
-    protected abstract _findOne(criteria: QueryCriteria): Promise<T | null>;
+    protected abstract _findOne(criteria: QueryCriteria<T>): Promise<T | null>;
 
-    protected abstract _find(criteria: QueryCriteria): Promise<T[]>;
+    protected abstract _find(criteria: QueryCriteria<T>): Promise<T[]>;
 
-    protected abstract _updateOne(criteria: QueryCriteria, data: Partial<T>): Promise<T | null>;
+    protected abstract _updateOne(criteria: QueryCriteria<T>, data: Partial<T>): Promise<T | null>;
 
-    protected abstract _update(criteria: QueryCriteria, data: Partial<T>): Promise<T[]>;
+    protected abstract _update(criteria: QueryCriteria<T>, data: Partial<T>): Promise<T[]>;
 
-    protected abstract _destroyOne(criteria: QueryCriteria): Promise<T | null>;
+    protected abstract _destroyOne(criteria: QueryCriteria<T>): Promise<T | null>;
 
-    protected abstract _destroy(criteria: QueryCriteria): Promise<T[]>;
+    protected abstract _destroy(criteria: QueryCriteria<T>): Promise<T[]>;
 
-    protected abstract _count(criteria: QueryCriteria): Promise<number>;
+    protected abstract _count(criteria: QueryCriteria<T>): Promise<number>;
 
     protected createInternalRepository(accessToken: symbol, modelName: string = this.modelname): InternalModelRepository<T> {
         if (accessToken !== INTERNAL_MODEL_ACCESS_TOKEN) {
@@ -71,35 +71,35 @@ export abstract class AbstractModel<T> {
         const model = this;
 
         return {
-            async find(criteria: QueryCriteria = {}): Promise<T[]> {
+            async find(criteria: QueryCriteria<T> = {}): Promise<T[]> {
                 return model._find(criteria);
             },
 
-            async findOne(criteria: QueryCriteria = {}): Promise<T | null> {
+            async findOne(criteria: QueryCriteria<T> = {}): Promise<T | null> {
                 return model._findOne(criteria);
             },
 
-            async count(criteria: QueryCriteria = {}): Promise<number> {
+            async count(criteria: QueryCriteria<T> = {}): Promise<number> {
                 return model._count(criteria);
             },
 
-            async create(data: InternalModelWriteData): Promise<T> {
+            async create(data: InternalModelWriteData<T>): Promise<T> {
                 return model._create(data as Partial<T>);
             },
 
-            async update(criteria: QueryCriteria, data: InternalModelWriteData): Promise<T[]> {
+            async update(criteria: QueryCriteria<T>, data: InternalModelWriteData<T>): Promise<T[]> {
                 return model._update(criteria, data as Partial<T>);
             },
 
-            async updateOne(criteria: QueryCriteria, data: InternalModelWriteData): Promise<T | null> {
+            async updateOne(criteria: QueryCriteria<T>, data: InternalModelWriteData<T>): Promise<T | null> {
                 return model._updateOne(criteria, data as Partial<T>);
             },
 
-            async destroy(criteria: QueryCriteria): Promise<T[]> {
+            async destroy(criteria: QueryCriteria<T>): Promise<T[]> {
                 return model._destroy(criteria);
             },
 
-            async destroyOne(criteria: QueryCriteria): Promise<T | null> {
+            async destroyOne(criteria: QueryCriteria<T>): Promise<T | null> {
                 return model._destroyOne(criteria);
             },
 
@@ -223,14 +223,14 @@ export abstract class AbstractModel<T> {
         return dataAccessor.process(record);
     }
 
-    public async findOne(criteria: QueryCriteria, dataAccessor: DataAccessor): Promise<Partial<T> | null> {
+    public async findOne(criteria: QueryCriteria<T>, dataAccessor: DataAccessor): Promise<Partial<T> | null> {
         criteria = await dataAccessor.sanitizeUserRelationAccess(criteria);
         let record = await this._findOne(criteria);
 
         return record ? dataAccessor.process(record) : null;
     }
 
-    public async find(criteria: QueryCriteria, dataAccessor: DataAccessor): Promise<Partial<T>[]> {
+    public async find(criteria: QueryCriteria<T>, dataAccessor: DataAccessor): Promise<Partial<T>[]> {
         criteria = await dataAccessor.sanitizeUserRelationAccess(criteria);
         let records = await this._find(criteria);
         return records.map(record => dataAccessor.process(record));
@@ -257,7 +257,7 @@ export abstract class AbstractModel<T> {
         throw new Error('countWithRawWhere is only supported in Sequelize adapter');
     }
 
-    public async updateOne(criteria: QueryCriteria, data: Partial<T>, dataAccessor: DataAccessor): Promise<Partial<T> | null> {
+    public async updateOne(criteria: QueryCriteria<T>, data: Partial<T>, dataAccessor: DataAccessor): Promise<Partial<T> | null> {
         let _data = dataAccessor.process(data);
 
         // Get the old record first for diff
@@ -286,7 +286,7 @@ export abstract class AbstractModel<T> {
         return dataAccessor.process(record);
     }
 
-    public async update(criteria: QueryCriteria, data: Partial<T>, dataAccessor: DataAccessor): Promise<Partial<T>[]> {
+    public async update(criteria: QueryCriteria<T>, data: Partial<T>, dataAccessor: DataAccessor): Promise<Partial<T>[]> {
         let _data = dataAccessor.process(data);
         criteria = await dataAccessor.sanitizeUserRelationAccess(criteria);
 
@@ -313,7 +313,7 @@ export abstract class AbstractModel<T> {
         return records.map(record => dataAccessor.process(record));
     }
 
-    public async destroyOne(criteria: QueryCriteria, dataAccessor: DataAccessor): Promise<Partial<T> | null> {
+    public async destroyOne(criteria: QueryCriteria<T>, dataAccessor: DataAccessor): Promise<Partial<T> | null> {
         // Get the record first for diff
         criteria = await dataAccessor.sanitizeUserRelationAccess(criteria);
         const oldRecord = await this._findOne(criteria);
@@ -340,7 +340,7 @@ export abstract class AbstractModel<T> {
         return dataAccessor.process(record);
     }
 
-    public async destroy(criteria: QueryCriteria, dataAccessor: DataAccessor): Promise<Partial<T>[]> {
+    public async destroy(criteria: QueryCriteria<T>, dataAccessor: DataAccessor): Promise<Partial<T>[]> {
         // Get records first for diff
         criteria = await dataAccessor.sanitizeUserRelationAccess(criteria);
         const oldRecords = await this._find(criteria);
@@ -366,7 +366,7 @@ export abstract class AbstractModel<T> {
         return records.map(record => dataAccessor.process(record));
     }
 
-    public async count(criteria: QueryCriteria = {}, dataAccessor: DataAccessor): Promise<number> {
+    public async count(criteria: QueryCriteria<T> = {}, dataAccessor: DataAccessor): Promise<number> {
         criteria = await dataAccessor.sanitizeUserRelationAccess(criteria);
         return this._count(criteria);
     }

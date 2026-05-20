@@ -314,7 +314,7 @@ export class WidgetHandler {
 
     public async setWidgetsDB(id: number, body: {
         widgets: WidgetConfig[],
-        layout: WidgetLayoutItem[]
+        layout: WidgetsLayouts
     }, auth: boolean): Promise<number> {
         const userModel = this.adminizer.modelHandler.internal("widgets").get<UserAP>("UserAP");
 

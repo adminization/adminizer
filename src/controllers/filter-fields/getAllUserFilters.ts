@@ -17,7 +17,7 @@ export async function getAllUserFilters(req: ReqType, res: ResType) {
     const getGroupName = async (groupId: number): Promise<string> => {
         if (groupNamesCache[groupId]) return groupNamesCache[groupId];
         try {
-            const group = await groupModel?.['_findOne']({ id: groupId });
+            const group = await groupModel?.['_findOne']({where: {id: groupId}});
             if (group) {
                 groupNamesCache[groupId] = group.name || String(groupId);
                 return groupNamesCache[groupId];
@@ -71,7 +71,7 @@ export async function getAllUserFilters(req: ReqType, res: ResType) {
                 let ownerName: string | undefined;
                 if (userModel && filter.ownerId) {
                     try {
-                        const owner = await userModel['_findOne']({ id: filter.ownerId });
+                        const owner = await userModel['_findOne']({where: {id: filter.ownerId}});
                         if (owner) {
                             ownerName = owner.fullName || owner.login || String(owner.id);
                         }

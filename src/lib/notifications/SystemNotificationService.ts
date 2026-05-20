@@ -21,49 +21,46 @@ export class SystemNotificationService extends AbstractNotificationService {
         };
 
         let notificationDB: NotificationAPModel;
-        // Save to the database
-        if (this.adminizer.modelHandler.model.has('notificationap')) {
-            try {
-                notificationDB = await this.adminizer.modelHandler.model.get('notificationap')["_create"](fullNotification);
+        try {
+            notificationDB = await this.notificationModel().create(fullNotification);
 
-                const users = await this.adminizer.modelHandler.model.get('userap')["_find"]({}) as UserAP[];
-                for (const user of users) {
-                    try {
-                        if (this.adminizer.accessRightsHelper.hasPermission(`notification-${this.notificationClass}`, user)) {
-                            await this.createUserNotification(notificationDB.id, user.id);
-                        }
-                    } catch (error) {
-                        Adminizer.log.error('Error creating UserNotificationAP:', error);
+            const users = await this.userModel().find({}) as UserAP[];
+            for (const user of users) {
+                try {
+                    if (this.adminizer.accessRightsHelper.hasPermission(`notification-${this.notificationClass}`, user)) {
+                        await this.createUserNotification(notificationDB.id, user.id);
                     }
+                } catch (error) {
+                    Adminizer.log.error('Error creating UserNotificationAP:', error);
                 }
-
-                const event: INotificationEvent = {
-                    type: 'notification',
-                    data: {
-                        ...notificationDB,
-                        icon: {
-                            icon: this.icon,
-                            iconColor: this.iconColor
-                        },
-                    } as INotification,
-                    notificationClass: this.notificationClass,
-                    userId: notification.userId ?? null,
-                    channel: notification.channel ?? 'system'
-                };
-
-                // Send to all channels or to a specific channel
-                if (notification.channel) {
-                    this.broadcastToChannel(notification.channel, event);
-                } else {
-                    this.broadcastToChannel('system', event);
-                }
-
-                Adminizer.log.info(`[System] Notification dispatched: ${fullNotification.title}`);
-                return true;
-
-            } catch (error) {
-                Adminizer.log.error('Error saving system notification to database:', error);
             }
+
+            const event: INotificationEvent = {
+                type: 'notification',
+                data: {
+                    ...notificationDB,
+                    icon: {
+                        icon: this.icon,
+                        iconColor: this.iconColor
+                    },
+                } as INotification,
+                notificationClass: this.notificationClass,
+                userId: notification.userId ?? null,
+                channel: notification.channel ?? 'system'
+            };
+
+            // Send to all channels or to a specific channel
+            if (notification.channel) {
+                this.broadcastToChannel(notification.channel, event);
+            } else {
+                this.broadcastToChannel('system', event);
+            }
+
+            Adminizer.log.info(`[System] Notification dispatched: ${fullNotification.title}`);
+            return true;
+
+        } catch (error) {
+            Adminizer.log.error('Error saving system notification to database:', error);
         }
 
         return false;

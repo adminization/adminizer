@@ -6,6 +6,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Adminizer } from "../Adminizer";
 import * as process from "node:process";
+import { QueryCriteria } from "../../interfaces/queryCriteria";
+import { MediaManagerMetaAP } from "../../models/MediaManagerMetaAP";
+import { MediaManagerAssociationsAP } from "../../models/MediaManagerAssociationsAP";
 
 interface Meta {
     [key: string]: string;
@@ -25,29 +28,36 @@ export class ImageItem extends File<MediaManagerItem> {
         this.adminizer = adminizer;
     }
 
+    protected mediaModel() {
+        return this.adminizer.modelHandler.internal("media-manager").get<MediaManagerItem>(this.model);
+    }
+
+    protected metaRepository() {
+        return this.adminizer.modelHandler.internal("media-manager").get<any>(this.metaModel);
+    }
+
+    protected associationModel() {
+        return this.adminizer.modelHandler.internal("media-manager").get<any>(this.modelAssoc);
+    }
+
     public async getItems(limit: number, skip: number, sort: SortCriteria, group: string): Promise<{
         data: MediaManagerItem[];
         next: boolean
     }> {
-        // TODO refactor CRUD functions for DataAccessor usage
-        let data: MediaManagerItem[] = await this.adminizer.modelHandler.model.get(this.model)["_find"](
+        let data: MediaManagerItem[] = await this.mediaModel().find(
             {
                 where: { parent: null, mimeType: { contains: this.type }, group: group },
                 limit: limit,
                 skip: skip,
                 sort: sort,
-                //populate:{...}
-                //select: {...}
-            },
-            {
-                populate: [
-                    ["variants", { sort: sort }],
-                    ["meta", {}]
-                ]
+                populate: {
+                    variants: {sort: sort},
+                    meta: true
+                }
             },
         )
 
-        let next = await this.adminizer.modelHandler.model.get(this.model)['_find']({
+        let next = await this.mediaModel().find({
             where: { parent: null, mimeType: { contains: this.type }, group: group },
             limit: limit,
             skip: skip === 0 ? limit : skip + limit,
@@ -65,11 +75,13 @@ export class ImageItem extends File<MediaManagerItem> {
     }
 
     public async search(s: string, group: string): Promise<MediaManagerItem[]> {
-        // TODO refactor CRUD functions for DataAccessor usage
-        let data: MediaManagerItem[] = await this.adminizer.modelHandler.model.get(this.model)["_find"]({
+        let data: MediaManagerItem[] = await this.mediaModel().find({
             where: { filename: { contains: s }, mimeType: { contains: this.type }, parent: null, group: group },
             sort: "createdAt DESC",
-        }, { populate: [["variants", { sort: "createdAt DESC" }]] })
+            populate: {
+                variants: {sort: "createdAt DESC"}
+            }
+        })
         for (let elem of data) {
             elem.variants = await populateVariants(this.adminizer, elem.variants, this.model)
         }
@@ -78,8 +90,7 @@ export class ImageItem extends File<MediaManagerItem> {
 
     public async upload(file: UploaderFile, filename: string, origFileName: string, group: string): Promise<MediaManagerItem[]> {
 
-        // TODO refactor CRUD functions for DataAccessor usage
-        let parent: MediaManagerItem = await this.adminizer.modelHandler.model.get(this.model)["_create"]({
+        let parent: MediaManagerItem = await this.mediaModel().create({
             parent: null,
             mimeType: file.mimetype,
             size: file.size,
@@ -98,17 +109,18 @@ export class ImageItem extends File<MediaManagerItem> {
             await this.createVariants(file, parent, filename, group);
         }
 
-        // TODO refactor CRUD functions for DataAccessor usage
-        const item: MediaManagerItem = await this.adminizer.modelHandler.model.get(this.model)["_findOne"]({ where: { id: parent.id } });
+        const item: MediaManagerItem = await this.mediaModel().findOne({ where: { id: parent.id } });
         item.variants = await populateVariants(this.adminizer, item.variants, this.model)
         return [item]
     }
 
     public async getVariants(id: string): Promise<MediaManagerItem[]> {
-        // TODO refactor CRUD functions for DataAccessor usage
-        let items = ((await this.adminizer.modelHandler.model.get(this.model)["_find"]({
-            where: { id: id }
-        }, { populate: [["variants", { sort: "createdAt DESC" }]] }))[0]).variants
+        let items = ((await this.mediaModel().find({
+            where: { id: id },
+            populate: {
+                variants: {sort: "createdAt DESC"}
+            }
+        }))[0]).variants
         return (await populateVariants(this.adminizer, items, this.model))
     }
 
@@ -132,8 +144,7 @@ export class ImageItem extends File<MediaManagerItem> {
                 height,
             );
 
-            // TODO refactor CRUD functions for DataAccessor usage
-            let newSize = await this.adminizer.modelHandler.model.get(this.model)["_create"]({
+            let newSize = await this.mediaModel().create({
                 parent: parent.id,
                 mimeType: parent.mimeType,
                 size: newFile.size,
@@ -150,12 +161,11 @@ export class ImageItem extends File<MediaManagerItem> {
     }
 
     public async getOrigin(id: string): Promise<string> {
-        // TODO refactor CRUD functions for DataAccessor usage
-        return (await this.adminizer.modelHandler.model.get(this.model)["_findOne"]({ where: { id: id } })).path;
+        return (await this.mediaModel().findOne({ where: { id: id } })).path;
     }
 
     public async getFile(id: number): Promise<MediaManagerItem> {
-        let item = await this.adminizer.modelHandler.model.get(this.model)["_findOne"]({ where: { id: id } });
+        let item = await this.mediaModel().findOne({ where: { id: id } });
         item.variants = await populateVariants(this.adminizer, item.variants, this.model)
         return item
     }
@@ -169,8 +179,7 @@ export class ImageItem extends File<MediaManagerItem> {
         };
 
         for (const key of Object.keys(metaData)) {
-            // TODO refactor CRUD functions for DataAccessor usage
-            await this.adminizer.modelHandler.model.get(this.metaModel)["_create"]({
+            await this.metaRepository().create({
                 key: key,
                 value: metaData[key],
                 parent: id,
@@ -181,9 +190,8 @@ export class ImageItem extends File<MediaManagerItem> {
     }
 
     protected async addFileMeta(file: string, id: string): Promise<void> {
-        // TODO refactor CRUD functions for DataAccessor usage
         const metaBuffer = fs.readFileSync(file)
-        await this.adminizer.modelHandler.model.get(this.metaModel)["_create"]({
+        await this.metaRepository().create({
             key: 'imageSizes',
             value: sizeOf(metaBuffer),
             parent: id,
@@ -193,17 +201,18 @@ export class ImageItem extends File<MediaManagerItem> {
 
     // TODO  {where: {isPublic: true}, sort: "id ASC"} ???
     public async getMeta(id: string,): Promise<{ key: string; value: string }[]> {
-        // TODO refactor CRUD functions for DataAccessor usage
-        return ((await this.adminizer.modelHandler.model.get(this.model)["_find"]({
-            id: id
-        }, { populate: [["meta", { where: { isPublic: true } }]] }))[0]).meta;
+        return ((await this.mediaModel().find({
+            where: { id: id },
+            populate: {
+                meta: {where: {isPublic: true}}
+            }
+        }))[0]).meta as any;
     }
 
     async setMeta(id: string, data: { [p: string]: string },): Promise<void> {
         for (const key of Object.keys(data)) {
-            // TODO refactor CRUD functions for DataAccessor usage
-            await this.adminizer.modelHandler.model.get(this.metaModel)["_update"](
-                { parent: id, key: key },
+            await this.metaRepository().update(
+                { where: { parent: id, key: key } },
                 { value: data[key] },
             );
         }
@@ -227,8 +236,7 @@ export class ImageItem extends File<MediaManagerItem> {
         const variantBuffer = fs.readFileSync(file.path)
         const { width, height } = sizeOf(variantBuffer)
 
-        // TODO refactor CRUD functions for DataAccessor usage
-        let item: MediaManagerItem = await this.adminizer.modelHandler.model.get(this.model)["_create"]({
+        let item: MediaManagerItem = await this.mediaModel().create({
             parent: parent.id,
             mimeType: file.mimetype,
             size: file.size,
@@ -241,23 +249,20 @@ export class ImageItem extends File<MediaManagerItem> {
 
         await this.addFileMeta(file.path, item.id)
 
-        // TODO refactor CRUD functions for DataAccessor usage
-        return (await this.adminizer.modelHandler.model.get(this.model)["_findOne"]({ where: { id: item.id } }))
+        return (await this.mediaModel().findOne({ where: { id: item.id } }))
     }
 
     async delete(id: string): Promise<boolean> {
         const fieldName = this.adminizer.ormAdapters[0].ormType === 'sequelize' ? 'fileId' : 'file';
-        const assoc = await this.adminizer.modelHandler.model.get(this.modelAssoc)["_find"]({ where: { [fieldName]: id } })
+        const assoc = await this.associationModel().find({ where: { [fieldName]: id } })
         if (assoc.length) {
             return Promise.resolve(false);
         }
-        const criteria = { where: { id: id } };
-        // TODO refactor CRUD functions for DataAccessor usage
-        let record = await this.adminizer.modelHandler.model.get(this.model)["_findOne"](criteria);
+        const criteria: QueryCriteria = { where: { id: id } };
+        let record = await this.mediaModel().findOne(criteria);
 
         await beforeDestroy(this.adminizer, criteria);
-        // TODO refactor CRUD functions for DataAccessor usage
-        await this.adminizer.modelHandler.model.get(this.model)["_destroy"]({ id: id });
+        await this.mediaModel().destroy({ where: { id: id } });
 
         await deleteFile(record.path);
         // Delete all variants
@@ -278,8 +283,7 @@ export class TextItem extends ImageItem {
     public type: MediaFileType = "text";
 
     public async upload(file: UploaderFile, filename: string, origFileName: string, group: string): Promise<MediaManagerItem[]> {
-        // TODO refactor CRUD functions for DataAccessor usage
-        let parent: MediaManagerItem = await this.adminizer.modelHandler.model.get(this.model)["_create"]({
+        let parent: MediaManagerItem = await this.mediaModel().create({
             parent: null,
             mimeType: file.mimetype,
             size: file.size,
@@ -292,8 +296,7 @@ export class TextItem extends ImageItem {
 
         await this.createMeta(parent.id);
 
-        // TODO refactor CRUD functions for DataAccessor usage
-        const item: MediaManagerItem = await this.adminizer.modelHandler.model.get(this.model)["_findOne"]({ where: { id: parent.id } });
+        const item: MediaManagerItem = await this.mediaModel().findOne({ where: { id: parent.id } });
         item.variants = await populateVariants(this.adminizer, item.variants, this.model)
         return [item]
     }
@@ -304,8 +307,7 @@ export class TextItem extends ImageItem {
 
     public async uploadVariant(parent: MediaManagerItem, file: UploaderFile, filename: string, group: string, localeId: string): Promise<MediaManagerItem> {
         let variants = parent.variants.filter(e => /^loc:/.test(e.tag) === false)
-        // TODO refactor CRUD functions for DataAccessor usage
-        let item: MediaManagerItem = await this.adminizer.modelHandler.model.get(this.model)["_create"]({
+        let item: MediaManagerItem = await this.mediaModel().create({
             parent: parent.id,
             mimeType: file.mimetype,
             size: file.size,
@@ -316,15 +318,16 @@ export class TextItem extends ImageItem {
             url: `/${this.urlPathPrefix}/${filename}`,
         })
 
-        // TODO refactor CRUD functions for DataAccessor usage
-        return (await this.adminizer.modelHandler.model.get(this.model)["_findOne"]({ where: { id: item.id } }))
+        return (await this.mediaModel().findOne({ where: { id: item.id } }))
     }
 
     public async getVariants(id: string): Promise<MediaManagerItem[]> {
-        // TODO refactor CRUD functions for DataAccessor usage
-        let items = ((await this.adminizer.modelHandler.model.get(this.model)["_find"]({
-            where: { id: id }
-        }, { populate: [["variants", { sort: "createdAt DESC" }]] }))[0]).variants
+        let items = ((await this.mediaModel().find({
+            where: { id: id },
+            populate: {
+                variants: {sort: "createdAt DESC"}
+            }
+        }))[0]).variants
         return (await populateVariants(this.adminizer, items, this.model))
     }
 }
@@ -337,20 +340,18 @@ export class VideoItem extends TextItem {
     public type: MediaFileType = "video";
 }
 
-async function beforeDestroy(adminizer: Adminizer, criteria: { where: object }) {
-    // TODO refactor CRUD functions for DataAccessor usage
-    let parent: ModelsAP["MediaManagerAP"] = (await adminizer.modelHandler.model.get("MediaManagerAP")?.["_find"](criteria))[0]
+async function beforeDestroy(adminizer: Adminizer, criteria: QueryCriteria) {
+    const mediaModel = adminizer.modelHandler.internal("media-manager").get<ModelsAP["MediaManagerAP"]>("MediaManagerAP");
+    const metaModel = adminizer.modelHandler.internal("media-manager").get<ModelsAP["MediaManagerMetaAP"]>("MediaManagerMetaAP");
+    let parent: ModelsAP["MediaManagerAP"] = (await mediaModel.find(criteria))[0]
     let meta = parent.meta
     for (const metaElement of meta) {
-        // TODO refactor CRUD functions for DataAccessor usage
-        await adminizer.modelHandler.model.get("MediaManagerMetaAP")?.["_destroy"]({ id: metaElement.id })
+        await metaModel.destroy({ where: { id: metaElement.id } })
     }
 
-    // TODO refactor CRUD functions for DataAccessor usage
-    let variants: ModelsAP["MediaManagerAP"]["variants"] = (await adminizer.modelHandler.model.get("MediaManagerAP")?.["_find"](criteria))[0].variants
+    let variants: ModelsAP["MediaManagerAP"]["variants"] = (await mediaModel.find(criteria))[0].variants
     for (const child of variants) {
-        // TODO refactor CRUD functions for DataAccessor usage
-        await adminizer.modelHandler.model.get("MediaManagerAP")?.["_destroy"]({ id: child.id })
+        await mediaModel.destroy({ where: { id: child.id } })
     }
 }
 

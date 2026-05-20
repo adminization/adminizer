@@ -7,6 +7,9 @@ import { GroupAP } from "../models/GroupAP";
 
 export default async function (req: ReqType, res: ResType) {
     let entity = ControllerHelper.findEntityObject(req);
+    const internalUsers = req.adminizer.modelHandler.internal("users");
+    const userModel = internalUsers.get<UserAP>("UserAP");
+    const groupModel = internalUsers.get<GroupAP>("GroupAP");
 
     // Check id
     if (!req.params.id) {
@@ -15,8 +18,7 @@ export default async function (req: ReqType, res: ResType) {
 
     let user: UserAP;
     try {
-        // TODO refactor CRUD functions for DataAccessor usage
-        user = await req.adminizer.modelHandler.model.get("UserAP")["_findOne"]({id: req.params.id});
+        user = await userModel.findOne({where: {id: req.params.id}});
     } catch (e) {
         Adminizer.log.error('Admin edit error: ');
         Adminizer.log.error(e);
@@ -25,8 +27,7 @@ export default async function (req: ReqType, res: ResType) {
 
     let groups: GroupAP[];
     try {
-        // TODO refactor CRUD functions for DataAccessor usage
-        groups = await req.adminizer.modelHandler.model.get("GroupAP")["_find"]({});
+        groups = await groupModel.find({});
     } catch (e) {
         Adminizer.log.error(e)
     }
@@ -56,8 +57,7 @@ export default async function (req: ReqType, res: ResType) {
 
         let updatedUser: UserAP;
         try {
-            // TODO refactor CRUD functions for DataAccessor usage
-            updatedUser = await req.adminizer.modelHandler.model.get("UserAP")["_updateOne"]({id: user.id}, {
+            updatedUser = await userModel.updateOne({where: {id: user.id}}, {
                 login: req.body.login, fullName: req.body.fullName,
                 email: req.body.email, timezone: req.body.timezone, expires: req.body.date,
                 locale: locale, isAdministrator: isAdministrator, isConfirmed: isConfirmed, groups: userGroups
@@ -65,8 +65,7 @@ export default async function (req: ReqType, res: ResType) {
             if (req.body.userPassword) {
                 let passwordHashed = generate(req.body.login + req.body.userPassword + process.env.AP_PASSWORD_SALT);
                 let password = 'masked';
-                // TODO refactor CRUD functions for DataAccessor usage
-                updatedUser = await req.adminizer.modelHandler.model.get("UserAP")["_updateOne"]({id: user.id}, {
+                updatedUser = await userModel.updateOne({where: {id: user.id}}, {
                     login: req.body.login,
                     passwordHashed: passwordHashed
                 });
@@ -86,8 +85,7 @@ export default async function (req: ReqType, res: ResType) {
 
     if (reloadNeeded) {
         try {
-            // TODO refactor CRUD functions for DataAccessor usage
-            user = await req.adminizer.modelHandler.model.get("UserAP")["_findOne"]({id: req.params.id});
+            user = await userModel.findOne({where: {id: req.params.id}});
         } catch (e) {
             Adminizer.log.error('Admin edit error: ');
             Adminizer.log.error(e);
@@ -95,8 +93,7 @@ export default async function (req: ReqType, res: ResType) {
         }
 
         try {
-            // TODO refactor CRUD functions for DataAccessor usage
-            groups = await req.adminizer.modelHandler.model.get("GroupAP")["_find"]({});
+            groups = await groupModel.find({});
         } catch (e) {
             Adminizer.log.error(e)
         }

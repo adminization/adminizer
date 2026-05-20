@@ -9,8 +9,8 @@ export default async function initUser(req: ReqType, res: ResType) {
         return res.redirect(`${req.adminizer.config.routePrefix}/`);
     }
 
-    // TODO refactor CRUD functions for DataAccessor usage
-    let admins: UserAP[] = await req.adminizer.modelHandler.model.get("UserAP")["_find"]({isAdministrator: true});
+    const userModel = req.adminizer.modelHandler.internal("auth").get<UserAP>("UserAP");
+    let admins: UserAP[] = await userModel.find({where: {isAdministrator: true}});
     if (admins.length) {
         res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
     }
@@ -38,8 +38,7 @@ export default async function initUser(req: ReqType, res: ResType) {
             Adminizer.log.debug(`Created admin`)
             let passwordHashed = generate(login + password +  process.env.AP_PASSWORD_SALT);
             password = 'masked';
-            // TODO refactor CRUD functions for DataAccessor usage
-            await req.adminizer.modelHandler.model.get("UserAP")["_create"](
+            await userModel.create(
                 {
                     login: login,
                     passwordHashed: passwordHashed,

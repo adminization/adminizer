@@ -47,6 +47,7 @@ import bindHistory from "../system/bindHistory";
 import bindCustomFilterHandlers from "../system/bindCustomFilterHandlers";
 import { CustomFilterHandler } from "./filters/CustomFilterHandler";
 import { FeedbackHandler } from "./feedback/FeedbackHandler";
+import { buildInternalModelAccess } from "../system/buildInternalModelAccess";
 
 export class Adminizer {
     // Preconfigures
@@ -232,6 +233,7 @@ export class Adminizer {
 
         // TODO: 'hot reload' unbind models
         await bindModels(this);
+        this.modelHandler.configureInternalAccess(buildInternalModelAccess(this.config, this.modelHandler));
         bindCustomFilterHandlers(this);
 
         this.config.rootPath = path.resolve(import.meta.dirname + "/..")

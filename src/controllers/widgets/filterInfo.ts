@@ -7,14 +7,9 @@ async function resolveDashboardUser(req: ReqType): Promise<UserAP | null> {
         return req.user as UserAP;
     }
 
-    const userModel = req.adminizer.modelHandler.model.get("UserAP");
-    if (!userModel) {
-        return null;
-    }
-
     const adminLogin = req.adminizer.config.administrator?.login ?? "admin";
-    // TODO refactor CRUD functions for DataAccessor usage
-    const user = await userModel["_findOne"]({ login: adminLogin });
+    const userModel = req.adminizer.modelHandler.internal("widgets").get<UserAP>("UserAP");
+    const user = await userModel.findOne({ where: { login: adminLogin } });
     return user ?? null;
 }
 

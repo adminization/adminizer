@@ -14,8 +14,46 @@ import {Adminizer} from "./Adminizer";
 import { GroupAP } from "../models/GroupAP";
 import { UserAP } from "../models/UserAP";
 import { isObject } from "../helpers/JsUtils";
+import { CriteriaWhere, QueryCriteria } from "../interfaces/queryCriteria";
 
 const MODEL_TOKEN_SUFFIX = "model";
+
+function hasCriteriaContent(criteria: CriteriaWhere): boolean {
+    return Object.keys(criteria).length > 0 || Object.getOwnPropertySymbols(criteria).length > 0;
+}
+
+function isPlainCriteriaWhere(where: unknown): where is CriteriaWhere {
+    if (!isObject(where)) {
+        return false;
+    }
+
+    const prototype = Object.getPrototypeOf(where);
+    return prototype === Object.prototype || prototype === null;
+}
+
+function mergeCriteriaWhere(criteriaWhere: QueryCriteria["where"], sanitizedCriteria: CriteriaWhere): QueryCriteria["where"] {
+    if (!hasCriteriaContent(sanitizedCriteria)) {
+        return criteriaWhere;
+    }
+
+    if (!criteriaWhere) {
+        return sanitizedCriteria;
+    }
+
+    if (isPlainCriteriaWhere(criteriaWhere)) {
+        return {
+            ...criteriaWhere,
+            ...sanitizedCriteria
+        };
+    }
+
+    return {
+        and: [
+            criteriaWhere as CriteriaWhere,
+            sanitizedCriteria
+        ]
+    };
+}
 
 export class DataAccessor {
     public readonly adminizer: Adminizer;
@@ -39,6 +77,10 @@ export class DataAccessor {
             .find(([key]) => key.toLowerCase() === modelName.toLowerCase());
         const config = entry ? entry[1] : undefined;
         return isObject(config) ? config as ModelConfig : undefined;
+    }
+
+    private accessRelationModel<T = any>(modelName: string) {
+        return this.adminizer.modelHandler.internal("data-accessor").get<T>(modelName);
     }
 
     /**
@@ -147,8 +189,33 @@ export class DataAccessor {
             result[key] = {config: fldConfig, model: modelField, populated: populatedModelFieldsConfig, modelConfig: associatedModelConfig };
         });
 
-        this.fields = result;
-        return result;
+        this.fields = this.orderFieldsByConfig(result, fieldsConfig, actionConfig.fields);
+        return this.fields;
+    }
+
+    private orderFieldsByConfig(
+        fields: Fields,
+        globalFieldsConfig: FieldsModels = {},
+        actionFieldsConfig: FieldsModels = {}
+    ): Fields {
+        const orderedFields: Fields = {};
+        const appendField = (fieldName: string) => {
+            if (!Object.prototype.hasOwnProperty.call(fields, fieldName)) {
+                return;
+            }
+
+            if (Object.prototype.hasOwnProperty.call(orderedFields, fieldName)) {
+                return;
+            }
+
+            orderedFields[fieldName] = fields[fieldName];
+        };
+
+        Object.keys(actionFieldsConfig || {}).forEach(appendField);
+        Object.keys(globalFieldsConfig || {}).forEach(appendField);
+        Object.keys(fields).forEach(appendField);
+
+        return orderedFields;
     }
 
     private getAssociatedFieldsConfig(modelName: string): { [fieldName: string]: Field } | undefined {
@@ -336,8 +403,8 @@ export class DataAccessor {
         return records.map(record => this.process(record));
     }
 
-    public async sanitizeUserRelationAccess<T>(criteria: T): Promise<Partial<T>> {
-        let sanitizedCriteria: Partial<T> = {};
+    public async sanitizeUserRelationAccess(criteria: QueryCriteria = {}): Promise<QueryCriteria> {
+        let sanitizedCriteria: CriteriaWhere = {};
 
         // Retrieve model configuration from adminpanel config
         const modelName = this.entity.model.modelname;
@@ -415,21 +482,17 @@ export class DataAccessor {
                 }
 
                 // Fetch all intermediate records associated with the user
-                const intermediateRecords = await intermediateModel["_find"]({[via]: this.user.id});
+                const intermediateRecords = await this.accessRelationModel(intermediateRelation.model).find({where: {[via]: this.user.id}});
                 const intermediateIds = (intermediateRecords || []).map((r) => r.id);
                 // Filter main model by all matching intermediate record IDs
                 sanitizedCriteria = {...sanitizedCriteria, [field]: {in: intermediateIds}};
             }
         }
 
-        let _criteria = criteria as { where?: Record<string, unknown> }
-        if (_criteria.where) {
-            _criteria.where = {..._criteria.where, ...sanitizedCriteria};
-        } else {
-            _criteria = {..._criteria, ...sanitizedCriteria}
-        }
-
-        return _criteria as Partial<T>;
+        return {
+            ...criteria,
+            where: mergeCriteriaWhere(criteria.where, sanitizedCriteria)
+        };
     }
 
     public async setUserRelationAccess<T>(record: T): Promise<Partial<T>> {
@@ -498,7 +561,7 @@ export class DataAccessor {
                     const chosenId = typeof updatedRecord[field as keyof T] === 'object'
                         ? (updatedRecord[field as keyof T] as Record<string, unknown>)[intermediatePk]
                         : updatedRecord[field as keyof T];
-                    const record = await intermediateModel["_findOne"]({[intermediatePk]: chosenId, [via]: this.user.id});
+                    const record = await this.accessRelationModel(intermediateRelation.model).findOne({where: {[intermediatePk]: chosenId, [via]: this.user.id}});
                     if (!record) {
                         throw new Error(`Access denied: "${field}" does not belong to the current user`);
                     }

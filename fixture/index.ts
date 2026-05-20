@@ -1,6 +1,7 @@
 // Load environment variables from .env file
 import dotenv from 'dotenv';
 dotenv.config();
+import "reflect-metadata";
 
 import { Adminizer } from "../dist";
 import { bindNavigation } from "../dist";
@@ -23,7 +24,14 @@ import { Test as TestSequelize } from "./models/sequelize/Test";
 import { Category as CategorySequelize } from "./models/sequelize/Category";
 import { TestCatalog as TestCatalogSequelize } from "./models/sequelize/TestCatalog";
 import { SequelizeAdapter } from "../dist/lib/model/adapter/sequelize";
-import { seedDatabase } from "./helpers/seedDatabase";
+import { DataSource } from "typeorm";
+import { TypeOrmAdapter } from "../dist/lib/model/adapter/typeorm";
+import { seedDatabase, seedTypeOrmDatabase } from "./helpers/seedDatabase";
+import { ExampleTypeOrm } from "./models/typeorm/Example";
+import { JsonSchemaTypeOrm } from "./models/typeorm/JsonSchema";
+import { TestTypeOrm } from "./models/typeorm/Test";
+import { CategoryTypeOrm } from "./models/typeorm/Category";
+import { TestCatalogTypeOrm } from "./models/typeorm/TestCatalog";
 
 
 //Widgets imports
@@ -35,7 +43,9 @@ import { ActionOne, ActionTwo } from "./widgets/Actions";
 import { TestCatalog } from "./virtual-catalog/virtualCatalog";
 import {
     ExampleDatatablePriceRangeFilterHandler,
-    ExampleJsonCustomFilterHandler
+    ExampleJsonCustomFilterHandler,
+    TypeOrmExampleDatatablePriceRangeFilterHandler,
+    TypeOrmExampleJsonCustomFilterHandler
 } from "./filters/customFilterHandlers";
 import express from "express";
 import cookieParser from "cookie-parser";
@@ -53,11 +63,7 @@ process.env.JWT_SECRET = "fixture-jwt-secret"
 const ormType = process.env.ORM ?? "sequelize";
 let adminizer: Adminizer;
 
-if (ormType !== "sequelize") {
-    throw new Error(`Unsupported fixture ORM "${ormType}". Supported ORM: sequelize`);
-}
-
-{
+if (ormType === "sequelize") {
     const tmpDir = path.join(process.cwd(), ".tmp");
     const dbPath = path.join(tmpDir, "adminizer_fixture.sqlite");
     const orm = new Sequelize({
@@ -87,6 +93,43 @@ if (ormType !== "sequelize") {
 
     // Enable debug logging
     Adminizer.logger.level = 'debug';
+} else if (ormType === "typeorm") {
+    const tmpDir = path.join(process.cwd(), ".tmp");
+    const dbPath = path.join(tmpDir, "adminizer_fixture_typeorm.sqlite");
+    const systemEntities = await TypeOrmAdapter.loadSystemEntities();
+    const dataSource = new DataSource({
+        type: "sqlite",
+        database: dbPath,
+        entities: [
+            ...systemEntities,
+            ExampleTypeOrm,
+            TestTypeOrm,
+            JsonSchemaTypeOrm,
+            CategoryTypeOrm,
+            TestCatalogTypeOrm,
+        ],
+        synchronize: process.env.ORM_ALTER !== "false",
+        logging: false,
+    });
+
+    await dataSource.initialize();
+
+    const typeOrmAdapter = new TypeOrmAdapter(dataSource);
+    adminizer = new Adminizer([typeOrmAdapter]);
+    await ormSharedFixtureLift(adminizer);
+
+    if (!process.env.NO_SEED_DATA) {
+        try {
+            await seedTypeOrmDatabase(dataSource, 77);
+            console.log("TypeORM database seeded with random data!");
+        } catch (seedErr) {
+            console.error("Error during TypeORM database seeding:", seedErr);
+        }
+    }
+
+    Adminizer.logger.level = 'debug';
+} else {
+    throw new Error(`Unsupported fixture ORM "${ormType}". Supported ORM: sequelize, typeorm`);
 }
 
 // Finish
@@ -145,11 +188,23 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
         adminizer.app.get(`${adminizer.config.routePrefix}/module-test`, adminizer.middlewareManager.bindMiddlewares(policies, module));
         adminizer.app.post(`${adminizer.config.routePrefix}/module-test`, adminizer.middlewareManager.bindMiddlewares(policies, async (req: ReqType, res: ResType) => {
-            adminizer.sendNotification({
+            const rawUserId = req.body.userId;
+            const userId = req.body.sendToAll
+                ? undefined
+                : Number(rawUserId);
+
+            if (!req.body.sendToAll && (!Number.isInteger(userId) || userId <= 0)) {
+                return res.status(400).json({
+                    error: 'Invalid userId'
+                });
+            }
+
+            await adminizer.sendNotification({
                 title: "Test notification",
                 message: req.body.message,
                 notificationClass: 'general',
-                channel: ''
+                channel: '',
+                ...(userId ? { userId } : {})
             })
             res.json({
                 test: req.body
@@ -181,8 +236,13 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
         await adminizer.init(adminpanelConfig as unknown as AdminpanelConfig)
 
-        adminizer.customFilterHandler.add(new ExampleJsonCustomFilterHandler(), { force: true });
-        adminizer.customFilterHandler.add(new ExampleDatatablePriceRangeFilterHandler(), { force: true });
+        if (ormType === "typeorm") {
+            adminizer.customFilterHandler.add(new TypeOrmExampleJsonCustomFilterHandler(), { force: true });
+            adminizer.customFilterHandler.add(new TypeOrmExampleDatatablePriceRangeFilterHandler(), { force: true });
+        } else {
+            adminizer.customFilterHandler.add(new ExampleJsonCustomFilterHandler(), { force: true });
+            adminizer.customFilterHandler.add(new ExampleDatatablePriceRangeFilterHandler(), { force: true });
+        }
 
         if (adminizer.config.aiAssistant?.enabled) {
             // Dynamic import to avoid loading OpenAI dependencies when AI assistant is disabled

@@ -1,5 +1,7 @@
 import { AbstractModel } from "./AbstractModel";
 import { Adminizer } from "../Adminizer";
+import { InternalModelAccessMap } from "../../interfaces/internalModelAccess";
+import { InternalModelAccessFactory, InternalModelScope } from "./InternalModelAccessFactory";
 
 /**
  * Central registry (service locator) for all AbstractModel instances in the application.
@@ -12,6 +14,7 @@ import { Adminizer } from "../Adminizer";
  */
 export class ModelHandler {
 	private models: Map<string, AbstractModel<any>> = new Map();
+	private internalAccess?: InternalModelAccessFactory;
 
 	add<T>(modelName: string, modelInstance: AbstractModel<T>): void {
 
@@ -33,6 +36,22 @@ export class ModelHandler {
 			keys: () => this.models.keys(),
 			values: () => this.models.values(),
 		};
+	}
+
+	configureInternalAccess(accessMap?: InternalModelAccessMap): void {
+		this.internalAccess = new InternalModelAccessFactory((modelName) => this.model.get(modelName), accessMap);
+	}
+
+	internal(scopeName: string): InternalModelScope {
+		return this.getInternalAccess().scope(scopeName);
+	}
+
+	private getInternalAccess(): InternalModelAccessFactory {
+		if (!this.internalAccess) {
+			throw new Error("Internal model access is not configured");
+		}
+
+		return this.internalAccess;
 	}
 
 	/**

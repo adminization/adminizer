@@ -1,5 +1,5 @@
 import { FilterCondition, FilterOperator } from '../../models/FilterAP';
-import { FILTER_SECURITY_LIMITS } from '../query-builder/ModernQueryBuilder';
+import { FILTER_SECURITY_LIMITS } from '../query-builder/QueryBuilder';
 
 /**
  * Security event types for logging suspicious filter attempts
@@ -290,7 +290,7 @@ export class ConditionValidator {
             return;
         }
 
-        // Relation condition support (Sequelize relations)
+        // Relation condition support
         if (condition.relation || condition.relationField) {
             if (!condition.relation || !condition.relationField) {
                 errors.push({

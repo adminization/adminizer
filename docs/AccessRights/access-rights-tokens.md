@@ -1,5 +1,5 @@
 # Access Rights
-When sails-adminpanel starts, for every Model it creates 4 access rights tokens:
+When Adminizer starts, every configured model gets 4 access rights tokens:
 - create
 - read
 - update
@@ -11,18 +11,20 @@ You can also create custom access rights tokens using function `registerToken` o
 
 These tokens can be used to give users rights to see information of specific Model, to create new models or edit it.
 Also, you can use tokens to create access rights to global and inline actions, or to Model tools.
-In controllers you should check access rights through `havePermission` method.
+In controllers you should check access rights through `hasPermission`.
 
 Example:
 
-```javascript
-if (sails.config.adminpanel.auth) {
-        if (!req.session.UserAP) { // check that user is authorized
-            return res.redirect(`${sails.config.adminpanel.routePrefix}/model/userap/login`);
-        } else if (!AccessRightsHelper.havePermission(`tokenName`, req.session.UserAP)) { // check permission
-            return res.sendStatus(403);
-        }
+```ts
+if (req.adminizer.config.auth.enable) {
+    if (!req.user) {
+        return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
     }
+
+    if (!req.adminizer.accessRightsHelper.hasPermission('tokenName', req.user)) {
+        return res.sendStatus(403);
+    }
+}
 ```
 
 ### Registering Custom Tokens
@@ -43,9 +45,10 @@ adminizer.accessRightsHelper.registerTokens([
 Assign the token to a group so members inherit the permission:
 
 ```ts
-await GroupAP.updateOne({ name: 'managers' }).set({
-  tokens: ['reports-export']
-})
+await adminizer.modelHandler
+  .internal("access-rights")
+  .get("GroupAP")
+  .update({ where: { name: 'managers' } }, { tokens: ['reports-export'] });
 ```
 
 
@@ -64,8 +67,8 @@ will be found, adminpanel will create admin profile with this credentials.
 If credentials in config will not be found, adminpanel will create admin with
 login `admin` and numeric password that will be displayed in console.
 
-```javascript
-module.exports.adminpanel = {
+```ts
+const config = {
     administrator: {
         login: 'string',
         password: 'string'

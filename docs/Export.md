@@ -82,9 +82,11 @@ The export controller:
 2. Loads the saved filter (if `filterId` is provided)
 3. Converts datetime conditions from HTML5 format to UTC
 4. Applies custom column configuration from filter
-5. Executes a query with no pagination (large limit)
-6. Formats data based on field types (relationships, booleans, dates, JSON)
-7. Generates the file and sends it as a download
+5. Converts filter conditions through `QueryBuilder` into internal `QueryCriteria`
+6. Executes a query with no pagination (large limit)
+7. Selects only real database columns at SQL level; relation/display fields are loaded and formatted after records are fetched
+8. Formats data based on field types (relationships, booleans, dates, JSON)
+9. Generates the file and sends it as a download
 
 ### Route Registration: `src/system/Router.ts`
 

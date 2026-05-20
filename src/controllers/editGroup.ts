@@ -8,6 +8,9 @@ import { GroupAP } from "../models/GroupAP";
 export default async function editGroup(req: ReqType, res: ResType) {
 
     let entity = ControllerHelper.findEntityObject(req);
+    const internalUsers = req.adminizer.modelHandler.internal("users");
+    const userModel = internalUsers.get<UserAP>("UserAP");
+    const groupModel = internalUsers.get<GroupAP>("GroupAP");
 
     //Check id
     if (!req.params.id) {
@@ -16,16 +19,14 @@ export default async function editGroup(req: ReqType, res: ResType) {
 
     let users: UserAP[]
     try {
-        // TODO refactor CRUD functions for DataAccessor usage
-        users = await req.adminizer.modelHandler.model.get("UserAP")["_find"](({isAdministrator: false}));
+        users = await userModel.find({where: {isAdministrator: false}});
     } catch (e) {
         Adminizer.log.error(e)
     }
 
     let group: GroupAP
     try {
-        // TODO refactor CRUD functions for DataAccessor usage
-        group = await req.adminizer.modelHandler.model.get("GroupAP")["_findOne"]({id: req.params.id});
+        group = await groupModel.findOne({where: {id: req.params.id}});
     } catch (e) {
         Adminizer.log.error('Admin edit error: ');
         Adminizer.log.error(e);
@@ -67,8 +68,7 @@ export default async function editGroup(req: ReqType, res: ResType) {
 
         let updatedGroup: GroupAP
         try {
-            // TODO refactor CRUD functions for DataAccessor usage
-            updatedGroup = await req.adminizer.modelHandler.model.get("GroupAP")["_updateOne"]({id: group.id}, {
+            updatedGroup = await groupModel.updateOne({where: {id: group.id}}, {
                 name: req.body.name, description: req.body.description,
                 users: usersInThisGroup, tokens: tokensOfThisGroup
             });
@@ -87,8 +87,7 @@ export default async function editGroup(req: ReqType, res: ResType) {
 
     if (reloadNeeded) {
         try {
-            // TODO refactor CRUD functions for DataAccessor usage
-            group = await req.adminizer.modelHandler.model.get("GroupAP")["_findOne"]({id: req.params.id});
+            group = await groupModel.findOne({where: {id: req.params.id}});
         } catch (e) {
             Adminizer.log.error('Admin edit error: ');
             Adminizer.log.error(e);
@@ -96,8 +95,7 @@ export default async function editGroup(req: ReqType, res: ResType) {
         }
 
         try {
-            // TODO refactor CRUD functions for DataAccessor usage
-            users = await req.adminizer.modelHandler.model.get("UserAP")["_find"]({isAdministrator: false});
+            users = await userModel.find({where: {isAdministrator: false}});
         } catch (e) {
             Adminizer.log.error(e)
         }

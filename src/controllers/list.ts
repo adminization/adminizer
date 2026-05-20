@@ -1,6 +1,7 @@
 import {ControllerHelper} from "../helpers/controllerHelper";
 import {DataAccessor} from "../lib/DataAccessor";
-import {ModernQueryBuilder, QueryParams, QueryResult} from "../lib/query-builder/ModernQueryBuilder";
+import {QueryBuilder} from "../lib/query-builder/QueryBuilder";
+import {QueryBuilderParams} from "../interfaces/queryBuilder";
 import {Adminizer} from "../lib/Adminizer";
 import {inertiaListHelper} from "../helpers/inertiaListHelper";
 import {Field, Fields} from "../helpers/fieldsHelper";
@@ -132,13 +133,13 @@ export default async function list(req: ReqType, res: ResType) {
     }
 
     // Apply custom columns if filter has them
-    let displayFields = fields;
+    let displayFields = getVisibleFields(fields);
     let customColumnsConfig: FilterColumnAP[] | null = null;
 
     if (savedColumns.length > 0) {
         customColumnsConfig = savedColumns;
         // Filter and reorder fields based on custom column configuration
-        displayFields = applyCustomColumns(fields, savedColumns);
+        displayFields = applyCustomColumns(displayFields, savedColumns);
     }
 
     // Add column search conditions (with datetime conversion)
@@ -163,7 +164,7 @@ export default async function list(req: ReqType, res: ResType) {
     }
 
     // Build query parameters
-    const queryParams: QueryParams = {
+    const queryParams: QueryBuilderParams = {
         page,
         limit,
         sort: effectiveSortField,
@@ -172,8 +173,8 @@ export default async function list(req: ReqType, res: ResType) {
         globalSearch: globalSearch || undefined
     };
 
-    // Execute query using ModernQueryBuilder (use original fields for query, displayFields for output)
-    const queryBuilder = new ModernQueryBuilder(
+    // Execute query using QueryBuilder (use original fields for query, displayFields for output)
+    const queryBuilder = new QueryBuilder(
         entity.model,
         fields,
         dataAccessor,
@@ -317,6 +318,18 @@ function applyCustomColumns(fields: Fields, columns: FilterColumnAP[]): Fields {
     }
 
     return result;
+}
+
+function getVisibleFields(fields: Fields): Fields {
+    return Object.entries(fields).reduce<Fields>((result, [key, field]) => {
+        const config = field?.config as BaseFieldConfig | undefined;
+        if (config?.visible === false) {
+            return result;
+        }
+
+        result[key] = field;
+        return result;
+    }, {});
 }
 
 /**

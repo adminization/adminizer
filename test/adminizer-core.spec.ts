@@ -5,6 +5,7 @@ import {
     mapSequelizeToAdminizerAttributes,
     SequelizeModel,
 } from "../src/lib/model/adapter/sequelize";
+import { DataAccessor } from "../src/lib/DataAccessor";
 
 describe("Adminizer core ORM contract", () => {
     function createModels() {
@@ -106,5 +107,88 @@ describe("Adminizer core ORM contract", () => {
         expect(options.where.title[Op.like]).toBe("%hello%");
         expect(options.where.views[Op.gte]).toBe(10);
         expect(options.where.published).toBe(true);
+    });
+
+    it("preserves Sequelize literal filters while sanitizing access criteria", async () => {
+        const literal = Sequelize.literal("1=1");
+        const accessor = Object.create(DataAccessor.prototype) as DataAccessor;
+
+        Object.assign(accessor, {
+            user: { isAdministrator: true },
+            entity: {
+                model: { modelname: "Example" },
+                config: {},
+            },
+        });
+
+        const sanitized = await accessor.sanitizeUserRelationAccess({
+            where: literal as any,
+        });
+
+        expect(sanitized.where).toBe(literal);
+    });
+
+    it("combines Sequelize literal filters with user relation access", async () => {
+        const literal = Sequelize.literal("1=1");
+        const accessor = Object.create(DataAccessor.prototype) as DataAccessor;
+
+        Object.assign(accessor, {
+            user: {
+                id: 5,
+                login: "editor",
+                isAdministrator: false,
+            },
+            entity: {
+                model: {
+                    modelname: "Example",
+                    attributes: {
+                        owner: { model: "UserAP" },
+                    },
+                },
+                config: {
+                    userAccessRelation: "owner",
+                },
+            },
+        });
+
+        const sanitized = await accessor.sanitizeUserRelationAccess({
+            where: literal as any,
+        });
+
+        expect((sanitized.where as any).and).toEqual([
+            literal,
+            { owner: 5 },
+        ]);
+    });
+
+    it("matches JSON array values with jsonContains on SQLite", async () => {
+        const sequelize = new Sequelize({
+            dialect: "sqlite",
+            storage: ":memory:",
+            logging: false,
+        });
+
+        const Example = sequelize.define("Example", {
+            selectMany: DataTypes.JSON,
+        });
+        Example.belongsTo(Example, { as: "parent", foreignKey: "parentId" });
+
+        await sequelize.sync();
+        await Example.bulkCreate([
+            { selectMany: ["Sone", "Stwo"] },
+            { selectMany: ["Sthree"] },
+        ]);
+
+        const model = new SequelizeModel("Example", Example as any);
+        const count = await (model as any)._count({
+            where: {
+                or: [
+                    { selectMany: { jsonContains: "Sone" } },
+                    { selectMany: { jsonContains: "Stwo" } },
+                ],
+            },
+        });
+
+        expect(count).toBe(1);
     });
 });

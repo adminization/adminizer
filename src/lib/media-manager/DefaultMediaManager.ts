@@ -10,6 +10,7 @@ import {
 import { getAssociationFieldName, populateVariants } from "./helpers/MediaManagerHelper";
 import { ApplicationItem, ImageItem, TextItem, VideoItem } from "./Items";
 import { Adminizer } from "../Adminizer";
+import { MediaManagerAssociationsAP } from "../../models/MediaManagerAssociationsAP";
 
 
 export class DefaultMediaManager extends AbstractMediaManager {
@@ -31,20 +32,31 @@ export class DefaultMediaManager extends AbstractMediaManager {
         this.adminizer = adminizer;
     }
 
+    private mediaModel() {
+        return this.adminizer.modelHandler.internal("media-manager").get<MediaManagerItem>(this.model);
+    }
+
+    private associationModel() {
+        return this.adminizer.modelHandler.internal("media-manager").get<any>(this.modelAssoc);
+    }
+
     public async getAll(limit: number, skip: number, sort: SortCriteria, group: string): Promise<{
         data: MediaManagerItem[];
         next: boolean
     }> {
-        //TODO refactor CRUD functions for DataAccessor usage
-        let data: MediaManagerItem[] = await this.adminizer.modelHandler.model.get(this.model)["_find"]({
+        let data: MediaManagerItem[] = await this.mediaModel().find({
             where: { parent: null, group: group },
             limit: limit,
             skip: skip,
             sort: sort,
-        }, { populate: [["variants", { sort: sort }], ["meta", {}]] })
+            populate: {
+                variants: {sort: sort},
+                meta: true
+            }
+        })
 
 
-        let next = await this.adminizer.modelHandler.model.get(this.model)["_find"]({
+        let next = await this.mediaModel().find({
             where: { parent: null, group: group },
             limit: limit,
             skip: skip === 0 ? limit : skip + limit,
@@ -62,14 +74,15 @@ export class DefaultMediaManager extends AbstractMediaManager {
     }
 
     public async searchAll(s: string, group: string): Promise<MediaManagerItem[]> {
-        //TODO refactor CRUD functions for DataAccessor usage
-        let data: MediaManagerItem[] = await this.adminizer.modelHandler.model.get(this.model)["_find"]({
+        let data: MediaManagerItem[] = await this.mediaModel().find({
             where: { filename: { contains: s }, parent: null, group: group },
             sort: "createdAt DESC",
-        }, {
-            populate: [["variants", { sort: "createdAt DESC" }], ["meta", {}]],
             // This limitation is made strictly, if your code solves this please make a PR
-            limit: 1000
+            limit: 1000,
+            populate: {
+                variants: {sort: "createdAt DESC"},
+                meta: true
+            }
         })
 
 
@@ -93,7 +106,8 @@ export class DefaultMediaManager extends AbstractMediaManager {
 
         const modelIdStr = String(modelId); //Normalize to string
 
-        let modelAssociations = await this.adminizer.modelHandler.model.get(this.modelAssoc)["_find"]({
+        const associationModel = this.associationModel();
+        let modelAssociations = await associationModel.find({
             where: {
                 modelId: modelIdStr,
                 model: model.toLowerCase(),
@@ -105,13 +119,13 @@ export class DefaultMediaManager extends AbstractMediaManager {
             const q: Record<string, any> = {};
             const pk = this.adminizer.modelHandler.model.get(this.modelAssoc).primaryKey;
             q[pk] = modelAssociation.id;
-            await this.adminizer.modelHandler.model.get(this.modelAssoc)["_destroy"](q);
+            await associationModel.destroy({where: q});
         }
 
         const fieldName = this.adminizer.ormAdapters[0].ormType === 'sequelize' ? 'fileId' : 'file';
 
         for (const [key, widgetItem] of data.entries()) {
-            await this.adminizer.modelHandler.model.get(this.modelAssoc)["_create"]({
+            await associationModel.create({
                 mediaManagerId: this.id,
                 model: model.toLowerCase(),
                 modelId: modelIdStr, //Save as a string
@@ -138,14 +152,15 @@ export class DefaultMediaManager extends AbstractMediaManager {
 
         const fieldName = this.adminizer.ormAdapters[0].ormType === 'sequelize' ? 'fileRef' : 'file';
 
-        let files = await this.adminizer.modelHandler.model.get(this.modelAssoc)['_find']({
+        let files = await this.associationModel().find({
             where: {
                 model: model.toLowerCase(),
                 widgetName: widgetName,
                 modelId: modelIdStr, //Search by string
             },
-            sort: "sortOrder ASC"
-        }, { populate: [[fieldName, {}]] });
+            sort: "sortOrder ASC",
+            populate: {[fieldName]: true}
+        });
 
         for (const file of files) {
             widgetItems.push({

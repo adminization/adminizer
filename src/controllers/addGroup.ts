@@ -8,11 +8,13 @@ import { GroupAP } from "../models/GroupAP";
 export default async function addGroup(req: ReqType, res: ResType) {
 
     let entity = ControllerHelper.findEntityObject(req);
+    const internalUsers = req.adminizer.modelHandler.internal("users");
+    const userModel = internalUsers.get<UserAP>("UserAP");
+    const groupModel = internalUsers.get<GroupAP>("GroupAP");
 
     let users: UserAP[];
     try {
-        // TODO refactor CRUD functions for DataAccessor usage
-        users = await req.adminizer.modelHandler.model.get("UserAP")["_find"]({isAdministrator: false});
+        users = await userModel.find({where: {isAdministrator: false}});
     } catch (e) {
         Adminizer.log.error(e)
     }
@@ -52,8 +54,7 @@ export default async function addGroup(req: ReqType, res: ResType) {
 
         let group: GroupAP;
         try {
-            // TODO refactor CRUD functions for DataAccessor usage
-            group = await req.adminizer.modelHandler.model.get("GroupAP")?.["_create"]({
+            group = await groupModel.create({
                 name: req.body.name, description: req.body.description,
                 users: usersInThisGroup, tokens: tokensOfThisGroup
             })

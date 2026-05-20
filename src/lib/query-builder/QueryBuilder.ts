@@ -3,8 +3,9 @@ import { AbstractModel } from '../model/AbstractModel';
 import { DataAccessor } from '../DataAccessor';
 import { BaseFieldConfig } from '../../interfaces/adminpanelConfig';
 import { FilterCondition, FilterOperator } from '../../models/FilterAP';
-import { Op, Sequelize } from 'sequelize';
 import { CustomFilterHandler } from '../filters/CustomFilterHandler';
+import { QueryBuilderParams, QueryBuilderResult } from '../../interfaces/queryBuilder';
+import { CriteriaWhere } from '../../interfaces/queryCriteria';
 
 /**
  * Security limits for filter conditions
@@ -18,32 +19,6 @@ export const FILTER_SECURITY_LIMITS = {
 };
 
 /**
- * Modern query parameters interface
- * Replaces legacy DataTables.js format
- */
-export interface QueryParams {
-    page: number;
-    limit: number;
-    sort?: string;
-    sortDirection?: 'ASC' | 'DESC';
-    filters?: FilterCondition[];
-    globalSearch?: string;
-    fields?: string[];
-}
-
-/**
- * Query result interface
- */
-export interface QueryResult<T = any> {
-    data: T[];
-    total: number;
-    filtered: number;
-    page: number;
-    limit: number;
-    pages: number;
-}
-
-/**
  * Custom field condition result
  */
 export interface CustomFieldCondition {
@@ -54,7 +29,7 @@ export interface CustomFieldCondition {
 }
 
 /**
- * ModernQueryBuilder - replaces legacy NodeTable
+ * QueryBuilder - replaces legacy NodeTable
  *
  * Key improvements:
  * - Promise-based API (no callbacks)
@@ -65,7 +40,7 @@ export interface CustomFieldCondition {
  * - Full operator support (eq, neq, gt, gte, lt, lte, like, ilike, in, between, isNull, regex, custom)
  * - Nested AND/OR/NOT groups
  */
-export class ModernQueryBuilder {
+export class QueryBuilder {
     private fieldsArray: string[] = ['actions'];
 
     constructor(
@@ -81,43 +56,30 @@ export class ModernQueryBuilder {
      * Public method to build WHERE clause without executing query
      * Useful for external execution (e.g., direct adapter calls)
      */
-    buildWhereClause(params: QueryParams): any {
+    buildWhereClause(params: QueryBuilderParams): CriteriaWhere {
         return this.buildWhere(params);
     }
 
     /**
      * Execute query with Promise API
      */
-    async execute(params: QueryParams): Promise<QueryResult> {
+    async execute(params: QueryBuilderParams): Promise<QueryBuilderResult> {
         
         const whereClause = this.buildWhere(params);
         const orderClause = this.buildOrder(params);
-        const [safeSortField, safeSortDirectionRaw = 'DESC'] = orderClause.trim().split(/\s+/);
-        const safeSortDirection: 'ASC' | 'DESC' = safeSortDirectionRaw === 'ASC' ? 'ASC' : 'DESC';
-        // Check if whereClause is a Sequelize.literal (has 'val' property with string)
-        const isLiteral = whereClause && typeof whereClause === 'object' && 'val' in whereClause && typeof whereClause.val === 'string';
-
-        // Convert orderClause to Sequelize format for findWithRawWhere
-        const orderForRaw: [string, 'ASC' | 'DESC'][] = [[safeSortField, safeSortDirection]];
         const offset = (params.page - 1) * params.limit;
 
         // Execute queries in parallel
         const [data, total, filtered] = await Promise.all([
-            // Use findWithRawWhere for literal, regular find for normal where
-            isLiteral
-                ? this.model.findWithRawWhere(whereClause, { limit: params.limit, offset, order: orderForRaw })
-                : this.model.find({
-                    where: whereClause,
-                    sort: orderClause,
-                    limit: params.limit,
-                    skip: offset,
-                    select: params.fields
-                }, this.dataAccessor),
+            this.model.find({
+                where: whereClause,
+                sort: orderClause,
+                limit: params.limit,
+                skip: offset,
+                select: this.buildSelect(params.fields)
+            }, this.dataAccessor),
             this.model.count({}, this.dataAccessor),
-            // For count with filter, use countWithRawWhere for literal
-            isLiteral
-                ? this.model.countWithRawWhere(whereClause)
-                : this.model.count(whereClause, this.dataAccessor)
+            this.model.count({where: whereClause}, this.dataAccessor)
         ]);
 
         return {
@@ -130,36 +92,21 @@ export class ModernQueryBuilder {
         };
     }
 
-    private quoteIdentifier(identifier: string): string {
-        return `\`${identifier.replace(/`/g, '``')}\``;
-    }
-
-    private getQualifiedField(field: string): string {
-        const modelAlias = this.model.identity || this.model.modelname;
-        if (!modelAlias) {
-            return this.quoteIdentifier(field);
-        }
-
-        return `${this.quoteIdentifier(modelAlias)}.${this.quoteIdentifier(field)}`;
-    }
-
     /**
      * Build WHERE clause from FilterCondition[]
      * Supports nested AND/OR/NOT groups
      */
-    private buildWhere(params: QueryParams): any {
-        const conditions: any[] = [];
+    private buildWhere(params: QueryBuilderParams): CriteriaWhere {
+        const conditions: CriteriaWhere[] = [];
         
         // 1. Filters from FilterCondition
         if (params.filters && params.filters.length > 0) {
             const filterCondition = this.buildConditionGroup(params.filters, 'AND');
             // Check if filterCondition is not empty (including null values)
             const hasKeys = Object.keys(filterCondition).length > 0;
-            const hasSymbols = Object.getOwnPropertySymbols(filterCondition).length > 0;
             const hasNullValue = Object.values(filterCondition).some(v => v === null);
-            const isLiteral = typeof filterCondition === 'object' && filterCondition !== null && 'val' in filterCondition && typeof filterCondition.val === 'string';
             
-            if (hasKeys || hasSymbols || hasNullValue || isLiteral) {
+            if (hasKeys || hasNullValue) {
                 conditions.push(filterCondition);
             }
         }
@@ -178,15 +125,10 @@ export class ModernQueryBuilder {
         }
 
         if (conditions.length === 1) {
-            const condition = conditions[0];
-            // Check if it's a Sequelize.literal - return it directly without wrapping
-            if (condition && typeof condition === 'object' && 'val' in condition && typeof condition.val === 'string') {
-                return condition;
-            }
-            return condition;
+            return conditions[0];
         }
 
-        return { [Op.and]: conditions };
+        return { and: conditions };
     }
 
     /**
@@ -197,7 +139,7 @@ export class ModernQueryBuilder {
         conditions: FilterCondition[],
         logic: 'AND' | 'OR' | 'NOT' = 'AND',
         depth: number = 0
-    ): Record<string, any> {
+    ): CriteriaWhere {
         // Security: check depth
         if (depth > FILTER_SECURITY_LIMITS.MAX_DEPTH) {
             throw new Error(`Filter nesting too deep (max ${FILTER_SECURITY_LIMITS.MAX_DEPTH})`);
@@ -224,17 +166,7 @@ export class ModernQueryBuilder {
                 return this.buildSingleCondition(cond);
             })
             .filter(c => {
-                // Check if object is not empty (including Symbol keys and null values)
                 if (!c) return false;
-
-                // Check for Sequelize.literal() - it has 'val' property
-                if (typeof c === 'object' && 'val' in c && typeof c.val === 'string') {
-                    return true;
-                }
-
-                // Check for Symbol keys at top level FIRST (before Object.keys)
-                const symbols = Object.getOwnPropertySymbols(c);
-                if (symbols.length > 0) return true;
 
                 // Check for regular keys
                 const keys = Object.keys(c);
@@ -244,9 +176,6 @@ export class ModernQueryBuilder {
                         // null is a valid value (IS NULL condition)
                         if (val === null) return true;
                         if (val && typeof val === 'object') {
-                            // Check nested object for Symbol keys
-                            const nestedSymbols = Object.getOwnPropertySymbols(val);
-                            if (nestedSymbols.length > 0) return true;
                             if (Object.keys(val).length > 0) return true;
                         } else if (val !== undefined) {
                             return true;
@@ -264,14 +193,9 @@ export class ModernQueryBuilder {
         if (clauses.length === 1) {
             // NOT operator
             if (logic === 'NOT') {
-                return { [Op.not]: clauses[0] };
+                return { not: clauses[0] };
             }
-            // Check if it's a Sequelize.literal - return it directly
-            const clause = clauses[0];
-            if (typeof clause === 'object' && 'val' in clause && typeof clause.val === 'string') {
-                return clause;
-            }
-            return clause;
+            return clauses[0];
         }
 
         // NOT operator requires exactly one condition
@@ -280,8 +204,8 @@ export class ModernQueryBuilder {
         }
 
         return logic === 'OR'
-            ? { [Op.or]: clauses }
-            : { [Op.and]: clauses };
+            ? { or: clauses }
+            : { and: clauses };
     }
 
     /**
@@ -326,15 +250,10 @@ export class ModernQueryBuilder {
     /**
      * Build single condition
      */
-    private buildSingleCondition(cond: FilterCondition): Record<string, any> {
-        // 1. Raw SQL (highest priority)
+    private buildSingleCondition(cond: FilterCondition): CriteriaWhere {
+        // 1. Raw SQL is intentionally not part of QueryCriteria.
         if (cond.rawSQL) {
-            return {
-                __rawSQL: {
-                    sql: cond.rawSQL,
-                    params: cond.rawSQLParams || []
-                }
-            };
+            throw new Error("Raw SQL filters are not supported by QueryCriteria");
         }
 
         // 2. Custom handler
@@ -366,38 +285,15 @@ export class ModernQueryBuilder {
         // select-many widget stores data as JSON array: ["value1","value2"]
         if ((fieldType === 'json' || fieldConfigType === 'select-many') &&
             Array.isArray(value)) {
-            const qualifiedField = this.getQualifiedField(field);
-
-            // For eq operator, check if arrays are equal (exact match)
-            // For SQLite: compare JSON strings directly
             if (operator === 'eq') {
-                const jsonStr = JSON.stringify(value);
-                const sql = `${qualifiedField} = '${jsonStr.replace(/'/g, "''")}'`;
-                return Sequelize.literal(sql);
+                return { [field]: {jsonContains: value} };
             }
 
-            // For in/notIn operators, check if value exists in JSON array
-            // For SQLite: use LIKE with JSON string representation
             if (operator === 'in' || operator === 'notIn') {
-                // Create LIKE patterns for each value
-                // JSON stores values as "value" with quotes
-                const patterns = value.map((v: any) => `%"${v}"%`);
-
-                if (operator === 'in') {
-                    // Build raw SQL for JSON array containment
-                    const likeConditions = patterns.map((pattern: string) =>
-                        `${qualifiedField} LIKE '${pattern.replace(/'/g, "''")}'`
-                    );
-                    const sql = `(${likeConditions.join(' OR ')})`;
-                    return Sequelize.literal(sql);
-                } else {
-                    // Check if none of the values exist in the JSON array
-                    const likeConditions = patterns.map((pattern: string) =>
-                        `${qualifiedField} LIKE '${pattern.replace(/'/g, "''")}'`
-                    );
-                    const sql = `NOT (${likeConditions.join(' OR ')})`;
-                    return Sequelize.literal(sql);
-                }
+                const clauses = value.map((item) => ({[field]: {jsonContains: item}}));
+                return operator === 'in'
+                    ? {or: clauses}
+                    : {not: {or: clauses}};
             }
         }
 
@@ -408,7 +304,7 @@ export class ModernQueryBuilder {
 
         // Special handling for isNotNull - return { not: { field: null } }
         if (operator === 'isNotNull') {
-            return { not: { [field]: null } };
+            return { [field]: {isNotNull: true} };
         }
 
         // Validate operator-value combination
@@ -426,8 +322,7 @@ export class ModernQueryBuilder {
     }
 
     /**
-     * Map filter operators to Sequelize string operators
-     * Using string operators ($like, $gt, etc.) instead of Symbol (Op.like) for proper serialization
+     * Map filter operators to adapter-neutral criteria operators.
      */
     private mapOperatorToCondition(operator: FilterOperator, value: any): any {
         const operatorsWithoutValue: FilterOperator[] = ['isNull', 'isNotNull', 'today'];
@@ -440,8 +335,7 @@ export class ModernQueryBuilder {
         switch (operator) {
             case 'eq':
                 // Convert string 'true'/'false' to actual boolean values
-                // For boolean fields, return value directly (not wrapped in Op.eq)
-                // because Sequelize handles direct boolean values better for SQLite TINYINT
+                // For boolean fields, return value directly.
                 if (value === 'true') return true;
                 if (value === 'false') return false;
                 if (typeof value === 'boolean') return value;
@@ -450,44 +344,41 @@ export class ModernQueryBuilder {
             case 'neq':
                 // Convert string 'true'/'false' to actual boolean values
                 const neqValue = value === 'true' ? true : value === 'false' ? false : value;
-                return { [Op.ne]: neqValue };
+                return { ne: neqValue };
 
             case 'gt':
-                return { [Op.gt]: value };
+                return { gt: value };
 
             case 'gte':
-                return { [Op.gte]: value };
+                return { gte: value };
 
             case 'lt':
-                return { [Op.lt]: value };
+                return { lt: value };
 
             case 'lte':
-                return { [Op.lte]: value };
+                return { lte: value };
 
             case 'like':
-                // Using Op.like with Sequelize - works with string serialization
                 if (typeof value === 'string' && value.startsWith('%') && value.endsWith('%')) {
-                    return { [Op.like]: `%${value.slice(1, -1)}%` };
+                    return { contains: value.slice(1, -1) };
                 }
-                return { [Op.like]: `%${value}%` };
+                return { contains: value };
 
             case 'ilike':
                 // Case-insensitive LIKE - works on all dialects
                 if (typeof value === 'string' && value.startsWith('%') && value.endsWith('%')) {
-                    return { [Op.like]: value };
+                    return { contains: value.slice(1, -1) };
                 }
-                return { [Op.like]: `%${value}%` };
+                return { contains: value };
 
             case 'startsWith':
-                // Using Op.like with prefix - works on all dialects
-                return { [Op.like]: `${value}%` };
+                return { startsWith: value };
 
             case 'endsWith':
-                // Using Op.like with suffix - works on all dialects
-                return { [Op.like]: `%${value}` };
+                return { endsWith: value };
 
             case 'regex':
-                return { [Op.regexp]: value };
+                return { regex: value };
 
             case 'in':
                 // Convert string 'true'/'false' to actual boolean values in array
@@ -495,7 +386,7 @@ export class ModernQueryBuilder {
                 const convertedInValues = inValues.map((v: any) => 
                     v === 'true' ? true : v === 'false' ? false : v
                 );
-                return { [Op.in]: convertedInValues };
+                return { in: convertedInValues };
 
             case 'notIn':
                 // Convert string 'true'/'false' to actual boolean values in array
@@ -503,37 +394,37 @@ export class ModernQueryBuilder {
                 const convertedNotInValues = notInValues.map((v: any) => 
                     v === 'true' ? true : v === 'false' ? false : v
                 );
-                return { [Op.notIn]: convertedNotInValues };
+                return { notIn: convertedNotInValues };
 
             case 'between':
                 if (Array.isArray(value) && value.length === 2) {
-                    return { [Op.between]: value };
+                    return { between: value };
                 }
                 return value;
 
             case 'today': {
                 const [from, to] = this.getDayRange(new Date());
-                return { [Op.between]: [from, to] };
+                return { between: [from, to] };
             }
 
             case 'month': {
                 const range = this.getMonthRangeByValue(value);
-                return range ? { [Op.between]: range } : undefined;
+                return range ? { between: range } : undefined;
             }
 
             case 'year': {
                 const range = this.getYearRangeByValue(value);
-                return range ? { [Op.between]: range } : undefined;
+                return range ? { between: range } : undefined;
             }
 
             case 'monthBetween': {
                 const range = this.getMonthRangeBetween(value);
-                return range ? { [Op.between]: range } : undefined;
+                return range ? { between: range } : undefined;
             }
 
             case 'yearBetween': {
                 const range = this.getYearRangeBetween(value);
-                return range ? { [Op.between]: range } : undefined;
+                return range ? { between: range } : undefined;
             }
 
             case 'custom':
@@ -704,7 +595,7 @@ export class ModernQueryBuilder {
     /**
      * Build relation condition
      */
-    private buildRelationCondition(cond: FilterCondition): Record<string, any> {
+    private buildRelationCondition(cond: FilterCondition): CriteriaWhere {
         const { relation, relationField, operator, value } = cond;
 
         // Ensure operator and safe relation path parts exist
@@ -723,7 +614,7 @@ export class ModernQueryBuilder {
         }
 
         if (operator === 'isNotNull') {
-            return { [relationPath]: { [Op.not]: null } };
+            return { [relationPath]: { isNotNull: true } };
         }
 
         this.validateOperatorValue(operator, value);
@@ -749,19 +640,12 @@ export class ModernQueryBuilder {
 
             // rawSQL returned
             if (condition.rawSQL) {
-                return {
-                    __rawSQL: {
-                        sql: condition.rawSQL,
-                        params: condition.params || []
-                    }
-                };
+                throw new Error("Raw SQL filters are not supported by QueryCriteria");
             }
 
             // in-memory function returned
             if (condition.inMemory) {
-                return {
-                    __inMemory: condition.inMemory
-                };
+                throw new Error("In-memory filters are not supported by QueryCriteria");
             }
 
             // Standard criteria returned
@@ -780,7 +664,7 @@ export class ModernQueryBuilder {
      * Searches in string/text/ref fields (same behavior as NodeTable)
      * Date/time fields are excluded from global search to avoid moment.js warnings
      */
-    private buildGlobalSearch(searchStr: string): any {
+    private buildGlobalSearch(searchStr: string): CriteriaWhere | null {
         // Skip if empty
         if (!searchStr || searchStr.trim() === '') {
             return null;
@@ -828,7 +712,7 @@ export class ModernQueryBuilder {
     /**
      * Build ORDER clause
      */
-    private buildOrder(params: QueryParams): string {
+    private buildOrder(params: QueryBuilderParams): string {
         const sortField = params.sort || 'createdAt';
         const sortDirection = this.sanitizeSortDirection(params.sortDirection as string | undefined);
 
@@ -925,6 +809,30 @@ export class ModernQueryBuilder {
         return out;
     }
 
+    private buildSelect(fields?: string[]): string[] | undefined {
+        if (!fields?.length) {
+            return undefined;
+        }
+
+        const selectableFields = fields.filter((field) => {
+            const modelField = this.model.attributes[field];
+            if (!modelField) {
+                return false;
+            }
+
+            return !modelField.model
+                && !modelField.collection
+                && modelField.type !== "association"
+                && modelField.type !== "association-many";
+        });
+
+        if (this.model.primaryKey && !selectableFields.includes(this.model.primaryKey)) {
+            selectableFields.unshift(this.model.primaryKey);
+        }
+
+        return selectableFields.length ? selectableFields : undefined;
+    }
+
     /**
      * Get allowed operators for field type
      */
@@ -947,3 +855,5 @@ export class ModernQueryBuilder {
         return operatorsByType[fieldType] || operatorsByType.string;
     }
 }
+
+export { QueryBuilder as ModernQueryBuilder };

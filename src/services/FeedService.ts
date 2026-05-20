@@ -1,7 +1,8 @@
 import { Adminizer } from "../lib/Adminizer";
 import { FilterAP } from "../models/FilterAP";
 import { DataAccessor } from "../lib/DataAccessor";
-import { ModernQueryBuilder, QueryParams } from "../lib/query-builder/ModernQueryBuilder";
+import { QueryBuilder } from "../lib/query-builder/QueryBuilder";
+import { QueryBuilderParams } from "../interfaces/queryBuilder";
 import { Field, Fields } from "../helpers/fieldsHelper";
 import { FilterService } from "../lib/filters/FilterService";
 import { UserAP } from "../models/UserAP";
@@ -44,13 +45,10 @@ export class FeedService {
             return null;
         }
 
-        const filterModel = this.adminizer.modelHandler.model.get('filterap');
-        if (!filterModel) {
-            throw new Error('FilterAP model not found');
-        }
-
-        const filter = await filterModel["_findOne"]({ apiKey, apiEnabled: true, visibility: 'private' });
-        return filter as FilterAP | null;
+        return await this.adminizer.modelHandler
+            .internal("feed")
+            .get<FilterAP>("FilterAP")
+            .findOne({where: {apiKey, apiEnabled: true, visibility: 'private'}});
     }
 
     /**
@@ -102,7 +100,7 @@ export class FeedService {
         const createdAtSortField = this.resolveCreatedAtSortField(entity.model.attributes, displayFields);
 
         // Build query params for where clause construction
-        const queryParams: QueryParams = {
+        const queryParams: QueryBuilderParams = {
             page: 1,
             limit: 20,
             filters: convertedConditions.length > 0 ? convertedConditions : undefined,
@@ -111,12 +109,12 @@ export class FeedService {
             fields: Object.keys(displayFields)
         };
 
-        // Build where clause using ModernQueryBuilder
+        // Build where clause using QueryBuilder
         // Create an administrator DataAccessor to avoid user-based filtering
         
 
         const dataAccessor = new DataAccessor(adminizerInstance, user, entity, "list");
-        const queryBuilder = new ModernQueryBuilder(
+        const queryBuilder = new QueryBuilder(
             entity.model,
             fields,
             dataAccessor,

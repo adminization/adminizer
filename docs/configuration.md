@@ -1,5 +1,7 @@
 # Admin Panel configuration
 
+> This page is a legacy extended reference. Prefer the focused pages in `docs/Configuration/` for new projects. Sequelize is the primary supported ORM; TypeORM support is experimental.
+
 
 ### Abstract
 
@@ -19,7 +21,7 @@ import { AdminizerConfig } from "adminizer";
 
 const config: AdminizerConfig = {
   routePrefix: "/admin",
-  auth: true,
+  auth: { enable: true },
   dashboard: true,
   models: {
     ExampleModel: {
@@ -365,10 +367,9 @@ module.exports.adminpanel = {
 
 ## Associations
 
-Now Adminpanel hook partially supports assotiations.
+Adminizer partially supports associations.
 
-Adminpanel determinates such fields by waterline configuration.
-Right now if you model field have such configuration:
+Adminizer detects association fields from adapter metadata. For example, a relation field may be represented as:
 
 ```javascript
 fieldName: {
@@ -392,33 +393,24 @@ owner: {
 
 ## Auto config
 
-This configuration loads all sail models as they are. Just place  in `config\adminpanel.js`
+The old Sails auto-config example is not applicable to current Adminizer projects. Define models explicitly in `AdminpanelConfig.models`, or generate that object from your ORM metadata in project code.
 
-```javascript
- const fs = require("fs");
- let modelPath = __dirname + "/../api/models";
- let models = {};
- fs.readdir(modelPath, function (err, files) {
-   files.forEach(function (file) {
-     let modelName = file.split(".")[0];
-     models[modelName] = {
-       title: modelName,
-       model: modelName,
-     };
-   });
- });
-
- module.exports.adminpanel = { models: models } ;
+```ts
+const config = {
+  models: {
+    Example: {
+      title: "Example",
+      model: "example",
+    },
+  },
+};
 ```
 
 
 ## Limitations
 
-+ For now admin panel do not fully support waterline associations. So some fields might be ignored ! It's planned.
-+ No file upload functionality. Due to the nature of `skipper` I removed file upload functionality. **Not tested with latest one**
-+ No custom actions support. For now you couldn't add custom actions and pages into admin panel.
-+ No template engine support except of `jade`. I primary working with this template engine and didn't create a another templates
-+ No custom assets support. You couldn't edit css/js for admin panel for now.
++ Association support depends on the active adapter and model metadata.
++ Custom controls, modules, widgets, media manager uploads, and custom assets are supported by current Adminizer versions. See the focused documentation pages for current APIs.
 
 ## Configuration schema
 
@@ -430,7 +422,7 @@ This configuration loads all sail models as they are. Just place  in `config\adm
 /** @type {import("adminizer").AdminizerConfig} */
 const config = {
   routePrefix: "/admin",
-  auth: true,
+  auth: { enable: true },
   dashboard: true,
   models: {
     ExampleModel: {
@@ -622,9 +614,9 @@ module.exports = config;
         title: string
         text: string
     }
-    translation: { // Text translation using sails built-in internationalization
+    translation: { // Text translation
         locales: string[] // Locales list
-        path: string // Relative path from project root to translations folder
+        directory: string // Relative path from project root to translations folder
         defaultLocale: string // Default locale
     }
     // default administrator login credentials, will be used if no admin profiles found

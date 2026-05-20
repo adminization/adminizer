@@ -15,6 +15,9 @@
 		"start": "cross-env NO_SEED_DATA=true ORM=sequelize tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
 		"dev": "cross-env ADMINIZER_ENV=dev ORM=sequelize tsx watch --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
 		"dev:no-seed": "cross-env ADMINIZER_ENV=dev NO_SEED_DATA=true ORM=sequelize tsx watch --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
+		"start:typeorm": "cross-env NO_SEED_DATA=true ORM=typeorm tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
+		"dev:typeorm": "cross-env ADMINIZER_ENV=dev ORM=typeorm tsx watch --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
+		"dev:typeorm:no-seed": "cross-env ADMINIZER_ENV=dev NO_SEED_DATA=true ORM=typeorm tsx watch --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
 		"dev:no-seed-clean": "cross-env ADMINIZER_ENV=dev NO_SEED_DATA=true CLEAN_TMP=true ORM=sequelize tsx watch --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
 		"dev:cors": "cross-env ADMINIZER_ENV=dev NO_SEED_DATA=true ORM=sequelize FRONTEND_URL=http://localhost:8080 tsx watch --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
 		"build:assets": "vite build",
@@ -30,8 +33,10 @@
 		"copy:modules": "node copy-modules.js",
 		"build:assets:modules": "npm run build:assets && npm run copy:modules",
 		"start:seed": "cross-env ORM=sequelize tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
+		"start:typeorm:seed": "cross-env ORM=typeorm tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
 		"demo:build": "npm run copy:backend && npm run compile:backend && npm run build:assets && npm run copy:modules",
-		"demo": "cross-env ORM=sequelize tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts"
+		"demo": "cross-env ORM=sequelize tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
+		"demo:typeorm": "cross-env ORM=typeorm tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts"
 	},
 	"keywords": [],
 	"author": "Siziy Ivan <xziy88@gmail.com>",

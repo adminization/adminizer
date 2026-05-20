@@ -4,6 +4,7 @@ import {EditorOptions} from "@toast-ui/editor/types/editor";
 import {GridSettings as HandsontableSettings} from "handsontable/settings";
 import {GroupAP} from "../models/GroupAP";
 import {UserAP} from "../models/UserAP";
+import {InternalModelAccessMap} from "./internalModelAccess";
 
 /**
  * Controller function type - async function that handles requests and returns a response
@@ -264,6 +265,11 @@ export interface AdminpanelConfig {
     system?: {
         /** Default ORM adapter for system models */
         defaultORM: string
+        /**
+         * Extra internal model access scopes for modules and project code.
+         * Built-in scopes are registered by Adminizer.
+         */
+        internalModelAccess?: InternalModelAccessMap
     }
 
     bind?: {

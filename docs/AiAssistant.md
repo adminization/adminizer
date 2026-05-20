@@ -31,23 +31,21 @@ This ensures that the AI assistant subsystem has zero overhead when disabled.
 
 #### Fixture Configuration
 
-In the fixture, the AI assistant is controlled by the `ENABLE_AI_ASSISTANT` environment variable:
+In the fixture, the AI assistant is disabled by default in `fixture/adminizerConfig.ts`:
 
-```bash
-# Enable AI assistant in fixture
-export ENABLE_AI_ASSISTANT=true
-
-# Disable AI assistant in fixture (default)
-export ENABLE_AI_ASSISTANT=false
-# or simply omit the variable
+```ts
+aiAssistant: {
+    enabled: false,
+    defaultModel: 'openai-data',
+    models: ['openai-data', 'dummy'],
+}
 ```
 
-This allows testing the application both with and without the AI assistant enabled.
+Set `enabled: true` locally to test the assistant.
 
 The default configuration registers the in-memory `dummy` model that always replies with `Ai-assystant dummy in deveploment`.
 
-The fixture configuration enables the assistant with this dummy model so the chat can be exercised locally without any external
-dependencies.
+When the assistant is enabled, the built-in `dummy` model lets you exercise the chat locally without any external dependencies.
 
 ## Fixture OpenAI Agent
 
@@ -89,7 +87,7 @@ All endpoints require the user to have the access token generated for the model.
 * `AiAssistantPanel` anchors a full-height chat interface to the right quarter of the viewport as a fixed workspace on desktop, or full-screen on mobile, rendering conversation history and the compose form outside of the main layout. Users can send messages by clicking Send or pressing Ctrl+Enter (Cmd+Enter on Mac).
 * Conversation history is stored client-side for rendering while the server keeps the authoritative in-memory copy.
 
-**See [Mobile Layout Documentation](./AiAssistant-Mobile.md) for details on responsive behavior.**
+On mobile devices, the assistant panel uses the full screen instead of shifting the main layout.
 
 ## Extending With New Models
 

@@ -71,6 +71,10 @@ export abstract class AbstractHistoryAdapter {
         }
     }
 
+    private internalModel<T = any>(modelName: string) {
+        return this.adminizer.modelHandler.internal("history").get<T>(modelName);
+    }
+
     /**
      * Registers access rights for this history adapter.
      * Called during construction with a slight delay to ensure Adminizer is ready.
@@ -332,8 +336,7 @@ export abstract class AbstractHistoryAdapter {
             }
 
             try {
-                const model = this.adminizer.modelHandler.model.get(entity.name);
-                const record = await model["_findOne"]({ id: historyRecord.modelId });
+                const record = await this.internalModel(entity.name).findOne({where: {id: historyRecord.modelId}});
 
                 let displayValue: string;
 
@@ -373,7 +376,7 @@ export abstract class AbstractHistoryAdapter {
     protected async getModelRelationsHistory<T extends string | number>(model: string, ids: T[]): Promise<T[]> {
         const data: T[] = [];
         for (const id of ids) {
-            const record = await this.adminizer.modelHandler.model.get(model.toLowerCase())["_findOne"]({ id });
+            const record = await this.internalModel(model).findOne({where: {id}});
             if (record) {
                 data.push(id);
             }

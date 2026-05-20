@@ -43,8 +43,10 @@ export default async function feedController(req: ReqType, res: ResType) {
             return res.status(403).json({ error: 'Auth is required for feed access' });
         }
 
-        const userModel = req.adminizer.modelHandler.model.get('UserAP');
-        const user = await userModel['_findOne']({ apiKey: userKey });
+        const user = await req.adminizer.modelHandler
+            .internal("feed")
+            .get("UserAP")
+            .findOne({where: {apiKey: userKey}});
 
         if (!user) {
             return res.status(403).json({ error: 'Invalid userKey' });

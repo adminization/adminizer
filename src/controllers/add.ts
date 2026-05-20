@@ -105,7 +105,7 @@ export default async function add(req: ReqType, res: ResType) {
             Adminizer.log.debug(`A new record was created: `, record);
             if (req.body.jsonPopupCatalog) {
                 dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "edit");
-                record = await entity.model.findOne({id: record.id}, dataAccessor);
+                record = await entity.model.findOne({where: {id: record.id}}, dataAccessor);
 
                 // await new Promise(resolve => setTimeout(resolve, 2000));
                 return res.json({record: record})

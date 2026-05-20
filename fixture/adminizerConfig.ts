@@ -65,7 +65,9 @@ const models: AdminpanelConfig["models"] = {
                 title: 'created At',
                 type: 'string',
             },
-            updatedAt: false,
+            updatedAt: {
+                visible: false
+            },
             title: {
                 title: 'Title',
                 type: 'string',
@@ -406,7 +408,9 @@ const models: AdminpanelConfig["models"] = {
             createdAt: {
                 title: 'Created at',
             },
-            updatedAt: false,
+            updatedAt: {
+                visible: false
+            },
             mediamanager_one: {
                 title: 'Images 1',
                 type: 'mediamanager',
@@ -457,8 +461,12 @@ const models: AdminpanelConfig["models"] = {
             visible: false,
         },
         fields: {
-            createdAt: false,
-            updatedAt: false,
+            createdAt: {
+                visible: false
+            },
+            updatedAt: {
+                visible: false
+            }
         }
     },
 }

@@ -569,16 +569,21 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
         }
     };
 
-    const loadTemporaryFilterPayload = async (): Promise<TemporaryFilterPayload | null> => {
-        if (!modelName) {
+    const getTemporaryFilterPayloadFromPage = (): TemporaryFilterPayload | null => {
+        if (activeFilterId !== TEMPORARY_FILTER_ID || activeFilterFromPage?.id !== TEMPORARY_FILTER_ID) {
             return null;
         }
 
-        if (activeFilterId === TEMPORARY_FILTER_ID && activeFilterFromPage?.id === TEMPORARY_FILTER_ID) {
-            return {
-                name: activeFilterFromPage.name,
-                conditions: activeFilterFromPage.conditions || []
-            };
+        return {
+            name: activeFilterFromPage.name,
+            conditions: Array.isArray(activeFilterFromPage.conditions) ? activeFilterFromPage.conditions : [],
+            columns: activeFilterFromPage.columns
+        };
+    };
+
+    const loadTemporaryFilterPayload = async (): Promise<TemporaryFilterPayload | null> => {
+        if (!modelName) {
+            return null;
         }
 
         try {
@@ -586,7 +591,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
             const filter = response.data?.filter;
 
             if (!filter) {
-                return null;
+                return getTemporaryFilterPayloadFromPage();
             }
 
             return {
@@ -603,7 +608,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
                 console.error('Error loading temporary filter:', error);
             }
 
-            return null;
+            return getTemporaryFilterPayloadFromPage();
         }
     };
 

@@ -2,19 +2,21 @@
 
 Adminizer supports interface translations using the `translation` block in the configuration.
 
-```js
-module.exports.adminpanel = {
+```ts
+const config = {
   translation: {
     locales: ['en', 'de'],
-    path: 'config/locales',
+    directory: 'config/locales',
     defaultLocale: 'en'
   }
 };
 ```
 
 * `locales` – list of available locales
-* `path` – relative path to translation files
+* `directory` – relative path to translation files
 * `defaultLocale` – locale used when none is specified
+
+`path` is still accepted for older configs, but is deprecated. Use `directory` for new projects.
 
 In Inertia mode, interface strings are translated on the server through `req.i18n.__(...)` before props are sent to React components. This includes shared UI props such as sidebar navbar item titles and section labels.
 

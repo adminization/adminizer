@@ -1,7 +1,7 @@
 /**
  * The class manages the interaction between the user and the database entry, taking into account user permissions and the main config file settings.
  */
-import {Entity} from "../interfaces/types";
+import {ModelResource} from "../interfaces/types";
 import {
     ActionType,
     FieldsModels,
@@ -58,15 +58,15 @@ function mergeCriteriaWhere(criteriaWhere: QueryCriteria["where"], sanitizedCrit
 export class DataAccessor {
     public readonly adminizer: Adminizer;
     user: UserAP;
-    entity: Entity;
+    modelResource: ModelResource;
     action: ActionType
     private fields: Fields = null;
     private actionVerb: string
 
-    constructor(adminizer: Adminizer, user: UserAP, entity: Entity, action: ActionType) {
+    constructor(adminizer: Adminizer, user: UserAP, modelResource: ModelResource, action: ActionType) {
         this.adminizer = adminizer;
         this.user = user;
-        this.entity = entity;
+        this.modelResource = modelResource;
         this.action = action
         this.actionVerb = getTokenAction(this.action);
 
@@ -84,7 +84,7 @@ export class DataAccessor {
     }
 
     /**
-     * Retrieves the fields for the given entity based on action type,
+     * Retrieves the fields for the given ModelResource based on action type,
      * taking into account access rights and configuration settings.
      * @returns {Fields} An object with configured fields and their properties.
      */
@@ -93,18 +93,18 @@ export class DataAccessor {
             return this.fields;
         }
 
-        if (!this.entity.model || !this.entity.model.attributes) {
+        if (!this.modelResource.model || !this.modelResource.model.attributes) {
             return {};
         }
 
         // get action and field configs
-        const actionConfig = ControllerHelper.findActionConfig(this.entity, this.action);
-        const fieldsConfig = this.entity.config?.fields || {};
-        const modelAttributes = this.entity.model.attributes;
+        const actionConfig = ControllerHelper.findActionConfig(this.modelResource, this.action);
+        const fieldsConfig = this.modelResource.config?.fields || {};
+        const modelAttributes = this.modelResource.model.attributes;
 
-        const tokenId = `${this.actionVerb}-${this.entity.model.modelname}-${MODEL_TOKEN_SUFFIX}`;
+        const tokenId = `${this.actionVerb}-${this.modelResource.model.modelname}-${MODEL_TOKEN_SUFFIX}`;
         if (!this.adminizer.accessRightsHelper.hasPermission(tokenId, this.user)) {
-            Adminizer.log.debug(`getFieldsConfig > No access rights to ${this.actionVerb} model: ${this.entity.model.modelname}`);
+            Adminizer.log.debug(`getFieldsConfig > No access rights to ${this.actionVerb} model: ${this.modelResource.model.modelname}`);
             return undefined;
         }
 
@@ -157,7 +157,7 @@ export class DataAccessor {
                 
                 const tokenId = `read-${modelName}-${MODEL_TOKEN_SUFFIX}`;
                 if (!this.adminizer.accessRightsHelper.hasPermission(tokenId, this.user)) {
-                    Adminizer.log.silly(`No access rights to model: ${this.entity.model.modelname}`);
+                    Adminizer.log.silly(`No access rights to model: ${this.modelResource.model.modelname}`);
                     return undefined;
                 }
 
@@ -291,7 +291,7 @@ export class DataAccessor {
     }
 
     private checkFieldAccess(key: string, fieldConfig: Field["config"]): boolean {
-        if (this.entity.model.primaryKey === key) {
+        if (this.modelResource.model.primaryKey === key) {
             return true;
         }
 
@@ -321,7 +321,7 @@ export class DataAccessor {
         const filteredRecord: Partial<T> = {};
 
         // Set the primary key value
-        const primaryKey = (this.entity.model.primaryKey ?? 'id') as keyof T;
+        const primaryKey = (this.modelResource.model.primaryKey ?? 'id') as keyof T;
         filteredRecord[primaryKey] = record[primaryKey];
 
         for (const fieldKey in record) {
@@ -407,8 +407,8 @@ export class DataAccessor {
         let sanitizedCriteria: CriteriaWhere = {};
 
         // Retrieve model configuration from adminpanel config
-        const modelName = this.entity.model.modelname;
-        const modelConfig = this.entity.config;
+        const modelName = this.modelResource.model.modelname;
+        const modelConfig = this.modelResource.config;
 
         // Check if the model has `userAccessRelation` configured
         if (!this.user.isAdministrator && modelConfig && modelConfig.userAccessRelation) {
@@ -422,7 +422,7 @@ export class DataAccessor {
                 let accessField = userAccessRelation;
 
                 // Check if the relation points to `UserAP` or `GroupAP` in the model's attributes
-                const modelAttributes = this.entity.model.attributes;
+                const modelAttributes = this.modelResource.model.attributes;
                 const relation = modelAttributes[accessField];
 
                 if (!relation || !['userap', 'groupap'].includes(relation.model.toLowerCase() || relation.collection.toLowerCase())) {
@@ -459,7 +459,7 @@ export class DataAccessor {
                 const {field, via} = userAccessRelation;
 
                 // Get attributes of the current model and validate the intermediate relation
-                const modelAttributes = this.entity.model.attributes;
+                const modelAttributes = this.modelResource.model.attributes;
                 const intermediateRelation = modelAttributes[field];
                 if (!intermediateRelation || !intermediateRelation.model) {
                     throw new Error(`Invalid intermediate relation configuration for field "${field}" in model ${modelName}`);
@@ -499,9 +499,9 @@ export class DataAccessor {
         let updatedRecord: Partial<T> = {...record};
 
         // Check if model has `userAccessRelation` configured
-        if (this.entity.config && this.entity.config.userAccessRelation) {
+        if (this.modelResource.config && this.modelResource.config.userAccessRelation) {
             // Get access field from userAccessRelation
-            const userAccessRelation = this.entity.config.userAccessRelation;
+            const userAccessRelation = this.modelResource.config.userAccessRelation;
             if (typeof userAccessRelation === 'string') {
                 let accessField = userAccessRelation;
                 // only admin can set user access relation manually
@@ -510,7 +510,7 @@ export class DataAccessor {
                 }
 
                 // Check if the relation points to `UserAP` or `GroupAP` in the model's attributes
-                const modelAttributes = this.entity.model.attributes;
+                const modelAttributes = this.modelResource.model.attributes;
                 const relation = modelAttributes[accessField];
                 if (relation && ['userap', 'groupap'].includes(relation.model.toLowerCase())) {
                     if (relation.model.toLowerCase() === 'userap') {
@@ -536,10 +536,10 @@ export class DataAccessor {
                         throw new Error(`Invalid userAccessRelation configuration: "via" is required`);
                     }
 
-                    const modelAttributes = this.entity.model.attributes;
+                    const modelAttributes = this.modelResource.model.attributes;
                     const intermediateRelation = modelAttributes[field];
                     if (!intermediateRelation || !intermediateRelation.model) {
-                        throw new Error(`Invalid intermediate relation configuration for field "${field}" in model ${this.entity.model.modelname}`);
+                        throw new Error(`Invalid intermediate relation configuration for field "${field}" in model ${this.modelResource.model.modelname}`);
                     }
 
                     const intermediateModel = this.adminizer.modelHandler.model.get(intermediateRelation.model.toLowerCase());
@@ -586,3 +586,5 @@ function getTokenAction(apAction: ActionType) {
             return "delete";
     }
 }
+
+

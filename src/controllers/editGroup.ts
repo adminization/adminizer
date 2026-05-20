@@ -7,7 +7,7 @@ import { GroupAP } from "../models/GroupAP";
 
 export default async function editGroup(req: ReqType, res: ResType) {
 
-    let entity = ControllerHelper.findEntityObject(req);
+    let modelResource = ControllerHelper.findModelResource(req);
     const internalUsers = req.adminizer.modelHandler.internal("users");
     const userModel = internalUsers.get<UserAP>("UserAP");
     const groupModel = internalUsers.get<GroupAP>("GroupAP");
@@ -103,9 +103,11 @@ export default async function editGroup(req: ReqType, res: ResType) {
 
     
 
-    const props = inertiaGroupHelper(entity, req, users, groupedTokens, group)
+    const props = inertiaGroupHelper(modelResource, req, users, groupedTokens, group)
     return req.Inertia.render({
         component: 'add-group',
         props: props
     })
 };
+
+

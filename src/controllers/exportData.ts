@@ -20,9 +20,9 @@ type ExportFormat = 'json' | 'csv' | 'xlsx';
  * Body: { filterId, format, fields }
  */
 export default async function exportData(req: ReqType, res: ResType) {
-    const entity = ControllerHelper.findEntityObject(req);
+    const modelResource = ControllerHelper.findModelResource(req);
 
-    if (!entity.model) {
+    if (!modelResource.model) {
         return res.status(404).json({ error: 'Model not found' });
     }
 
@@ -38,7 +38,7 @@ export default async function exportData(req: ReqType, res: ResType) {
         return res.status(400).json({ error: 'Invalid export format. Supported: json, csv, xlsx' });
     }
 
-    const dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "list");
+    const dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "list");
     const fields = dataAccessor.getFieldsConfig();
 
     // Load filter if provided
@@ -47,8 +47,8 @@ export default async function exportData(req: ReqType, res: ResType) {
 
     if (filterId) {
         try {
-            if (filterId === 'temporary' && req.session?.temporaryFilters?.[entity.name]) {
-                const tempFilter = req.session.temporaryFilters[entity.name];
+            if (filterId === 'temporary' && req.session?.temporaryFilters?.[modelResource.name]) {
+                const tempFilter = req.session.temporaryFilters[modelResource.name];
                 filters = convertDatetimeConditions(tempFilter.conditions || [], { dropEmptyValues: true });
                 if (tempFilter.columns && Array.isArray(tempFilter.columns)) {
                     savedColumns = tempFilter.columns.map((col: any, index: number) => ({
@@ -104,7 +104,7 @@ export default async function exportData(req: ReqType, res: ResType) {
     };
 
     const listQueryBuilder = new ListQueryBuilder(
-        entity.model,
+        modelResource.model,
         fields,
         dataAccessor,
         req.adminizer.customFilterHandler
@@ -120,11 +120,11 @@ export default async function exportData(req: ReqType, res: ResType) {
         // Generate file based on format
         switch (exportFormat) {
             case 'json':
-                return sendJsonExport(res, exportData, entity.name);
+                return sendJsonExport(res, exportData, modelResource.name);
             case 'csv':
-                return sendCsvExport(res, exportData, entity.name, displayFields, req);
+                return sendCsvExport(res, exportData, modelResource.name, displayFields, req);
             case 'xlsx':
-                return sendXlsxExport(res, exportData, entity.name, displayFields, req);
+                return sendXlsxExport(res, exportData, modelResource.name, displayFields, req);
             default:
                 return res.status(400).json({ error: 'Invalid export format' });
         }
@@ -391,4 +391,6 @@ async function sendXlsxExport(res: ResType, data: Record<string, any>[], modelNa
 
     return res.send(buffer);
 }
+
+
 

@@ -23,7 +23,7 @@ export default async function bindAuthorization(adminizer: Adminizer) {
      * Router
      */
     let policies = adminizer.config.middlewares;
-    let baseRoute = `${adminizer.config.routePrefix}/model/:entity`;
+    let baseRoute = `${adminizer.config.routePrefix}/model/:modelResourceName`;
 
 
     let adminsCredentials: { fullName: string, login: string }[] = [];
@@ -113,3 +113,5 @@ async function initUserPolicy(req: ReqType, res: ResType, proceed: any) {
     }
     return proceed()
 }
+
+

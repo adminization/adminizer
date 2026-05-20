@@ -10,14 +10,14 @@ import { FilterColumnAP } from "../../models/FilterColumnAP";
  * Also returns columns for a specific filter if filterId is provided
  */
 export async function getModelColumns(req: ReqType, res: ResType) {
-    const entity = ControllerHelper.findEntityObject(req);
+    const modelResource = ControllerHelper.findModelResource(req);
 
-    if (!entity.model) {
+    if (!modelResource.model) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
     }
 
     // Get available fields from DataAccessor (respects user permissions)
-    const dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "list");
+    const dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "list");
     const fields = dataAccessor.getFieldsConfig();
 
     // Convert fields to column format
@@ -51,8 +51,8 @@ export async function getModelColumns(req: ReqType, res: ResType) {
         }
     } else if (filterId === 'temporary') {
         // Get temporary filter columns from session
-        if (req.session?.temporaryFilters?.[entity.name]?.columns) {
-            const tempColumns = req.session.temporaryFilters[entity.name].columns;
+        if (req.session?.temporaryFilters?.[modelResource.name]?.columns) {
+            const tempColumns = req.session.temporaryFilters[modelResource.name].columns;
             filterColumns = tempColumns.map((col: any, index: number) => ({
                 id: index + 1,
                 filter: 'temporary',
@@ -63,7 +63,7 @@ export async function getModelColumns(req: ReqType, res: ResType) {
     }
 
     return res.json({
-        model: entity.name,
+        model: modelResource.name,
         availableColumns,
         filterColumns: filterColumns,
         hasFilterConfig: filterColumns.length > 0
@@ -75,9 +75,9 @@ export async function getModelColumns(req: ReqType, res: ResType) {
  * Update column configuration for a specific filter
  */
 export async function updateFilterColumns(req: ReqType, res: ResType) {
-    const entity = ControllerHelper.findEntityObject(req);
+    const modelResource = ControllerHelper.findModelResource(req);
 
-    if (!entity.model) {
+    if (!modelResource.model) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
     }
 
@@ -123,3 +123,5 @@ export async function updateFilterColumns(req: ReqType, res: ResType) {
         });
     }
 }
+
+

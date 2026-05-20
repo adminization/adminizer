@@ -10,9 +10,9 @@ import { GROUP_FILTER_VISIBILITY_TOKEN } from "../../policies/permissionResolver
  * Apply temporary filter (without saving) - stores filter in session keyed by model name
  */
 export async function applyTemporaryFilter(req: ReqType, res: ResType) {
-    const entity = ControllerHelper.findEntityObject(req);
+    const modelResource = ControllerHelper.findModelResource(req);
 
-    if (!entity.model) {
+    if (!modelResource.model) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
     }
 
@@ -27,7 +27,7 @@ export async function applyTemporaryFilter(req: ReqType, res: ResType) {
         if (!req.session.temporaryFilters) {
             req.session.temporaryFilters = {};
         }
-        req.session.temporaryFilters[entity.name] = {
+        req.session.temporaryFilters[modelResource.name] = {
             name: name || req.i18n.__('Temporary filter'),
             conditions,
             columns: columns || undefined
@@ -47,13 +47,13 @@ export async function applyTemporaryFilter(req: ReqType, res: ResType) {
  * Returns temporary filter from server session.
  */
 export async function getTemporaryFilter(req: ReqType, res: ResType) {
-    const entity = ControllerHelper.findEntityObject(req);
+    const modelResource = ControllerHelper.findModelResource(req);
 
-    if (!entity.model) {
+    if (!modelResource.model) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
     }
 
-    const temporaryFilter = req.session?.temporaryFilters?.[entity.name];
+    const temporaryFilter = req.session?.temporaryFilters?.[modelResource.name];
 
     if (!temporaryFilter) {
         return res.status(404).send({ error: req.i18n.__('Temporary filter not found') });
@@ -74,16 +74,16 @@ export async function getTemporaryFilter(req: ReqType, res: ResType) {
  * Returns list of saved filters for the model
  */
 export async function getSavedFilters(req: ReqType, res: ResType) {
-    const entity = ControllerHelper.findEntityObject(req);
+    const modelResource = ControllerHelper.findModelResource(req);
 
-    if (!entity.model) {
+    if (!modelResource.model) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
     }
 
     const filterService = new FilterService(req.adminizer);
 
     // Get filters accessible by user (public filters for all users)
-    const filters = await filterService.getFiltersForModel(entity.name, req.user, {
+    const filters = await filterService.getFiltersForModel(modelResource.name, req.user, {
         includePublic: true,
         includeSystem: false
     });
@@ -126,7 +126,7 @@ export async function getSavedFilters(req: ReqType, res: ResType) {
     );
 
     return res.json({
-        model: entity.name,
+        model: modelResource.name,
         filters: filtersWithCount
     });
 }
@@ -136,9 +136,9 @@ export async function getSavedFilters(req: ReqType, res: ResType) {
  * Create or update a saved filter
  */
 export async function saveFilter(req: ReqType, res: ResType) {
-    const entity = ControllerHelper.findEntityObject(req);
+    const modelResource = ControllerHelper.findModelResource(req);
 
-    if (!entity.model) {
+    if (!modelResource.model) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
     }
 
@@ -177,7 +177,7 @@ export async function saveFilter(req: ReqType, res: ResType) {
 
     try {
         // Check if filter with same name exists for this user
-        const existingFilters = await filterService.getFiltersForModel(entity.name, req.user, {
+        const existingFilters = await filterService.getFiltersForModel(modelResource.name, req.user, {
             includePublic: false,
             includeSystem: false
         });
@@ -272,7 +272,7 @@ export async function saveFilter(req: ReqType, res: ResType) {
                 id: crypto.randomUUID(),
                 name,
                 description,
-                modelName: entity.name,
+                modelName: modelResource.name,
                 conditions,
                 sortField,
                 sortDirection,
@@ -319,9 +319,9 @@ export async function saveFilter(req: ReqType, res: ResType) {
  * Delete a saved filter
  */
 export async function deleteFilter(req: ReqType, res: ResType) {
-    const entity = ControllerHelper.findEntityObject(req);
+    const modelResource = ControllerHelper.findModelResource(req);
 
-    if (!entity.model) {
+    if (!modelResource.model) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
     }
 
@@ -359,3 +359,5 @@ export async function deleteFilter(req: ReqType, res: ResType) {
         });
     }
 }
+
+

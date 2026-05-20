@@ -3,7 +3,7 @@ import { UserAP } from "../../models/UserAP";
 import { Adminizer } from "../Adminizer";
 import { Field, Fields } from "../../helpers/fieldsHelper";
 import { ActionType, ModelConfig } from "../../interfaces/adminpanelConfig";
-import { Entity } from "../../interfaces/types";
+import { ModelResource } from "../../interfaces/types";
 import { ModelAnyInstance } from "../model/AbstractModel";
 import { isObject } from "../../helpers/JsUtils";
 import { DataAccessor } from "../DataAccessor";
@@ -221,12 +221,12 @@ export abstract class AbstractHistoryAdapter {
             const fieldsCache = new Map<string, any>();
 
             for (const historyRecord of accessHistory) {
-                const entity = this.findEntityObject(historyRecord);
+                const modelResource = this.findModelResource(historyRecord);
                 const modelKey = historyRecord.modelName;
 
                 // We use a cache so as not to create a DataAccessor for each record
                 if (!fieldsCache.has(modelKey)) {
-                    const dataAccessor = new DataAccessor(this.adminizer, user, entity, "edit");
+                    const dataAccessor = new DataAccessor(this.adminizer, user, modelResource, "edit");
                     let fields = dataAccessor.getFieldsConfig();
                     fields = await this.loadAssociations(fields, user, "edit");
                     fieldsCache.set(modelKey, fields);
@@ -256,8 +256,8 @@ export abstract class AbstractHistoryAdapter {
      * @protected
      */
     protected async _getModelFieldsHistory(history: HistoryActionsAP, user: UserAP): Promise<Record<string, any>> {
-        const entity = this.findEntityObject(history);
-        const dataAccessor = new DataAccessor(this.adminizer, user, entity, "edit");
+        const modelResource = this.findModelResource(history);
+        const dataAccessor = new DataAccessor(this.adminizer, user, modelResource, "edit");
         let fields = dataAccessor.getFieldsConfig();
         fields = await this.loadAssociations(fields, user, "edit");
 
@@ -324,8 +324,8 @@ export abstract class AbstractHistoryAdapter {
         const modifiedHistory: (HistoryActionsAP & { displayName: string })[] = [];
 
         for (const historyRecord of history) {
-            const entity = this.findEntityObject(historyRecord);
-            const { displayName } = entity.config;
+            const modelResource = this.findModelResource(historyRecord);
+            const { displayName } = modelResource.config;
 
             if (!displayName) {
                 modifiedHistory.push({
@@ -336,7 +336,7 @@ export abstract class AbstractHistoryAdapter {
             }
 
             try {
-                const record = await this.internalModel(entity.name).findOne({where: {id: historyRecord.modelId}});
+                const record = await this.internalModel(modelResource.name).findOne({where: {id: historyRecord.modelId}});
 
                 let displayValue: string;
 
@@ -385,29 +385,29 @@ export abstract class AbstractHistoryAdapter {
     }
 
     /**
-     * Constructs an Entity object from a history record.
+     * Constructs an ModelResource object from a history record.
      * Used to access model configuration and instance.
      *
      * @param history - The history record.
-     * @returns Entity object with name, URI, model instance, and config.
+     * @returns ModelResource object with name, URI, model instance, and config.
      * @protected
      */
-    protected findEntityObject(history: HistoryActionsAP): Entity {
-        const entityName = history.modelName;
+    protected findModelResource(history: HistoryActionsAP): ModelResource {
+        const modelResourceName = history.modelName;
 
-        const entityUri = `${this.adminizer.config.routePrefix}/model/${entityName}`;
+        const modelResourceUri = `${this.adminizer.config.routePrefix}/model/${modelResourceName}`;
         const models = this.adminizer.config.models;
         const foundKey = Object.keys(models).find(
-            key => key.toLowerCase() === entityName.toLowerCase()
+            key => key.toLowerCase() === modelResourceName.toLowerCase()
         );
 
-        const entity: Entity = {
-            name: entityName,
-            uri: entityUri,
+        const modelResource: ModelResource = {
+            name: modelResourceName,
+            uri: modelResourceUri,
             model: this.adminizer.modelHandler.model.get(history.modelName),
             config: models[foundKey]
         };
-        return entity;
+        return modelResource;
     }
 
     /**
@@ -449,11 +449,11 @@ export abstract class AbstractHistoryAdapter {
                 // adding deprecated records array to config for association widget
                 Adminizer.log.warn("Warning: executing malicious job trying to add a huge amount of records in field config," +
                     " please rewrite this part of code in the nearest future");
-                let entity: Entity = {
+                let modelResource: ModelResource = {
                     name: modelName, config: this.adminizer.config.models[modelName] as ModelConfig,
                     model: Model, uri: `${this.adminizer.config.routePrefix}/model/${modelName}`
                 };
-                let dataAccessor = new DataAccessor(this.adminizer, user, entity, "view");
+                let dataAccessor = new DataAccessor(this.adminizer, user, modelResource, "view");
                 list = await Model.find({}, dataAccessor);
             } catch (e) {
                 Adminizer.log.error(e);
@@ -475,3 +475,5 @@ export abstract class AbstractHistoryAdapter {
         return fields;
     }
 }
+
+

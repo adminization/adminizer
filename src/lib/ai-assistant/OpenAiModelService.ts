@@ -3,19 +3,19 @@ import {AiAssistantMessage} from '../../interfaces/types';
 import {UserAP} from '../../models/UserAP';
 import {Adminizer} from '../Adminizer';
 import {ActionType, ModelConfig} from '../../interfaces/adminpanelConfig';
-import {Entity} from '../../interfaces/types';
+import {ModelResource} from '../../interfaces/types';
 import {DataAccessor} from '../DataAccessor';
 
 type AgentAction = 'create' | 'list' | 'update' | 'delete';
 
 interface AgentInstruction {
     action: AgentAction;
-    entity: string;
+    modelResource: string;
     payload?: Record<string, unknown>;
     criteria?: Record<string, unknown>;
 }
 
-type DataAccessorFactory = (entity: Entity, user: UserAP, action: ActionType) => DataAccessor;
+type DataAccessorFactory = (modelResource: ModelResource, user: UserAP, action: ActionType) => DataAccessor;
 
 const ACTION_TOKENS: Record<ActionType, 'create' | 'read' | 'update' | 'delete'> = {
     add: 'create',
@@ -34,7 +34,7 @@ export class OpenAiModelService extends AbstractAiModelService {
             name: 'OpenAI fixture agent',
             description: 'Executes structured commands with DataAccessor using the current user permissions.',
         });
-        this.createAccessor = accessorFactory ?? ((entity, user, action) => new DataAccessor(adminizer, user, entity, action));
+        this.createAccessor = accessorFactory ?? ((modelResource, user, action) => new DataAccessor(adminizer, user, modelResource, action));
     }
 
     public async generateReply(prompt: string, _history: AiAssistantMessage[], user: UserAP): Promise<string> {
@@ -53,13 +53,13 @@ export class OpenAiModelService extends AbstractAiModelService {
     }
 
     private async handleCreate(instruction: AgentInstruction, user: UserAP): Promise<string> {
-        const entity = this.resolveEntity(instruction.entity);
-        if (!entity || !entity.model) {
-            return `Model "${instruction.entity}" is not available in this project.`;
+        const modelResource = this.resolveModelResource(instruction.modelResource);
+        if (!modelResource || !modelResource.model) {
+            return `Model "${instruction.modelResource}" is not available in this project.`;
         }
 
-        if (!this.userHasPermission(entity, user, 'add')) {
-            return `User "${user.login}" does not have permission to create ${entity.name} records.`;
+        if (!this.userHasPermission(modelResource, user, 'add')) {
+            return `User "${user.login}" does not have permission to create ${modelResource.name} records.`;
         }
 
         if (!instruction.payload || typeof instruction.payload !== 'object') {
@@ -67,16 +67,16 @@ export class OpenAiModelService extends AbstractAiModelService {
         }
 
         try {
-            const accessor = this.createAccessor(entity, user, 'add');
-            const created = await entity.model.create(instruction.payload as any, accessor);
+            const accessor = this.createAccessor(modelResource, user, 'add');
+            const created = await modelResource.model.create(instruction.payload as any, accessor);
             const preview = JSON.stringify(created, null, 2);
-            const recordId = this.extractPrimaryKey(created, entity);
+            const recordId = this.extractPrimaryKey(created, modelResource);
             const idMessage = recordId !== undefined ? ` (id: ${recordId})` : '';
-            return `Record created in ${entity.name}${idMessage}:\n${preview}`;
+            return `Record created in ${modelResource.name}${idMessage}:\n${preview}`;
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             Adminizer.log.error('OpenAI agent failed to create record', error);
-            return `Failed to create ${entity.name} record: ${message}`;
+            return `Failed to create ${modelResource.name} record: ${message}`;
         }
     }
 
@@ -97,8 +97,8 @@ export class OpenAiModelService extends AbstractAiModelService {
                 return null;
             }
 
-            const entity = this.extractString(parsed, ['entity', 'model']);
-            if (!entity) {
+            const modelResource = this.extractString(parsed, ['modelResource', 'model']);
+            if (!modelResource) {
                 return null;
             }
 
@@ -107,7 +107,7 @@ export class OpenAiModelService extends AbstractAiModelService {
 
             return {
                 action: action as AgentAction,
-                entity,
+                modelResource,
                 payload,
                 criteria,
             };
@@ -123,7 +123,7 @@ export class OpenAiModelService extends AbstractAiModelService {
             '```json',
             '{',
             '  "action": "create",',
-            '  "entity": "Example",',
+            '  "modelResource": "Example",',
             '  "data": { "title": "Hello from the agent" }',
             '}',
             '```',
@@ -131,7 +131,7 @@ export class OpenAiModelService extends AbstractAiModelService {
         ].join('\n');
     }
 
-    private resolveEntity(modelName: string): Entity | null {
+    private resolveModelResource(modelName: string): ModelResource | null {
         const models = this.adminizer.config.models;
         if (!models) {
             return null;
@@ -187,22 +187,22 @@ export class OpenAiModelService extends AbstractAiModelService {
         return {...baseConfig, ...config};
     }
 
-    private userHasPermission(entity: Entity, user: UserAP, action: ActionType): boolean {
-        const token = this.getPermissionToken(entity, action);
+    private userHasPermission(modelResource: ModelResource, user: UserAP, action: ActionType): boolean {
+        const token = this.getPermissionToken(modelResource, action);
         return this.adminizer.accessRightsHelper.hasPermission(token, user);
     }
 
-    private getPermissionToken(entity: Entity, action: ActionType): string {
+    private getPermissionToken(modelResource: ModelResource, action: ActionType): string {
         const verb = ACTION_TOKENS[action];
-        const modelName = entity.model?.modelname ?? entity.config?.model ?? entity.name;
+        const modelName = modelResource.model?.modelname ?? modelResource.config?.model ?? modelResource.name;
         return `${verb}-${modelName}-model`.toLowerCase();
     }
 
-    private extractPrimaryKey(record: Partial<Record<string, unknown>>, entity: Entity): unknown {
+    private extractPrimaryKey(record: Partial<Record<string, unknown>>, modelResource: ModelResource): unknown {
         if (!record) {
             return undefined;
         }
-        const primaryKey = (entity.model as any)?.primaryKey ?? 'id';
+        const primaryKey = (modelResource.model as any)?.primaryKey ?? 'id';
         return (record as Record<string, unknown>)[primaryKey];
     }
 
@@ -226,3 +226,5 @@ export class OpenAiModelService extends AbstractAiModelService {
         return undefined;
     }
 }
+
+

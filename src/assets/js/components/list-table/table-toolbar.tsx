@@ -38,7 +38,7 @@ export function TableToolbar({header, showSearch, onToggleSearch}: TableToolbarP
     const [exporting, setExporting] = useState(false);
 
     // Load translations
-    const { t } = useFilterTranslations(header.entity.name);
+    const { t } = useFilterTranslations(header.modelResource.name);
 
     /**
      * Handle export request
@@ -53,7 +53,7 @@ export function TableToolbar({header, showSearch, onToggleSearch}: TableToolbarP
             const filterId = urlParams.get('filterId') || undefined;
 
             const response = await adminApi.post<any>(
-                `${header.entity.uri}/export`,
+                `${header.modelResource.uri}/export`,
                 {
                     format,
                     filterId
@@ -74,7 +74,7 @@ export function TableToolbar({header, showSearch, onToggleSearch}: TableToolbarP
 
             // Get filename from Content-Disposition header
             const contentDisposition = response.headers['content-disposition'];
-            let filename = `${header.entity.name}_export.${format === 'xlsx' ? 'xlsx' : format}`;
+            let filename = `${header.modelResource.name}_export.${format === 'xlsx' ? 'xlsx' : format}`;
             if (contentDisposition) {
                 const match = contentDisposition.match(/filename="?(.+?)"?$/);
                 if (match) {
@@ -204,7 +204,7 @@ export function TableToolbar({header, showSearch, onToggleSearch}: TableToolbarP
             <div className="flex flex-wrap gap-2 py-3">
                 {header.crudActions?.createTitle && (
                     <Button asChild>
-                        <Link href={`${header.entity.uri}/add`}>
+                        <Link href={`${header.modelResource.uri}/add`}>
                             <Icon iconNode={SquarePlus}/>
                             {header.crudActions.createTitle}
                         </Link>
@@ -371,5 +371,7 @@ export function TableToolbar({header, showSearch, onToggleSearch}: TableToolbarP
         </div>
     );
 }
+
+
 
 

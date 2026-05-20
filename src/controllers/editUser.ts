@@ -6,7 +6,7 @@ import { UserAP } from "../models/UserAP";
 import { GroupAP } from "../models/GroupAP";
 
 export default async function (req: ReqType, res: ResType) {
-    let entity = ControllerHelper.findEntityObject(req);
+    let modelResource = ControllerHelper.findModelResource(req);
     const internalUsers = req.adminizer.modelHandler.internal("users");
     const userModel = internalUsers.get<UserAP>("UserAP");
     const groupModel = internalUsers.get<GroupAP>("GroupAP");
@@ -99,10 +99,12 @@ export default async function (req: ReqType, res: ResType) {
         }
     }
 
-    const props = inertiaUserHelper(entity, req, groups, user)
+    const props = inertiaUserHelper(modelResource, req, groups, user)
     return req.Inertia.render({
         component: 'add-user',
         props: props
     })
 
 };
+
+

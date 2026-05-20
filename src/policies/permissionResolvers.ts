@@ -1,10 +1,6 @@
-function extractEntityName(req: ReqType): string | undefined {
-    if (req.params?.entityName) {
-        return req.params.entityName;
-    }
-
-    if (req.params?.entity) {
-        return req.params.entity;
+function extractModelResourceName(req: ReqType): string | undefined {
+    if (req.params?.modelResourceName) {
+        return req.params.modelResourceName;
     }
 
     const path = req.path || req.originalUrl || "";
@@ -15,23 +11,23 @@ function extractEntityName(req: ReqType): string | undefined {
 export const GROUP_FILTER_VISIBILITY_TOKEN = "manage-group-filter-visibility";
 
 export function modelReadToken(req: ReqType): string | undefined {
-    const entityName = extractEntityName(req);
-    return entityName ? `read-${entityName}-model` : undefined;
+    const modelResourceName = extractModelResourceName(req);
+    return modelResourceName ? `read-${modelResourceName}-model` : undefined;
 }
 
 export function modelCreateToken(req: ReqType): string | undefined {
-    const entityName = extractEntityName(req);
-    return entityName ? `create-${entityName}-model` : undefined;
+    const modelResourceName = extractModelResourceName(req);
+    return modelResourceName ? `create-${modelResourceName}-model` : undefined;
 }
 
 export function modelUpdateToken(req: ReqType): string | undefined {
-    const entityName = extractEntityName(req);
-    return entityName ? `update-${entityName}-model` : undefined;
+    const modelResourceName = extractModelResourceName(req);
+    return modelResourceName ? `update-${modelResourceName}-model` : undefined;
 }
 
 export function modelDeleteToken(req: ReqType): string | undefined {
-    const entityName = extractEntityName(req);
-    return entityName ? `delete-${entityName}-model` : undefined;
+    const modelResourceName = extractModelResourceName(req);
+    return modelResourceName ? `delete-${modelResourceName}-model` : undefined;
 }
 
 export function widgetToken(req: ReqType): string | undefined {
@@ -67,3 +63,5 @@ export function historyToken(req: ReqType): string {
 export function groupFilterVisibilityToken(): string {
     return GROUP_FILTER_VISIBILITY_TOKEN;
 }
+
+

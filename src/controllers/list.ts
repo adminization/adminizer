@@ -14,14 +14,14 @@ import { getUiTranslations } from "../lib/ui-i18n/getUiTranslations";
 import { FILTER_UI_TRANSLATION_KEYS } from "../lib/ui-i18n/uiTranslationKeys";
 
 export default async function list(req: ReqType, res: ResType) {
-    let entity = ControllerHelper.findEntityObject(req);
-    if (!entity.model) {
+    let modelResource = ControllerHelper.findModelResource(req);
+    if (!modelResource.model) {
         return res.status(404).send({error: 'Not Found'});
     }
 
-    let dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "list");
+    let dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "list");
     let fields = dataAccessor.getFieldsConfig();
-    const header = inertiaListHelper(entity, req, fields);
+    const header = inertiaListHelper(modelResource, req, fields);
     const i18nPage = getUiTranslations(req, FILTER_UI_TRANSLATION_KEYS);
 
     // Parse pagination
@@ -45,13 +45,13 @@ export default async function list(req: ReqType, res: ResType) {
     if (filterId) {
         try {
             // Handle temporary filter from session (keyed by model name)
-            if (filterId === 'temporary' && req.session?.temporaryFilters?.[entity.name]) {
-                const tempFilter = req.session.temporaryFilters[entity.name];
+            if (filterId === 'temporary' && req.session?.temporaryFilters?.[modelResource.name]) {
+                const tempFilter = req.session.temporaryFilters[modelResource.name];
                 savedFilter = {
                     id: 'temporary',
                     name: tempFilter.name,
                     conditions: tempFilter.conditions,
-                    modelName: entity.name,
+                    modelName: modelResource.name,
                     visibility: 'private',
                     ownerId: req.user?.id || null,
                     apiEnabled: false,
@@ -175,7 +175,7 @@ export default async function list(req: ReqType, res: ResType) {
 
     // Execute query using ListQueryBuilder (use original fields for query, displayFields for output)
     const listQueryBuilder = new ListQueryBuilder(
-        entity.model,
+        modelResource.model,
         fields,
         dataAccessor,
         req.adminizer.customFilterHandler
@@ -491,4 +491,6 @@ function setColumns(
 
     return columns;
 }
+
+
 

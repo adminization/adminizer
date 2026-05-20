@@ -45,12 +45,12 @@ export class ConfigHelper {
 
 		let config = this.adminizer.config;
 		let modelConfig: ModelConfig;
-		Object.keys(config.models).forEach((entityName) => {
-			const model = config.models[entityName];
+		Object.keys(config.models).forEach((modelResourceName) => {
+			const model = config.models[modelResourceName];
 			if (typeof model !== "boolean") {
 				if (model.model === modelName.toLowerCase()) {
-					if (typeof config.models[entityName] !== "boolean") {
-						modelConfig = config.models[entityName] as ModelConfig
+					if (typeof config.models[modelResourceName] !== "boolean") {
+						modelConfig = config.models[modelResourceName] as ModelConfig
 					}
 				}
 			}
@@ -188,3 +188,4 @@ function getDisplayField(attributes: any): string {
 			? "label"
 			: "id";
 }
+

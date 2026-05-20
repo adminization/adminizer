@@ -13,17 +13,17 @@ import {Adminizer} from "../lib/Adminizer";
 import inertiaAddHelper from "../helpers/inertiaAddHelper";
 
 export default async function add(req: ReqType, res: ResType) {
-    let entity = ControllerHelper.findEntityObject(req);
+    let modelResource = ControllerHelper.findModelResource(req);
     
-    if (!entity.model) {
+    if (!modelResource.model) {
         return res.status(404).send({error: 'Model not Found'});
     }
 
-    if (!entity.config?.add) {
-        return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/${entity.uri}`);
+    if (!modelResource.config?.add) {
+        return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/${modelResource.uri}`);
     }
 
-    let dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "add");
+    let dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "add");
     let fields = dataAccessor.getFieldsConfig();
 
     // add deprecated 'records' to config
@@ -88,31 +88,31 @@ export default async function add(req: ReqType, res: ResType) {
             }
         }
 
-        // callback before save entity
-        let entityAdd = entity.config.add as CreateUpdateConfig;
-        if (typeof entityAdd.entityModifier === "function") {
-            reqData = entityAdd.entityModifier(reqData);
+        // callback before save modelResource
+        let addConfig = modelResource.config.add as CreateUpdateConfig;
+        if (typeof addConfig.entityModifier === "function") {
+            reqData = addConfig.entityModifier(reqData);
         }
 
         try {
-            let record = await entity.model.create(reqData, dataAccessor);
-            const identifierField = entity.config.identifierField || req.adminizer.config.identifierField;
+            let record = await modelResource.model.create(reqData, dataAccessor);
+            const identifierField = modelResource.config.identifierField || req.adminizer.config.identifierField;
             const redirectId = (record as Record<string, any>)?.[identifierField] ?? (record as Record<string, any>)?.id;
 
             // save associations media to json
-            await saveRelationsMediaManager(req.adminizer, fields, rawReqData, entity.model.identity, record.id)
-            await updateCurrentHistoryMediaManagerData(req.adminizer, fields, rawReqData, entity.name, record.id)
+            await saveRelationsMediaManager(req.adminizer, fields, rawReqData, modelResource.model.identity, record.id)
+            await updateCurrentHistoryMediaManagerData(req.adminizer, fields, rawReqData, modelResource.name, record.id)
 
             Adminizer.log.debug(`A new record was created: `, record);
             if (req.body.jsonPopupCatalog) {
-                dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "edit");
-                record = await entity.model.findOne({where: {id: record.id}}, dataAccessor);
+                dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "edit");
+                record = await modelResource.model.findOne({where: {id: record.id}}, dataAccessor);
 
                 // await new Promise(resolve => setTimeout(resolve, 2000));
                 return res.json({record: record})
             } else {
                 req.flash.setFlashMessage('success', req.i18n.__('New record was created'));
-                return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/${entity.name}/edit/${redirectId}`)
+                return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/${modelResource.name}/edit/${redirectId}`)
             }
         } catch (e) {
             Adminizer.log.error(e);
@@ -120,7 +120,7 @@ export default async function add(req: ReqType, res: ResType) {
             data = reqData;
         }
     }
-    const props = inertiaAddHelper(req, entity, fields)
+    const props = inertiaAddHelper(req, modelResource, fields)
 
     if (req.query?.without_layout) {
         return res.json({
@@ -134,3 +134,5 @@ export default async function add(req: ReqType, res: ResType) {
         })
     }
 };
+
+

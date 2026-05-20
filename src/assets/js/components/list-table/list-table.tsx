@@ -19,7 +19,7 @@ const ListTable = () => {
     const initialData = page.props.data;
     const header = page.props.header;
     const customColumns = page.props.customColumns;
-    const {t} = useFilterTranslations(header.entity.name);
+    const {t} = useFilterTranslations(header.modelResource.name);
     const pageSizeOptions = header.pageSizeOptions.map(String);
 
     // Store table data in state for inline updates
@@ -82,7 +82,7 @@ const ListTable = () => {
 
     const dynamicColumns = useTableColumns(
         page.props.columns,
-        header.entity.name,
+        header.modelResource.name,
         updateRecord,
         handleCustomSort,
         handleColumnSearch,
@@ -95,8 +95,8 @@ const ListTable = () => {
             thActionsTitle: header.thActionsTitle,
             crudActions: header.crudActions,
             inlineActions: header.inlineActions,
-            entityUri: header.entity.uri,
-            entityName: header.entity.name,
+            modelResourceUri: header.modelResource.uri,
+            modelResourceName: header.modelResource.name,
             delModal: header.delModal
         });
 
@@ -134,8 +134,8 @@ const ListTable = () => {
         header.thActionsTitle,
         header.crudActions,
         header.inlineActions,
-        header.entity.uri,
-        header.entity.name,
+        header.modelResource.uri,
+        header.modelResource.name,
         header.delModal,
         dynamicColumns,
         customColumns
@@ -144,7 +144,7 @@ const ListTable = () => {
     const {
         columnVisibility,
         onColumnVisibilityChange
-    } = usePersistedColumnVisibility(header.entity.name, tableColumns);
+    } = usePersistedColumnVisibility(header.modelResource.name, tableColumns);
 
     return (
         <>
@@ -210,3 +210,5 @@ const ListTable = () => {
 };
 
 export default ListTable;
+
+

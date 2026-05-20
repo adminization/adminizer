@@ -15,7 +15,7 @@ export type MenuItem = {
     actions: HrefConfig[] | null;
     icon: string | null;
     accessRightsToken: string | null;
-    entityName?: string;
+    modelResourceName?: string;
     section?: string;
 }
 
@@ -185,7 +185,7 @@ export class MenuHelper {
     }
 
     /**
-     * Get list of entity menus that was not bound to groups
+     * Get list of ModelResource menus that was not bound to groups
      *
      * @returns {Array}
      */
@@ -245,7 +245,7 @@ export class MenuHelper {
                         icon: val.icon || null,
                         actions: val.tools ? val.tools.map((tool) => _this.enrichHrefAccessToken(tool)) : null,
                         id: val.title ? val.title.replace(" ", "_") : key,
-                        entityName: key,
+                        modelResourceName: key,
                         accessRightsToken: `read-${key}-model`,
                         section: val.navbar?.section || 'Platform',
                     });
@@ -273,3 +273,4 @@ export class MenuHelper {
         return menus;
     }
 }
+

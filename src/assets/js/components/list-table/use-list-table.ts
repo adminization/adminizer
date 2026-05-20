@@ -90,7 +90,7 @@ export function useListTable({header, initialCount = String(header.defaultPageSi
         }
         
         setLoading(true);
-        router.visit(`${header.entity.uri}?${queryString}`, {
+        router.visit(`${header.modelResource.uri}?${queryString}`, {
             preserveState: true,
             only: onlyFields,
             onSuccess: () => {
@@ -98,7 +98,7 @@ export function useListTable({header, initialCount = String(header.defaultPageSi
                 setDataKey(prev => prev + 1);
             }
         });
-    }, [header.entity.uri]);
+    }, [header.modelResource.uri]);
 
     const buildQueryString = useCallback(
         (
@@ -218,3 +218,5 @@ export function useListTable({header, initialCount = String(header.defaultPageSi
         buildQueryString
     };
 }
+
+

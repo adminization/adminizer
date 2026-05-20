@@ -1,6 +1,6 @@
 import { GroupAP } from "../models/GroupAP";
 import { UserAP } from "../models/UserAP";
-import {AccessRightsToken, Entity, PropsField} from "../interfaces/types";
+import {AccessRightsToken, ModelResource, PropsField} from "../interfaces/types";
 
 
 
@@ -28,7 +28,7 @@ interface listProps extends Record<string | number | symbol, unknown>{
 }
 
 export function inertiaGroupHelper(
-    entity: Entity, req: ReqType, users: UserAP[],
+    modelResource: ModelResource, req: ReqType, users: UserAP[],
     groupedTokens: {
         [key: string]: AccessRightsToken[]
     },
@@ -38,12 +38,12 @@ export function inertiaGroupHelper(
         view: view,
         btnBack: {
             title: req.i18n.__('Back'),
-            link: entity.uri
+            link: modelResource.uri
         },
         btnSave: {
             title: req.i18n.__('Save')
         },
-        postLink: group ? `${entity.uri}/edit/${group.id}` : `${entity.uri}/add`,
+        postLink: group ? `${modelResource.uri}/edit/${group.id}` : `${modelResource.uri}/add`,
         head: req.i18n.__('Group settings'),
         userHead: '',
         fields: [
@@ -101,3 +101,5 @@ export function inertiaGroupHelper(
     }
     return props
 }
+
+

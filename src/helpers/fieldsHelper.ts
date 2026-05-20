@@ -1,5 +1,5 @@
 import { ActionType, BaseFieldConfig, FieldsTypes, ModelConfig } from "../interfaces/adminpanelConfig";
-import { Entity } from "../interfaces/types";
+import { ModelResource } from "../interfaces/types";
 import { Attribute, ModelAnyInstance } from "../lib/model/AbstractModel";
 import { DataAccessor } from "../lib/DataAccessor";
 import { Adminizer } from "../lib/Adminizer";
@@ -67,11 +67,11 @@ export class FieldsHelper {
 				// adding deprecated records array to config for association widget
 				Adminizer.log.warn("Warning: executing malicious job trying to add a huge amount of records in field config," +
 					" please rewrite this part of code in the nearest future");
-				let entity: Entity = {
+				let modelResource: ModelResource = {
 					name: modelName, config: req.adminizer.config.models[modelName] as ModelConfig,
 					model: Model, uri: `${req.adminizer.config.routePrefix}/model/${modelName}`
 				};
-				let dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "view");
+				let dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "view");
 				list = await Model.find({}, dataAccessor);
 			} catch (e) {
 				Adminizer.log.error(e)
@@ -93,3 +93,5 @@ export class FieldsHelper {
 		return fields
 	}
 }
+
+

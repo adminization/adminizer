@@ -480,7 +480,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
         const loadFilterFields = async () => {
             try {
                 if (!modelName) {
-                    console.error('Could not find entity in URL');
+                    console.error('Could not find modelResource in URL');
                     return;
                 }
 
@@ -2853,6 +2853,8 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
         </>
     );
 }
+
+
 
 
 

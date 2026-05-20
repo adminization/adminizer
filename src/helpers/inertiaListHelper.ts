@@ -1,4 +1,4 @@
-import {Entity} from "../interfaces/types";
+import {ModelResource} from "../interfaces/types";
 import {Fields} from "./fieldsHelper";
 import inertiaActionsHelper, {Actions} from "./inertiaActionsHelper";
 
@@ -19,7 +19,7 @@ interface listProps extends Record<string | number | symbol, unknown> {
     notFoundContent: string,
     searchBtn: string,
     resetBtn: string,
-    entity: {
+    modelResource: {
         name: string;
         uri: string
     },
@@ -30,12 +30,12 @@ interface listProps extends Record<string | number | symbol, unknown> {
     pageSizeOptions: number[]
 }
 
-export function inertiaListHelper(entity: Entity, req: ReqType, fields: Fields, activeFilterName?: string) {
+export function inertiaListHelper(modelResource: ModelResource, req: ReqType, fields: Fields, activeFilterName?: string) {
     const actionType = 'list';
 
     // Check if filters are enabled for this model
     // Preferred: model-level `models.<Model>.filters`; fallback: legacy top-level `modelFilters.<Model>`
-    const modelFiltersConfig = entity.config?.filters ?? req.adminizer.config.modelFilters?.[entity.name];
+    const modelFiltersConfig = modelResource.config?.filters ?? req.adminizer.config.modelFilters?.[modelResource.name];
     const filtersEnabledGlobally = req.adminizer.config.filters?.enabled !== false;
     const filtersEnabled = filtersEnabledGlobally && modelFiltersConfig?.enabled === true;
     
@@ -49,9 +49,9 @@ export function inertiaListHelper(entity: Entity, req: ReqType, fields: Fields, 
             viewsTitle: '',
             deleteTitle: ''
         },
-        entity: {
-            name: entity.name,
-            uri: entity.uri
+        modelResource: {
+            name: modelResource.name,
+            uri: modelResource.uri
         },
         delModal: {
             yes: req.i18n.__('Yes'),
@@ -65,24 +65,24 @@ export function inertiaListHelper(entity: Entity, req: ReqType, fields: Fields, 
         pageSizeOptions: [5, 20, 50],
     } as listProps
 
-    if (entity.config.add && req.adminizer.accessRightsHelper.hasPermission(`create-${entity.name}-model`, req.user, `CRUD create on model "${entity.name}"`)) {
+    if (modelResource.config.add && req.adminizer.accessRightsHelper.hasPermission(`create-${modelResource.name}-model`, req.user, `CRUD create on model "${modelResource.name}"`)) {
         props.crudActions.createTitle = req.i18n.__('create')
     }
-    if (entity.config.edit && req.adminizer.accessRightsHelper.hasPermission(`update-${entity.name}-model`, req.user, `CRUD update on model "${entity.name}"`)) {
+    if (modelResource.config.edit && req.adminizer.accessRightsHelper.hasPermission(`update-${modelResource.name}-model`, req.user, `CRUD update on model "${modelResource.name}"`)) {
         props.crudActions.editTitle = req.i18n.__('Edit')
     }
-    if (entity.config.view && req.adminizer.accessRightsHelper.hasPermission(`read-${entity.name}-model`, req.user, `CRUD read on model "${entity.name}"`)) {
+    if (modelResource.config.view && req.adminizer.accessRightsHelper.hasPermission(`read-${modelResource.name}-model`, req.user, `CRUD read on model "${modelResource.name}"`)) {
         props.crudActions.viewsTitle = req.i18n.__('View')
     }
-    if (entity.config.remove && req.adminizer.accessRightsHelper.hasPermission(`delete-${entity.name}-model`, req.user, `CRUD delete on model "${entity.name}"`)) {
+    if (modelResource.config.remove && req.adminizer.accessRightsHelper.hasPermission(`delete-${modelResource.name}-model`, req.user, `CRUD delete on model "${modelResource.name}"`)) {
         props.crudActions.deleteTitle = req.i18n.__('Delete')
     }
 
-    props.actions = inertiaActionsHelper(actionType, entity, req)
+    props.actions = inertiaActionsHelper(actionType, modelResource, req)
 
-    if (req.adminizer.menuHelper.hasInlineActions(entity.config, 'list')) {
-        for (const inlineAction of req.adminizer.menuHelper.getInlineActions(entity.config, 'list')) {
-            const context = `inline action "${inlineAction.title}" (${inlineAction.id}) on model "${entity.name}"`;
+    if (req.adminizer.menuHelper.hasInlineActions(modelResource.config, 'list')) {
+        for (const inlineAction of req.adminizer.menuHelper.getInlineActions(modelResource.config, 'list')) {
+            const context = `inline action "${inlineAction.title}" (${inlineAction.id}) on model "${modelResource.name}"`;
             if (req.adminizer.accessRightsHelper.hasPermission(inlineAction.accessRightsToken, req.user, context)) {
                 props.inlineActions.push({
                     icon: inlineAction.icon,
@@ -105,3 +105,5 @@ export function inertiaListHelper(entity: Entity, req: ReqType, fields: Fields, 
 
     return props
 }
+
+

@@ -7,7 +7,7 @@ import { GroupAP } from "../models/GroupAP";
 import { generateUserApiKey } from "../helpers/apiKeyHelper";
 
 export default async function (req: ReqType, res: ResType) {
-    let entity = ControllerHelper.findEntityObject(req);
+    let modelResource = ControllerHelper.findModelResource(req);
     const internalUsers = req.adminizer.modelHandler.internal("users");
     const groupModel = internalUsers.get<GroupAP>("GroupAP");
     const userModel = internalUsers.get<UserAP>("UserAP");
@@ -59,9 +59,11 @@ export default async function (req: ReqType, res: ResType) {
             req.session.messages.adminError.push(e.message || 'Something went wrong...');
         }
     }
-    const props = inertiaUserHelper(entity, req, groups)
+    const props = inertiaUserHelper(modelResource, req, groups)
     return req.Inertia.render({
         component: 'add-user',
         props: props
     })
 };
+
+

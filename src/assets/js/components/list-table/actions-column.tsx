@@ -6,8 +6,8 @@ interface ActionsColumnOptions {
     thActionsTitle: string;
     crudActions: HeaderConfig['crudActions'];
     inlineActions: HeaderConfig['inlineActions'];
-    entityUri: string;
-    entityName: string;
+    modelResourceUri: string;
+    modelResourceName: string;
     delModal: HeaderConfig['delModal'];
 }
 
@@ -30,8 +30,8 @@ export function createActionsColumn(options: ActionsColumnOptions): ColumnDef<an
                         ) &&
                         <RowActionsDropdown
                             rowId={row.original.id}
-                            entityUri={options.entityUri}
-                            entityName={options.entityName}
+                            modelResourceUri={options.modelResourceUri}
+                            modelResourceName={options.modelResourceName}
                             crudActions={options.crudActions}
                             inlineActions={options.inlineActions}
                             delModal={options.delModal}
@@ -42,3 +42,4 @@ export function createActionsColumn(options: ActionsColumnOptions): ColumnDef<an
         }
     };
 }
+

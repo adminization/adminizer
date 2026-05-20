@@ -1,6 +1,6 @@
 import { GroupAP } from "../models/GroupAP";
 import { UserAP } from "../models/UserAP";
-import {Entity, PropsField} from "../interfaces/types";
+import {ModelResource, PropsField} from "../interfaces/types";
 
 interface listProps extends Record<string | number | symbol, unknown> {
     edit: boolean;
@@ -26,13 +26,13 @@ interface listProps extends Record<string | number | symbol, unknown> {
     apiKey?: string;
 }
 
-export function inertiaUserHelper(entity: Entity, req: ReqType, groups: GroupAP[], user?: UserAP, view: boolean = false) {
+export function inertiaUserHelper(modelResource: ModelResource, req: ReqType, groups: GroupAP[], user?: UserAP, view: boolean = false) {
     let props: listProps = {
         edit: !!user,
         view: view,
         btnBack: {
             title: req.i18n.__('Back'),
-            link: entity.uri
+            link: modelResource.uri
         },
         userPretend: {
             label: req.i18n.__('Pretend to be a user'),
@@ -42,7 +42,7 @@ export function inertiaUserHelper(entity: Entity, req: ReqType, groups: GroupAP[
         btnSave: {
             title: req.i18n.__('Save')
         },
-        postLink: user ? `${entity.uri}/edit/${user.id}` : `${entity.uri}/add`,
+        postLink: user ? `${modelResource.uri}/edit/${user.id}` : `${modelResource.uri}/add`,
         head: req.i18n.__('User settings'),
         groupHead: req.i18n.__('User groups'),
         fields: [
@@ -145,3 +145,5 @@ export function inertiaUserHelper(entity: Entity, req: ReqType, groups: GroupAP[
     }
     return props;
 }
+
+

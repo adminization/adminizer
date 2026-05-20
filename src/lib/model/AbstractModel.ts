@@ -197,7 +197,7 @@ export abstract class AbstractModel<T> {
 
         this.setHistory(dataAccessor, {
             modelId: record[this.primaryKey as keyof T] as string | number,
-            modelName: dataAccessor.entity.name.toLocaleLowerCase(),
+            modelName: dataAccessor.modelResource.name.toLocaleLowerCase(),
             action: eventType.toLocaleLowerCase(),
             data: record,
             diff: formattedChanges,
@@ -398,3 +398,5 @@ export abstract class AbstractAdapter {
         throw new Error("Function 'registerSystemModels' must be implemented by subclass");
     }
 }
+
+

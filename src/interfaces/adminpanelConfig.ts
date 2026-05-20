@@ -395,7 +395,7 @@ export interface ModelConfig {
         section?: string
     }
     /**
-     * Entity fields configuration
+     * Model resource fields configuration
      * */
     fields?: FieldsModels
     /**
@@ -447,11 +447,11 @@ export interface ModelConfig {
      * */
     view?: boolean
     /**
-     * Entity actions displayed in left navbar for specific entity
+     * Model resource actions displayed in left navbar for specific model resource
      * */
     tools?: HrefConfig[]
     /**
-     * Entity icon
+     * Model resource icon
      * */
     icon?: MaterialIcon
 

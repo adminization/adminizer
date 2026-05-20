@@ -12,14 +12,14 @@ export default async function remove(req: ReqType, res: ResType) {
     }
     let referTo = decodeURIComponent(req.query.referTo as string)
 
-    let entity = ControllerHelper.findEntityObject(req);
-    if (!entity.model) {
+    let modelResource = ControllerHelper.findModelResource(req);
+    if (!modelResource.model) {
         Adminizer.log.error(new Error('Admin panel: no model found'));
         return res.status(404).send({error: 'Not Found'});
     }
 
-    if (!entity.config.remove) {
-        return res.redirect(`${req.adminizer.config.routePrefix}/${entity.uri}`);
+    if (!modelResource.config.remove) {
+        return res.redirect(`${req.adminizer.config.routePrefix}/${modelResource.uri}`);
     }
 
     /**
@@ -28,8 +28,8 @@ export default async function remove(req: ReqType, res: ResType) {
     let record: ModelAnyInstance;
     let dataAccessor;
     try {
-        dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "remove");
-        record = await entity.model.findOne({where: {id: req.params.id}}, dataAccessor) as ModelAnyInstance;
+        dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "remove");
+        record = await modelResource.model.findOne({where: {id: req.params.id}}, dataAccessor) as ModelAnyInstance;
     } catch (e) {
         if (req.accepts('json')) {
             return res.json({
@@ -54,13 +54,13 @@ export default async function remove(req: ReqType, res: ResType) {
 
     let destroyedRecord;
     try {
-        const fieldId = entity.config.identifierField ?? req.adminizer.config.identifierField;
+        const fieldId = modelResource.config.identifierField ?? req.adminizer.config.identifierField;
         const q: Record<string, ModelAnyField> = {}
         q[fieldId] = record[fieldId]
-        destroyedRecord = await entity.model.destroy(q, dataAccessor)
+        destroyedRecord = await modelResource.model.destroy(q, dataAccessor)
         console.log(destroyedRecord[0])
         // delete relations media manager
-        await deleteRelationsMediaManager(req.adminizer, entity.name, destroyedRecord)
+        await deleteRelationsMediaManager(req.adminizer, modelResource.name, destroyedRecord)
     } catch (e) {
         Adminizer.log.error('adminpanel > error', e);
     }
@@ -73,6 +73,8 @@ export default async function remove(req: ReqType, res: ResType) {
     } else {
         req.flash.setFlashMessage('error', req.i18n.__('Record was not removed'));
     }
-    let referToUrl = referTo ? `${entity.uri}${referTo}` : `${entity.uri}`
+    let referToUrl = referTo ? `${modelResource.uri}${referTo}` : `${modelResource.uri}`
     return req.Inertia.redirect(`${referToUrl}`)
 };
+
+

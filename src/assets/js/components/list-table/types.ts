@@ -28,7 +28,7 @@ export interface HeaderConfig {
     inlineActions: Action[];
     thActionsTitle: string;
     crudActions: CrudActions;
-    entity: {
+    modelResource: {
         name: string;
         uri: string;
     };
@@ -68,3 +68,5 @@ export interface ExtendedSharedData extends SharedData {
     header: HeaderConfig;
     customColumns?: FilterColumnConfig[] | null;
 }
+
+

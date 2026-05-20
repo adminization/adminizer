@@ -186,9 +186,9 @@ export default class Router {
         );
 
         /**
-         *  Create a base entity route
+         *  Create a base ModelResource route
          */
-        const resourceRoute = (suffix = '') => `${adminizer.config.routePrefix}/model/:entityName${suffix}`;
+        const resourceRoute = (suffix = '') => `${adminizer.config.routePrefix}/model/:modelResourceName${suffix}`;
 
         /**
          * Catalog
@@ -612,3 +612,4 @@ export default class Router {
         }
     }
 }
+

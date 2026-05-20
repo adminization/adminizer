@@ -20,22 +20,22 @@ export default async function edit(req: ReqType, res: ResType) {
         return res.status(404).send({error: 'Not Found'});
     }
 
-    let entity = ControllerHelper.findEntityObject(req);
+    let modelResource = ControllerHelper.findModelResource(req);
     
-    if (!entity.model) {
+    if (!modelResource.model) {
         return res.status(404).send({error: 'Not Found'});
     }
 
-    if (!entity.config.edit) {
-        return res.redirect(`${req.adminizer.config.routePrefix}/${entity.uri}`);
+    if (!modelResource.config.edit) {
+        return res.redirect(`${req.adminizer.config.routePrefix}/${modelResource.uri}`);
     }
 
     let record;
     let dataAccessor;
     const id = req.params.id
     try {
-        dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "edit");
-        record = await entity.model.findOne({where: {id: id}}, dataAccessor);
+        dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "edit");
+        record = await modelResource.model.findOne({where: {id: id}}, dataAccessor);
         if (!record) return res.status(404).send("Adminpanel > Record not found");
     } catch (e) {
         Adminizer.log.error('Admin edit error: ');
@@ -50,14 +50,14 @@ export default async function edit(req: ReqType, res: ResType) {
 
     // Save
     if (req.method.toUpperCase() === 'POST') {
-        const identifierField = entity.config.identifierField || req.adminizer.config.identifierField;
+        const identifierField = modelResource.config.identifierField || req.adminizer.config.identifierField;
         delete req.body.redirectUrl
 
         let reqData = RequestProcessor.processRequest(req, fields);
         let params: {
             [key: string]: number | string
         } = {};
-        params[entity.config.identifierField || req.adminizer.config.identifierField] = req.params.id;
+        params[modelResource.config.identifierField || req.adminizer.config.identifierField] = req.params.id;
 
         /**
          * Here means reqData adapt for model data, but rawReqData is processed for widget processing
@@ -119,16 +119,16 @@ export default async function edit(req: ReqType, res: ResType) {
             }
         }
 
-        // callback before save entity
-        let entityEdit = entity.config.edit as CreateUpdateConfig;
-        if (typeof entityEdit.entityModifier === "function") {
-            reqData = entityEdit.entityModifier(reqData);
+        // callback before save modelResource
+        let editConfig = modelResource.config.edit as CreateUpdateConfig;
+        if (typeof editConfig.entityModifier === "function") {
+            reqData = editConfig.entityModifier(reqData);
         }
 
         try {
-            let newRecord = await entity.model.update(params, reqData, dataAccessor);
-            await saveRelationsMediaManager(req.adminizer, fields, rawReqData, entity.model.modelname, newRecord[0].id)
-            await updateCurrentHistoryMediaManagerData(req.adminizer, fields, rawReqData, entity.name, newRecord[0].id)
+            let newRecord = await modelResource.model.update(params, reqData, dataAccessor);
+            await saveRelationsMediaManager(req.adminizer, fields, rawReqData, modelResource.model.modelname, newRecord[0].id)
+            await updateCurrentHistoryMediaManagerData(req.adminizer, fields, rawReqData, modelResource.name, newRecord[0].id)
 
 
             Adminizer.log.debug(`Record was updated: `, newRecord);
@@ -141,7 +141,7 @@ export default async function edit(req: ReqType, res: ResType) {
                     for (const section of req.adminizer.config.navigation.sections) {
                         let navigation = req.adminizer.catalogHandler.getCatalog('navigation')
                         navigation.setId(section)
-                        let navItem = navigation.itemTypes.find(item => item.type === entity.name.toLowerCase())
+                        let navItem = navigation.itemTypes.find(item => item.type === modelResource.name.toLowerCase())
                         if (navItem) {
                             await navItem.updateModelItems(newRecord[0].id, {record: newRecord[0]}, section)
                         }
@@ -150,7 +150,7 @@ export default async function edit(req: ReqType, res: ResType) {
 
                 req.flash.setFlashMessage('success', req.i18n.__('Record was updated'));
                 const redirectId = newRecord[0]?.[identifierField] ?? req.params.id;
-                return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/${entity.name}/edit/${redirectId}`)
+                return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/${modelResource.name}/edit/${redirectId}`)
             }
         } catch (e) {
             Adminizer.log.error(e);
@@ -164,13 +164,13 @@ export default async function edit(req: ReqType, res: ResType) {
         if (isMediaManagerFieldConfig(fieldConfigConfig)) {
             record[field] = await getRelationsMediaManager(req.adminizer, {
                 mediaManagerId: (fieldConfigConfig.options as MediaManagerOptionsField)?.id ?? "default",
-                model: entity.model.modelname,
+                model: modelResource.model.modelname,
                 widgetName: field,
                 modelId: id
             })
         }
     }
-    const props = inertiaAddHelper(req, entity, fields, record)
+    const props = inertiaAddHelper(req, modelResource, fields, record)
     if (req.query?.without_layout) {
         return res.json({
             props: props
@@ -182,3 +182,5 @@ export default async function edit(req: ReqType, res: ResType) {
         })
     }
 };
+
+

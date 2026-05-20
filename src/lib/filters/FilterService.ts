@@ -4,7 +4,7 @@ import { ListQueryBuilder } from '../list-query-builder/ListQueryBuilder';
 import { FilterAP, FilterCondition } from '../../models/FilterAP';
 import { FilterColumnAP } from '../../models/FilterColumnAP';
 import { UserAP } from '../../models/UserAP';
-import { Entity } from '../../interfaces/types';
+import { ModelResource } from '../../interfaces/types';
 import { ModelConfig, ModelFiltersConfig } from '../../interfaces/adminpanelConfig';
 import { convertDatetimeConditions } from '../../helpers/filterDatetimeHelper';
 import { ListQueryBuilderParams } from '../../interfaces/listQueryBuilder';
@@ -22,10 +22,10 @@ export class FilterService {
     constructor(private adminizer: Adminizer) {}
 
     /**
-     * Get Entity object by model name
-     * Similar to ControllerHelper.findEntityObject but without req dependency
+     * Get ModelResource object by model name
+     * Similar to ControllerHelper.findModelResource but without req dependency
      */
-    private getEntityByModelName(modelName: string): Entity | null {
+    private getModelResourceByModelName(modelName: string): ModelResource | null {
         const models = this.adminizer.config.models;
         if (!models) {
             return null;
@@ -226,13 +226,13 @@ export class FilterService {
      */
     async countFilterResults(filter: FilterAP, user: UserAP): Promise<number> {
         try {
-            const entity = this.getEntityByModelName(filter.modelName);
-            if (!entity || !entity.model) {
+            const modelResource = this.getModelResourceByModelName(filter.modelName);
+            if (!modelResource || !modelResource.model) {
                 Adminizer.log.warn(`FilterService.countFilterResults: Model '${filter.modelName}' not found`);
                 return -1;
             }
 
-            const dataAccessor = new DataAccessor(this.adminizer, user, entity, 'list');
+            const dataAccessor = new DataAccessor(this.adminizer, user, modelResource, 'list');
             const fields = dataAccessor.getFieldsConfig();
 
             // Convert datetime conditions to date ranges
@@ -245,7 +245,7 @@ export class FilterService {
             };
 
             const listQueryBuilder = new ListQueryBuilder(
-                entity.model,
+                modelResource.model,
                 fields,
                 dataAccessor,
                 this.adminizer.customFilterHandler
@@ -424,3 +424,5 @@ export class FilterService {
 }
 
 export default FilterService;
+
+

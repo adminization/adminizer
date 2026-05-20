@@ -60,7 +60,7 @@ export class FeedService {
         records: any[];
         fields: Fields;
         modelName: string;
-        entity: any;
+        modelResource: any;
     }> {
         const modelName = filter.modelName;
         const adminizerInstance = adminizer || this.adminizer;
@@ -72,20 +72,20 @@ export class FeedService {
         // Create a minimal request-like object to use ControllerHelper
         const mockReq = {
             adminizer: adminizerInstance,
-            params: { entityName: modelName },
+            params: { modelResourceName: modelName },
             query: {},
             originalUrl: `/adminizer/model/${modelName}/list`,
             url: `/adminizer/model/${modelName}/list`
         } as unknown as ReqType;
 
-        // Get entity for model
-        const entity = ControllerHelper.findEntityObject(mockReq);
-        if (!entity || !entity.model || !entity.model.attributes) {
+        // Get ModelResource for model
+        const modelResource = ControllerHelper.findModelResource(mockReq);
+        if (!modelResource || !modelResource.model || !modelResource.model.attributes) {
             throw new Error(`Model '${modelName}' not found`);
         }
 
         // Build fields directly from model attributes (bypass permission checks for public API)
-        const fields = this.buildFieldsFromAttributes(entity.model.attributes, entity.config?.fields || {}, adminizerInstance);
+        const fields = this.buildFieldsFromAttributes(modelResource.model.attributes, modelResource.config?.fields || {}, adminizerInstance);
 
         // Use saved columns if available
         let displayFields = fields;
@@ -97,7 +97,7 @@ export class FeedService {
         const rawConditions = filter.conditions || [];
         const convertedConditions = convertDatetimeConditions(rawConditions, { dropEmptyValues: true });
 
-        const createdAtSortField = this.resolveCreatedAtSortField(entity.model.attributes, displayFields);
+        const createdAtSortField = this.resolveCreatedAtSortField(modelResource.model.attributes, displayFields);
 
         // Build query params for where clause construction
         const queryParams: ListQueryBuilderParams = {
@@ -113,9 +113,9 @@ export class FeedService {
         // Create an administrator DataAccessor to avoid user-based filtering
         
 
-        const dataAccessor = new DataAccessor(adminizerInstance, user, entity, "list");
+        const dataAccessor = new DataAccessor(adminizerInstance, user, modelResource, "list");
         const listQueryBuilder = new ListQueryBuilder(
-            entity.model,
+            modelResource.model,
             fields,
             dataAccessor,
             adminizerInstance.customFilterHandler
@@ -130,7 +130,7 @@ export class FeedService {
             records: result.data,
             fields: displayFields,
             modelName,
-            entity
+            modelResource
         };
     }
 
@@ -433,4 +433,6 @@ export class FeedService {
         return new Date();
     }
 }
+
+
 

@@ -75,19 +75,19 @@ function isSimpleFilterField(type: string): boolean {
  * This controller is universal - works with any model
  */
 export default async function filterFields(req: ReqType, res: ResType) {
-    const entity = ControllerHelper.findEntityObject(req);
+    const modelResource = ControllerHelper.findModelResource(req);
 
-    if (!entity.model) {
+    if (!modelResource.model) {
         return res.status(404).send({ error: req.i18n.__('Model not found') });
     }
 
     // Get fields via DataAccessor (respects access rights and merged field config)
-    const dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "list");
+    const dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "list");
     const fields = dataAccessor.getFieldsConfig() || {};
 
     // Get filter config for this model (optional)
     // Preferred: model-level `models.<Model>.filters`; fallback: legacy top-level `modelFilters.<Model>`
-    const filterConfig = entity.config?.filters ?? req.adminizer.config.modelFilters?.[entity.name];
+    const filterConfig = modelResource.config?.filters ?? req.adminizer.config.modelFilters?.[modelResource.name];
     const filterFields: FilterField[] = [];
 
     for (const [fieldName, field] of Object.entries(fields)) {
@@ -180,7 +180,9 @@ export default async function filterFields(req: ReqType, res: ResType) {
     }
 
     return res.json({
-        model: entity.name,
+        model: modelResource.name,
         fields: filterFields,
     });
 }
+
+

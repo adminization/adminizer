@@ -16,8 +16,8 @@ import { Action, CrudActions, DelModal } from './types.ts';
 
 interface RowActionsDropdownProps {
     rowId: string | number;
-    entityUri: string;
-    entityName: string;
+    modelResourceUri: string;
+    modelResourceName: string;
     crudActions: CrudActions;
     inlineActions?: Action[];
     delModal: DelModal;
@@ -25,8 +25,8 @@ interface RowActionsDropdownProps {
 
 export function RowActionsDropdown({
     rowId,
-    entityUri,
-    entityName,
+    modelResourceUri,
+    modelResourceName,
     crudActions,
     inlineActions,
     delModal
@@ -43,7 +43,7 @@ export function RowActionsDropdown({
                     {crudActions?.editTitle && (
                         <DropdownMenuItem asChild className="cursor-pointer">
                             <Link
-                                href={`${entityUri}/edit/${rowId}`}
+                                href={`${modelResourceUri}/edit/${rowId}`}
                                 onClick={() => {
                                     localStorage.setItem('backUrl', window.location.pathname + window.location.search);
                                 }}
@@ -55,7 +55,7 @@ export function RowActionsDropdown({
                     )}
                     {crudActions?.viewsTitle && (
                         <DropdownMenuItem asChild className="cursor-pointer">
-                            <Link href={`${entityUri}/view/${rowId}`}>
+                            <Link href={`${modelResourceUri}/view/${rowId}`}>
                                 <Icon iconNode={Eye} />
                                 {crudActions.viewsTitle}
                             </Link>
@@ -67,7 +67,7 @@ export function RowActionsDropdown({
                                 btnTitle={crudActions.deleteTitle}
                                 delModal={delModal}
                                 btnCLass="font-normal text-destructive hover:text-destructive w-full cursor-pointer justify-start"
-                                link={`${entityUri}/remove/${rowId}?referTo=${encodeURIComponent(window.location.search)}`}
+                                link={`${modelResourceUri}/remove/${rowId}?referTo=${encodeURIComponent(window.location.search)}`}
                             />
                         </DropdownMenuItem>
                     )}
@@ -82,7 +82,7 @@ export function RowActionsDropdown({
                                 className="cursor-pointer"
                             >
                                 {action.type === 'blank' ? (
-                                    <a target="_blank" href={`${action.link}?id=${rowId}&entity=${entityName}`}>
+                                    <a target="_blank" href={`${action.link}?id=${rowId}&modelResourceName=${modelResourceName}`}>
                                         {action.icon && (
                                             <MaterialIcon name={action.icon} className="!text-[18px] mr-2" />
                                         )}
@@ -90,7 +90,7 @@ export function RowActionsDropdown({
                                     </a>
                                 ) : (
                                     <Link
-                                        href={`${action.link}/${rowId}?id=${rowId}&entity=${entityName}`}
+                                        href={`${action.link}/${rowId}?id=${rowId}&modelResourceName=${modelResourceName}`}
                                     >
                                         {action.icon && (
                                             <MaterialIcon name={action.icon} className="!text-[18px] mr-2" />
@@ -106,3 +106,5 @@ export function RowActionsDropdown({
         </DropdownMenu>
     );
 }
+
+

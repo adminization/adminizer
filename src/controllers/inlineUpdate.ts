@@ -23,8 +23,8 @@ export default async function inlineUpdate(req: ReqType, res: ResType) {
         return res.status(400).json({ error: 'Field name is required' });
     }
 
-    const entity = ControllerHelper.findEntityObject(req);
-    if (!entity.model) {
+    const modelResource = ControllerHelper.findModelResource(req);
+    if (!modelResource.model) {
         return res.status(404).json({ error: 'Model not found' });
     }
 
@@ -32,7 +32,7 @@ export default async function inlineUpdate(req: ReqType, res: ResType) {
     const newValue = req.body.value;
 
     // Get field config
-    const dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "edit");
+    const dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "edit");
     const fields = dataAccessor.getFieldsConfig();
     const fieldConfig = fields[fieldName] as Field;
 
@@ -41,9 +41,9 @@ export default async function inlineUpdate(req: ReqType, res: ResType) {
     }
 
     const identifierField =
-        entity.config.identifierField ||
+        modelResource.config.identifierField ||
         req.adminizer.config.identifierField ||
-        entity.model.primaryKey ||
+        modelResource.model.primaryKey ||
         'id';
 
     const blockedInlineFields = new Set(['id', 'createdat', 'updatedat']);
@@ -81,10 +81,10 @@ export default async function inlineUpdate(req: ReqType, res: ResType) {
     // Update record
     const id = req.params.id;
     const params: Record<string, string | number> = {};
-    params[entity.config.identifierField || req.adminizer.config.identifierField] = id;
+    params[modelResource.config.identifierField || req.adminizer.config.identifierField] = id;
 
     try {
-        await entity.model.update(params, { [fieldName]: convertedValue }, dataAccessor);
+        await modelResource.model.update(params, { [fieldName]: convertedValue }, dataAccessor);
 
         return res.json({
             success: true, 
@@ -176,3 +176,5 @@ function convertInlineValue(value: any, fieldType?: string): any {
             return typeof value === 'string' ? value : String(value);
     }
 }
+
+

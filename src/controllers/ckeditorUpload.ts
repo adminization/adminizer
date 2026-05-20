@@ -3,9 +3,9 @@ import * as fs from "fs";
 import multer from "multer";
 
 export async function ckEditorUpload(req: ReqType, res: ResType) {
-	let entity = ControllerHelper.findEntityObject(req);
+	let modelResource = ControllerHelper.findModelResource(req);
 
-    const dirDownload = `uploads/model/${entity.name}/ckeditor`;
+    const dirDownload = `uploads/model/${modelResource.name}/ckeditor`;
 
     await handleUpload(req, res, dirDownload)
 
@@ -68,3 +68,5 @@ function setStorage(outputDir: string) {
         }
     });
 }
+
+

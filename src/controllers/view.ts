@@ -17,28 +17,28 @@ export default async function view(req: ReqType, res: ResType) {
         return res.status(404).send({error: 'Not Found'});
     }
 
-    let entity = ControllerHelper.findEntityObject(req);
-    if (!entity.config.view) {
-        return res.redirect(`${req.adminizer.config.routePrefix}/${entity.uri}`);
+    let modelResource = ControllerHelper.findModelResource(req);
+    if (!modelResource.config.view) {
+        return res.redirect(`${req.adminizer.config.routePrefix}/${modelResource.uri}`);
     }
 
-    if (!entity.model) {
+    if (!modelResource.model) {
         return res.status(404).send({error: 'Not Found'});
     }
 
-    let dataAccessor = new DataAccessor(req.adminizer, req.user, entity, "view");
+    let dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "view");
     let fields = dataAccessor.getFieldsConfig();
 
     let record;
     try {
-        record = await entity.model.findOne({where: {id: req.params.id}}, dataAccessor);
+        record = await modelResource.model.findOne({where: {id: req.params.id}}, dataAccessor);
     } catch (e) {
         Adminizer.log.error('Admin edit error: ');
         Adminizer.log.error(e);
         return res.status(500).send({error: 'Internal Server Error'});
     }
 
-    switch (entity.config.model) {
+    switch (modelResource.config.model) {
 
         case 'userap':
             let groups: GroupAP[];
@@ -47,7 +47,7 @@ export default async function view(req: ReqType, res: ResType) {
             } catch (e) {
                 Adminizer.log.error(e)
             }
-            const userProps = inertiaUserHelper(entity, req, groups, record as UserAP, true)
+            const userProps = inertiaUserHelper(modelResource, req, groups, record as UserAP, true)
             return req.Inertia.render({
                 component: 'add-user',
                 props: userProps
@@ -77,7 +77,7 @@ export default async function view(req: ReqType, res: ResType) {
             for (let department of departments) {
                 groupedTokens[department] = req.adminizer.accessRightsHelper.getTokensByDepartment(department)
             }
-            const groupProps = inertiaGroupHelper(entity, req, users, groupedTokens, group, true)
+            const groupProps = inertiaGroupHelper(modelResource, req, users, groupedTokens, group, true)
             return req.Inertia.render({
                 component: 'add-group',
                 props: groupProps
@@ -90,13 +90,13 @@ export default async function view(req: ReqType, res: ResType) {
                 if (fieldConfigConfig.type === 'mediamanager') {
                     record[field] = await getRelationsMediaManager(req.adminizer, {
                         mediaManagerId: (fieldConfigConfig.options as MediaManagerOptionsField)?.id ?? "default",
-                        model: entity.model.modelname,
+                        model: modelResource.model.modelname,
                         widgetName: field,
                         modelId: req.params.id
                     })
                 }
             }
-            const props = inertiaAddHelper(req, entity, fields, record, true)
+            const props = inertiaAddHelper(req, modelResource, fields, record, true)
             return req.Inertia.render({
                 component: 'add',
                 props: props
@@ -104,3 +104,5 @@ export default async function view(req: ReqType, res: ResType) {
     }
 
 };
+
+

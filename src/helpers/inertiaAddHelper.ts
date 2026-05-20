@@ -1,4 +1,4 @@
-import { Entity, PropsField } from "../interfaces/types";
+import { ModelResource, PropsField } from "../interfaces/types";
 import inertiaActionsHelper, { Actions } from "./inertiaActionsHelper";
 import { Fields, Field } from "./fieldsHelper";
 import {
@@ -69,7 +69,7 @@ interface FieldProps extends Record<string | number | symbol, unknown> {
     model: string
 }
 
-export default function inertiaAddHelper(req: ReqType, entity: Entity, fields: Fields, record?: Record<string, string | boolean | number | string[]>, view: boolean = false) {
+export default function inertiaAddHelper(req: ReqType, modelResource: ModelResource, fields: Fields, record?: Record<string, string | boolean | number | string[]>, view: boolean = false) {
     const actionType = 'add';
     let props: FieldProps = {
         edit: !!record,
@@ -79,7 +79,7 @@ export default function inertiaAddHelper(req: ReqType, entity: Entity, fields: F
         search: req.i18n.__('Search'),
         btnBack: {
             title: req.i18n.__('Back'),
-            link: entity.uri
+            link: modelResource.uri
         },
         fields: [],
         btnSave: {
@@ -88,10 +88,10 @@ export default function inertiaAddHelper(req: ReqType, entity: Entity, fields: F
         btnHistory: {
             title: req.i18n.__('History'),
         },
-        postLink: record ? `${entity.uri}/edit/${record.id}` : `${entity.uri}/add`,
-        model: entity.name.toLocaleLowerCase()
+        postLink: record ? `${modelResource.uri}/edit/${record.id}` : `${modelResource.uri}/add`,
+        model: modelResource.name.toLocaleLowerCase()
     }
-    props.actions = inertiaActionsHelper(actionType, entity, req)
+    props.actions = inertiaActionsHelper(actionType, modelResource, req)
 
     const config = req.adminizer.configHelper.getConfig();
     for (const key of Object.keys(fields)) {
@@ -118,7 +118,7 @@ export default function inertiaAddHelper(req: ReqType, entity: Entity, fields: F
         let canCreateRelated = false
 
         //@ts-ignore TODO: fix field type
-        if (entity.config.model && req.adminizer.configHelper.isId(field, entity.config.model)) {
+        if (modelResource.config.model && req.adminizer.configHelper.isId(field, modelResource.config.model)) {
             disabled = true
         }
 
@@ -411,3 +411,5 @@ export function setSelectMany(isIn: string[], value: string[] | undefined) {
         initValue: initValue
     }
 }
+
+

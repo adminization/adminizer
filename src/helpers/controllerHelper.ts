@@ -1,4 +1,4 @@
-import {Entity} from "../interfaces/types";
+import {ModelResource} from "../interfaces/types";
 import {ActionType, CreateUpdateConfig, ModelConfig} from "../interfaces/adminpanelConfig";
 import {AbstractModel} from "../lib/model/AbstractModel";
 import {Adminizer} from "../lib/Adminizer";
@@ -11,7 +11,7 @@ type ActionConfig = CreateUpdateConfig
 export class ControllerHelper {
 
     /**
-     * Default configuration for entity
+     * Default configuration for ModelResource
      *
      * @see ControllerHelper.findConfig
      */
@@ -33,7 +33,7 @@ export class ControllerHelper {
     };
 
     /**
-     * Check if given entity config has all required properties
+     * Check if given ModelResource config has all required properties
      *
      * @param {Object} config
      * @returns {boolean}
@@ -50,30 +50,30 @@ export class ControllerHelper {
     };
 
     /**
-     * Normalizing entity config.
+     * Normalizing ModelResource config.
      * Will return fulfilled configuration object.
      *
      * @see ControllerHelper._isValidModelConfig
-     * @param entityName
+     * @param modelResourceName
      * @param {Object} config
      * @returns {Object}
      * @private
      */
-    private static _normalizeModelConfig(entityName: string, config: ModelConfig | boolean): ModelConfig {
+    private static _normalizeModelConfig(modelResourceName: string, config: ModelConfig | boolean): ModelConfig {
         if (typeof config === "boolean") {
             config = {
-                model: entityName,
+                model: modelResourceName,
                 icon: 'description',
-                title: entityName
+                title: modelResourceName
             }
         }
 
         if (!this._isValidModelConfig(config)) {
-            Adminizer.log.error('Wrong entity configuration, using default');
+            Adminizer.log.error('Wrong ModelResource configuration, using default');
             config = {
-                model: entityName,
+                model: modelResourceName,
                 icon: 'description',
-                title: entityName
+                title: modelResourceName
             }
         }
         config = {...this._defaultModelConfig, ...config};
@@ -94,14 +94,14 @@ export class ControllerHelper {
     };
 
     /**
-     * Get entity name
+     * Get ModelResource name
      *
      * @param {Request} req
      * @returns {?string}
      */
-        public static findEntityName(req: ReqType): string {
-            if (req.params.entityName) {
-                return req.params.entityName;
+        public static findModelResourceName(req: ReqType): string {
+            if (req.params.modelResourceName) {
+                return req.params.modelResourceName;
             }
 
             if (req.params.model) {
@@ -109,24 +109,24 @@ export class ControllerHelper {
             }
 
             const urlParts = req.originalUrl.split('/');
-            const entityName = urlParts[3];
+            const modelResourceName = urlParts[3];
 
             const models = req.adminizer.config.models;
-            if (!models || !Object.keys(models).some(key => key.toLowerCase() === entityName.toLowerCase())) {
-                throw new Error(`Model "${entityName}" not found`);
+            if (!models || !Object.keys(models).some(key => key.toLowerCase() === modelResourceName.toLowerCase())) {
+                throw new Error(`Model "${modelResourceName}" not found`);
             }
 
-            return Object.keys(models).find(key => key.toLowerCase() === entityName.toLowerCase());
+            return Object.keys(models).find(key => key.toLowerCase() === modelResourceName.toLowerCase());
         }
 
     /**
      * Searches for config from admin panel
      *
      * @param {Request} req
-     * @param {String} entityName
+     * @param {String} modelResourceName
      * @returns {?Object}
      */
-        public static findModelConfig(req: ReqType, entityName: string): ModelConfig {
+        public static findModelConfig(req: ReqType, modelResourceName: string): ModelConfig {
             const models = req.adminizer.config.models;
             if (!models) {
                 Adminizer.log.error('No models configuration found');
@@ -134,11 +134,11 @@ export class ControllerHelper {
             }
 
             const foundKey = Object.keys(models).find(
-                key => key.toLowerCase() === entityName.toLowerCase()
+                key => key.toLowerCase() === modelResourceName.toLowerCase()
             );
 
             if (!foundKey) {
-                Adminizer.log.error(`No such route exists: ${entityName}`);
+                Adminizer.log.error(`No such route exists: ${modelResourceName}`);
                 return null;
             }
 
@@ -163,32 +163,32 @@ export class ControllerHelper {
      *  }
      *
      * @throws {Error} if req or actionType not passed
-     * @param {Object} entity Entity object with `name`, `config`, `model` {@link ControllerHelper.findEntityObject}
+     * @param {Object} ModelResource ModelResource object with `name`, `config`, `model` {@link ControllerHelper.findModelResource}
      * @param {string} actionType Type of action that config should be loaded for. Example: list, edit, add, remove, view.
      * @returns {Object} Will return object with configs or default configs.
      */
-    public static findActionConfig(entity: Entity, actionType: ActionType): ActionConfig {
-        if (!entity || !actionType) {
-            throw new Error('No `entity` or `actionType` passed !');
+    public static findActionConfig(modelResource: ModelResource, actionType: ActionType): ActionConfig {
+        if (!modelResource || !actionType) {
+            throw new Error('No `ModelResource` or `actionType` passed !');
         }
         let result = {...this._defaultActionConfig};
-        if (!entity.config || !entity.config[actionType]) {
+        if (!modelResource.config || !modelResource.config[actionType]) {
             return result;
         }
         /**
          * Here we could get true/false so need to update it to Object for later manipulations
          * In this function
          */
-        if (typeof entity.config[actionType] === "boolean") {
+        if (typeof modelResource.config[actionType] === "boolean") {
             return result;
         }
-        return this._normalizeActionConfig(entity.config[actionType] as ActionConfig);
+        return this._normalizeActionConfig(modelResource.config[actionType] as ActionConfig);
     }
 
     /**
-     * Will create entity object from request.
+     * Will create ModelResource object from request.
      *
-     * Entity Object will have this format:
+     * ModelResource Object will have this format:
      *
      * @example
      * ```javascript
@@ -203,28 +203,30 @@ export class ControllerHelper {
      * @param req
      * @returns {Object}
      */
-    public static findEntityObject(req: ReqType): Entity {
+    public static findModelResource(req: ReqType): ModelResource {
         // Retrieve model name based on the request
-        const entityName = this.findEntityName(req);
+        const modelResourceName = this.findModelResourceName(req);
 
-        // Construct the entity URI
-        const entityUri = `${req.adminizer.config.routePrefix}/model/${entityName}`;
+        // Construct the ModelResource URI
+        const modelResourceUri = `${req.adminizer.config.routePrefix}/model/${modelResourceName}`;
 
-        // Initialize the Entity object
-        const entity: Entity = {
-            name: entityName,
-            uri: entityUri,
+        // Initialize the ModelResource object
+        const modelResource: ModelResource = {
+            name: modelResourceName,
+            uri: modelResourceUri,
             model: null,
             config: null
         };
-        // Find and add the model configuration to the entity
-        entity.config = this.findModelConfig(req, entityName);
-        // Find and add the model itself to the entity
-        if (this._isValidModelConfig(entity.config)) {
-            entity.model = req.adminizer.modelHandler.model.get(entity.config.model);
+        // Find and add the model configuration to the ModelResource
+        modelResource.config = this.findModelConfig(req, modelResourceName);
+        // Find and add the model itself to the ModelResource
+        if (this._isValidModelConfig(modelResource.config)) {
+            modelResource.model = req.adminizer.modelHandler.model.get(modelResource.config.model);
         }
 
-        // Return the completed entity object
-        return entity;
+        // Return the completed ModelResource object
+        return modelResource;
     }
 }
+
+

@@ -6,7 +6,7 @@ import {Adminizer} from "../lib/Adminizer";
 import multer from "multer";
 import {I18n} from "../lib/I18n";
 
-export interface Entity {
+export interface ModelResource {
     name: string
     config?: ModelConfig
     model?: AbstractModel<any>
@@ -92,3 +92,4 @@ export type Migration = {
   up: (args: { context: any }) => Promise<unknown> | unknown;
   down: (args: { context: any }) => Promise<unknown> | unknown;
 };
+

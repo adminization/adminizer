@@ -1,13 +1,13 @@
 import { Adminizer } from '../Adminizer';
 import { DataAccessor } from '../DataAccessor';
-import { QueryBuilder } from '../query-builder/QueryBuilder';
+import { ListQueryBuilder } from '../list-query-builder/ListQueryBuilder';
 import { FilterAP, FilterCondition } from '../../models/FilterAP';
 import { FilterColumnAP } from '../../models/FilterColumnAP';
 import { UserAP } from '../../models/UserAP';
 import { Entity } from '../../interfaces/types';
 import { ModelConfig, ModelFiltersConfig } from '../../interfaces/adminpanelConfig';
 import { convertDatetimeConditions } from '../../helpers/filterDatetimeHelper';
-import { QueryBuilderParams } from '../../interfaces/queryBuilder';
+import { ListQueryBuilderParams } from '../../interfaces/listQueryBuilder';
 
 /**
  * FilterService - manages filter operations
@@ -15,7 +15,7 @@ import { QueryBuilderParams } from '../../interfaces/queryBuilder';
  * Key responsibilities:
  * - Check if filters are enabled for a model
  * - Apply saved filters to queries
- * - Integrate with QueryBuilder
+ * - Integrate with ListQueryBuilder
  * - Handle filter access control
  */
 export class FilterService {
@@ -238,19 +238,19 @@ export class FilterService {
             // Convert datetime conditions to date ranges
             const convertedConditions = convertDatetimeConditions(filter.conditions || []);
 
-            const queryParams: QueryBuilderParams = {
+            const queryParams: ListQueryBuilderParams = {
                 page: 1,
                 limit: 1, // We only need count
                 filters: convertedConditions
             };
 
-            const queryBuilder = new QueryBuilder(
+            const listQueryBuilder = new ListQueryBuilder(
                 entity.model,
                 fields,
                 dataAccessor,
                 this.adminizer.customFilterHandler
             );
-            const result = await queryBuilder.execute(queryParams);
+            const result = await listQueryBuilder.execute(queryParams);
 
             return result.filtered;
         } catch (error: any) {

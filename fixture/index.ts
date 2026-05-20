@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import "reflect-metadata";
 
-import { Adminizer } from "../dist";
+import { Adminizer, UserAP } from "../dist";
 import { bindNavigation } from "../dist";
 import http from 'http';
 import adminpanelConfig from "./adminizerConfig";
@@ -171,7 +171,7 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
             const isDev = process.env.NODE_ENV === 'development';
             const moduleComponent = isDev ? '/modules/test/ComponentB.tsx' : `${adminizer.config.routePrefix}/assets/modules/ComponentB.es.js`;
-            const users = await req.adminizer.modelHandler.model.get('userap')["_find"]({})
+            const users = await req.adminizer.modelHandler.internal('auth').get<UserAP>('userap').find({})
             return req.Inertia.render({
                 component: 'module', // required
                 props: {

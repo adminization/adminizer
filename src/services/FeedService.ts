@@ -1,8 +1,8 @@
 import { Adminizer } from "../lib/Adminizer";
 import { FilterAP } from "../models/FilterAP";
 import { DataAccessor } from "../lib/DataAccessor";
-import { QueryBuilder } from "../lib/query-builder/QueryBuilder";
-import { QueryBuilderParams } from "../interfaces/queryBuilder";
+import { ListQueryBuilder } from "../lib/list-query-builder/ListQueryBuilder";
+import { ListQueryBuilderParams } from "../interfaces/listQueryBuilder";
 import { Field, Fields } from "../helpers/fieldsHelper";
 import { FilterService } from "../lib/filters/FilterService";
 import { UserAP } from "../models/UserAP";
@@ -100,7 +100,7 @@ export class FeedService {
         const createdAtSortField = this.resolveCreatedAtSortField(entity.model.attributes, displayFields);
 
         // Build query params for where clause construction
-        const queryParams: QueryBuilderParams = {
+        const queryParams: ListQueryBuilderParams = {
             page: 1,
             limit: 20,
             filters: convertedConditions.length > 0 ? convertedConditions : undefined,
@@ -109,12 +109,12 @@ export class FeedService {
             fields: Object.keys(displayFields)
         };
 
-        // Build where clause using QueryBuilder
+        // Build where clause using ListQueryBuilder
         // Create an administrator DataAccessor to avoid user-based filtering
         
 
         const dataAccessor = new DataAccessor(adminizerInstance, user, entity, "list");
-        const queryBuilder = new QueryBuilder(
+        const listQueryBuilder = new ListQueryBuilder(
             entity.model,
             fields,
             dataAccessor,
@@ -122,7 +122,7 @@ export class FeedService {
         );
 
 
-        const result = await queryBuilder.execute(queryParams);
+        const result = await listQueryBuilder.execute(queryParams);
 
         Adminizer.log.info(`FeedService: === END fetchFilterData === records=${result.data?.length ?? 0}`);
 

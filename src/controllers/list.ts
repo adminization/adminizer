@@ -1,7 +1,7 @@
 import {ControllerHelper} from "../helpers/controllerHelper";
 import {DataAccessor} from "../lib/DataAccessor";
-import {QueryBuilder} from "../lib/query-builder/QueryBuilder";
-import {QueryBuilderParams} from "../interfaces/queryBuilder";
+import {ListQueryBuilder} from "../lib/list-query-builder/ListQueryBuilder";
+import {ListQueryBuilderParams} from "../interfaces/listQueryBuilder";
 import {Adminizer} from "../lib/Adminizer";
 import {inertiaListHelper} from "../helpers/inertiaListHelper";
 import {Field, Fields} from "../helpers/fieldsHelper";
@@ -164,7 +164,7 @@ export default async function list(req: ReqType, res: ResType) {
     }
 
     // Build query parameters
-    const queryParams: QueryBuilderParams = {
+    const queryParams: ListQueryBuilderParams = {
         page,
         limit,
         sort: effectiveSortField,
@@ -173,8 +173,8 @@ export default async function list(req: ReqType, res: ResType) {
         globalSearch: globalSearch || undefined
     };
 
-    // Execute query using QueryBuilder (use original fields for query, displayFields for output)
-    const queryBuilder = new QueryBuilder(
+    // Execute query using ListQueryBuilder (use original fields for query, displayFields for output)
+    const listQueryBuilder = new ListQueryBuilder(
         entity.model,
         fields,
         dataAccessor,
@@ -182,7 +182,7 @@ export default async function list(req: ReqType, res: ResType) {
     );
 
     try {
-        const result = await queryBuilder.execute(queryParams);
+        const result = await listQueryBuilder.execute(queryParams);
 
         // Build active filter info for frontend
         const activeFilter = savedFilter ? {

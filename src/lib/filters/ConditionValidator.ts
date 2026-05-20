@@ -1,5 +1,5 @@
 import { FilterCondition, FilterOperator } from '../../models/FilterAP';
-import { FILTER_SECURITY_LIMITS } from '../query-builder/QueryBuilder';
+import { FILTER_SECURITY_LIMITS } from '../list-query-builder/ListQueryBuilder';
 
 /**
  * Security event types for logging suspicious filter attempts

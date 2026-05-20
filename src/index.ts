@@ -15,7 +15,7 @@ export * from "./controllers/media-manager/mediaManagerAdapter"
 export * from "./interfaces/adminpanelConfig";
 export * from "./interfaces/types";
 export * from "./interfaces/queryCriteria";
-export * from "./interfaces/queryBuilder";
+export * from "./interfaces/listQueryBuilder";
 export * from "./interfaces/internalModelAccess";
 export * from "./interfaces/MaaterialIcons"
 export * from "./lib/model/AbstractModel";

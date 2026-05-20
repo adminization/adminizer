@@ -1,7 +1,7 @@
 import { ControllerHelper } from "../helpers/controllerHelper";
 import { DataAccessor } from "../lib/DataAccessor";
-import { QueryBuilder } from "../lib/query-builder/QueryBuilder";
-import { QueryBuilderParams } from "../interfaces/queryBuilder";
+import { ListQueryBuilder } from "../lib/list-query-builder/ListQueryBuilder";
+import { ListQueryBuilderParams } from "../interfaces/listQueryBuilder";
 import { Adminizer } from "../lib/Adminizer";
 import { Field, Fields } from "../helpers/fieldsHelper";
 import { FilterCondition } from "../models/FilterAP";
@@ -94,7 +94,7 @@ export default async function exportData(req: ReqType, res: ResType) {
     }
 
     // Fetch ALL data (no pagination)
-    const queryParams: QueryBuilderParams = {
+    const queryParams: ListQueryBuilderParams = {
         page: 1,
         limit: 10000, // Large limit to get all records
         filters: filters.length > 0 ? filters : undefined,
@@ -103,7 +103,7 @@ export default async function exportData(req: ReqType, res: ResType) {
         fields: Object.keys(displayFields)
     };
 
-    const queryBuilder = new QueryBuilder(
+    const listQueryBuilder = new ListQueryBuilder(
         entity.model,
         fields,
         dataAccessor,
@@ -111,7 +111,7 @@ export default async function exportData(req: ReqType, res: ResType) {
     );
 
     try {
-        const result = await queryBuilder.execute(queryParams);
+        const result = await listQueryBuilder.execute(queryParams);
         const records = result.data;
 
         // Prepare human-readable data for export

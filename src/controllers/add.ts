@@ -14,6 +14,7 @@ import inertiaAddHelper from "../helpers/inertiaAddHelper";
 
 export default async function add(req: ReqType, res: ResType) {
     let entity = ControllerHelper.findEntityObject(req);
+    
     if (!entity.model) {
         return res.status(404).send({error: 'Model not Found'});
     }

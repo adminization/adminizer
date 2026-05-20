@@ -4,7 +4,7 @@ import { FilterCondition } from "../models/FilterAP";
  * Input format for list/feed/export query builder.
  * This is not the internal model query language.
  */
-export interface QueryBuilderParams {
+export interface ListQueryBuilderParams {
     page: number;
     limit: number;
     sort?: string;
@@ -14,7 +14,7 @@ export interface QueryBuilderParams {
     fields?: string[];
 }
 
-export interface QueryBuilderResult<T = any> {
+export interface ListQueryBuilderResult<T = any> {
     data: T[];
     total: number;
     filtered: number;

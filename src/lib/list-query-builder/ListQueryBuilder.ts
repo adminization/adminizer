@@ -4,7 +4,7 @@ import { DataAccessor } from '../DataAccessor';
 import { BaseFieldConfig } from '../../interfaces/adminpanelConfig';
 import { FilterCondition, FilterOperator } from '../../models/FilterAP';
 import { CustomFilterHandler } from '../filters/CustomFilterHandler';
-import { QueryBuilderParams, QueryBuilderResult } from '../../interfaces/queryBuilder';
+import { ListQueryBuilderParams, ListQueryBuilderResult } from '../../interfaces/listQueryBuilder';
 import { CriteriaWhere } from '../../interfaces/queryCriteria';
 
 /**
@@ -29,7 +29,7 @@ export interface CustomFieldCondition {
 }
 
 /**
- * QueryBuilder - replaces legacy NodeTable
+ * ListQueryBuilder - replaces legacy NodeTable
  *
  * Key improvements:
  * - Promise-based API (no callbacks)
@@ -40,7 +40,7 @@ export interface CustomFieldCondition {
  * - Full operator support (eq, neq, gt, gte, lt, lte, like, ilike, in, between, isNull, regex, custom)
  * - Nested AND/OR/NOT groups
  */
-export class QueryBuilder {
+export class ListQueryBuilder {
     private fieldsArray: string[] = ['actions'];
 
     constructor(
@@ -56,14 +56,14 @@ export class QueryBuilder {
      * Public method to build WHERE clause without executing query
      * Useful for external execution (e.g., direct adapter calls)
      */
-    buildWhereClause(params: QueryBuilderParams): CriteriaWhere {
+    buildWhereClause(params: ListQueryBuilderParams): CriteriaWhere {
         return this.buildWhere(params);
     }
 
     /**
      * Execute query with Promise API
      */
-    async execute(params: QueryBuilderParams): Promise<QueryBuilderResult> {
+    async execute(params: ListQueryBuilderParams): Promise<ListQueryBuilderResult> {
         
         const whereClause = this.buildWhere(params);
         const orderClause = this.buildOrder(params);
@@ -96,7 +96,7 @@ export class QueryBuilder {
      * Build WHERE clause from FilterCondition[]
      * Supports nested AND/OR/NOT groups
      */
-    private buildWhere(params: QueryBuilderParams): CriteriaWhere {
+    private buildWhere(params: ListQueryBuilderParams): CriteriaWhere {
         const conditions: CriteriaWhere[] = [];
         
         // 1. Filters from FilterCondition
@@ -712,7 +712,7 @@ export class QueryBuilder {
     /**
      * Build ORDER clause
      */
-    private buildOrder(params: QueryBuilderParams): string {
+    private buildOrder(params: ListQueryBuilderParams): string {
         const sortField = params.sort || 'createdAt';
         const sortDirection = this.sanitizeSortDirection(params.sortDirection as string | undefined);
 
@@ -856,4 +856,4 @@ export class QueryBuilder {
     }
 }
 
-export { QueryBuilder as ModernQueryBuilder };
+export { ListQueryBuilder as ModernListQueryBuilder };

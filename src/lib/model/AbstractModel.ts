@@ -3,7 +3,7 @@ import {formatChanges, sanitizeForDiff} from "../../helpers/diffHelpers";
 import {diff} from "deep-object-diff";
 import { HistoryActionsAP } from "../../models/HistoryActionsAP";
 import { QueryCriteria } from "../../interfaces/queryCriteria";
-import { InternalModelRepository, InternalModelWriteData } from "../../interfaces/internalModelAccess";
+import { InternalModelCreateData, InternalModelRepository, InternalModelUpdateData } from "../../interfaces/internalModelAccess";
 import { INTERNAL_MODEL_ACCESS_TOKEN } from "./internalModelAccessToken";
 
 export interface Attribute {
@@ -83,15 +83,15 @@ export abstract class AbstractModel<T> {
                 return model._count(criteria);
             },
 
-            async create(data: InternalModelWriteData<T>): Promise<T> {
+            async create(data: InternalModelCreateData<T>): Promise<T> {
                 return model._create(data as Partial<T>);
             },
 
-            async update(criteria: QueryCriteria<T>, data: InternalModelWriteData<T>): Promise<T[]> {
+            async update(criteria: QueryCriteria<T>, data: InternalModelUpdateData<T>): Promise<T[]> {
                 return model._update(criteria, data as Partial<T>);
             },
 
-            async updateOne(criteria: QueryCriteria<T>, data: InternalModelWriteData<T>): Promise<T | null> {
+            async updateOne(criteria: QueryCriteria<T>, data: InternalModelUpdateData<T>): Promise<T | null> {
                 return model._updateOne(criteria, data as Partial<T>);
             },
 

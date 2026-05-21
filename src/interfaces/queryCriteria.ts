@@ -47,7 +47,7 @@ export interface CriteriaWhereLogic<TModel = any> {
     not?: CriteriaWhere<TModel>;
 }
 
-type IsAny<T> = 0 extends 1 & T ? true : false;
+export type IsAny<T> = 0 extends 1 & T ? true : false;
 
 export type CriteriaWhere<TModel = any> = IsAny<TModel> extends true
     ? CriteriaWhereLogic<TModel> & { [field: string]: unknown }

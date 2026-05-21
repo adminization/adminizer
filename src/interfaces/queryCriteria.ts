@@ -33,8 +33,7 @@ export type CriteriaFieldInput<TValue = unknown> =
         : TValue;
 
 export type CriteriaFieldValue<TValue = unknown> =
-    | CriteriaPrimitive
-    | CriteriaPrimitive[]
+    | null
     | CriteriaFieldInput<TValue>
     | CriteriaOperatorValue<CriteriaFieldInput<TValue>>;
 
@@ -48,14 +47,27 @@ export interface CriteriaWhereLogic<TModel = any> {
     not?: CriteriaWhere<TModel>;
 }
 
-export type CriteriaWhere<TModel = any> =
-    CriteriaWhereLogic<TModel>
-    & CriteriaKnownFields<TModel>
-    & {
-        [field: string]: CriteriaFieldValue | CriteriaWhere<TModel> | CriteriaWhere<TModel>[] | undefined;
-    };
+type IsAny<T> = 0 extends 1 & T ? true : false;
 
-export type CriteriaPopulate<TModel = any> = Record<string, true | QueryCriteria<any>>;
+export type CriteriaWhere<TModel = any> = IsAny<TModel> extends true
+    ? CriteriaWhereLogic<TModel> & { [field: string]: unknown }
+    : CriteriaWhereLogic<TModel> & CriteriaKnownFields<TModel>;
+
+type PopulatableElement<T> = NonNullable<T> extends Array<infer Item>
+    ? Item
+    : NonNullable<T>;
+
+type PopulatableKeys<TModel> = {
+    [K in keyof TModel]-?: NonNullable<TModel[K]> extends string | number | boolean | Date
+        ? never
+        : K;
+}[keyof TModel];
+
+export type CriteriaPopulate<TModel = any> = IsAny<TModel> extends true
+    ? Record<string, true | QueryCriteria<any>>
+    : {
+        [K in Extract<PopulatableKeys<TModel>, string>]?: true | QueryCriteria<PopulatableElement<TModel[K]>>;
+    };
 
 export interface QueryCriteria<TModel = any> {
     where?: CriteriaWhere<TModel>;

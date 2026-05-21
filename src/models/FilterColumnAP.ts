@@ -26,7 +26,7 @@ export default {
  * FilterColumnAP interface for TypeScript
  */
 export interface FilterColumnAP {
-    id: number;
+    id?: number;
     filter: string | FilterAP;       // BelongsTo FilterAP
     fieldName: string;
     order: number;

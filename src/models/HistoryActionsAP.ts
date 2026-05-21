@@ -44,7 +44,7 @@ export default {
 }
 
 export interface HistoryActionsAP {
-    id: number,
+    id?: number,
     modelId: number | string,
     modelName: string,
     action: string,
@@ -52,7 +52,7 @@ export interface HistoryActionsAP {
     diff: any,
     user: UserAP,
     isCurrent: boolean,
-    createdAt: number,
-    updatedAt: number,
+    createdAt?: number,
+    updatedAt?: number,
     preview: boolean
 }

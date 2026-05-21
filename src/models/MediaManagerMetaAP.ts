@@ -30,7 +30,7 @@ export default {
 
 
 export interface MediaManagerMetaAP {
-    id: string;
+    id?: string;
     key?: string;
     value?: Record<string, unknown>;
     isPublic?: boolean;

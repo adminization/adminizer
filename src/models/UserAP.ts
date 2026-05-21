@@ -59,7 +59,7 @@ export default {
 }
 
 export interface UserAP {
-  id: number;
+  id?: number;
   login: string;
   fullName?: string;
   email?: string;

@@ -1,5 +1,7 @@
+// @ts-ignore - module is resolved at runtime from package.json
 import { HotTable, HotColumn } from '@handsontable/react-wrapper';
 import { registerAllModules } from 'handsontable/registry';
+// @ts-ignore - settings.d.ts exists but is not exposed via handsontable's package.json exports
 import { ColumnSettings, GridSettings } from "handsontable/settings";
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RowObject, CellChange } from "handsontable/common";

@@ -133,7 +133,7 @@ export default {
  * FilterAP interface for TypeScript
  */
 export interface FilterAP {
-    id: string;                      // UUID
+    id?: string;                     // UUID
 
     // Core data
     name: string;                    // Filter name
@@ -164,8 +164,8 @@ export interface FilterAP {
     version: number;                 // Filter format version (starts at 1)
 
     // Timestamps
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 
     // Relations
     columns?: FilterColumnAP[];

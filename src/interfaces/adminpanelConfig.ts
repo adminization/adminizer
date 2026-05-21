@@ -1,6 +1,7 @@
 import {MaterialIcon} from "./MaaterialIcons";
 //@ts-ignore
 import {EditorOptions} from "@toast-ui/editor/types/editor";
+// @ts-ignore - settings.d.ts exists but is not exposed via handsontable's package.json exports
 import {GridSettings as HandsontableSettings} from "handsontable/settings";
 import {GroupAP} from "../models/GroupAP";
 import {UserAP} from "../models/UserAP";

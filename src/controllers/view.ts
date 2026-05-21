@@ -63,7 +63,7 @@ export default async function view(req: ReqType, res: ResType) {
 
             let group: GroupAP
             try {
-                group = await req.adminizer.modelHandler.internal("users").get<GroupAP>("GroupAP").findOne({where: {id: req.params.id}});
+                group = await req.adminizer.modelHandler.internal("users").get<GroupAP>("GroupAP").findOne({where: {id: Number(req.params.id)}});
             } catch (e) {
                 Adminizer.log.error('Admin edit error: ');
                 Adminizer.log.error(e);

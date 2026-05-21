@@ -18,7 +18,7 @@ export default async function (req: ReqType, res: ResType) {
 
     let user: UserAP;
     try {
-        user = await userModel.findOne({where: {id: req.params.id}});
+        user = await userModel.findOne({where: {id: Number(req.params.id)}});
     } catch (e) {
         Adminizer.log.error('Admin edit error: ');
         Adminizer.log.error(e);
@@ -85,7 +85,7 @@ export default async function (req: ReqType, res: ResType) {
 
     if (reloadNeeded) {
         try {
-            user = await userModel.findOne({where: {id: req.params.id}});
+            user = await userModel.findOne({where: {id: Number(req.params.id)}});
         } catch (e) {
             Adminizer.log.error('Admin edit error: ');
             Adminizer.log.error(e);

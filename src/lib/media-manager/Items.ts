@@ -164,8 +164,8 @@ export class ImageItem extends File<MediaManagerItem> {
         return (await this.mediaModel().findOne({ where: { id: id } })).path;
     }
 
-    public async getFile(id: number): Promise<MediaManagerItem> {
-        let item = await this.mediaModel().findOne({ where: { id: id } });
+    public async getFile(id: number | string): Promise<MediaManagerItem> {
+        let item = await this.mediaModel().findOne({ where: { id: String(id) } });
         item.variants = await populateVariants(this.adminizer, item.variants, this.model)
         return item
     }

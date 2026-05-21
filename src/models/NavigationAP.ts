@@ -16,7 +16,7 @@ export default {
 }
 
 export interface NavigationAP {
-    id: string;
+    id?: string;
     label: string;
     tree: Record<string, unknown>;
 }

@@ -75,7 +75,7 @@ export default async function bindAuthorization(adminizer: Adminizer) {
             let passwordHashed = generate("demodemo" + process.env.AP_PASSWORD_SALT);
             let password = 'masked';
             await userModel.create({
-                login: 'demo', password: 'demo', passwordHashed: passwordHashed, fullName: "Administrator",
+                login: 'demo', passwordHashed: passwordHashed, fullName: "Administrator",
                 isActive: true, isAdministrator: true,
                 apiKey: generateUserApiKey()
             });

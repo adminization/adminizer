@@ -26,7 +26,7 @@ export default async function editGroup(req: ReqType, res: ResType) {
 
     let group: GroupAP
     try {
-        group = await groupModel.findOne({where: {id: req.params.id}});
+        group = await groupModel.findOne({where: {id: Number(req.params.id)}});
     } catch (e) {
         Adminizer.log.error('Admin edit error: ');
         Adminizer.log.error(e);
@@ -87,7 +87,7 @@ export default async function editGroup(req: ReqType, res: ResType) {
 
     if (reloadNeeded) {
         try {
-            group = await groupModel.findOne({where: {id: req.params.id}});
+            group = await groupModel.findOne({where: {id: Number(req.params.id)}});
         } catch (e) {
             Adminizer.log.error('Admin edit error: ');
             Adminizer.log.error(e);

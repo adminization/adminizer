@@ -8,10 +8,10 @@ export type InternalModelRelationId = string | number;
 
 export type InternalModelWriteFieldValue<TValue> =
     NonNullable<TValue> extends Array<infer Item>
-        ? Item extends { id: unknown }
+        ? Item extends { id?: unknown }
             ? TValue | InternalModelRelationId[]
             : TValue
-        : NonNullable<TValue> extends { id: unknown }
+        : NonNullable<TValue> extends { id?: unknown }
             ? TValue | InternalModelRelationId
             : TValue;
 

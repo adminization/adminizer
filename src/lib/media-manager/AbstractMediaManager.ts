@@ -1,9 +1,10 @@
 import {Adminizer} from "../Adminizer";
+import {MediaManagerMetaAP} from "../../models/MediaManagerMetaAP";
 
 export interface MediaManagerItem {
-    id: string;
-    parent: string;
-    variants: MediaManagerItem[];
+    id?: string;
+    parent: string | null;
+    variants?: MediaManagerItem[];
     // TODO: create versions realization
     // version?: null
     mimeType: string;
@@ -16,9 +17,9 @@ export interface MediaManagerItem {
     group?: string;
     url: string;
     filename: string;
-    meta: string[];
-    createdAt: number;
-    updatedAt: number;
+    meta?: MediaManagerMetaAP[];
+    createdAt?: number;
+    updatedAt?: number;
 }
 
 
@@ -155,7 +156,7 @@ export abstract class File<T extends MediaManagerItem> {
 
     public abstract getOrigin(id: string): Promise<string>;
 
-    public abstract getFile(id: number): Promise<MediaManagerItem>
+    public abstract getFile(id: number | string): Promise<MediaManagerItem>
 }
 
 /**
@@ -340,7 +341,7 @@ export abstract class AbstractMediaManager {
         return this.getItemType("image")?.getOrigin(id);
     }
 
-    public getFile(mimeType: string, id: number){
+    public getFile(mimeType: string, id: number | string){
         const parts = mimeType.split("/");
         return this.getItemType(parts[0])?.getFile(id);
     }

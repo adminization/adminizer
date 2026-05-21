@@ -24,7 +24,7 @@ export default {
 }
 
 export interface GroupAP {
-  id: number;
+  id?: number;
   name: string;
   description?: string;
   tokens?: string[];

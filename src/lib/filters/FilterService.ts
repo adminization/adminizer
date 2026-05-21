@@ -282,7 +282,7 @@ export class FilterService {
         data.apiEnabled = data.apiEnabled || false;
         data.conditions = data.conditions || [];
 
-        return await filterModel.create(data);
+        return await filterModel.create(data as FilterAP);
     }
 
     /**

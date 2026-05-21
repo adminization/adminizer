@@ -323,7 +323,7 @@ async function sendXlsxExport(res: ResType, data: Record<string, any>[], modelNa
     let XLSX: any;
 
     try {
-        XLSX = await import('xlsx');
+        XLSX = await import('xlsx' as any);
     } catch (err) {
         Adminizer.log.error('xlsx library not installed. Install with: npm install xlsx');
         return res.status(500).json({

@@ -182,6 +182,9 @@ let adminpanelConfig: AdminpanelConfig = {
     },
     mediamanager: {
         fileStoragePath: '.tmp/public',
+    },
+    filters: {
+        enabled: false
     }
 }
 

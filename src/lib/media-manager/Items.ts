@@ -199,7 +199,7 @@ export class ImageItem extends File<MediaManagerItem> {
         });
     }
 
-    // TODO  {where: {isPublic: true}, sort: "id ASC"} ???
+    // TODO  {where: {isPublic: true}, sort: "id ASC"} -> need add sort by id
     public async getMeta(id: string,): Promise<{ key: string; value: string }[]> {
         return ((await this.mediaModel().find({
             where: { id: id },

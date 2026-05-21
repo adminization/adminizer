@@ -484,7 +484,7 @@ export default class Router {
         } else {
             adminizer.app.all(adminizer.config.routePrefix, withPolicies(_welcome, requireAuthUI()));
         }
-        // TODO emit can be used in tests
+        
         adminizer.emitter.emit("router:bound");
     }
 
@@ -514,6 +514,7 @@ export default class Router {
 
     public async bindModelRoutes(model: string, policies?: MiddlewareType[]): Promise<void> {
         if (!policies) policies = this.adminizer.config.middlewares;
+
         if (this.modelRoutePatterns.has(model)) {
             this.unbindModelRoutes(model);
         }

@@ -340,10 +340,6 @@ class NavigationItem extends AbstractItem<NavItem> {
 		return await storage.findElementById(itemId);
 	}
 
-	/**
-	 * @deprecated reason: transition to Inertia
-	* // TODO: need passing custom React module 
-	*/
 	async getAddTemplate(req: ReqType): Promise<{
         type: 'component' | 'navigation.group' | 'navigation.link' | 'model' | 'model.link',
         data: {

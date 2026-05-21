@@ -33,8 +33,9 @@ export class FieldsHelper {
 	 * @param {Object} fields
 	 * @param user
 	 * @param action
-	 * @deprecated use DataModel class
+	 * @deprecated this method has overload association tree on each request that is not optimize
 	 */
+	// TODO: make separate request for all dropdown relations by api call
 	public static async loadAssociations(req: ReqType, fields: Fields, action?: ActionType): Promise<Fields> {
 		/**
 		 * Load all associated records for given field key

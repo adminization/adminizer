@@ -8,7 +8,6 @@ The system is specifically designed to be **framework- and ORM-agnostic**, runni
 Thanks to this approach, Adminizer can be integrated into any server-side application, regardless of its architecture.
 
 The project is **open-source**, **free to use**, and focused on building an **open community**.  
-We would like to express special thanks to **Konstantin Zolotarev**, who laid the foundation with the **sails-adminpanel** project, which we later reworked and generalized.
 
 ---
 
@@ -51,6 +50,8 @@ Extension points in Adminizer follow the **Handler Registry** pattern — a comb
 This keeps the core framework-agnostic while letting every integration swap in its own behavior.
 
 ---
+
+We would like to express special thanks to **Konstantin Zolotarev**, who laid the foundation with the **sails-adminpanel** project, which we later reworked and generalized.
 
 > All agents must read the **AGENTS.md** file before proceeding. It contains important guidelines and responsibilities required for proper operation.
 

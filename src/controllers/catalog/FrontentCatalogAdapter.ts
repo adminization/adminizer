@@ -34,10 +34,7 @@ interface RequestData {
     _method: string;
 }
 
-/**
- * @deprecated Now is React
- * // TODO: refactor for react name
- */
+
 export class FrontendCatalog {
     catalog: AbstractCatalog;
 
@@ -141,13 +138,6 @@ export class FrontendCatalog {
     }
 
     async createItem(data: any, req: ReqType) {
-        // TODO It's not clear why it's here.
-        //data = VueCatalogUtils.refinement(data);
-        // if (this.catalog.slug !== "navigation") {
-        //     let item = data.record;
-        //     item.parenId = data.parenId;
-        //     return await this.catalog.createItem(item, req);
-        // } else {
         if (data.parentId === 0) data.parentId = null;
         return await this.catalog.createItem(data, req);
         // }
@@ -191,11 +181,7 @@ export class FrontendCatalog {
 
 
     async updateItem(item: any, modelId: string, data: any, req: ReqType) {
-        //TODO It's not clear why it's here.
-        //data = VueCatalogUtils.refinement(data);
-        // if (this.catalog.slug !== "navigation") {
-        //     return await this.catalog.updateModelItems(data.modelId, data.type, data.record, req);
-        // } else {
+       
         let normalizedModelId = modelId;
         if (normalizedModelId === '0') normalizedModelId = null;
         return await this.catalog.updateModelItems(normalizedModelId, item.type, data, req);

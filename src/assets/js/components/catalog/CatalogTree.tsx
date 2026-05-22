@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
-import {router} from '@inertiajs/react'
+import {router, usePage} from '@inertiajs/react'
 import {
     Tree,
     getBackendOptions,
@@ -63,8 +63,10 @@ const CatalogTree = () => {
         movingGroupsRootOnly: false
     })
 
+    const page = usePage<{uiMessages?: Record<string, string>}>()
+    const messages = (page.props.uiMessages || {}) as Record<string, string>
+
     const [items, setItems] = useState<CatalogItem[]>([])
-    const [messages, setMessages] = useState<Record<string, string>>({})
     const [isLoading, setIsLoading] = useState(false)
     const dialogRef = useRef<DialogStackHandle>(null);
     const [addItemProps, setAddItemProps] = useState({items: [], model: "", labels: {}})
@@ -116,17 +118,9 @@ const CatalogTree = () => {
             setIsNavigation(resCatalog.catalogSlug === "navigation");
         };
 
-        const initLocales = async () => {
-            let res = await axios.post('', {
-                _method: 'getLocales'
-            });
-            setMessages(res.data.data);
-        };
-
         const initCatalog = async () => {
             try {
                 setIsLoading(true);
-                await initLocales();
                 await fetchData();
             } catch (error) {
                 console.error('Error initializing catalog:', error);
@@ -706,15 +700,10 @@ const CatalogTree = () => {
                     <Skeleton className="h-full w-full rounded-md"/>
                 </>
             ) : (
-                <CatalogContext.Provider value={
-                    {
-                        messages,
-                        setMessages
-                    }
-                }>
+                <CatalogContext.Provider value={{ messages }}>
                     <Toaster position="top-center" richColors closeButton/>
                     <div className="flex gap-8 items-center mb-4">
-                        <h1 className="text-[28px] leading-[36px] text-foreground">{messages[catalog.catalogName]}</h1>
+                        <h1 className="text-[28px] leading-[36px] text-foreground">{catalog.catalogName}</h1>
                         {catalog.idList.length === 1 && selectedCatalogId && (
                             <Badge variant="secondary" className="px-3 py-1 text-sm">
                                 {selectedCatalogId}

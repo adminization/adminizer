@@ -114,6 +114,8 @@ export interface Field {
     required?: boolean;
     isIn?: string[] | object;
     options?: any;
+    relatedModel?: string;
+    canCreateRelated?: boolean;
 }
 
 export interface Catalog {

@@ -55,6 +55,8 @@ const ViewAll = () => {
     const [selectedUser, setSelectedUser] = useState<string>('all');
     const [date, setDate] = useState<DateRange | undefined>(undefined)
     const messages = page.props.messages
+    const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
+    const diffLabel = messages?.["Diff"] || uiMessages.Diff || 'Diff';
     
     const fetchHistory = async (offset: number, model: string = 'all', user: string = 'all', reset = false, dateRange: DateRange | undefined) => {
         setLoadingMore(true);
@@ -331,13 +333,17 @@ const ViewAll = () => {
                         }, 300);
                     }
                 }}>
-                    <DialogContent className="z-[1022] sm:max-w-[60vw]">
-                        <DialogHeader>
-                            <DialogTitle>Diff</DialogTitle>
-                        </DialogHeader>
-                        <DiffViewer changes={diffItem} className="max-h-[80vh] overflow-auto sm:max-w-[60vw] w-full" />
-                    </DialogContent>
-                </Dialog>
+                        <DialogContent className="z-[1022] sm:max-w-[60vw]">
+                            <DialogHeader>
+                                <DialogTitle>{diffLabel}</DialogTitle>
+                            </DialogHeader>
+                            <DiffViewer
+                                changes={diffItem}
+                                className="max-h-[80vh] overflow-auto sm:max-w-[60vw] w-full"
+                                messages={{ ...uiMessages, ...messages }}
+                            />
+                        </DialogContent>
+                    </Dialog>
             </div>
         </div>
     )

@@ -1,4 +1,5 @@
 import {NavMain} from '@/components/nav-main';
+import {FeedbackModal} from '@/components/modals/feedback-modal';
 import {
     Sidebar,
     SidebarContent,
@@ -26,6 +27,7 @@ import {Collapsible, CollapsibleContent} from "@radix-ui/react-collapsible";
 import {CollapsibleTrigger} from "@/components/ui/collapsible.tsx";
 
 declare const __APP_VERSION__: string;
+declare const __BUILD_TIME__: string;
 
 type Section = {
     id: string
@@ -239,8 +241,25 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <div className="text-center opacity-70">
-                    {page.props.showVersion && `v.${page.props.versionText || __APP_VERSION__}`}
+                <div className="flex flex-col items-center">
+                    {(page.props as any).version && (() => {
+                        const v = (page.props as any).version as { text: string | null; link: string | null; hint: string | null };
+                        const versionStr = v.text || __APP_VERSION__;
+                        const buildDate = new Date(__BUILD_TIME__).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                        // Show build date only when version text is the raw semver (not a custom string like startup time)
+                        const label = v.text ? `v.${versionStr}` : `v.${versionStr} · ${buildDate}`;
+                        const cls = "text-center opacity-70 hover:opacity-100 transition-opacity text-xs";
+                        return v.link ? (
+                            <a href={v.link} target="_blank" rel="noreferrer" title={v.hint ?? undefined} className={cls}>
+                                {label}
+                            </a>
+                        ) : (
+                            <span title={v.hint ?? undefined} className={cls}>
+                                {label}
+                            </span>
+                        );
+                    })()}
+                    {(page.props as any).showFeedback && <FeedbackModal />}
                 </div>
             </SidebarFooter>
         </Sidebar>

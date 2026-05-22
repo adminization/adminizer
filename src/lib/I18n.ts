@@ -103,8 +103,10 @@ export class I18n {
             }
             locale = this.defaultLocale;
         }
-        const translation = I18n.locales[locale][singular];
+        const localeDictionary = I18n.locales[locale] || {};
+        const translation = localeDictionary[singular];
         if (!translation && this.devMode) {
+            I18n.locales[locale] = I18n.locales[locale] || {};
             I18n.locales[locale][singular] = plural ? {one: singular, other: plural} : singular;
             this.writeFile(locale);
         }
@@ -121,7 +123,11 @@ export class I18n {
 
         try {
             const data = fs.readFileSync(file, "utf8");
-            I18n.locales[locale] = JSON.parse(data);
+            const parsed = JSON.parse(data);
+            I18n.locales[locale] = {
+                ...(I18n.locales[locale] || {}),
+                ...parsed
+            };
             if (!this.devMode) {
                 I18n.localeCache[file] = I18n.locales[locale];
             }

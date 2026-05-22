@@ -4,7 +4,6 @@
 import {Entity} from "../interfaces/types";
 import {
     ActionType,
-    BaseFieldConfig,
     FieldsModels,
     FieldsTypes,
     ModelConfig,
@@ -91,25 +90,20 @@ export class DataAccessor {
             let fldConfig: Field["config"] = {key: key, title: key};
             let associatedModelConfig: ModelConfig = undefined;
 
-            /** Combine the field configuration from global and action-specific configs
-             *  (now combine it before check, earlier was opposite).
-             *  Action-specific config should overwrite the global one */
-                // merge configs if they are both objects or pick priority one if not
-            const combinedFieldConfig =
-                    typeof fieldsConfig[key] === "object" && typeof actionConfig.fields[key] === "object"
-                        ? {...fieldsConfig[key], ...actionConfig.fields[key]}
-                        : actionConfig.fields[key] !== undefined
-                            ? actionConfig.fields[key]
-                            : fieldsConfig[key];
+            // Action-specific config has priority over global; objects are merged
+            const globalFieldConfig = fieldsConfig[key];
+            const actionFieldConfig = actionConfig.fields?.[key];
 
-            if (combinedFieldConfig !== undefined) {
-                /** Access rights check (check groupsAccessRights field if exists, if not - allow to all except default user group) */
-                let hasAccess = this.checkFieldAccess(key, combinedFieldConfig);
-                if (!hasAccess) {
+            if (globalFieldConfig || actionFieldConfig) {
+                const rawFieldConfig = { ...globalFieldConfig, ...actionFieldConfig };
+                const normalizedFieldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, rawFieldConfig, key, modelField);
+                if (!normalizedFieldConfig) {
                     return;
                 }
-
-                fldConfig = {...fldConfig, ...this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, combinedFieldConfig, key, modelField)};
+                if (!this.checkFieldAccess(key, normalizedFieldConfig)) {
+                    return;
+                }
+                fldConfig = { ...fldConfig, ...normalizedFieldConfig };
             }
 
             // Populate associated fields configuration if field is an association
@@ -144,8 +138,8 @@ export class DataAccessor {
             // Default type for field. Could be fetched form config file or file model if not defined in config file.
             fldConfig.type = ((fldConfig.type || modelField.type).toLowerCase() as FieldsTypes);
 
-            // Normalize final configuration
-            fldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fldConfig, key, modelField);
+            // Normalize final configuration (fldConfig is always an object here, normalize never returns undefined)
+            fldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fldConfig, key, modelField)!;
 
             // Add new field to result set
             result[key] = {config: fldConfig, model: modelField, populated: populatedModelFieldsConfig, modelConfig: associatedModelConfig };
@@ -175,27 +169,28 @@ export class DataAccessor {
         const fieldsConfig = modelConfig.fields || {};
 
         // Merge action-specific fields configuration if it exists
+        const addCfg = typeof modelConfig.add === "object" ? modelConfig.add : undefined;
+        const editCfg = typeof modelConfig.edit === "object" ? modelConfig.edit : undefined;
+        const listCfg = typeof modelConfig.list === "object" ? modelConfig.list : undefined;
         let actionSpecificConfig: FieldsModels = {};
-        if (modelConfig && typeof modelConfig === "object" && typeof modelConfig['add'] !== "boolean" && typeof modelConfig['edit'] !== "boolean" && typeof modelConfig['list'] !== "boolean") {
-            switch (this.action) {
-                case "add":
-                    actionSpecificConfig = modelConfig['add']?.fields || {};
-                    break;
-                case "edit":
-                    actionSpecificConfig = modelConfig['edit']?.fields || {};
-                    break;
-                case "list":
-                    actionSpecificConfig = modelConfig['list']?.fields || {};
-                    break;
-                case "view":
-                    actionSpecificConfig = modelConfig['edit']?.fields || {};
-                    break;
-                case "remove":
-                    actionSpecificConfig = {}
-                    break;
-                default:
-                    throw `Action type error: unknown type [${this.action}]`
-            }
+        switch (this.action) {
+            case "add":
+                actionSpecificConfig = addCfg?.fields || {};
+                break;
+            case "edit":
+                actionSpecificConfig = editCfg?.fields || {};
+                break;
+            case "list":
+                actionSpecificConfig = listCfg?.fields || {};
+                break;
+            case "view":
+                actionSpecificConfig = editCfg?.fields || {};
+                break;
+            case "remove":
+                actionSpecificConfig = {}
+                break;
+            default:
+                throw `Action type error: unknown type [${this.action}]`
         }
         const mergedFieldsConfig = {...fieldsConfig, ...actionSpecificConfig};
 
@@ -208,11 +203,10 @@ export class DataAccessor {
 
             // If fieldConfig exists, normalize it and merge with the basic config
             if (fieldConfig) {
-                const hasAccess = this.checkFieldAccess(key, fieldConfig);
-
-                // Skip the field if access is denied
-                if (!hasAccess) return;
-                fldConfig = {...fldConfig, ...this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fieldConfig, key, modelField)};
+                const normalizedFieldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fieldConfig, key, modelField);
+                if (!normalizedFieldConfig) return;
+                if (!this.checkFieldAccess(key, normalizedFieldConfig)) return;
+                fldConfig = { ...fldConfig, ...normalizedFieldConfig };
             }
 
             // Add the field to associatedFields regardless of config presence
@@ -228,20 +222,11 @@ export class DataAccessor {
     }
 
     private checkFieldAccess(key: string, fieldConfig: Field["config"]): boolean {
-        // If config is set to false skip this field
-        if (fieldConfig === false) {
-            return false;
-        }
-
         if (this.entity.model.primaryKey === key) {
             return true;
         }
 
         if (this.user.isAdministrator) {
-            return true;
-        }
-
-        if (typeof fieldConfig !== "object") {
             return true;
         }
 
@@ -278,8 +263,7 @@ export class DataAccessor {
 
             // Check access to the field
             if (this.checkFieldAccess(fieldKey, fieldConfig.config)) {
-                const fieldConfigConfig = fieldConfig.config as BaseFieldConfig; // in this.fields configs are only objects
-                const fieldType = fieldConfigConfig.type;
+                const fieldType = fieldConfig.config.type;
                 // Handle fields that are not associations
                 if (fieldType !== 'association' && fieldType !== 'association-many') {
                     filteredRecord[fieldKey] = fieldValue;
@@ -424,26 +408,11 @@ export class DataAccessor {
                     );
                 }
 
-                // Fetch the intermediate record associated with the user
-                // TODO refactor CRUD functions for DataAccessor usage
-                const intermediateRecord = await intermediateModel["_findOne"]({[via]: this.user.id});
-                if (!intermediateRecord) {
-                    throw new Error(
-                        `No intermediate record found in model "${intermediateRelation.model}" associated with user ID "${this.user.id}"`
-                    );
-                }
-
-                // Ensure there is only one associated intermediate record
-                const intermediateRecordCount = await intermediateModel.count({[via]: this.user.id}, this);
-                if (intermediateRecordCount > 1) {
-                    throw new Error(
-                        `Multiple intermediate records found in model "${intermediateRelation.model}" associated with user ID "${this.user.id}". ` +
-                        `Expected only one`
-                    );
-                }
-
-                // Add the intermediate record ID to the criteria
-                sanitizedCriteria = {...sanitizedCriteria, [field]: intermediateRecord.id}
+                // Fetch all intermediate records associated with the user
+                const intermediateRecords = await intermediateModel["_find"]({[via]: this.user.id});
+                const intermediateIds = (intermediateRecords || []).map((r) => r.id);
+                // Filter main model by all matching intermediate record IDs
+                sanitizedCriteria = {...sanitizedCriteria, [field]: {in: intermediateIds}};
             }
         }
 
@@ -493,54 +462,42 @@ export class DataAccessor {
                 // If userAccessRelation is an object
                 const {field, via} = userAccessRelation;
 
-                // only admin can set user access relation manually
+                // For non-admins: validate that the chosen intermediate record belongs to the user
                 if (updatedRecord[field as keyof T] && !this.user.isAdministrator) {
-                    delete updatedRecord[field as keyof T];
-                }
+                    if (!via) {
+                        throw new Error(`Invalid userAccessRelation configuration: "via" is required`);
+                    }
 
-                // Get attributes of the current model and validate the intermediate relation
-                const modelAttributes = this.entity.model.attributes;
-                const intermediateRelation = modelAttributes[field];
-                if (!intermediateRelation || !intermediateRelation.model) {
-                    throw new Error(`Invalid intermediate relation configuration for field "${field}" in model ${this.entity.model.modelname}`);
-                }
+                    const modelAttributes = this.entity.model.attributes;
+                    const intermediateRelation = modelAttributes[field];
+                    if (!intermediateRelation || !intermediateRelation.model) {
+                        throw new Error(`Invalid intermediate relation configuration for field "${field}" in model ${this.entity.model.modelname}`);
+                    }
 
-                // Retrieve the intermediate model
-                const intermediateModel = this.adminizer.modelHandler.model.get(intermediateRelation.model.toLowerCase());
-                if (!intermediateModel) {
-                    throw new Error(`Intermediate model "${intermediateRelation.model}" not found`);
-                }
+                    const intermediateModel = this.adminizer.modelHandler.model.get(intermediateRelation.model.toLowerCase());
+                    if (!intermediateModel) {
+                        throw new Error(`Intermediate model "${intermediateRelation.model}" not found`);
+                    }
 
-                // Validate the `via` field in the intermediate model
-                const intermediateAttributes = intermediateModel.attributes;
-                const viaRelation = intermediateAttributes[via];
-                if (!viaRelation || viaRelation.model.toLowerCase() !== 'userap') {
-                    throw new Error(
-                        `Unsupported or invalid via field "${via}" in intermediate model "${intermediateRelation.model}". ` +
-                        `Currently, only relations to "userap" are supported`
-                    );
-                }
+                    // Validate the `via` field in the intermediate model
+                    const intermediateAttributes = intermediateModel.attributes;
+                    const viaRelation = intermediateAttributes[via];
+                    if (!viaRelation || !viaRelation.model || viaRelation.model.toLowerCase() !== 'userap') {
+                        throw new Error(
+                            `Unsupported or invalid via field "${via}" in intermediate model "${intermediateRelation.model}". ` +
+                            `Currently, only relations to "userap" are supported`
+                        );
+                    }
 
-                // Find an existing intermediate record linking the user to the main record
-                // TODO refactor CRUD functions for DataAccessor usage
-                const intermediateRecord = await intermediateModel["_findOne"]({[via]: this.user.id});
-                if (!intermediateRecord) {
-                    throw new Error(
-                        `No intermediate record found in model "${intermediateRelation.model}" linking user "${this.user.id}" to the main record`
-                    );
+                    const intermediatePk = (intermediateModel.primaryKey ?? 'id') as string;
+                    const chosenId = typeof updatedRecord[field as keyof T] === 'object'
+                        ? (updatedRecord[field as keyof T] as Record<string, unknown>)[intermediatePk]
+                        : updatedRecord[field as keyof T];
+                    const record = await intermediateModel["_findOne"]({[intermediatePk]: chosenId, [via]: this.user.id});
+                    if (!record) {
+                        throw new Error(`Access denied: "${field}" does not belong to the current user`);
+                    }
                 }
-
-                // Ensure there is only one associated intermediate record
-                const intermediateRecordCount = await intermediateModel.count({[via]: this.user.id}, this);
-                if (intermediateRecordCount > 1) {
-                    throw new Error(
-                        `Multiple intermediate records found in model "${intermediateRelation.model}" associated with user ID "${this.user.id}". ` +
-                        `Expected only one`
-                    );
-                }
-
-                // Set the ID of the intermediate record to the main record's field
-                updatedRecord[field as keyof T] = intermediateRecord.id as T[keyof T];
             }
         }
         return updatedRecord;

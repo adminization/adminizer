@@ -9,6 +9,15 @@ import {useEffect, useRef, useState} from 'react';
 import {useAppearance} from "@/hooks/use-appearance";
 import {setFieldError} from "@/hooks/form-state";
 
+function normalizeContent(content: any, json: any) {
+    if (content !== undefined) {
+        return content && typeof content === 'object' && ('json' in content || 'text' in content)
+            ? content
+            : {json: content};
+    }
+    return json !== undefined ? {json} : undefined;
+}
+
 export default function VanillaJSONEditor(props: JSONEditorPropsOptional & Record<string, any>) {
     const refContainer = useRef<HTMLDivElement | null>(null);
     const refEditor = useRef<JsonEditor | null>(null);
@@ -18,25 +27,22 @@ export default function VanillaJSONEditor(props: JSONEditorPropsOptional & Recor
     const [theme, setTheme] = useState<string>('')
 
     useEffect(() => {
-        if (appearance === 'dark') {
-            setTheme('jse-theme-dark');
-        } else {
-            setTheme('');
-        }
+        const isDark = appearance === 'dark' || (appearance === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        setTheme(isDark ? 'jse-theme-dark' : '');
     }, [appearance]);
 
     useEffect(()=>{
        if(refEditor.current){
            refEditor.current.updateProps({
-               content: props.content ? {json: props.content} : props.json ? {json: props.json} : undefined
+               content: normalizeContent(props.content, props.json)
            })
        }
        
-    }, [props.content])
+    }, [props.content, props.json])
 
     useEffect(() => {
         const validator = props.schema ? createAjvValidator({schema: props.schema as JSONSchema}) : undefined;
-        const content = props.content ? {json: props.content} : props.json ? {json: props.json} : undefined;
+        const content = normalizeContent(props.content, props.json);
 
         refEditor.current = createJSONEditor({
             target: refContainer.current as HTMLDivElement,
@@ -97,7 +103,7 @@ export default function VanillaJSONEditor(props: JSONEditorPropsOptional & Recor
                 refEditor.current = null;
             }
         };
-    }, []);
+    }, [props.schema]);
 
     // update props
     useEffect(() => {
@@ -105,6 +111,14 @@ export default function VanillaJSONEditor(props: JSONEditorPropsOptional & Recor
             // only pass the props that actually changed
             // since the last time to prevent syncing issues
             const changedProps = filterUnchangedProps(props, refPrevProps.current);
+            if ('content' in changedProps || 'json' in changedProps) {
+                changedProps.content = normalizeContent(props.content, props.json);
+                delete (changedProps as Record<string, any>).json;
+            }
+            if ('schema' in changedProps) {
+                changedProps.validator = props.schema ? createAjvValidator({schema: props.schema as JSONSchema}) : undefined;
+                delete changedProps.schema;
+            }
             refEditor.current.updateProps(changedProps);
             refPrevProps.current = props;
         }
@@ -121,10 +135,10 @@ function filterUnchangedProps(
 
     for (const [key, value] of Object.entries(props)) {
         if (key === 'content') {
-            const currentJson = value?.json;
+            const currentJson = JSON.stringify(normalizeContent(value, undefined));
             // @ts-ignore
-            const prevJson = prevProps[key]?.json;
-            if (JSON.stringify(currentJson) !== JSON.stringify(prevJson)) {
+            const prevJson = JSON.stringify(normalizeContent(prevProps[key], undefined));
+            if (currentJson !== prevJson) {
                 changedProps[key] = value;
             }
         } else if (value !== prevProps[key as keyof JSONEditorPropsOptional]) {

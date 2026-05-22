@@ -7,6 +7,28 @@ import { InertiaMenuHelper } from "../helpers/inertiaMenuHelper";
 import { isAdminizerViteDevMode } from "../helpers/runtimeMode";
 
 export function bindInertia(adminizer: Adminizer) {
+    const escapeHtmlAttribute = (value: string): string => value
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    const resolveFaviconHref = (): string => {
+        const customFavicon = adminizer.config.favicon?.trim();
+        if (!customFavicon) {
+            return `${adminizer.config.routePrefix}/files/favicon.png`;
+        }
+
+        if (/^[a-z][a-z0-9+.-]*:/i.test(customFavicon) || customFavicon.startsWith("//")) {
+            return customFavicon;
+        }
+
+        if (customFavicon.startsWith("/")) {
+            return customFavicon;
+        }
+
+        return `${adminizer.config.routePrefix}/${customFavicon.replace(/^\/+/, "")}`;
+    };
 
     const viteRender = () => {
         if (isAdminizerViteDevMode()) {
@@ -70,7 +92,6 @@ export function bindInertia(adminizer: Adminizer) {
             // Route prefix script
             const routePrefixScript = `<script>window.routePrefix = "${adminizer.config.routePrefix}";</script>`;
 
-            // For Sails JS
             const bindPublic = `<script>window.bindPublic = ${adminizer.config.bind?.public}</script>`;
             return `
                 ${preloadLinks.join('\n')}
@@ -83,12 +104,14 @@ export function bindInertia(adminizer: Adminizer) {
     };
 
     const getHtml = (page: Page, _viewData: Record<string, string>) => {
+        const faviconHref = escapeHtmlAttribute(resolveFaviconHref());
+
         return `
        <!DOCTYPE html><html lang="${_viewData.lang}">
         <head>
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <meta charset="utf-8"><title inertia></title>
-            <link rel="icon" type="image/png" href="${adminizer.config.routePrefix}/files/favicon.png">
+            <link rel="icon" type="image/png" href="${faviconHref}">
             ${viteRender()}
             </head>
         <body>
@@ -115,7 +138,7 @@ export function bindInertia(adminizer: Adminizer) {
                 return req.flash.flashAll();
             },
             csrf: {
-                enabled: true,
+                enabled: adminizer.configHelper.isCsrfEnabled(),
                 cookieName: 'XSRF-TOKEN',
                 headerName: 'x-xsrf-token'
             }
@@ -125,15 +148,74 @@ export function bindInertia(adminizer: Adminizer) {
 
     adminizer.app.use((req: ReqType, _, next) => {
         checkAuth(req, adminizer)
+        const defaultLocale = typeof req.adminizer.config.translation !== "boolean"
+            ? req.adminizer.config.translation.defaultLocale
+            : "en";
 
         req.Inertia.setViewData({
-            lang: req.user?.locale || 'en',
+            lang: req.user?.locale || defaultLocale,
         })
         const menuHelper = new InertiaMenuHelper(adminizer)
 
         req.Inertia.shareProps({
             auth: {
                 user: req.session.userPretended ?? req.user
+            },
+            routePrefix: req.adminizer.config.routePrefix,
+            uiMessages: {
+                Delete: req.i18n.__("Delete"),
+                Diff: req.i18n.__("Diff"),
+                Preview: req.i18n.__("Preview"),
+                Add: req.i18n.__("Add"),
+                Search: req.i18n.__("Search"),
+                Yes: req.i18n.__("Yes"),
+                No: req.i18n.__("No"),
+                On: req.i18n.__("On"),
+                Off: req.i18n.__("Off"),
+                Hide: req.i18n.__("Hide"),
+                Show: req.i18n.__("Show"),
+                "No notifications found": req.i18n.__("No notifications found"),
+                "No widgets found": req.i18n.__("No widgets found"),
+                "Changes not found": req.i18n.__("Changes not found"),
+                Old: req.i18n.__("Old"),
+                New: req.i18n.__("New"),
+                Added: req.i18n.__("Added"),
+                Removed: req.i18n.__("Removed"),
+                Updated: req.i18n.__("Updated"),
+                "changed type": req.i18n.__("changed type"),
+                "Error: Invalid field data": req.i18n.__("Error: Invalid field data"),
+                "Error: Fields data is invalid": req.i18n.__("Error: Fields data is invalid"),
+                "No fields to display": req.i18n.__("No fields to display"),
+                "Error: Some fields are missing required properties (name, type, label)": req.i18n.__(
+                    "Error: Some fields are missing required properties (name, type, label)"
+                ),
+                Edit: req.i18n.__("Edit"),
+                create: req.i18n.__("create"),
+                Clean: req.i18n.__("Clean"),
+                "Are you sure?": req.i18n.__("Are you sure?"),
+                "Select Item type": req.i18n.__("Select Item type"),
+                "Select Ids": req.i18n.__("Select Ids"),
+                "Open in a new window": req.i18n.__("Open in a new window"),
+                Visible: req.i18n.__("Visible"),
+                "Performing an action...": req.i18n.__("Performing an action..."),
+                "Action completed": req.i18n.__("Action completed"),
+                Save: req.i18n.__("Save"),
+                First: req.i18n.__("First"),
+                Last: req.i18n.__("Last"),
+                Previous: req.i18n.__("Previous"),
+                Next: req.i18n.__("Next"),
+                "Send feedback": req.i18n.__("Send feedback"),
+                "Feedback": req.i18n.__("Feedback"),
+                "Title": req.i18n.__("Title"),
+                "Description": req.i18n.__("Description"),
+                "Attach files": req.i18n.__("Attach files"),
+                "Send": req.i18n.__("Send"),
+                "Sending...": req.i18n.__("Sending..."),
+                "Feedback sent successfully": req.i18n.__("Feedback sent successfully"),
+                "Title is required": req.i18n.__("Title is required"),
+                "File size exceeds the 5 MB limit": req.i18n.__("File size exceeds the 5 MB limit"),
+                "Remove file": req.i18n.__("Remove file"),
+                "Max 5 MB per file": req.i18n.__("Max 5 MB per file"),
             },
             menu: req.user ? menuHelper.getMenuItems(req) : null,
             title: menuHelper.getBrandTitle(),
@@ -154,8 +236,16 @@ export function bindInertia(adminizer: Adminizer) {
                     }))
                 )
             ] : null,
-            showVersion: req.adminizer.config.showVersion ?? false,
-            versionText: req.adminizer.config.versionText ?? null,
+            version: (() => {
+                const v = req.adminizer.config.showVersion;
+                if (!v) return null;
+                if (v === true)   return { text: null, link: null, hint: null };
+                if (typeof v === 'string') return { text: v, link: null, hint: null };
+                return { text: v.text ?? null, link: v.link ?? null, hint: v.hint ?? null };
+            })(),
+            showFeedback: req.adminizer.feedbackHandler?.isRegistered() ?? false,
+            feedbackTriggerLabel: req.adminizer.feedbackHandler?.getTriggerLabel() ?? null,
+            feedbackPlaceholder: req.adminizer.feedbackHandler?.getPlaceholder() ?? null,
             notifications: req.adminizer.config.notifications.enabled ?? false,
             aiAssistant: {
                 enabled: req.adminizer.config.aiAssistant?.enabled ?? false,
@@ -195,4 +285,7 @@ function checkAuth(req: ReqType, adminizer: Adminizer) {
         }
     }
 
+    if (req.i18n && typeof adminizer.config.translation !== 'boolean') {
+        req.i18n.setLocale(req.user?.locale || adminizer.config.translation.defaultLocale);
+    }
 }

@@ -6,6 +6,8 @@ import {
     ChevronDown,
     XIcon,
     WandSparkles,
+    ExternalLink,
+    Plus,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -25,6 +27,8 @@ import {
     CommandList,
     CommandSeparator,
 } from "@/components/ui/command";
+import { usePage } from "@inertiajs/react";
+import { SharedData } from "@/types";
 
 const multiSelectVariants = cva(
     "m-1 flex items-center border rounded-sm px-1",
@@ -71,6 +75,16 @@ interface MultiSelectProps
      */
     mode?: 'multiple' | 'single';
     processing?: boolean;
+    /**
+     * Called when user clicks the "open" icon on a selected chip.
+     * If provided, an ExternalLink icon is rendered next to each chip.
+     */
+    onOpenItem?: (value: string) => void;
+    /**
+     * Called when user clicks the "+" button to create a new related record.
+     * If provided, an add button is rendered in the selected-values area.
+     */
+    onAddNew?: () => void;
 }
 
 const MultiSelect = React.forwardRef<
@@ -94,10 +108,14 @@ const MultiSelect = React.forwardRef<
             asChild = false,
             className,
             mode = 'multiple',
+            onOpenItem,
+            onAddNew,
             ...props
         },
         ref
     ) => {
+        const page = usePage<SharedData>();
+        const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
         const [selectedValues, setSelectedValues] = React.useState<string[]>(defaultValue);
         const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
         const [isAnimating, setIsAnimating] = React.useState(false);
@@ -158,6 +176,31 @@ const MultiSelect = React.forwardRef<
             onValueChange(newSelectedValues);
         };
 
+        const renderAddNewButton = () => {
+            if (!onAddNew) {
+                return null;
+            }
+
+            return (
+                <div
+                    role="button"
+                    className={cn(
+                        "m-1 cursor-pointer",
+                        isAnimating ? "animate-bounce" : "",
+                        multiSelectVariants({ variant })
+                    )}
+                    style={{ animationDuration: `${animation}s` }}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        onAddNew();
+                    }}
+                >
+                    <Plus className="mr-1 h-3.5 w-3.5" />
+                    <span>{uiMessages.Add || 'Add'}</span>
+                </div>
+            );
+        };
+
         return (
             <Popover
                 open={isPopoverOpen}
@@ -194,6 +237,15 @@ const MultiSelect = React.forwardRef<
                                                     <IconComponent className="h-4 w-4 mr-2" />
                                                 )}
                                                 {option?.label}
+                                                {onOpenItem && (
+                                                    <ExternalLink
+                                                        className="ml-2 h-4 w-4 cursor-pointer text-muted-foreground hover:text-foreground"
+                                                        onClick={(event) => {
+                                                            event.stopPropagation();
+                                                            onOpenItem(value);
+                                                        }}
+                                                    />
+                                                )}
                                                 <XCircle
                                                     className={`ml-2 h-4 w-4 cursor-pointer`}
                                                     onClick={(event) => {
@@ -225,6 +277,7 @@ const MultiSelect = React.forwardRef<
                                             />
                                         </div>
                                     )}
+                                    {renderAddNewButton()}
                                 </div>
                                 <div className="flex items-center justify-between">
                                     {selectedValues.length > 0 && (
@@ -250,7 +303,10 @@ const MultiSelect = React.forwardRef<
                                 <span className="text-sm text-muted-foreground mx-3">
                                     {placeholder}
                                 </span>
-                                <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
+                                <div className="flex items-center">
+                                    {renderAddNewButton()}
+                                    <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
+                                </div>
                             </div>
                         )}
                     </Button>

@@ -31,20 +31,20 @@ export default async function login(req: ReqType, res: ResType) {
                 if (!user) {
                     return res.sendStatus(404);
                 }
-                if (req.user.isAdministrator) {
-                    req.session.userPretended = user;
-
+                if (!req.user.isAdministrator) {
+                    return res.sendStatus(403);
+                }
+                req.session.userPretended = user;
+                return req.session.save((err) => {
+                    if (err) {
+                        return res.status(500).send({ error: 'Session save failed' });
+                    }
                     // Force full page reload after pretend
                     if (req.headers['x-inertia']) {
                         return res.writeHead(409, { 'x-inertia-location': `${req.adminizer.config.routePrefix}/` }).end();
                     }
                     return res.redirect(`${req.adminizer.config.routePrefix}/`);
-                }
-
-                if (req.headers['x-inertia']) {
-                    return res.writeHead(409, { 'x-inertia-location': `${req.adminizer.config.routePrefix}/` }).end();
-                }
-                return res.redirect(`${req.adminizer.config.routePrefix}/`);
+                });
             }
 
             // Verify CAPTCHA solution if enabled
@@ -154,7 +154,7 @@ async function inertiaAdminMessage(req: ReqType, message: string, messageType: s
     }
 
     let errors: Record<string, string> = {};
-    errors[messageType] = message
+    errors[messageType] = req.i18n.__(message)
     return req.Inertia.render({
         component: 'login',
         props: {

@@ -25,10 +25,12 @@ const HistoryList: FC<HistoryListProps> = ({ modelName, modelId, handleWatchHist
     const [diffOpen, setDiffOpen] = useState(false);
     const [diffItem, setDiffItem] = useState<any>(null);
     const [loading, setLoading] = useState<boolean>(true);
-    const page = usePage<{historyTableMessages: Record<string, string>}>()
+    const page = usePage<{historyTableMessages: Record<string, string>, uiMessages?: Record<string, string>}>()
     const storageKey = 'currentHistoryView';
 
     const messages = page.props.historyTableMessages
+    const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
+    const diffLabel = messages?.["Diff"] || uiMessages.Diff || 'Diff';
     
     useEffect(() => {
         const fetchData = async () => {
@@ -84,7 +86,7 @@ const HistoryList: FC<HistoryListProps> = ({ modelName, modelId, handleWatchHist
                             <TableHead className="p-2 text-left">{messages["Date"]}</TableHead>
                             <TableHead className="p-2 text-left">{messages["Event"]}</TableHead>
                             <TableHead className="p-2 text-left">{messages["User"]}</TableHead>
-                            <TableHead className="p-2 text-left">Diff</TableHead>
+                            <TableHead className="p-2 text-left">{diffLabel}</TableHead>
                             <TableHead className="p-2 text-left"></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -146,9 +148,13 @@ const HistoryList: FC<HistoryListProps> = ({ modelName, modelId, handleWatchHist
                 }}>
                     <DialogContent className="z-[1022] sm:max-w-[60vw]">
                         <DialogHeader>
-                            <DialogTitle>Diff</DialogTitle>
+                            <DialogTitle>{diffLabel}</DialogTitle>
                         </DialogHeader>
-                        <DiffViewer changes={diffItem} className="max-h-[80vh] overflow-auto sm:max-w-[60vw] w-full" />
+                        <DiffViewer
+                            changes={diffItem}
+                            className="max-h-[80vh] overflow-auto sm:max-w-[60vw] w-full"
+                            messages={{ ...uiMessages, ...messages }}
+                        />
                     </DialogContent>
                 </Dialog>
             </div>

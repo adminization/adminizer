@@ -56,10 +56,11 @@ const LazyField: FC<{
     processing: boolean;
     notFound?: string
     search?: string
-}> = memo(({ field, value, onChange, processing, notFound, search }) => {
+    invalidFieldMessage?: string
+}> = memo(({ field, value, onChange, processing, notFound, search, invalidFieldMessage }) => {
     if (!field || typeof field !== 'object' || !field.name || !field.type) {
         console.error('Invalid field for LazyField:', field);
-        return <div className="text-red-500">Error: Invalid field data</div>;
+        return <div className="text-red-500">{invalidFieldMessage || 'Error: Invalid field data'}</div>;
     }
     const [ref, inView] = useInView({
         triggerOnce: true,
@@ -96,6 +97,7 @@ const AddForm: FC<{
     ({ page, catalog, callback, openNewWindow, openNewWindowLabel, isNavigation, DnavVisible, visibleLable }) => {
 
         const { btnBack, btnHistory, view, edit, history, notFound, model, fields } = page.props;
+        const uiMessages = (page.props.uiMessages || {}) as Record<string, string>;
 
         const {
             data,
@@ -151,19 +153,23 @@ const AddForm: FC<{
         // Validation and informative early returns (hooks have already been initialized above)
         if (!Array.isArray(fields)) {
             console.error('Fields is not an array:', fields);
-            return <div className="p-4 text-red-500">Error: Fields data is invalid</div>;
+            return <div className="p-4 text-red-500">{uiMessages["Error: Fields data is invalid"] || 'Error: Fields data is invalid'}</div>;
         }
 
         if (fields.length === 0) {
             console.warn('Fields array is empty');
-            return <div className="p-4 text-gray-500">No fields to display</div>;
+            return <div className="p-4 text-gray-500">{uiMessages["No fields to display"] || 'No fields to display'}</div>;
         }
 
         // Check each field for required properties
         const invalidFields = fields.filter(field => !field || typeof field !== 'object' || !field.name || !field.type || !field.label);
         if (invalidFields.length > 0) {
             console.error('Invalid fields found:', invalidFields);
-            return <div className="p-4 text-red-500">Error: Some fields are missing required properties (name, type, label)</div>;
+            return (
+                <div className="p-4 text-red-500">
+                    {uiMessages["Error: Some fields are missing required properties (name, type, label)"] || 'Error: Some fields are missing required properties (name, type, label)'}
+                </div>
+            );
         }
 
         const submit: FormEventHandler = async (e) => {
@@ -232,6 +238,7 @@ const AddForm: FC<{
                                                 processing={catalogProcessing || processing || view}
                                                 notFound={notFound}
                                                 search={page.props.search}
+                                                invalidFieldMessage={uiMessages["Error: Invalid field data"] || 'Error: Invalid field data'}
                                             />
                                         </>
                                         :

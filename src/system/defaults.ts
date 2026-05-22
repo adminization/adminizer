@@ -72,16 +72,16 @@ let adminpanelConfig: AdminpanelConfig = {
             },
             list: {
                 fields: {
-                    createdAt: false,
-                    updatedAt: false,
-                    id: false,
-                    email: false,
-                    passwordHashed: false,
-                    timezone: false,
-                    locale: false,
-                    isDeleted: false,
-                    isActive: false,
-                    groups: false
+                    createdAt: { visible: false },
+                    updatedAt: { visible: false },
+                    id: { visible: false },
+                    email: { visible: false },
+                    passwordHashed: { visible: false },
+                    timezone: { visible: false },
+                    locale: { visible: false },
+                    isDeleted: { visible: false },
+                    isActive: { visible: false },
+                    groups: { visible: false }
                 }
             }
         },
@@ -100,9 +100,9 @@ let adminpanelConfig: AdminpanelConfig = {
             },
             list: {
                 fields: {
-                    createdAt: false,
-                    updatedAt: false,
-                    id: false,
+                    createdAt: { visible: false },
+                    updatedAt: { visible: false },
+                    id: { visible: false },
                 }
             }
         }

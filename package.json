@@ -1,12 +1,13 @@
 {
 	"name": "adminizer",
 	"type": "module",
-	"version": "4.5.0",
+	"version": "4.6.0",
 	"main": "index.js",
 	"exports": {
 		".": "./index.js",
 		"./lib/DataAccessor": "./dist/lib/DataAccessor.js",
-		"./ui/*": "./dist/ui/components/ui/*.js"
+		"./ui/*": "./dist/ui/components/ui/*.js",
+		"./adminizer-module": "./adminizer-module.d.ts"
 	},
 	"scripts": {
 		"test": "vitest --watch=false",

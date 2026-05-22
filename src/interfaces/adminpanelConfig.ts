@@ -77,10 +77,16 @@ interface DashboardConfig {
 }
 
 
-// TODO make fields (complexType | boolean into 2 different fields, manually changing config or somehow programmatically)
-// TODO fields that can be both object and boolean should be divided into main field and "fieldnameEnable" - type boolean
 export interface AdminpanelConfig {
     routePrefix: string
+    /**
+     * Custom favicon URL for admin pages.
+     * - absolute URL is used as-is (`https://...`, `//...`, `data:...`)
+     * - path starting with `/` is treated as absolute path from site root
+     * - relative path is resolved from `routePrefix`
+     * @default `${routePrefix}/files/favicon.png`
+     */
+    favicon?: string
 
     /** prepare to impl dashboard*/
     dashboard?: boolean | DashboardConfig
@@ -110,9 +116,7 @@ export interface AdminpanelConfig {
         }
     }
     /**
-     * @alpha
      * Models configuration
-     * reference upload contoroller ~50 line
      * */
     models: {
         [key: string]: ModelConfig
@@ -136,7 +140,19 @@ export interface AdminpanelConfig {
         /**
          * will be created at the bottom of the sidenav panel
          * */
-        additionalLinks: HrefConfig[]
+        additionalLinks?: HrefConfig[]
+        /**
+         * Optional callback to filter or transform all navbar links after models have been processed.
+         * Receives all links (static + model-generated) and the current user; returns the final array.
+         */
+        handleAdditionalLinks?: (user: UserAP, allLinks: HrefConfig[]) => HrefConfig[]
+        /**
+         * Per-section handlers, applied after all links (static + model-generated) are collected.
+         * Each key is a section name; the handler receives links belonging to that section.
+         */
+        sectionHandlers?: {
+            [section: string]: (user: UserAP, links: HrefConfig[]) => HrefConfig[]
+        }
     }
     /**
      * Policies that will be executed before going to every page
@@ -228,14 +244,20 @@ export interface AdminpanelConfig {
         name: string
     }[]
     /**
-     * Show adminpanel version on the bottom of navbar
-     * */
-    showVersion?: boolean
-    /**
-     * Custom runtime version text shown in the sidebar footer.
-     * If not set, Adminizer falls back to its own build version.
+     * Show adminpanel version in the sidebar footer.
+     * - `false` / omitted — hidden
+     * - `true` — show build version with no extras
+     * - `string` — show that string as the version label
+     * - `object` — full control:
+     *   - `text`  — custom version label (falls back to build version)
+     *   - `link`  — URL opened when the label is clicked (opens in new tab)
+     *   - `hint`  — tooltip shown on hover
      */
-    versionText?: string
+    showVersion?: boolean | string | {
+        text?: string
+        link?: string
+        hint?: string
+    }
 
     /**
      *
@@ -403,10 +425,7 @@ export interface FieldsForms {
 export type ModelFieldConfig = (BaseFieldConfig | TuiEditorFieldConfig) & { groupsAccessRights?: string[] }
 
 export interface FieldsModels {
-    [key: string]:
-        boolean |
-        string |
-        ModelFieldConfig
+    [key: string]: ModelFieldConfig
 }
 
 interface FormFieldConfig extends BaseFieldConfig {

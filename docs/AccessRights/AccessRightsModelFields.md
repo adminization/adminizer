@@ -48,10 +48,10 @@ The `DataAccessor` supports fine-grained access control at the field level using
 Each field passes through the `checkFieldAccess()` method, which evaluates:
 
 1. **Explicit Disabling**
-   If a field is set to `false` in the config, it will be excluded:
+   To exclude a field, set `visible: false` in the config:
 
    ```ts
-   fields: { secretField: false }
+   fields: { secretField: { visible: false } }
    ```
 
 2. **Always Allowed:**
@@ -103,7 +103,7 @@ models: {
         type: "string",
         groupsAccessRights: ["admin", "qa"]
       },
-      createdAt: false // completely hidden
+      createdAt: { visible: false } // completely hidden
     },
     userAccessRelation: "owner"
   }

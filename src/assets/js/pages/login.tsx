@@ -28,6 +28,12 @@ interface LoginProps extends SharedData {
         link: string
     },
     captchaTask: number[]
+    captchaMessages?: {
+        initial?: string
+        solving?: string
+        success?: string
+        error?: string
+    }
     redirectTo?: string
 }
 
@@ -42,7 +48,8 @@ export default function Login() {
     // Determine if CAPTCHA is enabled (non-empty task)
     const hasCaptcha = Array.isArray(page.props.captchaTask) && page.props.captchaTask.length > 0;
 
-    const [captchaMessage, setCaptchaMessage] = useState("I'm not a robot");
+    const captchaTexts = page.props.captchaMessages || {};
+    const [captchaMessage, setCaptchaMessage] = useState(captchaTexts.initial || "I'm not a robot");
     const [showCheckmark, setShowCheckmark] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
@@ -67,7 +74,7 @@ export default function Login() {
             return
         }
         setCaptchaProcessing(true)
-        setCaptchaMessage("Solving CAPTCHA...")
+        setCaptchaMessage(captchaTexts.solving || "Solving CAPTCHA...")
         setShowCheckmark(false)
         const solveCaptchaAndSubmit = async () => {
             try {
@@ -83,7 +90,7 @@ export default function Login() {
 
                 const solution = await Puzzle.solve(puzzle);
                 // CAPTCHA solved
-                setCaptchaMessage("Verification complete!")
+                setCaptchaMessage(captchaTexts.success || "Verification complete!")
 
                 setCaptchaProcessing(false)
                 setShowCheckmark(true)
@@ -101,7 +108,7 @@ export default function Login() {
                 })
             } catch (error) {
                 console.error("Error solving CAPTCHA:", error);
-                setCaptchaMessage("Error solving CAPTCHA. Try again.")
+                setCaptchaMessage(captchaTexts.error || "Error solving CAPTCHA. Try again.")
             }
         }
         solveCaptchaAndSubmit()

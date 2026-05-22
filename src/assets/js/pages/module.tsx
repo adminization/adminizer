@@ -18,7 +18,8 @@ export default function Module() {
             // Loading the JS component
             const Module = await import(/* @vite-ignore */ page.props.moduleComponent as string);
             const Component = Module.default as ComponentType["default"];
-            setComponent(<Component data={page.props.data}/>);
+            const { moduleComponent: _mc, moduleComponentCSS: _css, ...componentProps } = page.props as any;
+            setComponent(<Component {...componentProps} />);
         };
 
         // Load CSS if the path is passed

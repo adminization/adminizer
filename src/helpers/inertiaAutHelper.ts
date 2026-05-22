@@ -10,6 +10,12 @@ export function inertiaLoginHelper(req: ReqType) {
     props.password = req.i18n.__('Password');
     props.title = req.i18n.__("Welcome");
     props.submitButton = req.i18n.__("Log in");
+    props.captchaMessages = {
+        initial: req.i18n.__("I'm not a robot"),
+        solving: req.i18n.__("Solving CAPTCHA..."),
+        success: req.i18n.__("Verification complete!"),
+        error: req.i18n.__("Error solving CAPTCHA. Try again."),
+    };
     props.submitLink = `${req.adminizer.config.routePrefix}/model/userap/login`
     props.redirectTo = (req.query?.redirectTo as string) || '';
     if (req.adminizer.config.registration?.enable === true) {

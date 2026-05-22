@@ -7,3 +7,5 @@ logs
 .patches
 codex.patch
 .env
+.codex
+.playwright-mcp

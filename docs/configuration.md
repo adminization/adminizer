@@ -34,9 +34,9 @@ const config: AdminizerConfig = {
       },
       list: {
         fields: {
-          id: true,
-          name: true,
-          createdAt: true,
+          id: {},
+          name: {},
+          createdAt: {},
         }
       },
       add: true,
@@ -150,37 +150,27 @@ models: {
 
 ## Fields configuration
 
-For now AdminPanel hook supports 3 notations into field configuration:
-
-+ Boolean notation
-
-```
-fieldName: true // will enable field showing/editing
-fieldName: false // will remove field from showing. Could be usefull for actions like edit
-```
-
-+ String natation
-
-```
-fieldName: "Field Ttitle"
-```
-
-+ Object notation
+Each field is configured with an **object** (`ModelFieldConfig`):
 
 ```
 fieldName: {
-    title: "Field title", // You can overwrite field title
-    type: "string", //you can overwrite default field type in admin panel
-    required: true, // you can mark field required or not
-    tooltip: 'tooltip for field', // You can define tooltip for field
-    editor: true, // you can add WYSTYG editor for the field in admin panel
+    title: "Field title", // overwrite field title
+    type: "string", // overwrite default field type in admin panel
+    required: true, // mark field required or not
+    tooltip: 'tooltip for field', // tooltip for field
+    editor: true, // add WYSIWYG editor for the field in admin panel
+    visible: false, // hide field (e.g. on a specific action)
 }
 ```
+
+To hide a field, set `visible: false`. To override only the title, pass `{ title: "Field title" }`.
+
+> **Breaking change in v5:** the boolean (`field: true`/`false`) and string (`field: "Title"`) shorthand notations were removed. Use the object form. A primitive value will be ignored at runtime with a warning.
 
 **There are several places for field config definition and an inheritance of field configs.**
 
 + You could use a global `fields` property into `config/adminpanel.js` file into `models` section.
-+ You could use `fields` property into `models:action` confguration. This config will overwrite global one
++ You could use `fields` property into `models:action` configuration. Action level config is shallow-merged on top of the global one.
 
 ```
 module.exports.adminpanel = {
@@ -190,10 +180,10 @@ module.exports.adminpanel = {
             model: 'User', // Model definition for model
 
             fields: {
-                email: 'User Email', // It will define title for this field in all actions (list/add/edit/view)
-                createdAt: false, // Will hide createdAt field in all actions
+                email: { title: 'User Email' }, // define title for this field in all actions (list/add/edit/view)
+                createdAt: { visible: false }, // hide createdAt field in all actions
                 avatar: {
-                    displayModifier: function (img) { // Only for list view  look callback.md for get more info
+                    displayModifier: function (img) { // Only for list view, look callback.md for more info
                         return `<img src="${img}">`
                     }
                 },
@@ -201,15 +191,19 @@ module.exports.adminpanel = {
                     title: 'User bio',
                     type: 'text', // LOOK BELOW FOR TYPES DESCRIPTION
                     editor: true
-                } // will set title `User bio` for the field and add editor into add/edit actions. Could be combined only with `text` type
+                } // sets title `User bio` and adds editor in add/edit actions. Could be combined only with `text` type
             },
             // Action level config
             list: {
-                bio: false // will hide bio field into list view
+                fields: {
+                    bio: { visible: false } // hide bio field in list view
+                }
             },
 
             edit: {
-                createdAt: 'Created at' //will enable field `createdAt` and set title to `Created at`
+                fields: {
+                    createdAt: { title: 'Created at' } // override title for createdAt in edit
+                }
             }
         }
     }
@@ -233,7 +227,7 @@ module.exports.adminpanel = {
 ```
 
 ## Ignored fields
-You could add ignored fields to action using `fields` config option.
+You can hide fields from all actions by setting `visible: false`.
 
 ```javascript
 module.exports.adminpanel = {
@@ -242,11 +236,11 @@ module.exports.adminpanel = {
             title: 'Users', // Menu title for model
             model: 'User', // Model definition for model
 
-            // this fields will be ignored into all actions
+            // these fields will be hidden in all actions
             fields: {
-                'admin': false,
-                'someAnotherField': false,
-                'encryptedPassword': false
+                'admin': { visible: false },
+                'someAnotherField': { visible: false },
+                'encryptedPassword': { visible: false }
             }
         }
     }
@@ -435,9 +429,9 @@ const config = {
       },
       list: {
         fields: {
-          id: true,
-          name: true,
-          createdAt: true,
+          id: {},
+          name: {},
+          createdAt: {},
         }
       },
       add: true,
@@ -584,14 +578,22 @@ module.exports = config;
         }
     }
     navbar: { // Left-side navigation bar
-        additionalLinks: { // will be created at the bottom of the sidenav panel
+        additionalLinks: { // static links shown in the sidenav panel
             id: string
             title: string
             link: string
-            icon: string
-            // Only for view, controller still uses his own access rights token
-            accessRightsToken: string
+            type: 'self' | 'blank'
+            icon?: string
+            section?: string
+            accessRightsToken?: string
+            subItems?: HrefConfig[]
         }[]
+        // Called after all links (static + model-generated) are collected. Returns final array.
+        handleAdditionalLinks: (user: UserAP, allLinks: HrefConfig[]) => HrefConfig[]
+        // Per-section handlers, applied after all links are collected.
+        sectionHandlers: {
+            [section: string]: (user: UserAP, links: HrefConfig[]) => HrefConfig[]
+        }
     }
     // Policies that will be executed before going to every page
     policies: string | string[] | Function | Function[]
@@ -648,7 +650,9 @@ If the value of the model key is `true: boolean` then only add and edit routers 
 You can add custom links into your admin panel pages.
 
 You could use:
-- `additionaLinks` in `navbar` property to create links at the top of the sidenav panel
+- `additionalLinks` in `navbar` to define static links in the sidenav panel
+- `handleAdditionalLinks(user, allLinks)` in `navbar` to filter or transform all navbar links (static + model-generated) after all links are collected
+- `sectionHandlers` in `navbar` to apply a handler to links of a specific section, after all links are collected
 - `global` or `inline` actions in `actions` property of `list` view
 - `tools` property to create link like Model submenu
 
@@ -710,6 +714,99 @@ module.exports.adminpanel = {
     }
 };
 ```
+
+## Dynamic navbar links by user
+
+Use `handleAdditionalLinks` to filter or transform the full list of navbar links (static + model-generated) based on the current user. The callback receives all links after models have been processed and must return the final array.
+
+```javascript
+module.exports.adminpanel = {
+    navbar: {
+        additionalLinks: [
+            {
+                id: "help",
+                title: "Help center",
+                link: "/adminizer/help",
+                type: "self",
+                icon: "help",
+                section: "Support"
+            }
+        ],
+        handleAdditionalLinks: function (user, allLinks) {
+            const isAdministrator = Boolean(user?.isAdministrator);
+
+            if (!isAdministrator) {
+                // Remove links that require admin access
+                return allLinks.filter(link => link.id !== 'audit');
+            }
+
+            return [
+                ...allLinks,
+                {
+                    id: "audit",
+                    title: "Audit log",
+                    link: "/adminizer/history",
+                    type: "self",
+                    icon: "history",
+                    accessRightsToken: "read-history",
+                    section: "Monitoring"
+                }
+            ];
+        }
+    }
+};
+```
+
+## Per-section link handlers
+
+Use `sectionHandlers` to apply a handler only to links belonging to a specific section. Each handler receives the links of that section and the current user, and returns the filtered or modified list. Handlers run after all links (static + model-generated) are collected.
+
+```javascript
+module.exports.adminpanel = {
+    navbar: {
+        additionalLinks: [
+            {
+                id: "status",
+                title: "System status",
+                link: "https://status.example.com",
+                type: "blank",
+                icon: "monitoring",
+                section: "Support"
+            }
+        ],
+        sectionHandlers: {
+            Support: function (user, links) {
+                // Only show support links to non-admin users
+                if (user?.isAdministrator) return [];
+                return links;
+            },
+            Platform: function (user, links) {
+                // Filter platform links based on user group
+                return links.filter(link =>
+                    !link.accessRightsToken || user?.groups?.includes('editors')
+                );
+            }
+        }
+    }
+};
+```
+
+All links can be assigned to a sidebar section via `section` field on `HrefConfig`:
+```javascript
+{
+    id: "billing",
+    title: "Billing",
+    link: "/adminizer/billing",
+    type: "self",
+    section: "Finance"
+}
+```
+
+Order of processing:
+1. Static `additionalLinks` are added to the navbar
+2. Model-generated links are appended
+3. `handleAdditionalLinks(user, allLinks)` is applied to the full list
+4. `sectionHandlers` are applied per section
 
 # Edit callback
 

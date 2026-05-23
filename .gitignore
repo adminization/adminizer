@@ -13,3 +13,4 @@ TODO
 package-lock.json
 refactor_docs/
 neutral-criteria-task.md
+.claude/settings.json

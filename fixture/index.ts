@@ -1,46 +1,47 @@
 // Load environment variables from .env file
 import dotenv from 'dotenv';
+
 dotenv.config();
 import "reflect-metadata";
 
-import { Adminizer, UserAP } from "../dist";
-import { bindNavigation } from "../dist";
+import {Adminizer, UserAP} from "../dist";
+import {bindNavigation} from "../dist";
 import http from 'http';
 import adminpanelConfig from "./adminizerConfig";
-import { AdminpanelConfig } from "../dist/interfaces/adminpanelConfig";
-import { sendNotificationsWithDelay } from "./helpers/notifications";
+import {AdminpanelConfig} from "../dist/interfaces/adminpanelConfig";
+import {sendNotificationsWithDelay} from "./helpers/notifications";
 // OpenAiDataAgentService is imported dynamically only when AI assistant is enabled
 import cors from 'cors';
 
-import { ReactQuill } from "../modules/controls/wysiwyg/ReactQuill";
+import {ReactQuill} from "../modules/controls/wysiwyg/ReactQuill";
 
 // Sequelize imports
-import { Sequelize } from "sequelize-typescript";
+import {Sequelize} from "sequelize-typescript";
 import fs from 'fs/promises';
 import path from 'path';
-import { Example as ExampleSequelize } from "./models/sequelize/Example";
-import { JsonSchema as JsonSchemaSequelize } from "./models/sequelize/JsonSchema";
-import { Test as TestSequelize } from "./models/sequelize/Test";
-import { Category as CategorySequelize } from "./models/sequelize/Category";
-import { TestCatalog as TestCatalogSequelize } from "./models/sequelize/TestCatalog";
-import { SequelizeAdapter } from "../dist/lib/model/adapter/sequelize";
-import { DataSource } from "typeorm";
-import { TypeOrmAdapter } from "../dist/lib/model/adapter/typeorm";
-import { seedDatabase, seedTypeOrmDatabase } from "./helpers/seedDatabase";
-import { ExampleTypeOrm } from "./models/typeorm/Example";
-import { JsonSchemaTypeOrm } from "./models/typeorm/JsonSchema";
-import { TestTypeOrm } from "./models/typeorm/Test";
-import { CategoryTypeOrm } from "./models/typeorm/Category";
-import { TestCatalogTypeOrm } from "./models/typeorm/TestCatalog";
+import {Example as ExampleSequelize} from "./models/sequelize/Example";
+import {JsonSchema as JsonSchemaSequelize} from "./models/sequelize/JsonSchema";
+import {Test as TestSequelize} from "./models/sequelize/Test";
+import {Category as CategorySequelize} from "./models/sequelize/Category";
+import {TestCatalog as TestCatalogSequelize} from "./models/sequelize/TestCatalog";
+import {SequelizeAdapter} from "../dist/lib/model/adapter/sequelize";
+import {DataSource} from "typeorm";
+import {TypeOrmAdapter} from "../dist/lib/model/adapter/typeorm";
+import {seedDatabase, seedTypeOrmDatabase} from "./helpers/seedDatabase";
+import {ExampleTypeOrm} from "./models/typeorm/Example";
+import {JsonSchemaTypeOrm} from "./models/typeorm/JsonSchema";
+import {TestTypeOrm} from "./models/typeorm/Test";
+import {CategoryTypeOrm} from "./models/typeorm/Category";
+import {TestCatalogTypeOrm} from "./models/typeorm/TestCatalog";
 
 
 //Widgets imports
-import { SwitcherOne, SwitcherTwo } from "./widgets/Switchers";
-import { SiteLinks } from "./widgets/Links";
-import { InfoOne, Info4, Info3, InfoTwo } from "./widgets/Info";
-import { CustomOne } from "./widgets/Custom";
-import { ActionOne, ActionTwo } from "./widgets/Actions";
-import { TestCatalog } from "./virtual-catalog/virtualCatalog";
+import {SwitcherOne, SwitcherTwo} from "./widgets/Switchers";
+import {SiteLinks} from "./widgets/Links";
+import {InfoOne, Info4, Info3, InfoTwo} from "./widgets/Info";
+import {CustomOne} from "./widgets/Custom";
+import {ActionOne, ActionTwo} from "./widgets/Actions";
+import {TestCatalog} from "./virtual-catalog/virtualCatalog";
 import {
     ExampleDatatablePriceRangeFilterHandler,
     ExampleJsonCustomFilterHandler,
@@ -49,9 +50,9 @@ import {
 } from "./filters/customFilterHandlers";
 import express from "express";
 import cookieParser from "cookie-parser";
-import { corsApi } from "./cors-api/api";
-import { renderIndexPage, NavTreeNode } from "./pages/indexPage";
-import { FileFeedbackHandler } from "./feedback/FileFeedbackHandler";
+import {corsApi} from "./cors-api/api";
+import {renderIndexPage, NavTreeNode} from "./pages/indexPage";
+import {FileFeedbackHandler} from "./feedback/FileFeedbackHandler";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
@@ -140,7 +141,7 @@ async function cleanTempFolder() {
     try {
         const stats = await fs.stat(tmpPath);
         if (stats.isDirectory()) {
-            await fs.rm(tmpPath, { recursive: true });
+            await fs.rm(tmpPath, {recursive: true});
             console.log(`Temporary folder ${tmpPath} cleaned successfully`);
         }
     } catch (err) {
@@ -159,7 +160,7 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
     // Add custom module
     adminizer.emitter.on('adminizer:loaded', () => {
-        let policies = adminizer.config.middlewares as MiddlewareType[];
+        let middlewares = adminizer.config.middlewares as MiddlewareType[];
         const module = async (req: ReqType, res: ResType, next: express.NextFunction) => {
             if (req.adminizer.config.auth?.enable) {
                 if (!req.user) {
@@ -186,8 +187,8 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
         }
 
-        adminizer.app.get(`${adminizer.config.routePrefix}/module-test`, adminizer.middlewareManager.bindMiddlewares(policies, module));
-        adminizer.app.post(`${adminizer.config.routePrefix}/module-test`, adminizer.middlewareManager.bindMiddlewares(policies, async (req: ReqType, res: ResType) => {
+        adminizer.app.get(`${adminizer.config.routePrefix}/module-test`, adminizer.middlewareManager.bindMiddlewares(middlewares, module));
+        adminizer.app.post(`${adminizer.config.routePrefix}/module-test`, adminizer.middlewareManager.bindMiddlewares(middlewares, async (req: ReqType, res: ResType) => {
             const rawUserId = req.body.userId;
             const userId = req.body.sendToAll
                 ? undefined
@@ -204,9 +205,9 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
                 message: req.body.message,
                 notificationClass: 'general',
                 channel: '',
-                ...(userId ? { userId } : {})
+                ...(userId ? {userId} : {})
             })
-            res.json({
+            return res.json({
                 test: req.body
             })
         }));
@@ -237,16 +238,16 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
         await adminizer.init(adminpanelConfig as unknown as AdminpanelConfig)
 
         if (ormType === "typeorm") {
-            adminizer.customFilterHandler.add(new TypeOrmExampleJsonCustomFilterHandler(), { force: true });
-            adminizer.customFilterHandler.add(new TypeOrmExampleDatatablePriceRangeFilterHandler(), { force: true });
+            adminizer.customFilterHandler.add(new TypeOrmExampleJsonCustomFilterHandler(), {force: true});
+            adminizer.customFilterHandler.add(new TypeOrmExampleDatatablePriceRangeFilterHandler(), {force: true});
         } else {
-            adminizer.customFilterHandler.add(new ExampleJsonCustomFilterHandler(), { force: true });
-            adminizer.customFilterHandler.add(new ExampleDatatablePriceRangeFilterHandler(), { force: true });
+            adminizer.customFilterHandler.add(new ExampleJsonCustomFilterHandler(), {force: true});
+            adminizer.customFilterHandler.add(new ExampleDatatablePriceRangeFilterHandler(), {force: true});
         }
 
         if (adminizer.config.aiAssistant?.enabled) {
             // Dynamic import to avoid loading OpenAI dependencies when AI assistant is disabled
-            const { OpenAiDataAgentService } = await import("./helpers/ai/OpenAiDataAgentService");
+            const {OpenAiDataAgentService} = await import("./helpers/ai/OpenAiDataAgentService");
             const openAiAgent = new OpenAiDataAgentService(adminizer);
             if (openAiAgent.isEnabled()) {
                 adminizer.aiAssistantHandler!.registerModel(openAiAgent);
@@ -336,10 +337,10 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
             const header = await adminizer.modelHandler
                 .internal('navigation')
                 .get('navigationap')
-                .findOne({ where: { label: 'header' } });
-            res.json({ header: header });
+                .findOne({where: {label: 'header'}});
+            res.json({header: header});
         } catch (error) {
-            res.status(500).json({ error: 'Internal server error' });
+            res.status(500).json({error: 'Internal server error'});
         }
     });
 
@@ -351,7 +352,7 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
                 getNavigationSection('footer'),
             ]);
 
-            res.type('html').send(renderIndexPage(adminpanelConfig.routePrefix, { header, footer }));
+            res.type('html').send(renderIndexPage(adminpanelConfig.routePrefix, {header, footer}));
         } catch (error) {
             console.error(error);
             res.status(500).send('Navigation preview rendering failed');
@@ -379,8 +380,8 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 async function getNavigationSection(section: string): Promise<NavTreeNode[]> {
     const navigationRecord = await adminizer.modelHandler
         .internal('navigation')
-        .get<{ tree?: NavTreeNode[] }>('navigationap')
-        .findOne({ where: { label: section } });
+        .get<any>('navigationap')
+        .findOne({where: {label: section}});
     return navigationRecord?.tree ?? [];
 }
 
@@ -388,11 +389,17 @@ async function seedNavigation(adminizer: Adminizer) {
     const routePrefix = adminpanelConfig.routePrefix;
     try {
         const catalog = adminizer.catalogHandler.getCatalog('navigation') as any;
-        if (!catalog) { console.warn('seedNavigation: navigation catalog not found'); return; }
+        if (!catalog) {
+            console.warn('seedNavigation: navigation catalog not found');
+            return;
+        }
 
         const seedSection = async (section: string, tree: NavTreeNode[]) => {
             const storage = catalog.storageServices.get(section);
-            if (!storage) { console.warn(`seedNavigation: storage "${section}" not found`); return; }
+            if (!storage) {
+                console.warn(`seedNavigation: storage "${section}" not found`);
+                return;
+            }
             // Only seed if storage is empty
             const existing = await storage.findElementsByParentId(null, null);
             if (existing.length > 0) return;
@@ -403,113 +410,113 @@ async function seedNavigation(adminizer: Adminizer) {
 
         // header
         const headerTree: NavTreeNode[] = [
-                {
-                    id: 'h-group-docs',
-                    name: 'Documentation',
-                    type: 'group',
-                    parentId: null,
-                    sortOrder: 0,
-                    icon: 'folder',
-                    visible: true,
-                    children: [
-                        {
-                            id: 'h-link-docs-install',
-                            name: 'Install',
-                            type: 'link',
-                            parentId: 'h-group-docs',
-                            sortOrder: 0,
-                            icon: 'link',
-                            urlPath: 'https://docs.adminizer.org/Install.html',
-                            targetBlank: true,
-                            visible: true,
-                            children: [],
-                        },
-                        {
-                            id: 'h-link-docs-controls',
-                            name: 'Controls',
-                            type: 'link',
-                            parentId: 'h-group-docs',
-                            sortOrder: 1,
-                            icon: 'link',
-                            urlPath: 'https://docs.adminizer.org/Controls.html',
-                            targetBlank: true,
-                            visible: true,
-                            children: [],
-                        },
-                        {
-                            id: 'h-link-docs-navigation',
-                            name: 'Navigation Catalog',
-                            type: 'link',
-                            parentId: 'h-group-docs',
-                            sortOrder: 2,
-                            icon: 'link',
-                            urlPath: 'https://docs.adminizer.org/Navigation.html',
-                            targetBlank: true,
-                            visible: true,
-                            children: [],
-                        },
-                    ],
-                },
-                {
-                    id: 'h-group-admin',
-                    name: 'Adminizer',
-                    type: 'group',
-                    parentId: null,
-                    sortOrder: 1,
-                    icon: 'folder',
-                    visible: true,
-                    children: [
-                        {
-                            id: 'h-link-admin-home',
-                            name: 'Dashboard',
-                            type: 'link',
-                            parentId: 'h-group-admin',
-                            sortOrder: 0,
-                            icon: 'link',
-                            urlPath: routePrefix,
-                            targetBlank: false,
-                            visible: true,
-                            children: [],
-                        },
-                        {
-                            id: 'h-link-admin-examples',
-                            name: 'All Controls (Example)',
-                            type: 'link',
-                            parentId: 'h-group-admin',
-                            sortOrder: 1,
-                            icon: 'link',
-                            urlPath: `${routePrefix}/model/Example`,
-                            targetBlank: false,
-                            visible: true,
-                            children: [],
-                        },
-                        {
-                            id: 'h-link-admin-test',
-                            name: 'Test Model',
-                            type: 'link',
-                            parentId: 'h-group-admin',
-                            sortOrder: 2,
-                            icon: 'link',
-                            urlPath: `${routePrefix}/model/Test`,
-                            targetBlank: false,
-                            visible: true,
-                            children: [],
-                        },
-                        {
-                            id: 'h-link-admin-categories',
-                            name: 'Categories',
-                            type: 'link',
-                            parentId: 'h-group-admin',
-                            sortOrder: 3,
-                            icon: 'link',
-                            urlPath: `${routePrefix}/model/Category`,
-                            targetBlank: false,
-                            visible: true,
-                            children: [],
-                        },
-                    ],
-                },
-            ];
+            {
+                id: 'h-group-docs',
+                name: 'Documentation',
+                type: 'group',
+                parentId: null,
+                sortOrder: 0,
+                icon: 'folder',
+                visible: true,
+                children: [
+                    {
+                        id: 'h-link-docs-install',
+                        name: 'Install',
+                        type: 'link',
+                        parentId: 'h-group-docs',
+                        sortOrder: 0,
+                        icon: 'link',
+                        urlPath: 'https://docs.adminizer.org/Install.html',
+                        targetBlank: true,
+                        visible: true,
+                        children: [],
+                    },
+                    {
+                        id: 'h-link-docs-controls',
+                        name: 'Controls',
+                        type: 'link',
+                        parentId: 'h-group-docs',
+                        sortOrder: 1,
+                        icon: 'link',
+                        urlPath: 'https://docs.adminizer.org/Controls.html',
+                        targetBlank: true,
+                        visible: true,
+                        children: [],
+                    },
+                    {
+                        id: 'h-link-docs-navigation',
+                        name: 'Navigation Catalog',
+                        type: 'link',
+                        parentId: 'h-group-docs',
+                        sortOrder: 2,
+                        icon: 'link',
+                        urlPath: 'https://docs.adminizer.org/Navigation.html',
+                        targetBlank: true,
+                        visible: true,
+                        children: [],
+                    },
+                ],
+            },
+            {
+                id: 'h-group-admin',
+                name: 'Adminizer',
+                type: 'group',
+                parentId: null,
+                sortOrder: 1,
+                icon: 'folder',
+                visible: true,
+                children: [
+                    {
+                        id: 'h-link-admin-home',
+                        name: 'Dashboard',
+                        type: 'link',
+                        parentId: 'h-group-admin',
+                        sortOrder: 0,
+                        icon: 'link',
+                        urlPath: routePrefix,
+                        targetBlank: false,
+                        visible: true,
+                        children: [],
+                    },
+                    {
+                        id: 'h-link-admin-examples',
+                        name: 'All Controls (Example)',
+                        type: 'link',
+                        parentId: 'h-group-admin',
+                        sortOrder: 1,
+                        icon: 'link',
+                        urlPath: `${routePrefix}/model/Example`,
+                        targetBlank: false,
+                        visible: true,
+                        children: [],
+                    },
+                    {
+                        id: 'h-link-admin-test',
+                        name: 'Test Model',
+                        type: 'link',
+                        parentId: 'h-group-admin',
+                        sortOrder: 2,
+                        icon: 'link',
+                        urlPath: `${routePrefix}/model/Test`,
+                        targetBlank: false,
+                        visible: true,
+                        children: [],
+                    },
+                    {
+                        id: 'h-link-admin-categories',
+                        name: 'Categories',
+                        type: 'link',
+                        parentId: 'h-group-admin',
+                        sortOrder: 3,
+                        icon: 'link',
+                        urlPath: `${routePrefix}/model/Category`,
+                        targetBlank: false,
+                        visible: true,
+                        children: [],
+                    },
+                ],
+            },
+        ];
         await seedSection('header', headerTree);
 
         // footer

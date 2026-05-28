@@ -1,72 +1,53 @@
-import {Adminizer} from "../Adminizer";
-import {AbstractCatalog} from "../catalog/AbstractCatalog";
-import {AbstractControls} from "../controls/AbstractControls";
-import {AbstractHistoryAdapter} from "../history-actions/AbstractHistoryAdapter";
-import {AbstractMediaManager} from "../media-manager/AbstractMediaManager";
-import {AbstractNotificationService} from "../notifications/AbstractNotificationService";
-import {BaseWidget} from "../widgets/abstractWidgetBase";
+import type {AdminpanelConfig} from "../../interfaces/adminpanelConfig";
+
+export type AppDisposer = () => void | Promise<void>;
+export type AppControllerMethod = "get" | "post" | "put" | "patch" | "delete" | "all";
+export type AppControllerPolicyMode = "ui" | "api";
+export type AppControllerPolicy =
+    | { type: "auth"; mode?: AppControllerPolicyMode }
+    | { type: "auth-enabled" }
+    | { type: "admin"; mode?: AppControllerPolicyMode }
+    | { type: "permission"; token: string; mode?: AppControllerPolicyMode }
+    | { type: "any-permission"; tokens: string[]; mode?: AppControllerPolicyMode };
+export type AppConfigPatch = {
+    [K in keyof AdminpanelConfig]?: AdminpanelConfig[K] extends (...args: any[]) => any
+        ? AdminpanelConfig[K]
+        : AdminpanelConfig[K] extends Array<infer U>
+            ? U[]
+            : AdminpanelConfig[K] extends object
+                ? Partial<AdminpanelConfig[K]>
+                : AdminpanelConfig[K];
+};
 
 export interface AppController {
+    id?: string;
     route: string;
-    method: string;
-    middleware: (req: unknown, res: unknown) => unknown | Promise<unknown>
+    method: AppControllerMethod;
+    middleware: MiddlewareType;
+    policies?: AppControllerPolicy[];
 }
 
-export interface CatalogDescriptor {
-    catalog: AbstractCatalog;
+export interface AppAsset {
+    id: string;
+    filePath: string;
+    route?: string;
+    devUrl?: string;
 }
 
-export interface ControlsDescriptor {
-    control: AbstractControls;
+export interface AppSetupContext {
+    asset(asset: AppAsset): string;
+    controller(controller: AppController): string;
+    config(config: AppConfigPatch, id?: string): void;
 }
 
-export interface HistoryDescriptor {
-    history: AbstractHistoryAdapter;
-}
-
-export interface MediaManagerProvider {
-    mediaManager: AbstractMediaManager;
-}
-
-export interface NotificationDescriptor {
-    service: AbstractNotificationService;
-}
-
-export interface WidgetDescriptor {
-    widget: BaseWidget;
-}
-
-export abstract class AbstractAdminizerApp {
+export abstract class AbstractAdminizerApp<TConfig = unknown> {
     abstract readonly name: string;
     abstract readonly version: string;
 
-    abstract readonly controllers?: AppController[];
-    abstract readonly catalogs?: CatalogDescriptor[];
-    abstract readonly controls?: ControlsDescriptor[];
-    abstract readonly historyAdapters?: AbstractHistoryAdapter[];
-    abstract readonly mediaManagers?: MediaManagerProvider[];
-    abstract readonly notifications?: NotificationDescriptor[];
-    abstract readonly widgets?: WidgetDescriptor[];
-    abstract readonly config?: Record<string, unknown>
+    readonly config?: TConfig
 
-    protected constructor(protected adminizer: Adminizer) {}
+    protected constructor() {}
 
-    /**
-     * Хук, вызываемый после установки приложения
-     * @param adminizer - экземпляр Adminizer для доступа к его API
-     */
-    onInstall?(adminizer: Adminizer): void | Promise<void>;
-
-    /**
-     * Хук, вызываемый перед удалением приложения
-     */
-    onUninstall?(): void | Promise<void>;
-
-    /**
-     * Хук для кастомной регистрации (если стандартных массивов недостаточно)
-     * @param adminizer - экземпляр Adminizer
-     * @returns массив disposer-функций для очистки
-     */
-    onRegister?(adminizer: Adminizer): Array<() => void> | void;
+    abstract setup(ctx: AppSetupContext): void | Promise<void>;
 
 }

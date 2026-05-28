@@ -48,6 +48,10 @@ import bindCustomFilterHandlers from "../system/bindCustomFilterHandlers";
 import { CustomFilterHandler } from "./filters/CustomFilterHandler";
 import { FeedbackHandler } from "./feedback/FeedbackHandler";
 import { buildInternalModelAccess } from "../system/buildInternalModelAccess";
+import { AppManager } from "./app-manager/AppManager";
+import { ControllerHandler } from "./app-manager/ControllerHandler";
+import { AssetHandler } from "./app-manager/AssetHandler";
+import { ConfigLayerHandler } from "./app-manager/ConfigLayerHandler";
 
 export class Adminizer {
     // Preconfigures
@@ -79,6 +83,10 @@ export class Adminizer {
     mediaManagerHandler!: MediaManagerHandler
     storageServices!: StorageServices
     feedbackHandler!: FeedbackHandler
+    appManager: AppManager
+    controllerHandler: ControllerHandler
+    assetHandler: AssetHandler
+    configLayerHandler: ConfigLayerHandler
 
     // Constants
     jwtSecret: string = process.env.JWT_SECRET ?? uuid()
@@ -121,6 +129,10 @@ export class Adminizer {
         this.app = express();
         this._emitter = new EventEmitter();
         this.ormAdapters = ormAdapters;
+        this.controllerHandler = new ControllerHandler(this);
+        this.assetHandler = new AssetHandler(this);
+        this.configLayerHandler = new ConfigLayerHandler(this);
+        this.appManager = new AppManager(this);
     }
 
     getMiddleware() {

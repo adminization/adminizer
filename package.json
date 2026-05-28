@@ -30,13 +30,8 @@
 		"build:module": "vite build --config modules/test/vite.config.module.ts",
 		"build:react-quill": "vite build --config modules/controls/wysiwyg/vite.config.react-quill.ts",
 		"build:catalog-modules": "vite build --config modules/testCatalog/vite.config.module.ts",
-		"copy:modules": "node copy-modules.js",
-		"build:assets:modules": "npm run build:assets && npm run copy:modules",
 		"start:seed": "cross-env ORM=sequelize tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
-		"start:typeorm:seed": "cross-env ORM=typeorm tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
-		"demo:build": "npm run copy:backend && npm run compile:backend && npm run build:assets && npm run copy:modules",
-		"demo": "cross-env ORM=sequelize tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
-		"demo:typeorm": "cross-env ORM=typeorm tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts"
+		"start:typeorm:seed": "cross-env ORM=typeorm tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts"
 	},
 	"keywords": [],
 	"author": "Siziy Ivan <xziy88@gmail.com>",

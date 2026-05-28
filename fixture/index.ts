@@ -4,8 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import "reflect-metadata";
 
-import {Adminizer, UserAP} from "../dist";
-import {bindNavigation} from "../dist";
+import {Adminizer} from "../dist";
 import http from 'http';
 import adminpanelConfig from "./adminizerConfig";
 import {AdminpanelConfig} from "../dist/interfaces/adminpanelConfig";
@@ -53,6 +52,7 @@ import cookieParser from "cookie-parser";
 import {corsApi} from "./cors-api/api";
 import {renderIndexPage, NavTreeNode} from "./pages/indexPage";
 import {FileFeedbackHandler} from "./feedback/FileFeedbackHandler";
+import {ComponentBApp} from "./apps/ComponentBApp";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
@@ -158,61 +158,6 @@ async function cleanTempFolder() {
 async function ormSharedFixtureLift(adminizer: Adminizer) {
     process.env.ROUTE_PREFIX = adminpanelConfig.routePrefix;
 
-    // Add custom module
-    adminizer.emitter.on('adminizer:loaded', () => {
-        let middlewares = adminizer.config.middlewares as MiddlewareType[];
-        const module = async (req: ReqType, res: ResType, next: express.NextFunction) => {
-            if (req.adminizer.config.auth?.enable) {
-                if (!req.user) {
-                    return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
-                }
-            }
-
-            // module logic here
-
-            const isDev = process.env.NODE_ENV === 'development';
-            const moduleComponent = isDev ? '/modules/test/ComponentB.tsx' : `${adminizer.config.routePrefix}/assets/modules/ComponentB.es.js`;
-            const users = await req.adminizer.modelHandler.internal('auth').get<UserAP>('userap').find({})
-            return req.Inertia.render({
-                component: 'module', // required
-                props: {
-                    moduleComponent: moduleComponent, // required
-                    data: {
-                        users: users,
-                    }
-                    // ...{menu: {test: '12'}}
-                    // other props
-                }
-            })
-
-        }
-
-        adminizer.app.get(`${adminizer.config.routePrefix}/module-test`, adminizer.middlewareManager.bindMiddlewares(middlewares, module));
-        adminizer.app.post(`${adminizer.config.routePrefix}/module-test`, adminizer.middlewareManager.bindMiddlewares(middlewares, async (req: ReqType, res: ResType) => {
-            const rawUserId = req.body.userId;
-            const userId = req.body.sendToAll
-                ? undefined
-                : Number(rawUserId);
-
-            if (!req.body.sendToAll && (!Number.isInteger(userId) || userId <= 0)) {
-                return res.status(400).json({
-                    error: 'Invalid userId'
-                });
-            }
-
-            await adminizer.sendNotification({
-                title: "Test notification",
-                message: req.body.message,
-                notificationClass: 'general',
-                channel: '',
-                ...(userId ? {userId} : {})
-            })
-            return res.json({
-                test: req.body
-            })
-        }));
-    });
-
     // add custom control wysiwyg
     // adminizer.emitter.on('adminizer:loaded', () => {
     //     adminizer.controlsHandler.add(new ReactQuill(adminizer))
@@ -222,6 +167,10 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
     adminizer.emitter.on('adminizer:loaded', () => {
         corsApi(adminizer)
     });
+
+    // adminizer.emitter.on('app:enabled', (data) => {
+    //     console.log(data)
+    // })
 
     try {
 
@@ -236,6 +185,11 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
         }
 
         await adminizer.init(adminpanelConfig as unknown as AdminpanelConfig)
+
+        // add ComponentB -- test module
+        await adminizer.appManager.enable(new ComponentBApp());
+
+
 
         if (ormType === "typeorm") {
             adminizer.customFilterHandler.add(new TypeOrmExampleJsonCustomFilterHandler(), {force: true});

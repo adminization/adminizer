@@ -8,7 +8,7 @@ import {
     RunContext,
 } from '@openai/agents';
 import {AbstractAiModelService} from '../../../dist/lib/ai-assistant/AbstractAiModelService';
-import {AiAssistantMessage, Entity} from '../../../dist/interfaces/types';
+import {AiAssistantMessage, ModelResource} from '../../../dist/interfaces/types';
 import {ModelConfig} from '../../../dist/interfaces/adminpanelConfig';
 import {Adminizer} from '../../../dist/lib/Adminizer';
 import {DataAccessor} from '../../../dist/lib/DataAccessor';
@@ -163,7 +163,7 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
                 // Handle fields parameter - can be empty array (default), undefined, or actual fields
                 const fieldsValue = input.fields;
                 const projected = fieldsValue && Array.isArray(fieldsValue) && fieldsValue.length > 0
-                    ? limited.map((record) => this.pickFields(record, fieldsValue))
+                    ? limited.map((record: Record<string, unknown>) => this.pickFields(record, fieldsValue))
                     : limited;
                 
                 if (fieldsValue && fieldsValue.length > 0) {
@@ -483,7 +483,7 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
         return readable;
     }
 
-    private resolveEntity(modelName: string): Entity {
+    private resolveEntity(modelName: string): ModelResource {
         const normalized = modelName.trim().toLowerCase();
         const models = this.adminizer.config.models ?? {};
 
@@ -507,7 +507,6 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
                 name: entityName,
                 config,
                 model: modelInstance,
-                type: 'model',
                 uri: `${this.adminizer.config.routePrefix}/model/${entityName}`,
             };
         }

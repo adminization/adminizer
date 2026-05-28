@@ -17,7 +17,6 @@ import {
 } from 'sequelize';
 import {Example} from './Example';
 import {UserAP} from '../../../dist';
-import {tr} from '@faker-js/faker/.';
 import {JsonSchema} from './JsonSchema';
 
 @Table({tableName: 'test', timestamps: true})

@@ -100,42 +100,7 @@ export async function sendNotificationsWithDelay(
         const notification = generateRandomNotification();
 
         try {
-            if (notification.notificationClass === "general") {
-                await adminizer.sendNotification(notification);
-
-            } else if (notification.notificationClass === 'system') {
-                switch (notification.channel) {
-                    case 'created':
-                        await adminizer.logSystemCreatedEvent(
-                            notification.title,
-                            notification.message,
-                            notification.metadata
-                        );
-                        break;
-                    case 'updated':
-                        await adminizer.logSystemUpdatedEvent(
-                            notification.title,
-                            notification.message,
-                            notification.metadata
-                        );
-                        break;
-                    case 'deleted':
-                        await adminizer.logSystemDeletedEvent(
-                            notification.title,
-                            notification.message,
-                            notification.metadata
-                        );
-                        break;
-                    case 'system':
-                    default:
-                        await adminizer.logSystemEvent(
-                            notification.title,
-                            notification.message,
-                            notification.metadata
-                        );
-                        break;
-                }
-            }
+            await adminizer.sendNotification(notification);
         } catch (error) {
             console.error(`✗ Failed to send notification ${i + 1}/${count}:`, error);
         }

@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { AbstractFeedbackHandler, FeedbackPayload } from '../../src/lib/feedback/AbstractFeedbackHandler';
+import { AbstractFeedbackHandler, FeedbackPayload } from '../../dist/lib/feedback/AbstractFeedbackHandler';
 
 /**
  * Example FeedbackHandler for the fixture environment.

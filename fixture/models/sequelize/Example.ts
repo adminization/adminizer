@@ -11,7 +11,7 @@ import {
   } from 'sequelize-typescript';
   import {InferAttributes, InferCreationAttributes, ModelStatic, Optional, Sequelize} from 'sequelize';
   import { Test } from './Test';
-import {UserAP} from "../../../src";
+import {UserAP} from "../../../dist";
   
   
   @Table({ tableName: 'example', timestamps: true })

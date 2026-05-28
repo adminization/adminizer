@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { generate } from 'password-hash';
 import { DataSource } from 'typeorm';
-import { UserAP } from '../../src';
+import { UserAP } from '../../dist';
 import { Example } from '../models/sequelize/Example';
 export async function seedDatabase(
   collections: Record<string, any>,

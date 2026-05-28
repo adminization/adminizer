@@ -22,7 +22,7 @@ export function corsApi(adminizer: Adminizer) {
         const cookies = parse(req.headers.cookie || '');
         const frontendToken = cookies.frontend_jwt;
 
-        let frontendUser: UserAP = null;
+        let frontendUser: ReturnType<typeof verifyUser> = null;
 
         if (frontendToken) {
             try {
@@ -38,8 +38,8 @@ export function corsApi(adminizer: Adminizer) {
                 auth: true,
                 user: {
                     id: frontendUser.id,
-                    email: frontendUser.email,
-                    name: frontendUser.fullName
+                    login: frontendUser.login,
+                    name: frontendUser.login
                 }
             });
         } else {
@@ -59,7 +59,18 @@ export function corsApi(adminizer: Adminizer) {
                 .get<UserAP>("UserAP")
                 .findOne({where: {login: login}});
 
-            const token = signUser(user, frontendJwtSecret);
+            if (!user?.id || !user.login) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Login failed'
+                });
+            }
+
+            const token = signUser({
+                id: user.id,
+                login: user.login,
+                isAdministrator: user.isAdministrator,
+            }, frontendJwtSecret);
 
             res.setHeader('Set-Cookie', serialize('frontend_jwt', token, {
                 httpOnly: true,

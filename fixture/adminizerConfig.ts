@@ -9,8 +9,12 @@ const models: AdminpanelConfig["models"] = {
         displayName: 'title',
         // userAccessRelation: 'owner',
         fields: {
-            createdAt: false,
-            updatedAt: false,
+            createdAt: {
+                visible: false
+            },
+            updatedAt: {
+                visible: false
+            },
             title: {
                 title: 'Title',
                 type: 'string',
@@ -479,6 +483,7 @@ const config: AdminpanelConfig = {
         enabled: true
     },
     system: {
+        defaultORM: process.env.ORM ?? "sequelize",
         internalModelAccess: {
             "test-catalog": ["TestCatalog"]
         }
@@ -578,13 +583,6 @@ const config: AdminpanelConfig = {
     },
     navbar: {
         additionalLinks: [
-            {
-                id: '2',
-                link: `${routePrefix}/module-test`,
-                type: 'self',
-                title: 'Test Module',
-                icon: '360'
-            },
             {
                 id: '3',
                 type: "self",

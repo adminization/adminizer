@@ -57,7 +57,6 @@ export class AppManager {
             appName: app.name,
             version: app.version,
         });
-        app.onRegister()
     }
 
     async enable(appOrName: AbstractAdminizerApp | string): Promise<void> {

@@ -4,7 +4,7 @@ import {
     AdminpanelIcon,
     AppSetupContext,
     UserAP,
-} from "../../dist";
+} from "../../../dist";
 
 interface ComponentBAppConfig {
     route: string;
@@ -29,8 +29,8 @@ export class ComponentBApp extends AbstractAdminizerApp<ComponentBAppConfig> {
             title: "Test Module",
             icon: "360",
             section: "Platform",
-            componentFile: path.resolve(import.meta.dirname, "../../modules/test/ComponentB.es.js"),
-            devComponentUrl: "/modules/test/ComponentB.tsx",
+            componentFile: path.resolve(import.meta.dirname, "ComponentB.es.js"),
+            devComponentUrl: "/fixture/apps/component-b/ComponentB.tsx",
             ...config,
         };
     }

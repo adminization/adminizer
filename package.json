@@ -13,6 +13,7 @@
 		"test": "vitest --watch=false",
 		"test:watch": "vitest --reporter verbose",
 		"start": "cross-env NO_SEED_DATA=true ORM=sequelize tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
+		"start:seed": "cross-env ORM=sequelize tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
 		"dev": "cross-env ADMINIZER_ENV=dev ORM=sequelize tsx watch --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
 		"dev:no-seed": "cross-env ADMINIZER_ENV=dev NO_SEED_DATA=true ORM=sequelize tsx watch --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
 		"start:typeorm": "cross-env NO_SEED_DATA=true ORM=typeorm tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
@@ -27,11 +28,10 @@
 		"copy:backend": "node copy-backend.js",
 		"build:backend": "npm run copy:backend && npm run compile:backend",
 		"build": "npm run copy:backend && npm run compile:backend && npm run compile:ui && npm run build:assets",
-		"build:module": "vite build --config modules/test/vite.config.module.ts",
 		"build:react-quill": "vite build --config modules/controls/wysiwyg/vite.config.react-quill.ts",
 		"build:catalog-modules": "vite build --config modules/testCatalog/vite.config.module.ts",
-		"start:seed": "cross-env ORM=sequelize tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
-		"start:typeorm:seed": "cross-env ORM=typeorm tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts"
+		"start:typeorm:seed": "cross-env ORM=typeorm tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
+		"build:apps": "vite build --config fixture/apps/component-b/vite.config.module.ts && vite build --config fixture/apps/module-manager/vite.config.module.ts"
 	},
 	"keywords": [],
 	"author": "Siziy Ivan <xziy88@gmail.com>",

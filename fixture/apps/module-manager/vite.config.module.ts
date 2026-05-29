@@ -44,18 +44,18 @@ export default defineConfig({
             '@/components/ui/table': 'UIComponents',
             '@/components/ui/textarea': 'UIComponents',
             '@/components/ui/tooltip': 'UIComponents',
+            '@/lib/axios-compat': 'axios',
+            '@inertiajs/react': 'InertiajsReact'
         }),
     ],
     build: {
         outDir: path.resolve(import.meta.dirname, ''),
-        // outDir: path.resolve(import.meta.dirname, 'dist/assets'),
         emptyOutDir: false,
         lib: {
-            // Library entrance point
-            entry: path.resolve(import.meta.dirname, 'ComponentB'),
-            name: 'ComponentB',
+            entry: path.resolve(import.meta.dirname, 'ModuleManager'),
+            name: 'ModuleManager',
             formats: ['es'],
-            fileName: (format) => `ComponentB.${format}.js`,
+            fileName: (format) => `ModuleManager.${format}.js`,
         },
         rollupOptions: {
             external: [
@@ -89,12 +89,14 @@ export default defineConfig({
                 '@/components/ui/table',
                 '@/components/ui/textarea',
                 '@/components/ui/tooltip',
+                '@/lib/axios-compat',
+                '@inertiajs/react'
             ],
         },
     },
     resolve: {
         alias: {
-            '@': path.resolve(import.meta.dirname, '../../src/assets/js'),
+            '@': path.resolve(import.meta.dirname, '../../../src/assets/js'),
         },
     },
 });

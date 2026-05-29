@@ -223,10 +223,10 @@ export function registerUIComponents(): void {
 
     //@ts-ignore
     window.UIComponents ??= {};
+
     //@ts-ignore
     window.JSComponents ??= {};
 
-    //@ts-ignore
     //@ts-ignore
     window.sonner = sonner
 

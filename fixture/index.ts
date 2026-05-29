@@ -52,7 +52,8 @@ import cookieParser from "cookie-parser";
 import {corsApi} from "./cors-api/api";
 import {renderIndexPage, NavTreeNode} from "./pages/indexPage";
 import {FileFeedbackHandler} from "./feedback/FileFeedbackHandler";
-import {ComponentBApp} from "./apps/ComponentBApp";
+import {ComponentBApp} from "./apps/component-b/ComponentBApp";
+import {ModuleManagerApp} from "./apps/module-manager/ModuleManagerApp";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
@@ -189,6 +190,9 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
         // add ComponentB -- test module
         await adminizer.appManager.enable(new ComponentBApp());
 
+        // add ModuleManager -- module manager
+        await adminizer.appManager.enable(new ModuleManagerApp());
+
 
 
         if (ormType === "typeorm") {
@@ -274,7 +278,8 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
             req.url.startsWith('/@react-refresh') ||
             req.url.startsWith('/node_modules') ||
             req.url.startsWith('/@fs') ||
-            req.url.startsWith('/modules')
+            req.url.startsWith('/modules') ||
+            req.url.startsWith('/fixture/apps')
         ) {
             adminizer.vite.middlewares(req, res, next);
         } else {

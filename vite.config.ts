@@ -6,6 +6,11 @@ import packageJson from './package.json';
 
 
 export default defineConfig({
+    server: {
+        fs: {
+            allow: ['.', 'fixture'] // Разрешить Vite читать файлы из fixture/
+        }
+    },
     define: {
         '__APP_VERSION__': JSON.stringify(packageJson.version),
         '__BUILD_TIME__': JSON.stringify(new Date().toISOString()),
@@ -45,5 +50,5 @@ export default defineConfig({
         alias: {
             '@': path.resolve(import.meta.dirname, './src/assets/js'),
         },
-    },
+    }
 })

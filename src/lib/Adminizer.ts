@@ -35,7 +35,6 @@ import {CatalogHandler} from "./catalog/CatalogHandler";
 import {v4 as uuid} from "uuid";
 import { AiAssistantHandler } from './ai-assistant/AiAssistantHandler';
 import {NotificationHandler} from './notifications/NotificationHandler';
-import {SystemNotificationService} from './notifications/SystemNotificationService';
 import {bindNotifications} from "../system/bindNotifications";
 import {bindAiAssistant} from "../system/bindAiAssistant";
 import {INotification} from "../interfaces/types";
@@ -244,7 +243,7 @@ export class Adminizer {
         this.modelHandler = new ModelHandler();
 
         // TODO: 'hot reload' unbind models
-        await bindModels(this);
+        bindModels(this);
         this.modelHandler.configureInternalAccess(buildInternalModelAccess(this.config, this.modelHandler));
         bindCustomFilterHandlers(this);
 
@@ -279,7 +278,7 @@ export class Adminizer {
             }
         }
 
-        await bindDashboardWidgets(this);
+        bindDashboardWidgets(this);
 
         await bindNavigation(this);
 
@@ -304,11 +303,11 @@ export class Adminizer {
         await bindAuthorization(this);
 
         // Bind notifications
-        if (this.config.notifications.enabled) await bindNotifications(this);
+        if (this.config.notifications.enabled) bindNotifications(this);
 
-        if (this.config.aiAssistant?.enabled) await bindAiAssistant(this);
+        if (this.config.aiAssistant?.enabled) bindAiAssistant(this);
 
-        if (this.config.history?.enabled) await bindHistory(this)
+        if (this.config.history?.enabled) bindHistory(this)
 
         // FeedbackHandler registers its own route lazily when handler.register() is called
         this.feedbackHandler = new FeedbackHandler(this)

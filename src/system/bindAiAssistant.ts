@@ -9,7 +9,7 @@ const modelFactories: Record<string, (adminizer: Adminizer) => AbstractAiModelSe
     openai: (adminizer) => new OpenAiModelService(adminizer),
 };
 
-export async function bindAiAssistant(adminizer: Adminizer): Promise<void> {
+export function bindAiAssistant(adminizer: Adminizer): void {
     // Early return if AI assistant is disabled
     if (!adminizer.config.aiAssistant?.enabled) {
         Adminizer.log.info('AI assistant is disabled in configuration. Skipping initialization.');

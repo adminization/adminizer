@@ -3,7 +3,7 @@ import {NotificationHandler} from '../lib/notifications/NotificationHandler';
 import {GeneralNotificationService} from '../lib/notifications/GeneralNotificationService';
 import {SystemNotificationService} from '../lib/notifications/SystemNotificationService';
 
-export async function bindNotifications(adminizer: Adminizer): Promise<void> {
+export function bindNotifications(adminizer: Adminizer): void {
     // Create a handler
     adminizer.notificationHandler = new NotificationHandler();
 

@@ -3,7 +3,7 @@ import { Adminizer } from "../lib/Adminizer";
 import fs from 'node:fs';
 import path from 'node:path';
 
-export default async function bindModels(adminizer: Adminizer) {
+export default function bindModels(adminizer: Adminizer) {
 	// Get default ORM adapter from config (or 0th adapter if there was only 1 provided)
 	let defaultOrmAdapter = adminizer.config.system?.defaultORM;
 	if (!defaultOrmAdapter && adminizer.ormAdapters.length === 1) {

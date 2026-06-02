@@ -1,6 +1,8 @@
 import path from "path";
 import {AbstractAdminizerApp, AppSetupContext} from "../../../dist";
 
+const MODULE_MANAGER_ACCESS_TOKEN = "module-manager";
+
 interface ModuleManagerAppConfig {
     route: string;
     sidebarId: string;
@@ -31,6 +33,13 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
     }
 
     setup(ctx: AppSetupContext): void {
+        ctx.accessRight({
+            id: MODULE_MANAGER_ACCESS_TOKEN,
+            name: "Module manager",
+            description: "Access to module manager",
+            department: "Modules",
+        });
+
         const moduleComponent = ctx.asset({
             id: "component",
             filePath: this.config.componentFile,
@@ -42,7 +51,7 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
             method: "get",
             route: this.config.route,
             middleware: this.renderModule(moduleComponent),
-            policies: [{type: "auth", mode: "ui"}],
+            policies: [{type: "permission", token: MODULE_MANAGER_ACCESS_TOKEN, mode: "ui"}],
         });
 
         ctx.controller({
@@ -50,7 +59,7 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
             method: "post",
             route: `${this.config.route}/enable`,
             middleware: this.enableModule,
-            policies: [{type: "auth", mode: "api"}],
+            policies: [{type: "permission", token: MODULE_MANAGER_ACCESS_TOKEN, mode: "api"}],
         });
 
         ctx.controller({
@@ -58,7 +67,7 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
             method: "post",
             route: `${this.config.route}/disable`,
             middleware: this.disableModule,
-            policies: [{type: "auth", mode: "api"}],
+            policies: [{type: "permission", token: MODULE_MANAGER_ACCESS_TOKEN, mode: "api"}],
         });
 
         ctx.controller({
@@ -66,7 +75,7 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
             method: "post",
             route: `${this.config.route}/unregister`,
             middleware: this.unregisterModule,
-            policies: [{type: "auth", mode: "api"}],
+            policies: [{type: "permission", token: MODULE_MANAGER_ACCESS_TOKEN, mode: "api"}],
         });
 
         ctx.config({
@@ -79,6 +88,7 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
                         title: this.config.title,
                         icon: this.config.icon as any,
                         section: this.config.section,
+                        accessRightsToken: MODULE_MANAGER_ACCESS_TOKEN,
                     },
                 ],
             },

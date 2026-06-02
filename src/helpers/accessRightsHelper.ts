@@ -28,6 +28,22 @@ export class AccessRightsHelper {
         this._tokens.push(accessRightsToken);
     }
 
+    public unregisterToken(tokenId: string): boolean {
+        const normalizedTokenId = tokenId.toLowerCase();
+        const index = this._tokens.findIndex((token) => token.id === normalizedTokenId);
+        if (index === -1) {
+            return false;
+        }
+
+        this._tokens.splice(index, 1);
+        return true;
+    }
+
+    public hasToken(tokenId: string): boolean {
+        const normalizedTokenId = tokenId.toLowerCase();
+        return this._tokens.some((token) => token.id === normalizedTokenId);
+    }
+
     public registerTokens(accessRightsTokens: AccessRightsToken[]): void {
         for (let token of accessRightsTokens) {
             this.registerToken(token);

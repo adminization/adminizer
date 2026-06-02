@@ -1,5 +1,6 @@
 import type {Adminizer} from "../Adminizer";
 import {AbstractAdminizerApp, AppAsset, AppConfigPatch, AppController, AppDisposer, AppSetupContext} from "./AdminizerApp";
+import type {AccessRightsToken} from "../../interfaces/types";
 
 export type AppState = "registered" | "enabled" | "disabled" | "unregistered" | "failed";
 
@@ -35,6 +36,11 @@ class RuntimeAppSetupContext implements AppSetupContext {
     config(config: AppConfigPatch, id = `config-${++this.configLayerIndex}`): void {
         const resourceId = this.adminizer.configLayerHandler.register(this.appName, id, config);
         this.disposers.push(() => this.adminizer.configLayerHandler.unregister(resourceId));
+    }
+
+    accessRight(token: AccessRightsToken): void {
+        const resourceId = this.adminizer.accessRightsHandler.register(this.appName, token);
+        this.disposers.push(() => this.adminizer.accessRightsHandler.unregister(resourceId));
     }
 }
 

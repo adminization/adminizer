@@ -51,6 +51,7 @@ import { AppManager } from "./app-manager/AppManager";
 import { ControllerHandler } from "./app-manager/ControllerHandler";
 import { AssetHandler } from "./app-manager/AssetHandler";
 import { ConfigLayerHandler } from "./app-manager/ConfigLayerHandler";
+import { AccessRightsHandler } from "./access-rights/AccessRightsHandler";
 
 export class Adminizer {
     // Preconfigures
@@ -86,6 +87,7 @@ export class Adminizer {
     controllerHandler: ControllerHandler
     assetHandler: AssetHandler
     configLayerHandler: ConfigLayerHandler
+    accessRightsHandler!: AccessRightsHandler
 
     // Constants
     jwtSecret: string = process.env.JWT_SECRET ?? uuid()
@@ -254,6 +256,7 @@ export class Adminizer {
 
         // TODO: 'hot reload' problem with deleting access right tokens
         this.accessRightsHelper = new AccessRightsHelper(this);
+        this.accessRightsHandler = new AccessRightsHandler(this);
 
         // Helpers go to construtor
         this.configHelper = new ConfigHelper(this);

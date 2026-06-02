@@ -45,6 +45,7 @@ export async function seedDatabase(
         "read-jsonschema-model",
         "ai-assistant-dummy",
         "ai-assistant-openai",
+        "module-manager",
       ]
     },
     { name: 'Guests', description: 'Guest access' },
@@ -230,6 +231,7 @@ export async function seedTypeOrmDatabase(
         "read-jsonschema-model",
         "ai-assistant-dummy",
         "ai-assistant-openai",
+        "module-manager",
       ]
     },
     { name: 'Guests', description: 'Guest access' },

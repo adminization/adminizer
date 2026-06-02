@@ -61,6 +61,14 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
             policies: [{type: "auth", mode: "api"}],
         });
 
+        ctx.controller({
+            id: "unregister",
+            method: "post",
+            route: `${this.config.route}/unregister`,
+            middleware: this.unregisterModule,
+            policies: [{type: "auth", mode: "api"}],
+        });
+
         ctx.config({
             navbar: {
                 additionalLinks: [
@@ -143,6 +151,38 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
             })
         } catch (error) {
             req.flash.setFlashMessage('error', `Ошибка при выключении модуля ${name}.`);
+            return res.status(500).json({error: error.message});
+        }
+    };
+
+    private unregisterModule: MiddlewareType = async (req, res) => {
+        const {name} = req.body;
+        if (!name) {
+            return res.status(400).json({error: "Name is required"});
+        }
+
+        if (name === "module-manager") {
+            return res.status(400).json({error: "Модуль 'module-manager' нельзя удалить"});
+        }
+
+        try {
+            await req.adminizer.appManager.unregister(name);
+            
+            // Логирование для проверки состояния после удаления
+            console.log('--- Проверка состояния после удаления модуля:', name, '---');
+            console.log('Список установленных приложений:', req.adminizer.appManager.getInstalledApps());
+            console.log('Состояние модуля:', req.adminizer.appManager.getState(name));
+            console.log('Объект модуля:', req.adminizer.appManager.getApp(name));
+            console.log('Контроллеры модуля:', req.adminizer.controllerHandler.getByApp(name));
+            console.log('Ассеты модуля:', req.adminizer.assetHandler.getByApp(name));
+            console.log('Конфигурация модуля:', req.adminizer.configLayerHandler.getByApp(name));
+            console.log('--- Проверка завершена ---');
+            
+            return res.json({
+                success: true
+            })
+        } catch (error) {
+            req.flash.setFlashMessage('error', `Ошибка при удалении модуля ${name}.`);
             return res.status(500).json({error: error.message});
         }
     };

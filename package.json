@@ -36,7 +36,8 @@
 	"keywords": [],
 	"author": "Siziy Ivan <xziy88@gmail.com>",
 	"contributors": [
-		"Serebriakov Roman <rserebryakov1902@gmail.com>"
+		"Serebriakov Roman <rserebryakov1902@gmail.com>",
+		"Dmitriy Tihonov"
 	],
 	"license": "MIT",
 	"description": "A modern, framework-agnostic admin panel for Node.js with TypeScript backend and React frontend",

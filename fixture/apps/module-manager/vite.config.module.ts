@@ -44,6 +44,7 @@ export default defineConfig({
             '@/components/ui/table': 'UIComponents',
             '@/components/ui/textarea': 'UIComponents',
             '@/components/ui/tooltip': 'UIComponents',
+            '@/components/modals/del-modal': ['JSComponents', 'DeleteModal'],
             '@/lib/axios-compat': 'axios',
             '@inertiajs/react': 'InertiajsReact'
         }),
@@ -89,6 +90,7 @@ export default defineConfig({
                 '@/components/ui/table',
                 '@/components/ui/textarea',
                 '@/components/ui/tooltip',
+                '@/components/modals/del-modal',
                 '@/lib/axios-compat',
                 '@inertiajs/react'
             ],

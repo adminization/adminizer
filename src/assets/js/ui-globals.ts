@@ -218,6 +218,7 @@ import MultiSelect from '@/components/multi-select';
 import * as sonner from 'sonner';
 import axios from '@/lib/axios-compat';
 import { adminApi } from '@/lib/admin-api';
+import DeleteModal from "@/components/modals/del-modal";
 
 export function registerUIComponents(): void {
 
@@ -423,6 +424,7 @@ export function registerUIComponents(): void {
         VanillaJSONEditor,
         HandsonTable,
         MonacoEditor,
-        MultiSelect
+        MultiSelect,
+        DeleteModal
     });
 }

@@ -1,5 +1,14 @@
 import type {Adminizer} from "../Adminizer";
-import {AbstractAdminizerApp, AppAsset, AppConfigPatch, AppController, AppDisposer, AppSetupContext} from "./AdminizerApp";
+import {
+    AbstractAdminizerApp,
+    AppAsset,
+    AppConfigPatch,
+    AppController,
+    AppDisposer,
+    AppEventHandler,
+    AppEventName,
+    AppSetupContext
+} from "./AdminizerApp";
 import type {AccessRightsToken} from "../../interfaces/types";
 import type {AbstractCatalog} from "../catalog/AbstractCatalog";
 
@@ -57,6 +66,24 @@ class RuntimeAppSetupContext implements AppSetupContext {
                 appName: this.appName,
                 resourceId,
                 slug: catalog.slug,
+            });
+        });
+    }
+
+    listener(event: AppEventName, handler: AppEventHandler): void {
+        this.adminizer.emitter.on(event, handler);
+        const resourceId = `${this.appName}:${event.toString()}:${this.disposers.length + 1}`;
+        this.adminizer.emitter.emit("app:listener:registered", {
+            appName: this.appName,
+            resourceId,
+            event,
+        });
+        this.disposers.push(() => {
+            this.adminizer.emitter.off(event, handler);
+            this.adminizer.emitter.emit("app:listener:unregistered", {
+                appName: this.appName,
+                resourceId,
+                event,
             });
         });
     }

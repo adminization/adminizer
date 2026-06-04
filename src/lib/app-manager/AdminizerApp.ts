@@ -3,6 +3,8 @@ import type {AccessRightsToken} from "../../interfaces/types";
 import type {AbstractCatalog} from "../catalog/AbstractCatalog";
 
 export type AppDisposer = () => void | Promise<void>;
+export type AppEventName = string | symbol;
+export type AppEventHandler<TPayload = any> = (payload: TPayload) => void | Promise<void>;
 export type AppControllerMethod = "get" | "post" | "put" | "patch" | "delete" | "all";
 export type AppControllerPolicyMode = "ui" | "api";
 export type AppControllerPolicy =
@@ -42,6 +44,7 @@ export interface AppSetupContext {
     config(config: AppConfigPatch, id?: string): void;
     accessRight(token: AccessRightsToken): void;
     catalog(catalog: AbstractCatalog): void;
+    listener(event: AppEventName, handler: AppEventHandler): void;
 }
 
 export abstract class AbstractAdminizerApp<TConfig = unknown> {

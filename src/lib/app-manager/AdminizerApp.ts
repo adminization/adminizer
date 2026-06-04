@@ -1,5 +1,6 @@
 import type {AdminpanelConfig} from "../../interfaces/adminpanelConfig";
 import type {AccessRightsToken} from "../../interfaces/types";
+import type {AbstractCatalog} from "../catalog/AbstractCatalog";
 
 export type AppDisposer = () => void | Promise<void>;
 export type AppControllerMethod = "get" | "post" | "put" | "patch" | "delete" | "all";
@@ -40,6 +41,7 @@ export interface AppSetupContext {
     controller(controller: AppController): string;
     config(config: AppConfigPatch, id?: string): void;
     accessRight(token: AccessRightsToken): void;
+    catalog(catalog: AbstractCatalog): void;
 }
 
 export abstract class AbstractAdminizerApp<TConfig = unknown> {

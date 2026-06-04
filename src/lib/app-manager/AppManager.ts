@@ -1,6 +1,7 @@
 import type {Adminizer} from "../Adminizer";
 import {AbstractAdminizerApp, AppAsset, AppConfigPatch, AppController, AppDisposer, AppSetupContext} from "./AdminizerApp";
 import type {AccessRightsToken} from "../../interfaces/types";
+import type {AbstractCatalog} from "../catalog/AbstractCatalog";
 
 export type AppState = "registered" | "enabled" | "disabled" | "unregistered" | "failed";
 
@@ -41,6 +42,23 @@ class RuntimeAppSetupContext implements AppSetupContext {
     accessRight(token: AccessRightsToken): void {
         const resourceId = this.adminizer.accessRightsHandler.register(this.appName, token);
         this.disposers.push(() => this.adminizer.accessRightsHandler.unregister(resourceId));
+    }
+
+    catalog(catalog: AbstractCatalog): void {
+        const resourceId = this.adminizer.catalogHandler.register(this.appName, catalog);
+        this.adminizer.emitter.emit("app:catalog:registered", {
+            appName: this.appName,
+            resourceId,
+            slug: catalog.slug,
+        });
+        this.disposers.push(() => {
+            this.adminizer.catalogHandler.unregister(resourceId);
+            this.adminizer.emitter.emit("app:catalog:unregistered", {
+                appName: this.appName,
+                resourceId,
+                slug: catalog.slug,
+            });
+        });
     }
 }
 

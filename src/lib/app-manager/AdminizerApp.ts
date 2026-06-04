@@ -1,4 +1,4 @@
-import type {AdminpanelConfig} from "../../interfaces/adminpanelConfig";
+import type {AdminpanelConfig, ModelConfig} from "../../interfaces/adminpanelConfig";
 import type {AccessRightsToken} from "../../interfaces/types";
 import type {AbstractCatalog} from "../catalog/AbstractCatalog";
 import type {AppModelAccess} from "../model/ModelHandler";
@@ -41,6 +41,12 @@ export interface AppAsset {
 
 export interface AppRuntime {
     models: AppModelAccess;
+    config: AppRuntimeConfig;
+}
+
+export interface AppRuntimeConfig {
+    readonly routePrefix: string;
+    getModelConfig(modelName: string): ModelConfig | undefined;
 }
 
 export interface AppModelAccessResource {
@@ -55,12 +61,19 @@ export interface AppModelResource<T = any> {
     sync?: boolean;
 }
 
+export interface AppCatalogFactoryResource {
+    id: string;
+    factory: (runtime: AppRuntime) => AbstractCatalog | Promise<AbstractCatalog>;
+}
+
+export type AppCatalogResource = AbstractCatalog | AppCatalogFactoryResource;
+
 export interface AppSetupContext {
     asset(asset: AppAsset): string;
     controller(controller: AppController): string;
     config(config: AppConfigPatch, id?: string): void;
     accessRight(token: AccessRightsToken): void;
-    catalog(catalog: AbstractCatalog): void;
+    catalog(catalog: AppCatalogResource): void;
     model<T = any>(model: AppModelResource<T>): void;
     modelAccess(access: AppModelAccessResource): void;
     listener(event: AppEventName, handler: AppEventHandler): void;

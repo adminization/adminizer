@@ -7,6 +7,7 @@ import {
     AppDisposer,
     AppEventHandler,
     AppEventName,
+    AppCatalogResource,
     AppModelAccessResource,
     AppModelResource,
     AppRuntime,
@@ -25,7 +26,7 @@ interface InstalledApp {
 
 class RuntimeAppSetupContext implements AppSetupContext {
     readonly disposers: AppDisposer[] = [];
-    private readonly pendingRegistrations: Promise<void>[] = [];
+    private readonly pendingRegistrations: Array<() => Promise<void>> = [];
     private configLayerIndex = 0;
     private modelAccessIndex = 0;
 
@@ -58,7 +59,15 @@ class RuntimeAppSetupContext implements AppSetupContext {
         this.disposers.push(() => this.adminizer.accessRightsHandler.unregister(resourceId));
     }
 
-    catalog(catalog: AbstractCatalog): void {
+    catalog(catalog: AppCatalogResource): void {
+        this.pendingRegistrations.push(() => this.registerCatalog(catalog));
+    }
+
+    private async registerCatalog(catalogResource: AppCatalogResource): Promise<void> {
+        const catalog = this.isCatalogFactory(catalogResource)
+            ? await catalogResource.factory(this.createRuntime())
+            : catalogResource;
+
         const resourceId = this.adminizer.catalogHandler.register(this.appName, catalog);
         this.adminizer.emitter.emit("app:catalog:registered", {
             appName: this.appName,
@@ -75,12 +84,18 @@ class RuntimeAppSetupContext implements AppSetupContext {
         });
     }
 
+    private isCatalogFactory(catalog: AppCatalogResource): catalog is Exclude<AppCatalogResource, AbstractCatalog> {
+        return "factory" in catalog;
+    }
+
     model<T = any>(model: AppModelResource<T>): void {
-        this.pendingRegistrations.push(this.registerModel(model));
+        this.pendingRegistrations.push(() => this.registerModel(model));
     }
 
     async waitForPendingRegistrations(): Promise<void> {
-        await Promise.all(this.pendingRegistrations);
+        for (const registration of this.pendingRegistrations) {
+            await registration();
+        }
     }
 
     private async registerModel<T = any>(model: AppModelResource<T>): Promise<void> {
@@ -130,6 +145,10 @@ class RuntimeAppSetupContext implements AppSetupContext {
     }
 
     modelAccess(access: AppModelAccessResource): void {
+        this.pendingRegistrations.push(() => this.registerModelAccess(access));
+    }
+
+    private async registerModelAccess(access: AppModelAccessResource): Promise<void> {
         const resourceId = this.adminizer.modelHandler.registerAppAccess(
             this.appName,
             access.id ?? `model-access-${++this.modelAccessIndex}`,
@@ -172,6 +191,14 @@ class RuntimeAppSetupContext implements AppSetupContext {
     private createRuntime(): AppRuntime {
         return {
             models: this.adminizer.modelHandler.createAppAccess(this.appName),
+            config: {
+                routePrefix: this.adminizer.config.routePrefix,
+                getModelConfig: (modelName: string) => {
+                    const models = this.adminizer.config.models ?? {};
+                    const modelKey = Object.keys(models).find((key) => key.toLowerCase() === modelName.toLowerCase());
+                    return modelKey ? models[modelKey] : undefined;
+                },
+            },
         };
     }
 }

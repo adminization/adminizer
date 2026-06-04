@@ -1,6 +1,7 @@
 import { JSONSchema4 } from "json-schema";
 import { Adminizer } from "../Adminizer";
-import { StorageServices } from "./Navigation";
+
+export interface CatalogStorageServices {}
 
 /**
  * Interface `Item` describes the data that the UI will operate on
@@ -35,7 +36,7 @@ export type _Item_ = {
  * General Item structure that will be available for all elements, including groups
  */
 export abstract class BaseItem<T extends Item> {
-    storageServices?: StorageServices
+    storageServices?: CatalogStorageServices
     // public abstract readonly id: string;
     public abstract readonly type: string;
 

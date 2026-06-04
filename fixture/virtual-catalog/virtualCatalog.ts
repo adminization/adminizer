@@ -7,7 +7,6 @@ import {
 } from "../../dist";
 import {Adminizer} from "../../dist";
 import {v4 as uuid} from "uuid";
-import {NavItem} from "../../dist";
 
 interface TestItem extends Item {
     modelId?: string
@@ -410,7 +409,7 @@ class TestItemM extends AbstractItem<TestItem> {
     async getEditTemplate(id: string | number, catalogId: string, req: ReqType, modelId: string | number): Promise<{
         type: 'component' | 'navigation.group' | 'navigation.link' | 'model' | 'model.link',
         data: {
-            item: NavItem
+            item: TestItem
         }
     }> {
         return Promise.resolve({
@@ -510,7 +509,7 @@ class TestItemModel extends AbstractItem<TestItem> {
     async getEditTemplate(id: string | number, catalogId: string, req: ReqType, modelId: string | number): Promise<{
         type: 'model',
         data: {
-            item: NavItem,
+            item: TestItem,
             model: string
         }
     }> {

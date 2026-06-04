@@ -23,7 +23,6 @@ const EXCLUDED_MODELS = new Set([
     'MediaManagerAP',
     'MediaManagerAssociationsAP',
     'MediaManagerMetaAP',
-    'NavigationAP',
     'NotificationAP',
     'UserNotificationAP',
     'UserAP',

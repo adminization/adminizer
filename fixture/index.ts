@@ -54,6 +54,9 @@ import {renderIndexPage, NavTreeNode} from "./pages/indexPage";
 import {FileFeedbackHandler} from "./feedback/FileFeedbackHandler";
 import {ComponentBApp} from "./apps/component-b/ComponentBApp";
 import {ModuleManagerApp} from "./apps/module-manager/ModuleManagerApp";
+import {NavigationApp} from "./apps/navigation/NavigationApp";
+import {navigationAppConfig} from "./apps/navigation/navigationConfig";
+import {navigationModelName} from "./apps/navigation/NavigationModel";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
@@ -187,6 +190,13 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
         await adminizer.init(adminpanelConfig as unknown as AdminpanelConfig)
 
+        if (ormType === "sequelize") {
+            await adminizer.appManager.enable(new NavigationApp({
+                ...navigationAppConfig,
+                sync: true,
+            }));
+        }
+
         // add ComponentB -- test module
         await adminizer.appManager.enable(new ComponentBApp());
 
@@ -293,10 +303,10 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
     // Custom route
     mainApp.get('/nav', async (req, res) => {
         try {
-            const header = await adminizer.modelHandler
-                .internal('navigation')
-                .get('navigationap')
-                .findOne({where: {label: 'header'}});
+            const navigationModel = adminizer.modelHandler.model.get(navigationModelName) as any;
+            const header = navigationModel
+                ? await navigationModel.findOne({where: {label: 'header'}})
+                : null;
             res.json({header: header});
         } catch (error) {
             res.status(500).json({error: 'Internal server error'});
@@ -337,10 +347,12 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
 
 async function getNavigationSection(section: string): Promise<NavTreeNode[]> {
-    const navigationRecord = await adminizer.modelHandler
-        .internal('navigation')
-        .get<any>('navigationap')
-        .findOne({where: {label: section}});
+    const navigationModel = adminizer.modelHandler.model.get(navigationModelName) as any;
+    if (!navigationModel) {
+        return [];
+    }
+
+    const navigationRecord = await navigationModel.findOne({where: {label: section}});
     return navigationRecord?.tree ?? [];
 }
 

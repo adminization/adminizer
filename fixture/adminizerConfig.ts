@@ -1,6 +1,6 @@
 import { AdminpanelConfig } from "../dist";
 
-const routePrefix = "/adminizer";
+export const routePrefix = "/adminizer";
 
 const models: AdminpanelConfig["models"] = {
     Test: {
@@ -546,57 +546,8 @@ const config: AdminpanelConfig = {
         ],
         autoloadWidgetsPath: 'fixture/widgets'
     },
-    navigation: {
-        items: [
-            {
-                title: 'Category',
-                model: "Category",
-                urlPath: '/catalog/category/${data.record.slug}'
-            },
-            {
-                title: 'Example',
-                model: "Example",
-                urlPath: `${routePrefix}/model/Example/\${data.record.id}`
-            }
-        ],
-        // Links in the admin panel leading to different navigation data (for example: header, footer) should end the same way as you specify in the array
-        // /admin/catalog/navigation/footer
-        // /admin/catalog/navigation/header
-        sections: ['header', 'footer'],
-        groupField: [
-            {
-                name: 'link',
-                label: 'Ссылка',
-                required: false
-            },
-            {
-                name: "test_field",
-                label: 'Test',
-                required: false
-            },
-            {
-                name: "test_feild2",
-                label: 'Test2',
-                required: false
-            }
-        ],
-    },
     navbar: {
         additionalLinks: [
-            {
-                id: '3',
-                type: "self",
-                link: `${routePrefix}/catalog/navigation/header`,
-                title: 'Nav Header',
-                icon: 'menu'
-            },
-            {
-                id: '4',
-                type: "self",
-                link: `${routePrefix}/catalog/navigation/footer`,
-                title: 'Nav Footer',
-                icon: 'menu'
-            },
             {
                 id: '5',
                 type: "self",

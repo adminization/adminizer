@@ -1,10 +1,9 @@
-import {AbstractAdminizerApp, AppSetupContext, NavigationConfig} from "../../../dist";
+import {AbstractAdminizerApp, AppSetupContext} from "../../../dist";
+import {NavigationCatalog} from "./NavigationCatalog";
 import {navigationModelName, navigationSchema} from "./NavigationModel";
+import type {NavigationAppConfig} from "./NavigationTypes";
 
-export interface NavigationAppConfig extends Omit<NavigationConfig, "model"> {
-    model?: string;
-    sync?: boolean;
-}
+const NAVIGATION_ACCESS_TOKEN = "catalog-navigation";
 
 export class NavigationApp extends AbstractAdminizerApp<NavigationAppConfig> {
     readonly name = "navigation";
@@ -16,12 +15,15 @@ export class NavigationApp extends AbstractAdminizerApp<NavigationAppConfig> {
         this.config = {
             ...config,
             model: config.model ?? navigationModelName,
+            routePrefix: config.routePrefix ?? "",
         };
     }
 
     setup(ctx: AppSetupContext): void {
+        let navigationCatalog: NavigationCatalog | undefined;
+
         ctx.accessRight({
-            id: "catalog-navigation",
+            id: NAVIGATION_ACCESS_TOKEN,
             name: "Navigation",
             description: "Access to edit navigation catalogs",
             department: "Catalog",
@@ -38,6 +40,79 @@ export class NavigationApp extends AbstractAdminizerApp<NavigationAppConfig> {
                 this.config.model,
                 ...this.config.items.map((item) => item.model),
             ],
+        });
+
+        ctx.config({
+            models: {
+                [this.config.model.toLowerCase()]: {
+                    add: false,
+                    fields: {
+                        createdAt: {visible: false},
+                        updatedAt: {visible: false},
+                    },
+                    navbar: {
+                        visible: false,
+                    },
+                    icon: "storage",
+                    identifierField: "",
+                    list: {
+                        fields: {
+                            tree: {visible: false},
+                            id: {visible: false},
+                        },
+                    },
+                    model: this.config.model.toLowerCase(),
+                    remove: false,
+                    title: this.config.model,
+                    tools: [],
+                },
+            },
+            navbar: {
+                additionalLinks: this.config.sections.map((section) => ({
+                    id: `navigation-${section}`,
+                    type: "self",
+                    link: `${this.config.routePrefix}/catalog/navigation/${section}`,
+                    title: `Nav ${section.charAt(0).toUpperCase()}${section.slice(1)}`,
+                    icon: "menu" as any,
+                    accessRightsToken: NAVIGATION_ACCESS_TOKEN,
+                })),
+            },
+        });
+
+        ctx.catalog({
+            id: "navigation",
+            factory: async (runtime) => {
+                const catalog = new NavigationCatalog(runtime, this.config);
+                await catalog.ready();
+                navigationCatalog = catalog;
+                return catalog;
+            },
+        });
+
+        ctx.listener("model:updated", async (event: {
+            modelName: string;
+            record: Record<string, any>;
+        }) => {
+            if (!navigationCatalog) {
+                return;
+            }
+
+            const itemConfig = this.config.items.find((item) =>
+                item.model.toLowerCase() === event.modelName.toLowerCase()
+            );
+            if (!itemConfig) {
+                return;
+            }
+
+            for (const section of this.config.sections) {
+                navigationCatalog.setId(section);
+                const navItem = navigationCatalog.itemTypes.find((item) =>
+                    item.type === event.modelName.toLowerCase()
+                );
+                if (navItem) {
+                    await navItem.updateModelItems(event.record.id, {record: event.record}, section);
+                }
+            }
         });
     }
 }

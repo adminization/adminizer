@@ -9,7 +9,6 @@ export function buildInternalModelAccess(
     const accessMap = config.system?.internalModelAccess;
     const dynamicAccessMap: InternalModelAccessMap = {};
 
-    addInternalAccessModels(dynamicAccessMap, "navigation", getNavigationInternalModels(config));
     addInternalAccessModels(dynamicAccessMap, "data-accessor", getDataAccessorInternalModels(config, modelHandler));
     addInternalAccessModels(dynamicAccessMap, "history", getHistoryInternalModels(config, modelHandler));
 
@@ -34,21 +33,6 @@ function addInternalAccessModels(accessMap: InternalModelAccessMap, scope: strin
     }
 
     accessMap[scope] = Array.from(new Set(models));
-}
-
-function getNavigationInternalModels(config: AdminpanelConfig): string[] {
-    if (!config.navigation) {
-        return [];
-    }
-
-    const models = [
-        config.navigation.model ?? "NavigationAP",
-        ...config.navigation.items
-            .map(item => item.model)
-            .filter((model): model is string => Boolean(model))
-    ];
-
-    return Array.from(new Set(models));
 }
 
 function getDataAccessorInternalModels(

@@ -11,7 +11,6 @@ import Router from "./../system/Router";
 import bindAssets from "../system/bindAssets";
 import bindDev from "../system/bindDev";
 import bindDashboardWidgets from "../system/bindDashboardWidgets";
-import {bindNavigation} from "../system/bindNavigation";
 import bindMediaManager from "../system/bindMediaManager";
 import bindAccessRights from "../system/bindAccessRights";
 import bindAuthorization from "../system/bindAuthorization";
@@ -39,7 +38,6 @@ import {bindNotifications} from "../system/bindNotifications";
 import {bindAiAssistant} from "../system/bindAiAssistant";
 import {INotification} from "../interfaces/types";
 import {MediaManagerHandler} from "./media-manager/MediaManagerHandler";
-import {StorageServices} from "./catalog/Navigation";
 import {bindCors} from "../system/bindCors";
 import { HistoryHandler } from "./history-actions/HistoryHandler";
 import bindHistory from "../system/bindHistory";
@@ -81,7 +79,6 @@ export class Adminizer {
     controlsHandler!: ControlsHandler
     catalogHandler!: CatalogHandler
     mediaManagerHandler!: MediaManagerHandler
-    storageServices!: StorageServices
     feedbackHandler!: FeedbackHandler
     appManager: AppManager
     controllerHandler: ControllerHandler
@@ -282,8 +279,6 @@ export class Adminizer {
         }
 
         bindDashboardWidgets(this);
-
-        await bindNavigation(this);
 
         bindMediaManager(this);
 

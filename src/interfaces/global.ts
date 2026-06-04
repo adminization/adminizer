@@ -50,12 +50,6 @@ declare global {
 			isPublic?: boolean
 			parent?: ModelsAP["MediaManagerAP"]
 		}
-
-		NavigationAP: {
-			id?: string
-			label: string
-			tree: any
-		}
 	}
     type reqSession = {
         flashMessages: Record<string, string[]>;

@@ -255,11 +255,6 @@ export interface AdminpanelConfig {
      */
     rootPath?: string
 
-    /**
-     *  Navigation
-     */
-    navigation?: NavigationConfig
-
     mediamanager?: MediaManagerConfig
 
     /** System settings */
@@ -677,24 +672,6 @@ export interface HrefConfig {
      * Optional section grouping for navbar items (side navigation)
      */
     section?: string
-}
-
-export interface NavigationItemTypeConfig {
-    model: string
-    title: string
-    /**
-     *  /page/${data.record.slug}
-     */
-    urlPath: string | ((v: any) => string)
-}
-
-export interface NavigationConfig {
-    model?: string
-    sections: string[]
-    groupField: { name: string, required: boolean, label: string }[]
-    allowContentInGroup?: boolean
-    items: NavigationItemTypeConfig[],
-    movingGroupsRootOnly?: boolean
 }
 
 export interface MediaManagerConfig {

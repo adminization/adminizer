@@ -16,7 +16,6 @@ export const DEFAULT_INTERNAL_MODEL_ACCESS: InternalModelAccessMap = {
     history: ["HistoryActionsAP", "UserAP"],
     "data-accessor": [],
     notifications: ["NotificationAP", "UserNotificationAP", "UserAP"],
-    navigation: ["NavigationAP"],
     feed: ["FilterAP", "UserAP"],
     widgets: ["UserAP", "FilterAP"]
 };

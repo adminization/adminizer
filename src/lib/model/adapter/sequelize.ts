@@ -11,6 +11,7 @@ import {
     HasOne
 } from "sequelize";
 import {AbstractAdapter, AbstractModel, Attribute} from "../AbstractModel";
+import type {RuntimeModelDefinition} from "../AbstractModel";
 import { CriteriaPopulate, CriteriaSelect, QueryCriteria } from "../../../interfaces/queryCriteria";
 import path from "path";
 import fs from "fs";
@@ -1133,6 +1134,24 @@ export class SequelizeAdapter extends AbstractAdapter {
     getAttributes(modelName: string): any {
         const model = this.getModel(modelName);
         return model?.getAttributes();
+    }
+
+    async registerRuntimeModel(definition: RuntimeModelDefinition): Promise<ModelStatic<any>> {
+        const existingModel = this.getModel(definition.modelName);
+        if (existingModel) {
+            return existingModel;
+        }
+
+        const model = generateSequelizeModel(this.sequelize, definition.modelName, definition.schema);
+        generateAssociationsFromSchema(this.sequelize.models, {
+            [definition.modelName]: definition.schema,
+        });
+
+        if (definition.sync) {
+            await model.sync();
+        }
+
+        return model;
     }
 
     /** Registration of system models */

@@ -48,12 +48,20 @@ export interface AppModelAccessResource {
     models: string[];
 }
 
+export interface AppModelResource<T = any> {
+    name: string;
+    adapter?: string;
+    schema: Record<string, any>;
+    sync?: boolean;
+}
+
 export interface AppSetupContext {
     asset(asset: AppAsset): string;
     controller(controller: AppController): string;
     config(config: AppConfigPatch, id?: string): void;
     accessRight(token: AccessRightsToken): void;
     catalog(catalog: AbstractCatalog): void;
+    model<T = any>(model: AppModelResource<T>): void;
     modelAccess(access: AppModelAccessResource): void;
     listener(event: AppEventName, handler: AppEventHandler): void;
 }

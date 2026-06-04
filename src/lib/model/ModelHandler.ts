@@ -14,6 +14,14 @@ export interface AppModelAccessRecord {
 	models: string[];
 }
 
+export interface ModelRecord {
+	id: string;
+	name: string;
+	model: AbstractModel<any>;
+	ownerApp?: string;
+	enabled: boolean;
+}
+
 export class AppModelAccess {
 	constructor(
 		private readonly getModel: (modelName: string) => AbstractModel<any> | undefined,
@@ -50,7 +58,7 @@ export class AppModelAccess {
  * Lookup is case-insensitive: `"UserAP"`, `"userap"`, and `"USERAP"` all resolve to the same model.
  */
 export class ModelHandler {
-	private models: Map<string, AbstractModel<any>> = new Map();
+	private models: Map<string, ModelRecord> = new Map();
 	private internalAccess?: InternalModelAccessFactory;
 	private appAccessRecords = new Map<string, AppModelAccessRecord>();
 
@@ -58,8 +66,62 @@ export class ModelHandler {
 
 
 		const modelname = modelName.toLowerCase()
-		this.models.set(modelname, modelInstance);
+		this.models.set(modelname, {
+			id: modelname,
+			name: modelName,
+			model: modelInstance,
+			enabled: true,
+		});
 		Adminizer.log.debug(`Model with name [${modelname}] was registered`)
+	}
+
+	register<T>(appName: string, modelName: string, modelInstance: AbstractModel<T>): string {
+		const normalizedModelName = normalizeName(modelName);
+		if (this.models.has(normalizedModelName)) {
+			throw new Error(`Model "${modelName}" is already registered`);
+		}
+
+		this.models.set(normalizedModelName, {
+			id: normalizedModelName,
+			name: modelName,
+			model: modelInstance,
+			ownerApp: appName,
+			enabled: true,
+		});
+		Adminizer.log.debug(`Model with name [${normalizedModelName}] was registered by app [${appName}]`)
+
+		return normalizedModelName;
+	}
+
+	unregister(id: string): void {
+		const record = this.models.get(normalizeName(id));
+		if (!record?.ownerApp) {
+			return;
+		}
+
+		this.models.delete(normalizeName(id));
+	}
+
+	disable(id: string): void {
+		const record = this.models.get(normalizeName(id));
+		if (!record?.ownerApp) {
+			return;
+		}
+
+		record.enabled = false;
+	}
+
+	enable(id: string): void {
+		const record = this.models.get(normalizeName(id));
+		if (!record?.ownerApp) {
+			return;
+		}
+
+		record.enabled = true;
+	}
+
+	getByApp(appName: string): ModelRecord[] {
+		return Array.from(this.models.values()).filter((record) => record.ownerApp === appName);
 	}
 
 	registerAppAccess(appName: string, id: string, models: string[]): string {
@@ -104,11 +166,13 @@ export class ModelHandler {
 	get model() {
 
 		return {
-			get: (modelName: string) => this.models.get(modelName.toLowerCase()),
-			has: (modelName: string) => this.models.has(modelName.toLowerCase()),
-			entries: () => this.models.entries(),
-			keys: () => this.models.keys(),
-			values: () => this.models.values(),
+			get: (modelName: string) => this.models.get(normalizeName(modelName))?.enabled
+				? this.models.get(normalizeName(modelName)).model
+				: undefined,
+			has: (modelName: string) => Boolean(this.models.get(normalizeName(modelName))?.enabled),
+			entries: () => this.enabledModelEntries(),
+			keys: () => this.enabledModelKeys(),
+			values: () => this.enabledModelValues(),
 		};
 	}
 
@@ -133,7 +197,7 @@ export class ModelHandler {
 	 */
 	get all() {
 		try {
-			return Array.from(this.models.values());
+			return Array.from(this.enabledModelValues());
 		} catch (e) {
 			Adminizer.log.error(e);
 			return [];
@@ -148,5 +212,29 @@ export class ModelHandler {
 			}
 		}
 		return allowedModels;
+	}
+
+	private *enabledModelEntries(): IterableIterator<[string, AbstractModel<any>]> {
+		for (const [modelName, record] of this.models.entries()) {
+			if (record.enabled) {
+				yield [modelName, record.model];
+			}
+		}
+	}
+
+	private *enabledModelKeys(): IterableIterator<string> {
+		for (const [modelName, record] of this.models.entries()) {
+			if (record.enabled) {
+				yield modelName;
+			}
+		}
+	}
+
+	private *enabledModelValues(): IterableIterator<AbstractModel<any>> {
+		for (const record of this.models.values()) {
+			if (record.enabled) {
+				yield record.model;
+			}
+		}
 	}
 }

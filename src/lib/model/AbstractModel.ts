@@ -26,6 +26,12 @@ export interface ModelAttributes {
     [key: string]: Attribute;
 }
 
+export interface RuntimeModelDefinition {
+    modelName: string;
+    schema: Record<string, any>;
+    sync?: boolean;
+}
+
 export type ModelAnyField = number | string | boolean | Date | Array<number | string | boolean> | {
     [key: string]: number | string | boolean | Date
 };
@@ -390,6 +396,10 @@ export abstract class AbstractAdapter {
 
     /** Return full model object */
     abstract getModel(modelName: string): any;
+
+    async registerRuntimeModel(_definition: RuntimeModelDefinition): Promise<any> {
+        throw new Error(`Runtime model registration is not supported by adapter "${this.ormType}"`);
+    }
 
     /**
      * This method must ensure system models registration and throw an error in case of errors. We force all adapters to realize it

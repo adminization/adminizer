@@ -8,6 +8,7 @@ import {
     AppEventHandler,
     AppEventName,
     AppModelAccessResource,
+    AppModelResource,
     AppRuntime,
     AppSetupContext
 } from "./AdminizerApp";
@@ -24,6 +25,7 @@ interface InstalledApp {
 
 class RuntimeAppSetupContext implements AppSetupContext {
     readonly disposers: AppDisposer[] = [];
+    private readonly pendingRegistrations: Promise<void>[] = [];
     private configLayerIndex = 0;
     private modelAccessIndex = 0;
 
@@ -71,6 +73,60 @@ class RuntimeAppSetupContext implements AppSetupContext {
                 slug: catalog.slug,
             });
         });
+    }
+
+    model<T = any>(model: AppModelResource<T>): void {
+        this.pendingRegistrations.push(this.registerModel(model));
+    }
+
+    async waitForPendingRegistrations(): Promise<void> {
+        await Promise.all(this.pendingRegistrations);
+    }
+
+    private async registerModel<T = any>(model: AppModelResource<T>): Promise<void> {
+        const modelInstance = await this.createModelFromRuntimeDefinition(model);
+        const resourceId = this.adminizer.modelHandler.register(this.appName, model.name, modelInstance);
+        this.adminizer.emitter.emit("app:model:registered", {
+            appName: this.appName,
+            resourceId,
+            modelName: model.name,
+        });
+        this.disposers.push(() => {
+            this.adminizer.modelHandler.unregister(resourceId);
+            this.adminizer.emitter.emit("app:model:unregistered", {
+                appName: this.appName,
+                resourceId,
+                modelName: model.name,
+            });
+        });
+    }
+
+    private async createModelFromRuntimeDefinition<T = any>(model: AppModelResource<T>) {
+        const ormAdapter = this.resolveModelAdapter(model.adapter);
+        const registeredModel = await ormAdapter.registerRuntimeModel({
+            modelName: model.name,
+            schema: model.schema,
+            sync: model.sync,
+        });
+
+        return new ormAdapter.Model(model.name, registeredModel);
+    }
+
+    private resolveModelAdapter(adapterName?: string) {
+        const resolvedAdapterName = adapterName ?? this.adminizer.config.system?.defaultORM;
+        if (resolvedAdapterName) {
+            const adapter = this.adminizer.getOrmAdapter(resolvedAdapterName);
+            if (!adapter) {
+                throw new Error(`Adapter "${resolvedAdapterName}" was not found`);
+            }
+            return adapter;
+        }
+
+        if (this.adminizer.ormAdapters.length === 1) {
+            return this.adminizer.ormAdapters[0];
+        }
+
+        throw new Error(`Adapter was not provided for app model registration "${this.appName}"`);
     }
 
     modelAccess(access: AppModelAccessResource): void {
@@ -166,6 +222,7 @@ export class AppManager {
         const ctx = new RuntimeAppSetupContext(this.adminizer, appName);
         try {
             await installed.app.setup(ctx);
+            await ctx.waitForPendingRegistrations();
             installed.disposers.push(...ctx.disposers);
 
             installed.state = "enabled";

@@ -339,6 +339,17 @@ export class Adminizer {
         return this._emitter;
     }
 
+    /**
+     * Runs event listeners and waits for async module side effects before continuing.
+     */
+    public async emitAsync<TPayload = unknown>(event: string | symbol, payload: TPayload): Promise<void> {
+        await Promise.all(
+            this._emitter.listeners(event).map((listener) =>
+                Promise.resolve((listener as (payload: TPayload) => void | Promise<void>)(payload))
+            )
+        );
+    }
+
     public getOrmAdapter(ormType: string): AbstractAdapter {
         return this.ormAdapters.find(item => item.ormType === ormType);
     }

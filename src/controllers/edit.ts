@@ -136,17 +136,12 @@ export default async function edit(req: ReqType, res: ResType) {
                 return res.json({record: newRecord})
             } else {
 
-                // update navigation tree after model updated
-                if (req.adminizer.config.navigation) {
-                    for (const section of req.adminizer.config.navigation.sections) {
-                        let navigation = req.adminizer.catalogHandler.getCatalog('navigation')
-                        navigation.setId(section)
-                        let navItem = navigation.itemTypes.find(item => item.type === modelResource.name.toLowerCase())
-                        if (navItem) {
-                            await navItem.updateModelItems(newRecord[0].id, {record: newRecord[0]}, section)
-                        }
-                    }
-                }
+                await req.adminizer.emitAsync("model:updated", {
+                    modelName: modelResource.name,
+                    modelResource,
+                    record: newRecord[0],
+                    action: "update",
+                });
 
                 req.flash.setFlashMessage('success', req.i18n.__('Record was updated'));
                 const redirectId = newRecord[0]?.[identifierField] ?? req.params.id;

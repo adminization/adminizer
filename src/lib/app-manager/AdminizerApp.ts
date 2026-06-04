@@ -1,10 +1,11 @@
 import type {AdminpanelConfig} from "../../interfaces/adminpanelConfig";
 import type {AccessRightsToken} from "../../interfaces/types";
 import type {AbstractCatalog} from "../catalog/AbstractCatalog";
+import type {AppModelAccess} from "../model/ModelHandler";
 
 export type AppDisposer = () => void | Promise<void>;
 export type AppEventName = string | symbol;
-export type AppEventHandler<TPayload = any> = (payload: TPayload) => void | Promise<void>;
+export type AppEventHandler<TPayload = any> = (payload: TPayload, runtime: AppRuntime) => void | Promise<void>;
 export type AppControllerMethod = "get" | "post" | "put" | "patch" | "delete" | "all";
 export type AppControllerPolicyMode = "ui" | "api";
 export type AppControllerPolicy =
@@ -38,12 +39,22 @@ export interface AppAsset {
     devUrl?: string;
 }
 
+export interface AppRuntime {
+    models: AppModelAccess;
+}
+
+export interface AppModelAccessResource {
+    id?: string;
+    models: string[];
+}
+
 export interface AppSetupContext {
     asset(asset: AppAsset): string;
     controller(controller: AppController): string;
     config(config: AppConfigPatch, id?: string): void;
     accessRight(token: AccessRightsToken): void;
     catalog(catalog: AbstractCatalog): void;
+    modelAccess(access: AppModelAccessResource): void;
     listener(event: AppEventName, handler: AppEventHandler): void;
 }
 

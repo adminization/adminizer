@@ -7,6 +7,8 @@ import {
     AppDisposer,
     AppEventHandler,
     AppEventName,
+    AppModelAccessResource,
+    AppRuntime,
     AppSetupContext
 } from "./AdminizerApp";
 import type {AccessRightsToken} from "../../interfaces/types";
@@ -23,6 +25,7 @@ interface InstalledApp {
 class RuntimeAppSetupContext implements AppSetupContext {
     readonly disposers: AppDisposer[] = [];
     private configLayerIndex = 0;
+    private modelAccessIndex = 0;
 
     constructor(
         private adminizer: Adminizer,
@@ -70,22 +73,50 @@ class RuntimeAppSetupContext implements AppSetupContext {
         });
     }
 
+    modelAccess(access: AppModelAccessResource): void {
+        const resourceId = this.adminizer.modelHandler.registerAppAccess(
+            this.appName,
+            access.id ?? `model-access-${++this.modelAccessIndex}`,
+            access.models
+        );
+        this.adminizer.emitter.emit("app:model-access:registered", {
+            appName: this.appName,
+            resourceId,
+            models: access.models,
+        });
+        this.disposers.push(() => {
+            this.adminizer.modelHandler.unregisterAppAccess(resourceId);
+            this.adminizer.emitter.emit("app:model-access:unregistered", {
+                appName: this.appName,
+                resourceId,
+                models: access.models,
+            });
+        });
+    }
+
     listener(event: AppEventName, handler: AppEventHandler): void {
-        this.adminizer.emitter.on(event, handler);
         const resourceId = `${this.appName}:${event.toString()}:${this.disposers.length + 1}`;
+        const listener = (payload: unknown) => handler(payload, this.createRuntime());
+        this.adminizer.emitter.on(event, listener);
         this.adminizer.emitter.emit("app:listener:registered", {
             appName: this.appName,
             resourceId,
             event,
         });
         this.disposers.push(() => {
-            this.adminizer.emitter.off(event, handler);
+            this.adminizer.emitter.off(event, listener);
             this.adminizer.emitter.emit("app:listener:unregistered", {
                 appName: this.appName,
                 resourceId,
                 event,
             });
         });
+    }
+
+    private createRuntime(): AppRuntime {
+        return {
+            models: this.adminizer.modelHandler.createAppAccess(this.appName),
+        };
     }
 }
 

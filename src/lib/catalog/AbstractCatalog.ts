@@ -11,7 +11,7 @@ export interface CatalogStorageServices {}
 export interface Item {
     id: string | number;
     name: string;
-    parentId: string | number;
+    parentId: string | number | null;
 
     /**
      *
@@ -333,6 +333,14 @@ export abstract class AbstractCatalog {
         return this.itemTypes.find((it) => it.type === type);
     }
 
+    private requireItemType(type: string): BaseItem<Item> {
+        const itemType = this.getItemType(type);
+        if (!itemType) {
+            throw new Error(`Catalog item type \`${String(type)}\` was not found in catalog \`${this.slug}\``);
+        }
+        return itemType;
+    }
+
     public getGroupType() {
         return this.itemTypes.find((it) => it.isGroup === true);
     }
@@ -351,14 +359,14 @@ export abstract class AbstractCatalog {
      *  Get an element
      */
     public async find(item: Item, req?: ReqType) {
-        return await this.getItemType(item.type)?._find(item.id, this.id, req);
+        return await this.requireItemType(item.type)._find(item.id, this.id, req);
     }
 
     /**
      *  Removing an element
      */
     public async deleteItem(type: string, id: string | number, req?: ReqType) {
-        await this.getItemType(type)?.deleteItem(id, this.id, req);
+        await this.requireItemType(type).deleteItem(id, this.id, req);
     }
 
     /**
@@ -369,7 +377,7 @@ export abstract class AbstractCatalog {
      * @param modelId
      */
     public getEditTemplate(item: Item, id: string | number, req: ReqType, modelId?: string | number) {
-        return this.getItemType(item.type)?.getEditTemplate(id, this.id, req, modelId);
+        return this.requireItemType(item.type).getEditTemplate(id, this.id, req, modelId);
     }
 
     /**
@@ -378,7 +386,7 @@ export abstract class AbstractCatalog {
      * @param req
      */
     public getAddTemplate(item: Item, req: ReqType) {
-        return this.getItemType(item.type)?.getAddTemplate(req);
+        return this.requireItemType(item.type).getAddTemplate(req);
     }
 
     public addActionHandler(actionHandler: ActionHandler) {
@@ -452,14 +460,20 @@ export abstract class AbstractCatalog {
      * @param req
      */
     public async createItem<T extends Item>(data: T, req?: ReqType): Promise<T> {
-        const promise = this.getItemType(data.type)?.create(data, this.id, req) as Promise<T>;
-        return await promise
+        const result = await this.requireItemType(data.type).create(data, this.id, req) as T;
+        if (!result) {
+            throw new Error(`Catalog item type \`${data.type}\` did not return created item`);
+        }
+        return result
     }
 
 
     public async updateItem<T extends Item>(id: string | number, type: string, data: T, req?: ReqType): Promise<T> {
-        const promise = this.getItemType(type)?.update(id, data, this.id, req) as Promise<T>;
-        return await promise
+        const result = await this.requireItemType(type).update(id, data, this.id, req) as T;
+        if (!result) {
+            throw new Error(`Catalog item type \`${type}\` did not return updated item`);
+        }
+        return result
     }
 
     /**
@@ -470,8 +484,11 @@ export abstract class AbstractCatalog {
      * @param req
      */
     public async updateModelItems<T extends Item>(modelId: string | number, type: string, data: T, req?: ReqType): Promise<T> {
-        const promise = this.getItemType(type)?.updateModelItems(modelId, data, this.id, req) as Promise<T>;
-        return await promise
+        const result = await this.requireItemType(type).updateModelItems(modelId, data, this.id, req) as T;
+        if (!result) {
+            throw new Error(`Catalog item type \`${type}\` did not return updated model item`);
+        }
+        return result
     }
 
     /**

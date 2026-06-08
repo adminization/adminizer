@@ -328,7 +328,8 @@ const CatalogTree = () => {
 
     const renderRegisteredTemplate = useCallback(async (
         template: { type: string; data: any },
-        mode: 'create' | 'update'
+        mode: 'create' | 'update',
+        currentItemType: string | null = itemType
     ): Promise<boolean> => {
         const componentRecord = templateComponents[template.type.toLowerCase()];
         if (!componentRecord) {
@@ -351,7 +352,7 @@ const CatalogTree = () => {
             type={template.type}
             template={template}
             parentId={parentid}
-            itemType={itemType}
+            itemType={currentItemType}
             selectedItem={selectedNodes[0]?.data as Record<string, any> | undefined}
             messages={messages}
             actions={{
@@ -364,8 +365,8 @@ const CatalogTree = () => {
         return true;
     }, [getAddModelJSON, itemType, messages, parentid, reloadCatalog, selectedNodes, templateComponents]);
 
-    const setPopUpData = useCallback(async (data: { type: string, data: any }) => {
-        if (await renderRegisteredTemplate(data, 'create')) {
+    const setPopUpData = useCallback(async (data: { type: string, data: any }, currentItemType: string | null = itemType) => {
+        if (await renderRegisteredTemplate(data, 'create', currentItemType)) {
             return;
         }
 
@@ -395,7 +396,7 @@ const CatalogTree = () => {
                 setPopupType('component')
                 break
         }
-    }, [parentid, reloadCatalog, renderRegisteredTemplate])
+    }, [itemType, parentid, reloadCatalog, renderRegisteredTemplate])
 
     const selectCatalogItem = useCallback(async (type: string) => {
         setItemType(type)
@@ -406,7 +407,7 @@ const CatalogTree = () => {
             setPopupType('model')
             await getAddModelJSON(res.data.data.model)
         } else {
-            await setPopUpData(res.data)
+            await setPopUpData(res.data, type)
             dialogRef.current?.next()
         }
         setFirstRender(false)

@@ -215,6 +215,9 @@ export class FrontendCatalogUtils {
      * Normalizes data for frontend: replaces null parentId with 0
      */
     public static normalizeForFrontend<T extends Item>(item: T): T {
+        if (!item) {
+            throw new Error("Cannot normalize empty catalog item for frontend");
+        }
         return { ...item, parentId: item.parentId === null ? 0 : item.parentId };
     }
 

@@ -13,6 +13,8 @@ export interface NavigationGroupField {
 export interface NavigationAppConfig {
     model?: string;
     routePrefix?: string;
+    componentFile?: string;
+    devComponentUrl?: string;
     sections: string[];
     groupField: NavigationGroupField[];
     allowContentInGroup?: boolean;

@@ -219,6 +219,7 @@ import * as sonner from 'sonner';
 import axios from '@/lib/axios-compat';
 import { adminApi } from '@/lib/admin-api';
 import DeleteModal from "@/components/modals/del-modal";
+import AddForm from "@/components/add-form";
 
 export function registerUIComponents(): void {
 
@@ -425,6 +426,7 @@ export function registerUIComponents(): void {
         HandsonTable,
         MonacoEditor,
         MultiSelect,
-        DeleteModal
+        DeleteModal,
+        AddForm
     });
 }

@@ -1,3 +1,4 @@
+import path from "path";
 import {AbstractAdminizerApp, AppSetupContext} from "../../../dist";
 import {NavigationCatalog} from "./NavigationCatalog";
 import {navigationModelName, navigationSchema} from "./NavigationModel";
@@ -16,6 +17,8 @@ export class NavigationApp extends AbstractAdminizerApp<NavigationAppConfig> {
             ...config,
             model: config.model ?? navigationModelName,
             routePrefix: config.routePrefix ?? "",
+            componentFile: config.componentFile ?? path.resolve(import.meta.dirname, "NavigationCatalogTemplates.es.js"),
+            devComponentUrl: config.devComponentUrl ?? "/fixture/apps/navigation/NavigationCatalogTemplates.tsx",
         };
     }
 
@@ -27,6 +30,33 @@ export class NavigationApp extends AbstractAdminizerApp<NavigationAppConfig> {
             name: "Navigation",
             description: "Access to edit navigation catalogs",
             department: "Catalog",
+        });
+
+        const catalogTemplates = ctx.asset({
+            id: "catalog-templates",
+            filePath: this.config.componentFile,
+            devUrl: this.config.devComponentUrl,
+        });
+
+        ctx.catalogTemplateComponent({
+            id: "model-link-template",
+            type: "navigation.model-link",
+            component: catalogTemplates,
+            exportName: "NavigationModelLinkTemplate",
+        });
+
+        ctx.catalogTemplateComponent({
+            id: "group-template",
+            type: "navigation.group",
+            component: catalogTemplates,
+            exportName: "NavigationGroupTemplate",
+        });
+
+        ctx.catalogTemplateComponent({
+            id: "link-template",
+            type: "navigation.link",
+            component: catalogTemplates,
+            exportName: "NavigationLinkTemplate",
         });
 
         ctx.model({

@@ -9,6 +9,7 @@ export * from "./lib/widgets/abstractSwitch"
 export * from "./lib/widgets/widgetHandler";
 export * from  "./lib/catalog/AbstractCatalog"
 export * from "./lib/catalog/CatalogHandler";
+export * from "./lib/catalog/CatalogTemplateComponentHandler";
 export * from "./lib/media-manager/MediaManagerHandler";
 export * from "./controllers/media-manager/mediaManagerAdapter"
 export * from "./interfaces/adminpanelConfig";

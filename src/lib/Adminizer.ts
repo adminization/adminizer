@@ -31,6 +31,7 @@ import {MenuHelper} from "../helpers/menuHelper";
 import {bindControls} from "../system/bindControls";
 import {ControlsHandler} from "./controls/ControlsHandler";
 import {CatalogHandler} from "./catalog/CatalogHandler";
+import {CatalogTemplateComponentHandler} from "./catalog/CatalogTemplateComponentHandler";
 import {v4 as uuid} from "uuid";
 import { AiAssistantHandler } from './ai-assistant/AiAssistantHandler';
 import {NotificationHandler} from './notifications/NotificationHandler';
@@ -78,6 +79,7 @@ export class Adminizer {
     vite: ViteDevServer
     controlsHandler!: ControlsHandler
     catalogHandler!: CatalogHandler
+    catalogTemplateComponentHandler!: CatalogTemplateComponentHandler
     mediaManagerHandler!: MediaManagerHandler
     feedbackHandler!: FeedbackHandler
     appManager: AppManager
@@ -263,6 +265,7 @@ export class Adminizer {
         this.widgetHandler = new WidgetHandler(this);
 
         this.catalogHandler = new CatalogHandler();
+        this.catalogTemplateComponentHandler = new CatalogTemplateComponentHandler();
 
         this.mediaManagerHandler = new MediaManagerHandler();
 

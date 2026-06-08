@@ -264,7 +264,7 @@ export class TestGroup extends AbstractGroup<TestItem> {
     }
 
     getAddTemplate(req: ReqType): Promise<{
-        type: "component" | "navigation.group" | "navigation.link" | "model";
+        type: string;
         data: any;
     }> {
         let type: 'component' = 'component';
@@ -278,7 +278,7 @@ export class TestGroup extends AbstractGroup<TestItem> {
     }
 
     async getEditTemplate(id: string | number, catalogId: string, req: ReqType, modelId?: string | number): Promise<{
-        type: "component" | "navigation.group" | "navigation.link" | "model";
+        type: string;
         data: any;
     }> {
         let type: 'component' = 'component';
@@ -374,7 +374,7 @@ class TestItemM extends AbstractItem<TestItem> {
     }
 
     async getAddTemplate(req: ReqType): Promise<{
-        type: 'component' | 'navigation.group' | 'navigation.link' | 'model' | 'model.link',
+        type: string,
         data: {
             items: { id: string; name: string }[],
             model: string,
@@ -407,7 +407,7 @@ class TestItemM extends AbstractItem<TestItem> {
     }
 
     async getEditTemplate(id: string | number, catalogId: string, req: ReqType, modelId: string | number): Promise<{
-        type: 'component' | 'navigation.group' | 'navigation.link' | 'model' | 'model.link',
+        type: string,
         data: {
             item: TestItem
         }

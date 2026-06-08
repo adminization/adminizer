@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {router} from '@inertiajs/react'
 import {
     Tree,
@@ -22,7 +22,9 @@ import {
     DynamicComponent,
     DynamicActionComponent,
     AddCatalogProps,
-    CatalogActions
+    CatalogActions,
+    CatalogTemplateComponentModule,
+    CatalogTemplateComponentRecord
 } from "@/types";
 import {Skeleton} from "@/components/ui/skeleton.tsx";
 import CatalogNode from "@/components/catalog/catalogUI/CatalogNode.tsx";
@@ -47,6 +49,15 @@ import {DropdownMenu} from "@radix-ui/react-dropdown-menu";
 import {DropdownMenuContent, DropdownMenuGroup, DropdownMenuTrigger} from "@/components/ui/dropdown-menu.tsx";
 import { useI18n } from "@/hooks/use-i18n";
 
+const getDynamicImportUrl = (component: string): string => {
+    if (!import.meta.env.DEV) {
+        return component;
+    }
+
+    const separator = component.includes("?") ? "&" : "?";
+    return `${component}${separator}t=${Date.now()}`;
+};
+
 const CatalogTree = () => {
     const treeRef = useRef<TreeMethods>(null);
 
@@ -65,15 +76,15 @@ const CatalogTree = () => {
     })
 
     const { t } = useI18n();
-    const messages = new Proxy({} as Record<string, string>, {
+    const messages = useMemo(() => new Proxy({} as Record<string, string>, {
         get: (_, key: string) => t(String(key))
-    });
+    }), [t]);
 
     const [items, setItems] = useState<CatalogItem[]>([])
+    const [templateComponents, setTemplateComponents] = useState<Record<string, CatalogTemplateComponentRecord>>({})
     const [isLoading, setIsLoading] = useState(false)
     const dialogRef = useRef<DialogStackHandle>(null);
     const [addItemProps, setAddItemProps] = useState({items: [], model: "", labels: {}})
-    const [addLinksGroupProps, setAddLinksGroupProps] = useState({items: [], labels: {}})
     const [popupType, setPopupType] = useState<string>('')
     const [loadingNodeId, setLoadingNodeId] = useState<string | number | null>(null)
     const [itemType, setItemType] = useState<string | null>(null)
@@ -82,8 +93,6 @@ const CatalogTree = () => {
 
     const [popUpTargetBlank, setPopUpTargetBlank] = useState<boolean>(false)
     const [popUpVisible, setPopUpVisible] = useState<boolean>(false)
-    const [isNavigation, setIsNavigation] = useState<boolean>(false)
-
     const [DynamicComponent, setDynamicComponent] = useState<React.ReactElement | null>(null);
     const [DynamicActionComponent, setDynamicActionComponent] = useState<React.ReactElement | null>(null);
 
@@ -113,12 +122,17 @@ const CatalogTree = () => {
             const res = await adminApi.post<any>('', {
                 _method: 'getCatalog'
             });
-            const {catalog: resCatalog, items, toolsActions} = res.data;
+            const {catalog: resCatalog, items, toolsActions, templateComponents = []} = res.data;
             setCatalog(resCatalog);
             setItems(items);
+            setTemplateComponents(Object.fromEntries(
+                (templateComponents as CatalogTemplateComponentRecord[]).map((component) => [
+                    component.type.toLowerCase(),
+                    component,
+                ])
+            ));
             setTreeData(resCatalog.nodes)
             setActionsTools(toolsActions)
-            setIsNavigation(resCatalog.catalogSlug === "navigation");
         };
 
         const initCatalog = async () => {
@@ -304,6 +318,85 @@ const CatalogTree = () => {
         }
     }, [selectedNodes, handleToggle, setTreeData]);
 
+    const getAddModelJSON = useCallback(async (model: string) => {
+        setSecondRender(true)
+        const res = await adminApi.get<any>(`${window.routePrefix}/model/${model}/add?without_layout=true`)
+        setAddProps(res.data)
+        dialogRef.current?.next()
+        setSecondRender(false)
+    }, [])
+
+    const renderRegisteredTemplate = useCallback(async (
+        template: { type: string; data: any },
+        mode: 'create' | 'update'
+    ): Promise<boolean> => {
+        const componentRecord = templateComponents[template.type.toLowerCase()];
+        if (!componentRecord) {
+            return false;
+        }
+
+        const Module = await import(/* @vite-ignore */ getDynamicImportUrl(componentRecord.component)) as CatalogTemplateComponentModule;
+        const Component = componentRecord.exportName
+            ? Module[componentRecord.exportName]
+            : Module.default;
+
+        if (!Component) {
+            toast.error(`Catalog template component "${template.type}" was not found`);
+            return false;
+        }
+
+        setDynamicComponent(<Component
+            key={`${template.type}-${mode}-${Date.now()}`}
+            mode={mode}
+            type={template.type}
+            template={template}
+            parentId={parentid}
+            itemType={itemType}
+            selectedItem={selectedNodes[0]?.data as Record<string, any> | undefined}
+            messages={messages}
+            actions={{
+                close: () => dialogRef.current?.close(),
+                reload: reloadCatalog,
+                openModelAdd: getAddModelJSON,
+            }}
+        />);
+        setPopupType('component');
+        return true;
+    }, [getAddModelJSON, itemType, messages, parentid, reloadCatalog, selectedNodes, templateComponents]);
+
+    const setPopUpData = useCallback(async (data: { type: string, data: any }) => {
+        if (await renderRegisteredTemplate(data, 'create')) {
+            return;
+        }
+
+        switch (data.type) {
+            case 'model.link':
+                setAddItemProps(data.data)
+                setPopupType('model.link')
+                break
+            case 'model':
+                setAddItemProps(data.data)
+                setPopupType('model')
+                break
+            default:
+                const initModule = async () => {
+                    const Module = await import(/* @vite-ignore */ data.data.path as string);
+                    const Component = Module.default as DynamicComponent['default'];
+                    setDynamicComponent(<Component
+                        key={JSON.stringify(new Date())}
+                        parentId={parentid}
+                        callback={(item: any) => {
+                            dialogRef.current?.close()
+                            reloadCatalog(item)
+                        }}
+                    />);
+                }
+                initModule();
+                setPopupType('component')
+                break
+        }
+    }, [parentid, reloadCatalog, renderRegisteredTemplate])
+
     const selectCatalogItem = useCallback(async (type: string) => {
         setItemType(type)
         setFirstRender(true)
@@ -313,11 +406,11 @@ const CatalogTree = () => {
             setPopupType('model')
             await getAddModelJSON(res.data.data.model)
         } else {
-            setPopUpData(res.data)
+            await setPopUpData(res.data)
             dialogRef.current?.next()
         }
         setFirstRender(false)
-    }, [parentid])
+    }, [getAddModelJSON, setPopUpData])
 
     const initUpdateItem = useCallback(async () => {
         try {
@@ -329,76 +422,66 @@ const CatalogTree = () => {
                 _method: 'getEditTemplate'
             })
             if (res.data) {
-                if (res.data.type.includes('navigation')) {
-                    switch (res.data.type) {
-                        case 'navigation.group':
-                            setAddLinksGroupProps(res.data.data)
-                            setPopupType('navigation.group')
+                if (await renderRegisteredTemplate(res.data, 'update')) {
+                    setFirstRender(false)
+                    return;
+                }
+
+                switch (res.data.type) {
+                    case 'model.link':
+                        const item = res.data.data.item
+                        const editModel = res.data.data.model ?? item.type ?? selectedNodes[0]?.data?.type
+                        if (!editModel) {
+                            toast.error('Unable to determine model for edit form')
                             setFirstRender(false)
                             break
-                        case 'navigation.link':
-                            setAddLinksGroupProps(res.data.data)
-                            setPopupType('navigation.link')
+                        }
+                        const resEdit = await adminApi.get<any>(`${window.routePrefix}/model/${editModel}/edit/${item.modelId}?without_layout=true`)
+                        setAddProps(resEdit.data)
+                        setPopUpTargetBlank(item.targetBlank)
+                        setPopUpVisible(item.visible)
+                        setPopupType('model.link')
+                        setFirstRender(false)
+                        break
+                    case 'model':
+                        const itemModel = res.data.data.item
+                        const editModelName = res.data.data.model ?? itemModel.type ?? selectedNodes[0]?.data?.type
+                        if (!editModelName) {
+                            toast.error('Unable to determine model for edit form')
                             setFirstRender(false)
                             break
-                    }
-                } else {
-                    switch (res.data.type) {
-                        case 'model.link':
-                            const item = res.data.data.item
-                            const editModel = res.data.data.model ?? item.type ?? selectedNodes[0]?.data?.type
-                            if (!editModel) {
-                                toast.error('Unable to determine model for edit form')
-                                setFirstRender(false)
-                                break
-                            }
-                            const resEdit = await adminApi.get<any>(`${window.routePrefix}/model/${editModel}/edit/${item.modelId}?without_layout=true`)
-                            setAddProps(resEdit.data)
-                            setPopUpTargetBlank(item.targetBlank)
-                            setPopUpVisible(item.visible)
-                            setPopupType('model.link')
-                            setFirstRender(false)
-                            break
-                        case 'model':
-                            const itemModel = res.data.data.item
-                            const editModelName = res.data.data.model ?? itemModel.type ?? selectedNodes[0]?.data?.type
-                            if (!editModelName) {
-                                toast.error('Unable to determine model for edit form')
-                                setFirstRender(false)
-                                break
-                            }
-                            const resEditModel = await adminApi.get<any>(`${window.routePrefix}/model/${editModelName}/edit/${itemModel.modelId}?without_layout=true`)
-                            setAddProps(resEditModel.data)
-                            setPopUpTargetBlank(itemModel.targetBlank)
-                            setPopUpVisible(itemModel.visible)
-                            setPopupType('model')
-                            setFirstRender(false)
-                            break
-                        default:
-                            const initModule = async () => {
-                                const Module = await import(/* @vite-ignore */ res.data.data.path as string);
-                                const Component = Module.default as DynamicComponent['default'];
-                                setDynamicComponent(<Component
-                                    key={`${res.data.data.id}-${res.data.data.item.name}`}
-                                    callback={(item: any) => {
-                                        dialogRef.current?.close()
-                                        reloadCatalog(item)
-                                    }}
-                                    update={true}
-                                    item={res.data.data.item}
-                                />);
-                            }
-                            initModule();
-                            setPopupType('component')
-                            setFirstRender(false)
-                            break
-                    }
+                        }
+                        const resEditModel = await adminApi.get<any>(`${window.routePrefix}/model/${editModelName}/edit/${itemModel.modelId}?without_layout=true`)
+                        setAddProps(resEditModel.data)
+                        setPopUpTargetBlank(itemModel.targetBlank)
+                        setPopUpVisible(itemModel.visible)
+                        setPopupType('model')
+                        setFirstRender(false)
+                        break
+                    default:
+                        const initModule = async () => {
+                            const Module = await import(/* @vite-ignore */ res.data.data.path as string);
+                            const Component = Module.default as DynamicComponent['default'];
+                            setDynamicComponent(<Component
+                                key={`${res.data.data.id}-${res.data.data.item.name}`}
+                                callback={(item: any) => {
+                                    dialogRef.current?.close()
+                                    reloadCatalog(item)
+                                }}
+                                update={true}
+                                item={res.data.data.item}
+                            />);
+                        }
+                        initModule();
+                        setPopupType('component')
+                        setFirstRender(false)
+                        break
                 }
             }
         } catch (e) {
             console.log(e)
         }
-    }, [selectedNodes])
+    }, [reloadCatalog, renderRegisteredTemplate, selectedNodes])
 
     const deleteItem = useCallback(async () => {
         if (!selectedNodes.length) return;
@@ -446,61 +529,6 @@ const CatalogTree = () => {
             setParentId(0)
         }
     }, [selectedNodes, treeData]);
-
-    const setPopUpData = useCallback((data: { type: string, data: any }) => {
-        if (data.type.includes('navigation')) {
-            switch (data.type) {
-                case 'model.link':
-                    setAddItemProps(data.data)
-                    setPopupType('model.link')
-                    break
-                case 'navigation.group':
-                    setAddLinksGroupProps(data.data)
-                    setPopupType('navigation.group')
-                    break
-                case 'navigation.link':
-                    setAddLinksGroupProps(data.data)
-                    setPopupType('navigation.link')
-                    break
-
-            }
-        } else {
-            switch (data.type) {
-                case 'model.link':
-                    setAddItemProps(data.data)
-                    setPopupType('model.link')
-                    break
-                case 'model':
-                    setAddItemProps(data.data)
-                    setPopupType('model')
-                    break
-                default:
-                    const initModule = async () => {
-                        const Module = await import(/* @vite-ignore */ data.data.path as string);
-                        const Component = Module.default as DynamicComponent['default'];
-                        setDynamicComponent(<Component
-                            key={JSON.stringify(new Date())}
-                            parentId={parentid}
-                            callback={(item: any) => {
-                                dialogRef.current?.close()
-                                reloadCatalog(item)
-                            }}
-                        />);
-                    }
-                    initModule();
-                    setPopupType('component')
-                    break
-            }
-        }
-    }, [selectedNodes, isNavigation])
-
-    const getAddModelJSON = useCallback(async (model: string) => {
-        setSecondRender(true)
-        const res = await adminApi.get<any>(`${window.routePrefix}/model/${model}/add?without_layout=true'`)
-        setAddProps(res.data)
-        dialogRef.current?.next()
-        setSecondRender(false)
-    }, [itemType])
 
     const addModel = async (record: any, targetBlank?: boolean, visible?: boolean) => {
         if (targetBlank) record.targetBlank = targetBlank
@@ -950,11 +978,9 @@ const CatalogTree = () => {
                         editModel={editModel}
                         popUpTargetBlank={popUpTargetBlank}
                         popUpVisible={popUpVisible}
-                        isNavigation={isNavigation}
                         messages={messages}
                         DynamicComponent={DynamicComponent}
                         DynamicActionComponent={DynamicActionComponent}
-                        addLinksGroupProps={addLinksGroupProps}
                         reloadCatalog={reloadCatalog}
                         itemType={itemType}
                         parentid={parentid}

@@ -1,6 +1,7 @@
 import type {AdminpanelConfig, ModelConfig} from "../../interfaces/adminpanelConfig";
 import type {AccessRightsToken} from "../../interfaces/types";
 import type {AbstractCatalog} from "../catalog/AbstractCatalog";
+import type {CatalogTemplateComponentResource} from "../catalog/CatalogTemplateComponentHandler";
 import type {AppModelAccess} from "../model/ModelHandler";
 
 export type AppDisposer = () => void | Promise<void>;
@@ -74,6 +75,7 @@ export interface AppSetupContext {
     config(config: AppConfigPatch, id?: string): void;
     accessRight(token: AccessRightsToken): void;
     catalog(catalog: AppCatalogResource): void;
+    catalogTemplateComponent(component: CatalogTemplateComponentResource): void;
     model<T = any>(model: AppModelResource<T>): void;
     modelAccess(access: AppModelAccessResource): void;
     listener(event: AppEventName, handler: AppEventHandler): void;

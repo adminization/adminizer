@@ -7,8 +7,7 @@ import {
 } from "@/components/ui/dialog-stack.tsx";
 import {LoaderCircle} from "lucide-react";
 import AddForm from "@/components/add-form.tsx";
-import NavItemAdd from "@/components/catalog/navigation/item-add.tsx";
-import NavLinkGropuAdd from "@/components/catalog/navigation/group-link-add.tsx";
+import ModelLinkAdd from "@/components/catalog/model-link-add.tsx";
 import SelectCatalogItem from "@/components/catalog/select-catalog-item.tsx";
 import {CatalogItem} from "@/types";
 
@@ -22,11 +21,9 @@ interface CatalogDialogStackProps {
     editModel: (record: any, targetBlank?: boolean) => Promise<void>;
     popUpTargetBlank: boolean;
     popUpVisible: boolean;
-    isNavigation: boolean;
     messages: Record<string, string>;
     DynamicComponent: React.ReactElement | null;
     DynamicActionComponent: React.ReactElement | null;
-    addLinksGroupProps: any;
     reloadCatalog: (item?: any) => Promise<void>;
     itemType: string | null;
     parentid: string | number;
@@ -48,11 +45,9 @@ const CatalogDialogStack: React.FC<CatalogDialogStackProps> = (
         editModel,
         popUpTargetBlank,
         popUpVisible,
-        isNavigation,
         messages,
         DynamicComponent,
         DynamicActionComponent,
-        addLinksGroupProps,
         reloadCatalog,
         itemType,
         parentid,
@@ -87,7 +82,6 @@ const CatalogDialogStack: React.FC<CatalogDialogStackProps> = (
                                                      visibleLable={messages["Visible"]}
                                                      openNewWindow={popUpTargetBlank}
                                                      DnavVisible={popUpVisible}
-                                                     isNavigation={isNavigation}
                                             />
                                         }
                                         {popupType === 'model' &&
@@ -98,29 +92,6 @@ const CatalogDialogStack: React.FC<CatalogDialogStackProps> = (
                                                      visibleLable={messages["Visible"]}
                                                      openNewWindow={popUpTargetBlank}
                                                      DnavVisible={popUpVisible}
-                                                     isNavigation={isNavigation}
-                                            />
-                                        }
-                                        {popupType === 'navigation.group' &&
-                                            <NavLinkGropuAdd
-                                                callback={(item) => {
-                                                    dialogRef.current?.close()
-                                                    reloadCatalog(item)
-                                                }}
-                                                update={true}
-                                                type="group"
-                                                {...addLinksGroupProps}
-                                            />
-                                        }
-                                        {popupType === 'navigation.link' &&
-                                            <NavLinkGropuAdd
-                                                callback={(item) => {
-                                                    dialogRef.current?.close()
-                                                    reloadCatalog(item)
-                                                }}
-                                                update={true}
-                                                type="link"
-                                                {...addLinksGroupProps}
                                             />
                                         }
                                         {popupType === 'component' &&
@@ -151,7 +122,7 @@ const CatalogDialogStack: React.FC<CatalogDialogStackProps> = (
                         {PopupEvent === 'create' &&
                             <>
                                 {popupType === 'model.link' &&
-                                    <NavItemAdd
+                                    <ModelLinkAdd
                                         add={getAddModelJSON}
                                         callback={() => {
                                             dialogRef.current?.close()
@@ -159,7 +130,6 @@ const CatalogDialogStack: React.FC<CatalogDialogStackProps> = (
                                         }}
                                         type={itemType ?? ''}
                                         parentId={parentid}
-                                        isNavigation={isNavigation}
                                         {...addItemProps}
                                     />
                                 }
@@ -170,31 +140,8 @@ const CatalogDialogStack: React.FC<CatalogDialogStackProps> = (
                                                  callback={addModel}
                                                  openNewWindowLabel={messages["Open in a new window"]}
                                                  visibleLable={messages["Visible"]}
-                                                 isNavigation={isNavigation}
                                         />
                                     </div>
-                                }
-                                {popupType === 'navigation.group' &&
-                                    <NavLinkGropuAdd
-                                        callback={(item) => {
-                                            dialogRef.current?.close()
-                                            reloadCatalog(item)
-                                        }}
-                                        type="group"
-                                        parentId={parentid}
-                                        {...addLinksGroupProps}
-                                    />
-                                }
-                                {popupType === 'navigation.link' &&
-                                    <NavLinkGropuAdd
-                                        callback={(item) => {
-                                            dialogRef.current?.close()
-                                            reloadCatalog(item)
-                                        }}
-                                        type="link"
-                                        parentId={parentid}
-                                        {...addLinksGroupProps}
-                                    />
                                 }
                                 {popupType === 'component' &&
                                     <>
@@ -213,7 +160,6 @@ const CatalogDialogStack: React.FC<CatalogDialogStackProps> = (
                                  callback={addModel}
                                  openNewWindowLabel={messages["Open in a new window"]}
                                  visibleLable={messages["Visible"]}
-                                 isNavigation={isNavigation}
                         />
                     </div>
                 </DialogStackContent>

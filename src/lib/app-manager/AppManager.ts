@@ -15,6 +15,7 @@ import {
 } from "./AdminizerApp";
 import type {AccessRightsToken} from "../../interfaces/types";
 import type {AbstractCatalog} from "../catalog/AbstractCatalog";
+import type {CatalogTemplateComponentResource} from "../catalog/CatalogTemplateComponentHandler";
 
 export type AppState = "registered" | "enabled" | "disabled" | "unregistered" | "failed";
 
@@ -63,6 +64,23 @@ class RuntimeAppSetupContext implements AppSetupContext {
 
     catalog(catalog: AppCatalogResource): void {
         this.pendingCatalogRegistrations.push(() => this.registerCatalog(catalog));
+    }
+
+    catalogTemplateComponent(component: CatalogTemplateComponentResource): void {
+        const resourceId = this.adminizer.catalogTemplateComponentHandler.register(this.appName, component);
+        this.adminizer.emitter.emit("app:catalog-template-component:registered", {
+            appName: this.appName,
+            resourceId,
+            type: component.type,
+        });
+        this.disposers.push(() => {
+            this.adminizer.catalogTemplateComponentHandler.unregister(resourceId);
+            this.adminizer.emitter.emit("app:catalog-template-component:unregistered", {
+                appName: this.appName,
+                resourceId,
+                type: component.type,
+            });
+        });
     }
 
     model<T = any>(model: AppModelResource<T>): void {

@@ -31,7 +31,7 @@
 		"build:react-quill": "vite build --config modules/controls/wysiwyg/vite.config.react-quill.ts",
 		"build:catalog-modules": "vite build --config modules/testCatalog/vite.config.module.ts",
 		"start:typeorm:seed": "cross-env ORM=typeorm tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
-		"build:apps": "vite build --config fixture/apps/component-b/vite.config.module.ts && vite build --config fixture/apps/module-manager/vite.config.module.ts"
+		"build:apps": "vite build --config fixture/apps/component-b/vite.config.module.ts && vite build --config fixture/apps/module-manager/vite.config.module.ts && vite build --config fixture/apps/navigation/vite.config.module.ts"
 	},
 	"keywords": [],
 	"author": "Siziy Ivan <xziy88@gmail.com>",

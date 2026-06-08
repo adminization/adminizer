@@ -135,6 +135,15 @@ export interface Catalog {
     nodes: ModeModel[]
 }
 
+export interface CatalogTemplateComponentRecord {
+    id: string;
+    appName: string;
+    type: string;
+    component: string;
+    exportName?: string;
+    enabled: boolean;
+}
+
 export interface CatalogItem {
     actionHandlers: []
     allowedRoot: boolean
@@ -145,34 +154,6 @@ export interface CatalogItem {
     model: string
     isGroup: boolean
     icon: string
-}
-
-export interface NavItemAddProps {
-    labels: Record<string, string>,
-    model: string,
-    isNavigation: boolean,
-    type: string,
-    parentId?: string | number,
-    items: {
-        id: number,
-        name: string
-    }[]
-    add: (model:string) => void
-    callback: () => void
-}
-
-export interface NavGroupAddProps{
-    labels: Record<string, string>
-    type: string
-    update?: boolean
-    parentId?: string | number
-    item?: Record<string, any>
-    items: {
-        name: string,
-        label: string
-        required: boolean
-    }[],
-    callback: (item: any) => void
 }
 
 export interface CustomCatalogData {
@@ -220,6 +201,29 @@ export interface DynamicComponent {
         update?: boolean
     }>;
 }
+
+export interface CatalogTemplateComponentProps {
+    mode: 'create' | 'update';
+    type: string;
+    template: {
+        type: string;
+        data: any;
+    };
+    parentId: string | number;
+    itemType: string | null;
+    selectedItem?: Record<string, any>;
+    messages: Record<string, string>;
+    actions: {
+        close: () => void;
+        reload: (item?: any) => Promise<void>;
+        openModelAdd: (model: string) => Promise<void>;
+    };
+}
+
+export type CatalogTemplateComponentModule = {
+    default?: FC<CatalogTemplateComponentProps>;
+    [key: string]: FC<CatalogTemplateComponentProps> | undefined;
+};
 
 export interface DynamicActionComponent {
     default: FC<{

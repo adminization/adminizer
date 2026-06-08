@@ -32,6 +32,11 @@ export type _Item_ = {
     [key: string]: boolean | string | number | object;
 };
 
+export interface CatalogTemplate<TData = any> {
+    type: string;
+    data: TData;
+}
+
 /**
  * General Item structure that will be available for all elements, including groups
  */
@@ -128,10 +133,7 @@ export abstract class BaseItem<T extends Item> {
      * get add template
      * @param req
      */
-    public abstract getAddTemplate(req: ReqType): Promise<{
-        type: 'component' | 'navigation.group' | 'navigation.link' | 'model' | 'model.link',
-        data: any
-    }>
+    public abstract getAddTemplate(req: ReqType): Promise<CatalogTemplate>
 
     /**
      * get edit template
@@ -140,10 +142,12 @@ export abstract class BaseItem<T extends Item> {
      * @param req
      * @param modelId
      */
-    public abstract getEditTemplate(id: string | number, catalogId: string, req: ReqType, modelId?: string | number): Promise<{
-        type: 'component' | 'navigation.group' | 'navigation.link' | 'model' | 'model.link',
-        data: any
-    }>;
+    public abstract getEditTemplate(
+        id: string | number,
+        catalogId: string,
+        req: ReqType,
+        modelId?: string | number
+    ): Promise<CatalogTemplate>;
 
     public async _getChilds(parentId: string | number, catalogId: string, req?: ReqType): Promise<Item[]> {
         let items = await this.getChilds(parentId, catalogId, req);

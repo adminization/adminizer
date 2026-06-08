@@ -40,6 +40,7 @@ export class NavigationApp extends AbstractAdminizerApp<NavigationAppConfig> {
 
         ctx.catalogTemplateComponent({
             id: "model-link-template",
+            catalog: "navigation",
             type: "navigation.model-link",
             component: catalogTemplates,
             exportName: "NavigationModelLinkTemplate",
@@ -47,6 +48,7 @@ export class NavigationApp extends AbstractAdminizerApp<NavigationAppConfig> {
 
         ctx.catalogTemplateComponent({
             id: "group-template",
+            catalog: "navigation",
             type: "navigation.group",
             component: catalogTemplates,
             exportName: "NavigationGroupTemplate",
@@ -54,6 +56,7 @@ export class NavigationApp extends AbstractAdminizerApp<NavigationAppConfig> {
 
         ctx.catalogTemplateComponent({
             id: "link-template",
+            catalog: "navigation",
             type: "navigation.link",
             component: catalogTemplates,
             exportName: "NavigationLinkTemplate",

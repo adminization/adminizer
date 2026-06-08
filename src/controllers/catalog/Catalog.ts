@@ -57,7 +57,7 @@ export async function catalogController(req: ReqType, res: ResType) {
                                 idList: idList
                             },
                             toolsActions: await frontendCatalog.getActions([], 'tools'),
-                            templateComponents: req.adminizer.catalogTemplateComponentHandler.getAll()
+                            templateComponents: req.adminizer.catalogTemplateComponentHandler.getByCatalog(_catalog.slug)
                         })
                     }
                     case 'createItem':

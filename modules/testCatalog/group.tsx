@@ -2,7 +2,7 @@ import {Label} from "@/components/ui/label.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import React, {useState, useEffect} from "react";
-import axios from "axios";
+import axios from "@/lib/axios-compat";
 import {LoaderCircle} from "lucide-react";
 
 interface ItemProps{
@@ -41,7 +41,7 @@ const Group = ({update = false, parentId, ...data}: ItemProps) => {
             let res = null
 
             if (update) {
-                res = await axios.put('', {
+                res = await axios.put<any>('', {
                     type: 'group',
                     modelId: data.item?.id,
                     data: {

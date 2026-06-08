@@ -485,7 +485,7 @@ const config: AdminpanelConfig = {
     system: {
         defaultORM: process.env.ORM ?? "sequelize",
         internalModelAccess: {
-            "test-catalog": ["TestCatalog"]
+            "test-catalog": ["TestCatalog", 'Category']
         }
     },
     mediamanager: {

@@ -1,339 +1,407 @@
-# Navigation Catalog
+# Navigation Module
 
-## Abstract
+Navigation is implemented as an Adminizer app module in the fixture: `fixture/apps/navigation`. Use that implementation as the reference for building project-specific navigation editors.
 
-The Navigation Catalog is a built-in Adminizer system for managing hierarchical site navigation menus — header, footer, or any other sections. It is built on top of the [Catalog](Catalog.md) infrastructure and adds specialized item types: records from any configured model (linked via a URL template), free-form groups with custom metadata fields, and plain external links.
+The module is built on the catalog system and registers its own runtime model, catalog, template components, access token, sidebar links, and synchronization listener.
 
-**Why is this needed:**
-- **Visual tree editor**: drag-and-drop ordering and nesting in the admin panel UI
-- **Multiple sections**: manage header, footer, and any other menus independently in one place
-- **Mixed content**: model records, groups, and external links coexist in the same tree
-- **URL templating**: item URLs are generated automatically from model record fields
-- **Persistent storage**: the entire tree is stored as JSON in the database, one row per section
-- **Ready-made API**: read the navigation tree from your frontend application via a single query
+## Fixture Files
 
-**Main features:**
-- Add records from any configured model as navigation items
-- Add folder-like groups with custom extra fields
-- Add manual external links
-- Drag-and-drop reordering and re-nesting
-- Per-item `visible` and `targetBlank` flags
-- Full-text search across all items
-- No extra code required — enabled entirely through `adminizerConfig.ts`
+| File | Purpose |
+|---|---|
+| `fixture/apps/navigation/NavigationApp.ts` | App entry point. Registers all module resources through `AppSetupContext`. |
+| `fixture/apps/navigation/navigationConfig.ts` | Example module config used by the fixture. |
+| `fixture/apps/navigation/NavigationTypes.ts` | Config interfaces. |
+| `fixture/apps/navigation/NavigationModel.ts` | Runtime model name and schema for persisted trees. |
+| `fixture/apps/navigation/NavigationCatalog.ts` | Catalog, storage, item types, and CRUD logic. |
+| `fixture/apps/navigation/NavigationCatalogTemplates.tsx` | React add/edit templates for model links, groups, and manual links. |
+| `fixture/apps/navigation/vite.config.module.ts` | Vite build for catalog template components. |
 
-## Overview
+## Enabling The Module
 
-Navigation is configured in `adminizerConfig.ts` under the `navigation` key. Adminizer automatically creates one [StorageService](#storageservice) per section, registers the `Navigation` catalog, and exposes the editor at `/adminizer/catalog/navigation/:section`.
+The fixture enables navigation after `adminizer.init()` and only for Sequelize:
 
-The tree is persisted in the `navigationap` database table — one row per section. Each row stores the full tree as a JSON blob. On every change (create, update, move, delete) the tree is rebuilt in memory and written back to the database.
+```ts
+await adminizer.init(adminpanelConfig);
 
-To consume the navigation in a frontend application, read the `navigationap` record for the desired section and use the `tree` field directly.
+await adminizer.appManager.enable(new NavigationApp({
+  ...navigationAppConfig,
+  sync: true,
+}));
+```
+
+Sequelize is the recommended/default ORM path. TypeORM support in the project is experimental, and the fixture does not currently enable the navigation app for TypeORM.
 
 ## Configuration
 
-Add the `navigation` key to `adminizerConfig.ts`:
+`NavigationAppConfig` is defined in `fixture/apps/navigation/NavigationTypes.ts`:
 
-```typescript
-// adminizerConfig.ts
-import { AdminpanelConfig } from 'adminizer';
+```ts
+interface NavigationAppConfig {
+  model?: string;
+  routePrefix?: string;
+  componentFile?: string;
+  devComponentUrl?: string;
+  sections: string[];
+  groupField: Array<{
+    name: string;
+    required: boolean;
+    label: string;
+  }>;
+  allowContentInGroup?: boolean;
+  items: Array<{
+    model: string;
+    title: string;
+    urlPath: string | ((value: any) => string);
+  }>;
+  movingGroupsRootOnly?: boolean;
+  sync?: boolean;
+}
+```
 
-const config: AdminpanelConfig = {
-  routePrefix: '/adminizer',
+Fixture config example:
 
-  navigation: {
-    // Sections to manage. Each creates a separate tree and a UI page:
-    // /adminizer/catalog/navigation/header
-    // /adminizer/catalog/navigation/footer
-    sections: ['header', 'footer'],
+```ts
+import { routePrefix } from "../../adminizerConfig";
+import type { NavigationAppConfig } from "./NavigationTypes";
 
-    // Model records that can be added as navigation items.
-    // The title appears in the "add item" dropdown.
-    // urlPath is a JS template string: use ${data.record.<field>} to reference record fields.
-    items: [
-      {
-        title: 'Category',
-        model: 'Category',
-        urlPath: '/catalog/${data.record.slug}',
-      },
-      {
-        title: 'Article',
-        model: 'Article',
-        urlPath: '/blog/${data.record.slug}',
-      },
-    ],
+export const navigationAppConfig: NavigationAppConfig = {
+  routePrefix,
+  items: [
+    {
+      title: "Category",
+      model: "Category",
+      urlPath: "/catalog/category/${data.record.slug}",
+    },
+    {
+      title: "Example",
+      model: "Example",
+      urlPath: `${routePrefix}/model/Example/\${data.record.id}`,
+    },
+  ],
+  sections: ["header", "footer"],
+  groupField: [
+    { name: "link", label: "Link", required: false },
+    { name: "css_class", label: "CSS class", required: false },
+  ],
+};
+```
 
-    // Extra fields added to NavigationGroup items.
-    // Useful for storing CSS classes, anchors, or any group-level metadata.
-    groupField: [
-      { name: 'link',      label: 'URL',       required: false },
-      { name: 'css_class', label: 'CSS class', required: false },
-    ],
+## What `NavigationApp` Registers
 
-    // Optional: allow content items (model records) to be placed
-    // directly at the root level, not only inside groups.
-    allowContentInGroup: true,
+`NavigationApp.setup(ctx)` registers these resources:
 
-    // Optional: restrict group drag-and-drop to the root level only.
-    movingGroupsRootOnly: false,
+| Resource | Code path | Details |
+|---|---|---|
+| Access right | `ctx.accessRight()` | Token `catalog-navigation`. Used by navigation sidebar links. |
+| Template asset | `ctx.asset()` | Serves `NavigationCatalogTemplates.es.js` in production or `NavigationCatalogTemplates.tsx` in dev. |
+| Catalog template components | `ctx.catalogTemplateComponent()` | Maps `navigation.model-link`, `navigation.group`, and `navigation.link` to React exports. |
+| Runtime model | `ctx.model()` | Registers the storage model. Default name is `Navigation`. |
+| Model access | `ctx.modelAccess()` | Allows the app to read/write the storage model and source content models. |
+| Config layer | `ctx.config()` | Hides the storage model from navbar/list UI and adds one sidebar link per section. |
+| Catalog | `ctx.catalog({ factory })` | Creates `NavigationCatalog`, waits for `catalog.ready()`, then registers it. |
+| Listener | `ctx.listener("model:updated")` | Updates navigation items when a linked model record changes. |
+
+Navigation setup is owned by the app module, not by core initialization.
+
+## Storage Model
+
+The default runtime model name is `Navigation` (`navigationModelName`). The schema is:
+
+```ts
+export const navigationSchema = {
+  id: {
+    type: "number",
+    autoIncrement: true,
+    primaryKey: true,
+  },
+  label: {
+    type: "string",
+    required: true,
+    unique: true,
+  },
+  tree: {
+    type: "json",
+    required: true,
   },
 };
 ```
 
-No other registration is needed. Adminizer calls `bindNavigation()` automatically during `init()`.
+`ctx.model({ name: this.config.model, schema: navigationSchema, sync: this.config.sync })` registers it through the active ORM adapter. In fixture usage, `sync: true` creates/synchronizes the model automatically for local development.
 
-## Item types
+The storage model is hidden from the regular model UI by a config layer:
 
-### NavigationItem — model record
-
-Links a specific record from a configured model. The URL is generated from the `urlPath` template at the moment the item is added.
-
+```ts
+ctx.config({
+  models: {
+    [this.config.model.toLowerCase()]: {
+      add: false,
+      navbar: { visible: false },
+      remove: false,
+      // list fields hidden as needed
+    },
+  },
+});
 ```
-urlPath: '/blog/${data.record.slug}'
-         └─ evaluated with data.record = the chosen model record
+
+## Catalog URLs
+
+For each configured section, `NavigationApp` adds a navbar link:
+
+```ts
+`${routePrefix}/catalog/navigation/${section}`
 ```
 
-The item stores:
-- `modelId` — the source record's id
-- `urlPath` — the evaluated URL (frozen at creation time)
-- `name` — taken from the record's `title` or `name` field
-- `targetBlank` — open in a new tab
-- `visible` — show/hide on the frontend
+Example fixture URLs:
 
-### NavigationGroup — folder
-
-A container node. Can hold any other item type as children. Supports custom fields defined via `groupField` in the config.
-
-### LinkItem — external link
-
-A plain link with a manually entered URL. Useful for external resources, anchors, or pages not covered by any model.
-
-## Admin panel UI
-
-The catalog editor is available at:
-```
+```text
 /adminizer/catalog/navigation/header
 /adminizer/catalog/navigation/footer
 ```
 
-The editor provides:
-- A tree view with drag-and-drop reordering and re-nesting
-- A section switcher (tabs for `header`, `footer`, etc.)
-- Add / edit / delete for each item type
-- Full-text search with automatic ancestor display
+The catalog controller validates `section` with `NavigationCatalog.getIdList()`, which returns `config.sections`.
 
-## Database
+## NavigationCatalog
 
-The navigation tree is stored in the `navigationap` table. Starting with Adminizer 5, built-in migrations are not supported; create or update this table through your project's own database workflow.
+`NavigationCatalog` extends `AbstractCatalog` and builds item types from module config:
 
-| column      | type   | description                                    |
-|-------------|--------|------------------------------------------------|
-| `id`        | text   | primary key                                    |
-| `label`     | text   | section name (`header`, `footer`, …), unique   |
-| `tree`      | json   | full tree with all children nested             |
-| `createdAt` | bigint |                                                |
-| `updatedAt` | bigint |                                                |
+- one `NavigationItem` per configured source model;
+- one `NavigationGroup` for groups;
+- one `LinkItem` for manual links.
 
-One row per section. The `tree` field contains the full nested structure rebuilt on every write.
+```ts
+const items: BaseItem<NavItem>[] = config.items.map((configElement) => new NavigationItem(
+  runtime,
+  configElement.title,
+  configElement.model,
+  config.model,
+  configElement.urlPath as string,
+  storageServices
+));
 
-### Tree node shape
+items.push(new NavigationGroup(config.groupField, storageServices));
+items.push(new LinkItem(storageServices));
+```
 
-```typescript
-interface NavItem {
-  id: string;            // UUID assigned at creation
-  name: string;          // Display label
-  type: string;          // 'category' | 'group' | 'link'
-  parentId: string | null;
-  sortOrder: number;
-  urlPath?: string;      // NavigationItem only
-  modelId?: string | number; // NavigationItem only
+The catalog has `slug = "navigation"`, `name = "Navigation"`, and `movingGroupsRootOnly` copied from config.
+
+## Storage Lifecycle
+
+`NavigationStorageServices` owns one `NavigationStorage` per section. Each storage:
+
+1. Loads the row with `label = section` from the runtime navigation model.
+2. Creates an empty row if it does not exist.
+3. Populates an in-memory `Map<id, NavItem>` from the persisted tree.
+4. Serves catalog reads from memory.
+5. Rebuilds and writes the full tree JSON to the model on each write.
+
+Important methods:
+
+| Method | Purpose |
+|---|---|
+| `ready` | Promise resolved when initial model loading is done. |
+| `buildTree()` | Convert flat in-memory map to nested `children` tree sorted by `sortOrder`. |
+| `populateFromTree(tree)` | Load persisted or seeded tree into memory. |
+| `setElement(id, item, init?)` | Add/update item and save to DB unless `init` is true. |
+| `removeElementById(id)` | Delete item and save tree. |
+| `findElementById(id)` | Read one item from memory. |
+| `findElementByModelId(modelId)` | Find navigation items linked to a source model record. |
+| `findElementsByParentId(parentId, type)` | Read children by parent and optional type. |
+| `saveToDB()` | Persist rebuilt tree JSON. |
+
+Do not seed navigation by writing raw rows directly after startup. The catalog reads from memory, so programmatic changes should go through `NavigationStorage` and then `saveToDB()`.
+
+## Item Types
+
+### Model Link Item
+
+`NavigationItem` extends `AbstractItem<NavItem>`. It represents a selected record from a configured source model.
+
+Creation supports two flows:
+
+- `_method: "select"`: choose an existing source record from the template dropdown;
+- regular add flow: create a source model record through Adminizer's model form, then add it to navigation.
+
+Stored fields include:
+
+```ts
+interface NavItem extends Item {
+  urlPath?: string;
+  modelId?: string | number;
   targetBlank?: boolean;
   visible?: boolean;
-  children: NavItem[];   // Nested children (built at read time)
 }
 ```
 
-## Consuming the navigation in a frontend app
+`urlPath` is generated by replacing `${data.record.<field>}` tokens from the source record:
 
-Read the `navigationap` record for the section you need. The `tree` field is ready to use — no extra processing required.
+```ts
+private renderUrlPath(record: any): string {
+  return this.urlPath.replace(/\$\{data\.record\.([^}]+)\}/g, (_match, field) =>
+    encodeURIComponent(record?.[field] ?? "")
+  );
+}
+```
 
-### Express.js example
+### Group Item
 
-```typescript
-// index.ts
-mainApp.get('/api/navigation', async (req, res) => {
-  try {
-    const navigationModel = adminizer.modelHandler
-      .internal('navigation')
-      .get('NavigationAP');
+`NavigationGroup` extends `AbstractGroup<NavItem>`. It stores a folder-like node with `name`, `targetBlank`, `visible`, and extra fields from `config.groupField`.
 
-    const header = await navigationModel.findOne({
-      where: { label: 'header' }
-    });
+### Manual Link Item
 
-    const footer = await navigationModel.findOne({
-      where: { label: 'footer' }
-    });
+`LinkItem` extends `NavigationGroup` but sets `isGroup = false`, `type = "link"`, and `icon = "insert_link"`. It uses a custom template that asks for a manual `link` value.
 
-    res.json({
-      header: header?.tree ?? [],
-      footer: footer?.tree ?? [],
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+## Template Components
+
+The module registers three catalog template component records:
+
+```ts
+ctx.catalogTemplateComponent({
+  id: "model-link-template",
+  catalog: "navigation",
+  type: "navigation.model-link",
+  component: catalogTemplates,
+  exportName: "NavigationModelLinkTemplate",
+});
+
+ctx.catalogTemplateComponent({
+  id: "group-template",
+  catalog: "navigation",
+  type: "navigation.group",
+  component: catalogTemplates,
+  exportName: "NavigationGroupTemplate",
+});
+
+ctx.catalogTemplateComponent({
+  id: "link-template",
+  catalog: "navigation",
+  type: "navigation.link",
+  component: catalogTemplates,
+  exportName: "NavigationLinkTemplate",
+});
+```
+
+The catalog item types return matching template types from `getAddTemplate()` and `getEditTemplate()`.
+
+For example, model links return:
+
+```ts
+return {
+  type: "navigation.model-link",
+  data: {
+    items,
+    model: this.model,
+    labels: { ... },
+  },
+};
+```
+
+`CatalogTree` receives registered template components from `catalogController.getCatalog`, imports the component asset, and passes `CatalogTemplateComponentProps` including `itemType`, `parentId`, `template`, and `actions`.
+
+## Synchronizing Source Model Updates
+
+`NavigationApp` listens to `model:updated`:
+
+```ts
+ctx.listener("model:updated", async (event) => {
+  const itemConfig = this.config.items.find((item) =>
+    item.model.toLowerCase() === event.modelName.toLowerCase()
+  );
+  if (!itemConfig) return;
+
+  for (const section of this.config.sections) {
+    navigationCatalog.setId(section);
+    const navItem = navigationCatalog.itemTypes.find((item) =>
+      item.type === event.modelName.toLowerCase()
+    );
+    if (navItem) {
+      await navItem.updateModelItems(event.record.id, { record: event.record }, section);
+    }
   }
 });
 ```
 
-### Example response
+This updates item names, URLs, and flags for navigation nodes linked to the edited source record.
+
+## Consuming Navigation Data
+
+Read the module storage model through app/project code. In the fixture, the model is named `Navigation` unless overridden.
+
+```ts
+const navigationModel = adminizer.modelHandler
+  .createAppAccess("navigation")
+  .get("Navigation");
+
+const header = await navigationModel.findOne({ where: { label: "header" } });
+const tree = header?.tree ?? [];
+```
+
+If you expose navigation to a public frontend, create a project route that reads the `tree` field and filters hidden nodes as needed.
+
+Example response shape:
 
 ```json
-{
-  "header": [
-    {
-      "id": "a1b2c3d4",
-      "name": "Catalog",
-      "type": "group",
-      "parentId": null,
-      "sortOrder": 0,
-      "visible": true,
-      "children": [
-        {
-          "id": "e5f6g7h8",
-          "name": "Electronics",
-          "type": "category",
-          "parentId": "a1b2c3d4",
-          "sortOrder": 0,
-          "urlPath": "/catalog/electronics",
-          "modelId": 12,
-          "targetBlank": false,
-          "visible": true,
-          "children": []
-        }
-      ]
-    },
-    {
-      "id": "i9j0k1l2",
-      "name": "About",
-      "type": "link",
-      "parentId": null,
-      "sortOrder": 1,
-      "urlPath": "/about",
-      "visible": true,
-      "children": []
-    }
-  ],
-  "footer": []
-}
+[
+  {
+    "id": "h-group-docs",
+    "name": "Docs",
+    "type": "group",
+    "parentId": null,
+    "sortOrder": 0,
+    "visible": true,
+    "children": [
+      {
+        "id": "h-link-install",
+        "name": "Install",
+        "type": "link",
+        "parentId": "h-group-docs",
+        "sortOrder": 0,
+        "urlPath": "/docs/install",
+        "targetBlank": false,
+        "visible": true,
+        "children": []
+      }
+    ]
+  }
+]
 ```
 
-### Next.js / React example
+## Programmatic Seeding
 
-```typescript
-// lib/navigation.ts
-export async function getNavigation() {
-  const res = await fetch(`${process.env.API_URL}/api/navigation`);
-  const data = await res.json();
-  return data; // { header: NavItem[], footer: NavItem[] }
-}
+Seed after the module is enabled and the catalog storage is ready:
 
-// components/Header.tsx
-import { getNavigation } from '@/lib/navigation';
+```ts
+await adminizer.appManager.enable(new NavigationApp({
+  ...navigationAppConfig,
+  sync: true,
+}));
 
-export default async function Header() {
-  const { header } = await getNavigation();
-
-  return (
-    <nav>
-      {header.filter(item => item.visible).map(item => (
-        <NavNode key={item.id} item={item} />
-      ))}
-    </nav>
-  );
-}
-
-function NavNode({ item }) {
-  return (
-    <div>
-      {item.urlPath ? (
-        <a href={item.urlPath} target={item.targetBlank ? '_blank' : undefined}>
-          {item.name}
-        </a>
-      ) : (
-        <span>{item.name}</span>
-      )}
-      {item.children?.length > 0 && (
-        <ul>
-          {item.children.filter(c => c.visible).map(child => (
-            <li key={child.id}>
-              <NavNode item={child} />
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-```
-
-## StorageService
-
-`StorageService` (`src/lib/catalog/Navigation.ts`) manages a single navigation section. It holds an in-memory `Map<id, NavItem>` and syncs it to the database on every write.
-
-**Important:** the catalog always reads from the in-memory map, never from the database directly. The database is only the persistence layer — writes go memory → DB, reads come from memory only. Any seed or programmatic write must go through `StorageService`, not via raw ORM calls.
-
-**Key methods:**
-
-| Method | Description |
-|---|---|
-| `ready` | Promise that resolves when `initModel()` has finished. Await before any programmatic writes. |
-| `initModel()` | Called in the constructor. Loads the existing tree from DB into memory, or creates an empty DB record. |
-| `buildTree()` | Assembles the flat in-memory map into a nested tree, sorted by `sortOrder`. |
-| `populateFromTree(tree)` | Recursively loads a tree structure into the in-memory map. |
-| `setElement(id, data)` | Add or update an item, then persist the rebuilt tree to DB. |
-| `findElementsByParentId(parentId, type?)` | Query items by parent, optionally filtered by type. |
-| `saveToDB()` | Rebuild the tree from memory and write the JSON to the `navigationap` row. |
-
-`StorageServices.ready()` waits for all sections at once:
-
-```typescript
-await adminizer.storageServices.ready(); // waits for header, footer, etc.
-```
-
-## Seeding navigation programmatically
-
-Because the catalog works from memory, seed data must be loaded into `StorageService` — not written directly to the database.
-
-**The correct pattern:**
-
-```typescript
-// After adminizer.init() — wait for all StorageServices to finish loading
-const navCatalog = adminizer.catalogHandler.getCatalog('navigation') as any;
+const navCatalog = adminizer.catalogHandler.getCatalog("navigation") as any;
+await navCatalog.ready?.();
 await navCatalog.storageServices.ready();
 
-const storage = navCatalog.storageServices.get('header');
-
-// Only seed if the section is empty
+const storage = navCatalog.storageServices.get("header");
 const existing = await storage.findElementsByParentId(null, null);
+
 if (existing.length === 0) {
   await storage.populateFromTree([
     {
-      id: 'group-1',
-      name: 'Docs',
-      type: 'group',
+      id: "h-group-docs",
+      name: "Docs",
+      type: "group",
       parentId: null,
       sortOrder: 0,
-      icon: 'folder',
+      icon: "folder",
       visible: true,
       children: [
         {
-          id: 'link-1',
-          name: 'Install',
-          type: 'link',
-          parentId: 'group-1',
+          id: "h-link-install",
+          name: "Install",
+          type: "link",
+          parentId: "h-group-docs",
           sortOrder: 0,
-          icon: 'link',
-          urlPath: 'https://example.com/docs/install',
-          targetBlank: true,
+          icon: "insert_link",
+          urlPath: "/docs/install",
+          targetBlank: false,
           visible: true,
           children: [],
         },
@@ -344,90 +412,9 @@ if (existing.length === 0) {
 }
 ```
 
-**Why direct DB writes do not work:** the catalog never reads from the database after startup — only from `storageMap`. Writing to the `navigationap` table via ORM has no effect until the next server restart.
+## Implementation Notes
 
-## Minimal seed example
-
-```typescript
-// index.ts — after adminizer.init()
-const navCatalog = adminizer.catalogHandler.getCatalog('navigation') as any;
-await navCatalog.storageServices.ready();
-
-const storage = navCatalog.storageServices.get('header');
-const existing = await storage.findElementsByParentId(null, null);
-if (existing.length === 0) {
-  await storage.populateFromTree([
-    { id: '1', name: 'Home',  type: 'link', parentId: null, sortOrder: 0, icon: 'link', urlPath: '/',             targetBlank: false, visible: true, children: [] },
-    { id: '2', name: 'Docs',  type: 'link', parentId: null, sortOrder: 1, icon: 'link', urlPath: '/docs',         targetBlank: false, visible: true, children: [] },
-    { id: '3', name: 'GitHub',type: 'link', parentId: null, sortOrder: 2, icon: 'link', urlPath: 'https://github.com', targetBlank: true,  visible: true, children: [] },
-  ]);
-  await storage.saveToDB();
-}
-```
-
-## Access rights
-
-The Navigation catalog registers access right tokens automatically:
-
-| Token | Grants access to |
-|---|---|
-| `catalog-navigation` | All navigation sections |
-| `catalog-navigation-header` | Header section only |
-| `catalog-navigation-footer` | Footer section only |
-
-Assign these tokens to groups in `adminizerConfig.ts` or via the access rights UI.
-
-## urlPath templates
-
-`urlPath` is evaluated as a JavaScript template literal at the moment a navigation item is created:
-
-```typescript
-// Config:
-urlPath: '/blog/${data.record.slug}'
-
-// At creation time Adminizer evaluates:
-const urlPath = eval('`' + configuredUrlPath + '`');
-// where data.record is the chosen model record
-```
-
-The evaluated URL is stored statically on the item. If the source record changes later, call `updateModelItems()` to propagate the new URL to all navigation items that reference it.
-
-You can use any field from the record:
-
-```typescript
-urlPath: '/products/${data.record.category}/${data.record.id}'
-urlPath: '/pages/${data.record.slug}?lang=en'
-urlPath: 'https://external.com/${data.record.externalId}'
-```
-
-## Full configuration reference
-
-```typescript
-navigation: {
-  // Required. List of section identifiers.
-  sections: string[]
-
-  // Required. Model types available as navigation items.
-  items: Array<{
-    title: string                           // Label in the "add" dropdown
-    model: string                           // Model name as defined in adminizerConfig models
-    urlPath: string | ((v: any) => string) // URL template or function
-  }>
-
-  // Optional. Extra fields on group nodes.
-  groupField: Array<{
-    name: string
-    label: string
-    required: boolean
-  }>
-
-  // Optional. Custom storage model name. Defaults to 'NavigationAP'.
-  model?: string
-
-  // Optional. Allow model items at the root level (outside groups).
-  allowContentInGroup?: boolean
-
-  // Optional. Restrict group drag-and-drop to root level only.
-  movingGroupsRootOnly?: boolean
-}
-```
+- Instantiate `new NavigationApp(config)` after `adminizer.init()`.
+- The fixture module registers the `Navigation` storage model at runtime through `ctx.model()`.
+- Catalog form UI is connected through `ctx.catalogTemplateComponent()`.
+- Keep Sequelize as the default recommendation. TypeORM remains experimental.

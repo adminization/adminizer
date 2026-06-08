@@ -6,14 +6,14 @@ To launch **Adminizer**, you need to follow a few simple steps:
 
 ## 1. Create an Adminizer instance
 
-You must create an instance of the `Adminizer` class.  
+You must create an instance of the `Adminizer` class.
 When creating it, you should pass an array of adapters — adapters are responsible for connecting Adminizer to your data sources. Sequelize is the primary supported adapter. TypeORM support exists, but is experimental.
 
 ---
 
 ## 2. Configure the adapters
 
-Each adapter acts as a bridge between Adminizer and your models.  
+Each adapter acts as a bridge between Adminizer and your models.
 You need to prepare and configure at least one adapter:
 - For **Sequelize**, create a database connection and register your models.
 - For **TypeORM**, use the experimental `TypeOrmAdapter` only after testing it against your project models.
@@ -33,15 +33,15 @@ After creating the Adminizer instance, call the `init` method and pass the proje
 
 ## 4. Create an HTTP server
 
-To access Adminizer through the browser, you must create an HTTP server (e.g., using Node.js `http` module).  
-You should forward all requests starting with the route prefix (like `/adminizer`) to Adminizer’s application handler.  
+To access Adminizer through the browser, you must create an HTTP server (e.g., using Node.js `http` module).
+You should forward all requests starting with the route prefix (like `/adminizer`) to Adminizer’s application handler.
 Other requests can be processed separately (e.g., by returning a basic welcome page).
 
 ---
 
 ## 5. Start the server
 
-Once everything is set up, start the server and listen on a port (typically 3000).  
+Once everything is set up, start the server and listen on a port (typically 3000).
 After that, the Adminizer panel will be available at a URL like `http://localhost:3000/adminizer`.
 
 ---
@@ -69,7 +69,7 @@ After that, the Adminizer panel will be available at a URL like `http://localhos
 
 # Troubleshooting Adminizer Startup
 
-If you encounter difficulties launching **Adminizer**,  
+If you encounter difficulties launching **Adminizer**,
 you can use the ready-made **fixture** (template project) available in the repository folder [`fixture`](https://github.com/adminization/adminizer/tree/main/fixture).
 
 This project already includes:
@@ -87,7 +87,8 @@ It serves as a practical starting point to help you quickly understand how Admin
 git clone https://github.com/adminization/adminizer.git
 cd adminizer
 npm install --force
-npm run demo:build && npm run demo
+npm run build
+npm run start:seed
 ```
 
 After running these commands, you will have a fully working Adminizer instance ready for testing and development at `http://localhost:3000/adminizer`.
@@ -170,4 +171,3 @@ async function start() {
 start();
 
 ```
-

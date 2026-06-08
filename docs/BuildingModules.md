@@ -1,377 +1,449 @@
-# Building a Module for Adminizer
+# Adminizer App Modules
 
-This guide covers everything you need to create your own React module for an Adminizer-powered project — whether it's a full admin page, a custom field control, or a dashboard widget.
+Adminizer modules are backend-first extensions built around `AbstractAdminizerApp` and `AppManager`. A module can register routes, frontend assets, config patches, access rights, runtime models, model access scopes, catalogs, catalog template components, and event listeners. This is the current extension mechanism for features such as the fixture module pages, module manager, and navigation catalog.
 
-**Related docs:**
-- [UIComponents.md](UIComponents.md) — full reference for all components available via `window.UIComponents` and `window.JSComponents`
-- [adminizer-module.d.ts](../adminizer-module.d.ts) — TypeScript declarations for globals and module contracts
+Older standalone React page modules and custom field controls still exist as frontend patterns, but a full Adminizer module should be installed through `adminizer.appManager`.
 
----
+## Core Types
 
-## How the UI layer works
-
-Adminizer registers React components into `window.UIComponents` at startup via `registerUIComponents()`. Your module consumes them at runtime without bundling its own copy.
-
-This means:
-- consistent look & feel with the core UI;
-- no duplicate React / shadcn / Radix in your bundle;
-- dark/light theme and spacing handled automatically.
-
-See [UIComponents.md](UIComponents.md) for the full list of available components and their props.
-
----
-
-## Types of modules
-
-| Type | Loaded by | Default export receives |
-|---|---|---|
-| **Page module** | `module.tsx` (full-page Inertia route) | `{ data?: TData }` |
-| **Field control** | `DynamicControls` (inside a form field) | `{ initialValue, onChange, name, options }` |
-
----
-
-## 1. Page module
-
-A page module is a standalone React component rendered as a full admin page.
-
-```tsx
-// my-page-module.tsx
-import type { PageModuleProps } from 'adminizer/adminizer-module';
-
-interface Item { id: number; name: string; status: string }
-
-export default function MyPageModule({ data }: PageModuleProps<{ items: Item[] }>) {
-  const { Button, Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
-          Badge, Toaster } = window.UIComponents;
-  const { items = [] } = data ?? {};
-  const [loading, setLoading] = React.useState(false);
-
-  const handleAction = async (id: number) => {
-    setLoading(true);
-    try {
-      await window.adminApi.postJson(`${window.routePrefix}/api/my-resource/${id}/action`);
-      window.sonner.toast.success('Done');
-    } catch {
-      window.sonner.toast.error('Failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <Toaster richColors position="bottom-right" />
-      <Table wrapperHeight="max-h-[70vh]">
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map(item => (
-            <TableRow key={item.id}>
-              <TableCell>{item.name}</TableCell>
-              <TableCell><Badge variant="outline">{item.status}</Badge></TableCell>
-              <TableCell>
-                <Button size="sm" disabled={loading} onClick={() => handleAction(item.id)}>
-                  Run
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </>
-  );
-}
-```
-
-**Backend registration (route + Inertia render):**
+Import module contracts from Adminizer:
 
 ```ts
-// Pass data and JS path to the frontend
-res.render('module', {
-  moduleComponent: `${routePrefix}/modules/my-page/my-page-module.js`,
-  data: { items: await fetchItems() },
-});
+import {
+  AbstractAdminizerApp,
+  AppSetupContext,
+  AppRuntime,
+} from "adminizer";
 ```
 
----
-
-## 2. Field control module
-
-A field control replaces the default input for a specific field type (wysiwyg, codeEditor, jsonEditor, etc.).
-
-### 2.1 Frontend component
-
-```tsx
-// my-editor.tsx
-import type { FieldModuleProps } from 'adminizer/adminizer-module';
-
-export default function MyEditor({ initialValue, onChange, name, options }: FieldModuleProps) {
-  const { MonacoEditor } = window.JSComponents;
-
-  return (
-    <MonacoEditor
-      value={initialValue}
-      onChange={onChange}
-      options={{ language: options?.language ?? 'javascript' }}
-    />
-  );
-}
-```
-
-Props received from `DynamicControls`:
-
-| Prop | Type | Description |
-|---|---|---|
-| `initialValue` | `string` | Current field value |
-| `onChange` | `(value: string) => void` | Emit new value to the form |
-| `name` | `string` | HTML field name attribute |
-| `options` | `Record<string, string>` | Config from `AbstractControls.getConfig()` merged with per-field overrides |
-
-### 2.2 Backend control class
+A module extends `AbstractAdminizerApp`:
 
 ```ts
-import { AbstractControls, ControlType, Path, Config, Adminizer } from 'adminizer';
+export class MyApp extends AbstractAdminizerApp<MyAppConfig> {
+  readonly name = "my-app";
+  readonly version = "1.0.0";
+  declare readonly config: MyAppConfig;
 
-export class MyEditor extends AbstractControls {
-  readonly name = 'my-editor';
-  readonly type: ControlType = 'codeEditor';
-  readonly path: Path = {
-    jsPath: {
-      dev:        `${this.routPrefix}/modules/my-editor/my-editor.js`,
-      production: `${this.routPrefix}/modules/my-editor/my-editor.prod.js`,
-    },
-    cssPath: '',
-  };
-  readonly config: Config = { language: 'javascript' };
+  constructor(config: Partial<MyAppConfig> = {}) {
+    super();
+    this.config = {
+      route: "/my-app",
+      ...config,
+    };
+  }
 
-  constructor(adminizer: Adminizer) { super(adminizer); }
-
-  getName()    { return this.name; }
-  getConfig()  { return this.config; }
-  getJsPath()  { return process.env.ADMINIZER_ENV === 'dev' ? this.path.jsPath.dev : this.path.jsPath.production; }
-  getCssPath() { return this.path.cssPath || undefined; }
-}
-```
-
-Available `type` values: `wysiwyg` | `jsonEditor` | `geoJson` | `markdown` | `table` | `codeEditor`
-
-### 2.3 Register and use
-
-**Register on `adminizer:loaded`:**
-
-```ts
-adminizer.emitter.on('adminizer:loaded', () => {
-  adminizer.controlsHandler.add(new MyEditor(adminizer));
-});
-```
-
-**Reference in model field config:**
-
-```ts
-fields: {
-  body: {
-    title: 'Body',
-    type: 'codeEditor',
-    options: {
-      name: 'my-editor',          // matches AbstractControls.name
-      config: { language: 'sql' } // overrides control defaults
-    }
+  setup(ctx: AppSetupContext): void | Promise<void> {
+    // Register resources here.
   }
 }
 ```
 
----
-
-## 3. Building with Vite
-
-Your module must be built as an ES module with Adminizer's globals as externals — otherwise React and UI components will be duplicated in the bundle.
+Enable it after `adminizer.init(config)`:
 
 ```ts
-// vite.config.module.ts
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { viteExternalsPlugin } from 'vite-plugin-externals';
+await adminizer.init(adminpanelConfig);
+await adminizer.appManager.enable(new MyApp());
+```
+
+`AppManager.enable(app)` registers the app if needed, runs `setup(ctx)`, waits for deferred model/model-access/catalog registrations, and stores disposers for later `disable()` or `unregister()`.
+
+## Resource Registration
+
+`setup(ctx)` receives an `AppSetupContext` with these methods:
+
+| Method | Purpose |
+|---|---|
+| `ctx.asset(asset)` | Expose a JS/CSS/static file and return its URL. In `ADMINIZER_ENV=dev`, `devUrl` is returned directly. In production, Adminizer creates a static controller for `filePath`. |
+| `ctx.controller(controller)` | Register an Express route under `config.routePrefix`; returns the resolved full path. |
+| `ctx.config(patch, id?)` | Merge a config patch into `adminizer.config`. Arrays of objects with `id` are merged by id; other arrays are appended. |
+| `ctx.accessRight(token)` | Register an access rights token owned by the app. |
+| `ctx.model(model)` | Register a runtime model through the active ORM adapter. Sequelize is the primary supported adapter. |
+| `ctx.modelAccess(access)` | Allow the app runtime to access selected models through `runtime.models`. |
+| `ctx.catalog(catalog)` | Register a catalog directly or through a factory that receives `AppRuntime`. |
+| `ctx.catalogTemplateComponent(component)` | Register a React template component for catalog add/edit forms. |
+| `ctx.listener(event, handler)` | Subscribe to Adminizer events. The handler receives `(payload, runtime)`. |
+
+Registration order after `setup()` is intentional: runtime models first, model access second, catalogs third. This lets catalog factories safely use models registered by the same app.
+
+## App Runtime
+
+Catalog factories and event listeners receive `AppRuntime`:
+
+```ts
+interface AppRuntime {
+  models: AppModelAccess;
+  config: {
+    readonly routePrefix: string;
+    getModelConfig(modelName: string): ModelConfig | undefined;
+  };
+}
+```
+
+Use `runtime.models.get<T>(modelName)` only for models declared through `ctx.modelAccess()`. This keeps internal and app model access explicit.
+
+```ts
+ctx.modelAccess({ models: ["Navigation", "Category"] });
+
+ctx.catalog({
+  id: "navigation",
+  factory: async (runtime) => {
+    const navigationModel = runtime.models.get("Navigation");
+    // Create and return AbstractCatalog.
+  },
+});
+```
+
+## Routes And Policies
+
+`ctx.controller()` registers routes through `ControllerHandler`. The route is automatically prefixed with `adminizer.config.routePrefix`.
+
+```ts
+const pageUrl = ctx.controller({
+  id: "page",
+  method: "get",
+  route: "/my-app",
+  middleware: async (req, res) => {
+    return req.Inertia.render({
+      component: "module",
+      props: {
+        moduleComponent,
+        data: { rows: [] },
+      },
+    });
+  },
+  policies: [{ type: "auth", mode: "ui" }],
+});
+```
+
+Supported policy types:
+
+| Policy | Meaning |
+|---|---|
+| `{ type: "auth", mode?: "ui" | "api" }` | Require authenticated user. |
+| `{ type: "auth-enabled" }` | Require auth only when auth is enabled. |
+| `{ type: "admin", mode?: "ui" | "api" }` | Require admin user. |
+| `{ type: "permission", token, mode?: "ui" | "api" }` | Require one access token. |
+| `{ type: "any-permission", tokens, mode?: "ui" | "api" }` | Require any token from a list. |
+
+Use `mode: "ui"` for Inertia pages and `mode: "api"` for JSON endpoints.
+
+## Frontend Page Module
+
+Adminizer renders app pages with the shared Inertia page `module`. Your controller passes `moduleComponent`; the page dynamically imports that ES module and renders its default export.
+
+```tsx
+// MyAppPage.tsx
+export default function MyAppPage({ data }: { data?: { rows: Array<{ id: number; name: string }> } }) {
+  const { Button, Card, CardContent } = window.UIComponents;
+
+  return (
+    <Card>
+      <CardContent>
+        {data?.rows.map((row) => (
+          <Button key={row.id}>{row.name}</Button>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+Register the built asset and route:
+
+```ts
+const moduleComponent = ctx.asset({
+  id: "component",
+  filePath: path.resolve(import.meta.dirname, "MyAppPage.es.js"),
+  devUrl: "/apps/my-app/MyAppPage.tsx",
+});
+
+ctx.controller({
+  id: "page",
+  method: "get",
+  route: "/my-app",
+  middleware: async (req, res) => req.Inertia.render({
+    component: "module",
+    props: {
+      moduleComponent,
+      data: { rows: await loadRows() },
+    },
+  }),
+  policies: [{ type: "auth", mode: "ui" }],
+});
+```
+
+Add a sidebar link through a config layer:
+
+```ts
+ctx.config({
+  navbar: {
+    additionalLinks: [{
+      id: "my-app",
+      link: pageUrl,
+      type: "self",
+      title: "My App",
+      icon: "settings",
+      section: "Platform",
+    }],
+  },
+});
+```
+
+## Runtime Models
+
+A module can register its own internal storage model:
+
+```ts
+ctx.model({
+  name: "MyAppState",
+  schema: {
+    id: { type: "number", autoIncrement: true, primaryKey: true },
+    label: { type: "string", required: true, unique: true },
+    payload: { type: "json", required: true },
+  },
+  sync: true,
+});
+
+ctx.modelAccess({ models: ["MyAppState"] });
+```
+
+`adapter` is optional. If omitted, Adminizer uses `config.system.defaultORM` or the only registered ORM adapter. Sequelize is the recommended default; TypeORM is experimental.
+
+## Catalog Template Components
+
+Catalog item types return add/edit templates with a `type` string:
+
+```ts
+async getAddTemplate(req: ReqType) {
+  return {
+    type: "my-catalog.item-form",
+    data: { labels: { save: req.i18n.__("Save") } },
+  };
+}
+```
+
+A module maps that template `type` to a React component through `ctx.catalogTemplateComponent()`:
+
+```ts
+const catalogTemplates = ctx.asset({
+  id: "catalog-templates",
+  filePath: path.resolve(import.meta.dirname, "CatalogTemplates.es.js"),
+  devUrl: "/apps/my-app/CatalogTemplates.tsx",
+});
+
+ctx.catalogTemplateComponent({
+  id: "item-form",
+  catalog: "my-catalog",
+  type: "my-catalog.item-form",
+  component: catalogTemplates,
+  exportName: "MyCatalogItemTemplate",
+});
+```
+
+`catalog` can be a string, an array of catalog slugs, or omitted. Omit it only for a global template type. `CatalogTemplateComponentHandler` prevents two enabled components from claiming the same template type in the same catalog scope.
+
+Template props on the frontend:
+
+```ts
+interface CatalogTemplateComponentProps {
+  mode: "create" | "update";
+  type: string;
+  template: { type: string; data: any };
+  parentId: string | number;
+  itemType: string | null;
+  selectedItem?: Record<string, any>;
+  messages: Record<string, string>;
+  actions: {
+    close: () => void;
+    reload: (item?: any) => Promise<void>;
+    openModelAdd: (model: string) => Promise<void>;
+  };
+}
+```
+
+A minimal template:
+
+```tsx
+export function MyCatalogItemTemplate({ template, itemType, parentId, actions }: CatalogTemplateComponentProps) {
+  const { Button, Input, Label } = window.UIComponents;
+  const [name, setName] = React.useState("");
+
+  const save = async () => {
+    const res = await window.adminApi.post("", {
+      _method: "createItem",
+      data: {
+        type: itemType,
+        parentId,
+        name,
+      },
+    });
+    actions.close();
+    await actions.reload(res.data.data);
+  };
+
+  return (
+    <div className="p-8 grid gap-4">
+      <Label>{template.data.labels?.name ?? "Name"}</Label>
+      <Input value={name} onChange={(e) => setName(e.target.value)} />
+      <Button onClick={save}>Save</Button>
+    </div>
+  );
+}
+```
+
+## Catalog Module Pattern
+
+For catalogs, prefer registering through an app instead of calling `adminizer.catalogHandler.add()` directly. The module can register storage models, access rights, sidebar links, catalog templates, and event listeners in one place.
+
+```ts
+export class MyCatalogApp extends AbstractAdminizerApp<MyCatalogAppConfig> {
+  readonly name = "my-catalog";
+  readonly version = "1.0.0";
+  declare readonly config: MyCatalogAppConfig;
+
+  constructor(config: MyCatalogAppConfig) {
+    super();
+    this.config = config;
+  }
+
+  setup(ctx: AppSetupContext): void {
+    ctx.accessRight({
+      id: "catalog-my-catalog",
+      name: "My Catalog",
+      description: "Access to My Catalog",
+      department: "Catalog",
+    });
+
+    ctx.model({
+      name: "MyCatalogStorage",
+      schema: {
+        id: { type: "number", autoIncrement: true, primaryKey: true },
+        label: { type: "string", required: true, unique: true },
+        tree: { type: "json", required: true },
+      },
+      sync: true,
+    });
+
+    ctx.modelAccess({ models: ["MyCatalogStorage"] });
+
+    ctx.config({
+      navbar: {
+        additionalLinks: [{
+          id: "my-catalog-main",
+          type: "self",
+          link: `${this.config.routePrefix}/catalog/my-catalog/main`,
+          title: "My Catalog",
+          icon: "folder",
+          accessRightsToken: "catalog-my-catalog",
+        }],
+      },
+    });
+
+    ctx.catalog({
+      id: "my-catalog",
+      factory: async (runtime) => {
+        const catalog = new MyCatalog(runtime, this.config);
+        await catalog.ready?.();
+        return catalog;
+      },
+    });
+  }
+}
+```
+
+## Events
+
+`ctx.listener(event, handler)` is useful for synchronizing module data with model changes. Adminizer emits `model:updated` after edit controller updates a record.
+
+```ts
+ctx.listener("model:updated", async (event: { modelName: string; record: Record<string, any> }, runtime) => {
+  if (event.modelName.toLowerCase() !== "category") {
+    return;
+  }
+
+  const storage = runtime.models.get("MyCatalogStorage");
+  await storage.update({ where: { label: "main" } }, { touchedAt: Date.now() } as any);
+});
+```
+
+`AppManager` also emits lifecycle events such as `app:registered`, `app:enable:start`, `app:enabled`, `app:disable:start`, `app:disabled`, `app:unregistered`, and resource-level registration events.
+
+## Vite Build For App Components
+
+Build module UI as an ES module and externalize Adminizer globals to avoid bundling another copy of React or UI components.
+
+```ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import { viteExternalsPlugin } from "vite-plugin-externals";
 
 export default defineConfig({
   plugins: [
     react(),
     viteExternalsPlugin({
-      'react':     'React',
-      'react-dom': 'ReactDOM',
-      // Optional, only if your external module imports `axios` directly.
-      // Adminizer exposes `window.axios` as a legacy compatibility client.
-      // Prefer `window.adminApi` for new code.
-      'axios':     'axios',
-      'sonner':    'sonner',
+      react: "React",
+      "react-dom": "ReactDOM",
+      "lucide-react": "LucideReact",
+      sonner: "sonner",
+      "@/components/ui/button": "UIComponents",
+      "@/components/ui/card": "UIComponents",
+      "@/components/ui/input": "UIComponents",
+      "@/components/ui/label": "UIComponents",
     }),
   ],
   build: {
+    outDir: path.resolve(import.meta.dirname, ""),
+    emptyOutDir: false,
     lib: {
-      entry:    'src/my-module.tsx',
-      formats:  ['es'],
-      fileName: 'my-module',
+      entry: path.resolve(import.meta.dirname, "MyAppPage"),
+      formats: ["es"],
+      fileName: (format) => `MyAppPage.${format}.js`,
     },
     rollupOptions: {
-      // Keep UIComponents and JSComponents external too
-      // if you import them as bare specifiers in your module
+      external: [
+        "@/components/ui/button",
+        "@/components/ui/card",
+        "@/components/ui/input",
+        "@/components/ui/label",
+      ],
+    },
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(import.meta.dirname, "../../src/assets/js"),
     },
   },
 });
 ```
 
-The output is a small `.js` file that reads globals from the Adminizer page at runtime.
+Use project-specific build scripts for modules. The fixture uses:
 
----
-
-## 4. TypeScript setup
-
-Add the Adminizer module declarations to your `tsconfig.json`:
-
-```json
-{
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "moduleResolution": "bundler"
-  },
-  "include": [
-    "src",
-    "node_modules/adminizer/adminizer-module.d.ts"
-  ]
-}
+```bash
+npm run build:apps
 ```
 
-This gives you:
-- autocomplete and hover docs for `window.UIComponents.*`, `window.JSComponents.*`, `window.adminApi`, `window.sonner`
-- `PageModuleProps<T>` and `FieldModuleProps` types for your component signatures
+## Fixture Examples
 
----
+The fixture contains three current app-module examples:
 
-## 5. Using UI components
+| App | Files | Demonstrates |
+|---|---|---|
+| `component-b` | `fixture/apps/component-b/*` | Page module, asset registration, UI route, JSON API route, sidebar config patch. |
+| `module-manager` | `fixture/apps/module-manager/*` | Access right token, permission-protected page/API routes, app lifecycle control through `AppManager`. |
+| `navigation` | `fixture/apps/navigation/*` | Runtime model, model access, catalog factory, catalog template components, sidebar links, `model:updated` listener. |
 
-Destructure from `window.UIComponents` at the top of your component. All components follow the same API as documented in [UIComponents.md](UIComponents.md).
+## Field Controls
 
-```tsx
-const {
-  Button, Badge, Card, CardHeader, CardTitle, CardContent,
-  Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose,
-  Input, Label, Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
-  Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
-  Toaster,
-} = window.UIComponents;
+Custom form controls are still implemented through `AbstractControls` and `adminizer.controlsHandler`, not through `AppManager` yet. See [Controls.md](Controls.md) for that API.
 
-const { MultiSelect, MonacoEditor } = window.JSComponents;
-const { Pencil, Trash2, Plus } = window.LucideReact;
-```
+## Checklist
 
-**Key rules:**
-- Never `import` shadcn, Radix, or Lucide directly — use the globals above.
-- Wrap your root with `<Toaster />` once if you use `window.sonner.toast`.
-- Wrap with `<TooltipProvider>` once if you use `<Tooltip>`.
-- Use `window.adminApi` instead of legacy `window.axios` for API calls. Prefer `*Json` methods for JSON endpoints — they add no-cache headers and throw a readable error if the session expires.
-
----
-
-## 6. HTTP calls
-
-```ts
-// Preferred — typed, no-cache, throws on HTML responses (session expiry)
-const { data } = await window.adminApi.getJson<{ rows: Row[] }>(
-  `${window.routePrefix}/api/my-resource`
-);
-
-await window.adminApi.postJson(`${window.routePrefix}/api/my-resource`, { name: 'New' });
-await window.adminApi.putJson(`${window.routePrefix}/api/my-resource/${id}`, payload);
-await window.adminApi.patchJson(`${window.routePrefix}/api/my-resource/${id}`, patch);
-await window.adminApi.deleteJson(`${window.routePrefix}/api/my-resource/${id}`);
-```
-
-Always use `window.routePrefix` to build URLs — it holds the configured admin prefix (e.g. `/admin`).
-
----
-
-## 7. Notifications (toasts)
-
-```ts
-window.sonner.toast('Record saved');
-window.sonner.toast.success('Created successfully');
-window.sonner.toast.error('Something went wrong');
-window.sonner.toast.warning('Deprecated field');
-window.sonner.toast.promise(
-  window.adminApi.postJson('/admin/api/items', payload),
-  { loading: 'Saving...', success: 'Saved', error: 'Failed' }
-);
-```
-
----
-
-## 8. Navigation links and the Inertia popup problem
-
-Adminizer uses [Inertia.js](https://inertiajs.com/) for SPA navigation. The sidebar's `<Link>` component intercepts clicks and performs an XHR fetch to the target URL expecting an Inertia JSON response.
-
-**If the link target is NOT an Inertia endpoint, a popup modal appears and then the page does a full reload.**
-
-This happens because Inertia receives an HTML page instead of the expected JSON response and falls back to a hard redirect, which briefly shows an error popup.
-
-### When does this occur?
-
-- The link uses a **relative path** that resolves to the wrong URL (e.g. `/integrations` instead of `/dashboard/integrations`).
-- The target route **does not call `req.Inertia.render()`** — for example it returns plain JSON or redirects.
-- The link points to an **external URL** or a route outside the adminizer prefix.
-
-### How to fix
-
-**1. Always use full paths with the `routePrefix`:**
-
-```ts
-// ❌ Wrong — resolves to /integrations, not an Inertia route
-link: '/integrations'
-
-// ✅ Correct — matches the registered Inertia route
-link: '/dashboard/integrations'
-```
-
-**2. For hash-based navigation (SPA sub-pages), use `<a>` instead of Inertia `<Link>`:**
-
-Inertia's `<Link>` does not understand hash-only URLs. If you navigate to `/dashboard/integrations#edit/123`, Inertia will fetch `/dashboard/integrations#edit/123` as a new page request, ignoring the hash.
-
-Use a native `<a>` tag for URLs that contain a `#`:
-
-```tsx
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
-    if (href.includes('#')) return <a href={href}>{children}</a>; // full reload, keeps hash
-    return <Link href={href}>{children}</Link>;                   // Inertia SPA navigation
-}
-```
-
-**3. Ensure every custom route renders via Inertia:**
-
-```ts
-// ✅ Required — Inertia.render() returns the correct JSON envelope
-handler: async (req, res) => {
-    return req.Inertia.render({ component: 'module', props: { ... } });
-}
-
-// ❌ Wrong — plain res.json() triggers the popup
-handler: async (req, res) => {
-    return res.json({ data: items });
-}
-```
-
-Note: API routes that return JSON (e.g. `?_method=getItems`) must be handled **before** the Inertia render branch in the same handler, not as separate routes, to avoid Inertia intercepting them.
-
----
-
-## 9. Deployment checklist
-
-- [ ] Bundle contains no duplicated React / shadcn / Radix libs (check with `vite-bundle-visualizer`).
-- [ ] All UI elements come from `window.UIComponents` / `window.JSComponents`.
-- [ ] `loading`, `error`, and `success` states are handled for every async action.
-- [ ] `dev` and `production` paths in `AbstractControls.path` point to the correct built assets.
-- [ ] Control is registered inside the `adminizer:loaded` listener.
-- [ ] Model field references the control via `options.name`.
-- [ ] TypeScript declarations included via `node_modules/adminizer/adminizer-module.d.ts`.
+- App has stable `name` and `version`.
+- All registered resources have deterministic `id` values.
+- UI controllers render through `req.Inertia.render({ component: "module", props: { moduleComponent, ... } })`.
+- API controllers use `mode: "api"` policies and return JSON.
+- Frontend assets are registered through `ctx.asset()` with both `filePath` and `devUrl` when local development is needed.
+- App-specific models are declared with `ctx.model()` and allowed with `ctx.modelAccess()` before catalogs use them.
+- Catalog templates are registered with `ctx.catalogTemplateComponent()` instead of hard-coded paths in catalog data.
+- Module UI uses `window.UIComponents`, `window.JSComponents`, `window.adminApi`, and global React/Lucide exports instead of bundling duplicates.

@@ -1,6 +1,6 @@
 # System Models
 
-Adminizer ships with several built-in models used for authentication, media management, navigation, filters, notifications, and history. These definitions reside in `src/models`.
+Adminizer ships with several built-in models used for authentication, media management, filters, notifications, and history. These definitions reside in `src/models`.
 
 Sequelize is the primary supported ORM. Register system models with `SequelizeAdapter.registerSystemModels(sequelize)`.
 
@@ -16,7 +16,6 @@ The provided models are:
 - `MediaManagerAP`
 - `MediaManagerAssociationsAP`
 - `MediaManagerMetaAP`
-- `NavigationAP`
 - `NotificationAP`
 - `UserNotificationAP`
 
@@ -25,4 +24,3 @@ They can be created and queried like any other models once registered.
 When using Sequelize the adapter generates explicit foreign keys using the
 `<fieldName>Id` pattern. This prevents naming collisions between attributes and
 associations when models reference themselves or each other.
-

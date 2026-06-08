@@ -26,7 +26,9 @@ interface InstalledApp {
 
 class RuntimeAppSetupContext implements AppSetupContext {
     readonly disposers: AppDisposer[] = [];
-    private readonly pendingRegistrations: Array<() => Promise<void>> = [];
+    private readonly pendingModelRegistrations: Array<() => Promise<void>> = [];
+    private readonly pendingModelAccessRegistrations: Array<() => Promise<void>> = [];
+    private readonly pendingCatalogRegistrations: Array<() => Promise<void>> = [];
     private configLayerIndex = 0;
     private modelAccessIndex = 0;
 
@@ -60,7 +62,40 @@ class RuntimeAppSetupContext implements AppSetupContext {
     }
 
     catalog(catalog: AppCatalogResource): void {
-        this.pendingRegistrations.push(() => this.registerCatalog(catalog));
+        this.pendingCatalogRegistrations.push(() => this.registerCatalog(catalog));
+    }
+
+    model<T = any>(model: AppModelResource<T>): void {
+        this.pendingModelRegistrations.push(() => this.registerModel(model));
+    }
+
+    modelAccess(access: AppModelAccessResource): void {
+        this.pendingModelAccessRegistrations.push(() => this.registerModelAccess(access));
+    }
+
+    listener(event: AppEventName, handler: AppEventHandler): void {
+        const resourceId = `${this.appName}:${event.toString()}:${this.disposers.length + 1}`;
+        const listener = (payload: unknown) => handler(payload, this.createRuntime());
+        this.adminizer.emitter.on(event, listener);
+        this.adminizer.emitter.emit("app:listener:registered", {
+            appName: this.appName,
+            resourceId,
+            event,
+        });
+        this.disposers.push(() => {
+            this.adminizer.emitter.off(event, listener);
+            this.adminizer.emitter.emit("app:listener:unregistered", {
+                appName: this.appName,
+                resourceId,
+                event,
+            });
+        });
+    }
+
+    async waitForPendingRegistrations(): Promise<void> {
+        await this.runRegistrationPhase(this.pendingModelRegistrations);
+        await this.runRegistrationPhase(this.pendingModelAccessRegistrations);
+        await this.runRegistrationPhase(this.pendingCatalogRegistrations);
     }
 
     private async registerCatalog(catalogResource: AppCatalogResource): Promise<void> {
@@ -84,18 +119,25 @@ class RuntimeAppSetupContext implements AppSetupContext {
         });
     }
 
-    private isCatalogFactory(catalog: AppCatalogResource): catalog is Exclude<AppCatalogResource, AbstractCatalog> {
-        return "factory" in catalog;
-    }
-
-    model<T = any>(model: AppModelResource<T>): void {
-        this.pendingRegistrations.push(() => this.registerModel(model));
-    }
-
-    async waitForPendingRegistrations(): Promise<void> {
-        for (const registration of this.pendingRegistrations) {
-            await registration();
-        }
+    private async registerModelAccess(access: AppModelAccessResource): Promise<void> {
+        const resourceId = this.adminizer.modelHandler.registerAppAccess(
+            this.appName,
+            access.id ?? `model-access-${++this.modelAccessIndex}`,
+            access.models
+        );
+        this.adminizer.emitter.emit("app:model-access:registered", {
+            appName: this.appName,
+            resourceId,
+            models: access.models,
+        });
+        this.disposers.push(() => {
+            this.adminizer.modelHandler.unregisterAppAccess(resourceId);
+            this.adminizer.emitter.emit("app:model-access:unregistered", {
+                appName: this.appName,
+                resourceId,
+                models: access.models,
+            });
+        });
     }
 
     private async registerModel<T = any>(model: AppModelResource<T>): Promise<void> {
@@ -114,6 +156,12 @@ class RuntimeAppSetupContext implements AppSetupContext {
                 modelName: model.name,
             });
         });
+    }
+
+    private async runRegistrationPhase(registrations: Array<() => Promise<void>>): Promise<void> {
+        for (const registration of registrations) {
+            await registration();
+        }
     }
 
     private async createModelFromRuntimeDefinition<T = any>(model: AppModelResource<T>) {
@@ -144,48 +192,8 @@ class RuntimeAppSetupContext implements AppSetupContext {
         throw new Error(`Adapter was not provided for app model registration "${this.appName}"`);
     }
 
-    modelAccess(access: AppModelAccessResource): void {
-        this.pendingRegistrations.push(() => this.registerModelAccess(access));
-    }
-
-    private async registerModelAccess(access: AppModelAccessResource): Promise<void> {
-        const resourceId = this.adminizer.modelHandler.registerAppAccess(
-            this.appName,
-            access.id ?? `model-access-${++this.modelAccessIndex}`,
-            access.models
-        );
-        this.adminizer.emitter.emit("app:model-access:registered", {
-            appName: this.appName,
-            resourceId,
-            models: access.models,
-        });
-        this.disposers.push(() => {
-            this.adminizer.modelHandler.unregisterAppAccess(resourceId);
-            this.adminizer.emitter.emit("app:model-access:unregistered", {
-                appName: this.appName,
-                resourceId,
-                models: access.models,
-            });
-        });
-    }
-
-    listener(event: AppEventName, handler: AppEventHandler): void {
-        const resourceId = `${this.appName}:${event.toString()}:${this.disposers.length + 1}`;
-        const listener = (payload: unknown) => handler(payload, this.createRuntime());
-        this.adminizer.emitter.on(event, listener);
-        this.adminizer.emitter.emit("app:listener:registered", {
-            appName: this.appName,
-            resourceId,
-            event,
-        });
-        this.disposers.push(() => {
-            this.adminizer.emitter.off(event, listener);
-            this.adminizer.emitter.emit("app:listener:unregistered", {
-                appName: this.appName,
-                resourceId,
-                event,
-            });
-        });
+    private isCatalogFactory(catalog: AppCatalogResource): catalog is Exclude<AppCatalogResource, AbstractCatalog> {
+        return "factory" in catalog;
     }
 
     private createRuntime(): AppRuntime {

@@ -38,31 +38,6 @@ export class NavigationApp extends AbstractAdminizerApp<NavigationAppConfig> {
             devUrl: this.config.devComponentUrl,
         });
 
-        // Перенести в регистрацию каталога
-        ctx.catalogTemplateComponent({
-            id: "model-link-template",
-            catalog: "navigation",
-            type: "navigation.model-link",
-            component: catalogTemplates,
-            exportName: "NavigationModelLinkTemplate",
-        });
-
-        ctx.catalogTemplateComponent({
-            id: "group-template",
-            catalog: "navigation",
-            type: "navigation.group",
-            component: catalogTemplates,
-            exportName: "NavigationGroupTemplate",
-        });
-
-        ctx.catalogTemplateComponent({
-            id: "link-template",
-            catalog: "navigation",
-            type: "navigation.link",
-            component: catalogTemplates,
-            exportName: "NavigationLinkTemplate",
-        });
-
         ctx.model({
             name: this.config.model,
             schema: navigationSchema,
@@ -115,6 +90,26 @@ export class NavigationApp extends AbstractAdminizerApp<NavigationAppConfig> {
 
         ctx.catalog({
             id: "navigation",
+            templates: [
+                {
+                    id: "model-link-template",
+                    type: "navigation.model-link",
+                    component: catalogTemplates,
+                    exportName: "NavigationModelLinkTemplate",
+                },
+                {
+                    id: "group-template",
+                    type: "navigation.group",
+                    component: catalogTemplates,
+                    exportName: "NavigationGroupTemplate",
+                },
+                {
+                    id: "link-template",
+                    type: "navigation.link",
+                    component: catalogTemplates,
+                    exportName: "NavigationLinkTemplate",
+                },
+            ],
             factory: async (runtime) => {
                 const catalog = new NavigationCatalog(runtime, this.config);
                 await catalog.ready();

@@ -7,7 +7,7 @@ import {
     AppDisposer,
     AppEventHandler,
     AppEventName,
-    AppCatalogResource,
+    AppCatalogFactoryResource,
     AppModelAccessResource,
     AppModelResource,
     AppRuntime,
@@ -15,8 +15,6 @@ import {
     AppSetupContext
 } from "./AdminizerApp";
 import type {AccessRightsToken} from "../../interfaces/types";
-import type {AbstractCatalog} from "../catalog/AbstractCatalog";
-import type {CatalogTemplateComponentResource} from "../catalog/CatalogTemplateComponentHandler";
 
 export type AppState = AppRuntimeAppState;
 
@@ -63,25 +61,8 @@ class RuntimeAppSetupContext implements AppSetupContext {
         this.disposers.push(() => this.adminizer.accessRightsHandler.unregister(resourceId));
     }
 
-    catalog(catalog: AppCatalogResource): void {
+    catalog(catalog: AppCatalogFactoryResource): void {
         this.pendingCatalogRegistrations.push(() => this.registerCatalog(catalog));
-    }
-
-    catalogTemplateComponent(component: CatalogTemplateComponentResource): void {
-        const resourceId = this.adminizer.catalogTemplateComponentHandler.register(this.appName, component);
-        this.adminizer.emitter.emit("app:catalog-template-component:registered", {
-            appName: this.appName,
-            resourceId,
-            type: component.type,
-        });
-        this.disposers.push(() => {
-            this.adminizer.catalogTemplateComponentHandler.unregister(resourceId);
-            this.adminizer.emitter.emit("app:catalog-template-component:unregistered", {
-                appName: this.appName,
-                resourceId,
-                type: component.type,
-            });
-        });
     }
 
     model<T = any>(model: AppModelResource<T>): void {
@@ -117,10 +98,8 @@ class RuntimeAppSetupContext implements AppSetupContext {
         await this.runRegistrationPhase(this.pendingCatalogRegistrations);
     }
 
-    private async registerCatalog(catalogResource: AppCatalogResource): Promise<void> {
-        const catalog = this.isCatalogFactory(catalogResource)
-            ? await catalogResource.factory(this.adminizer.appManager.createRuntime(this.appName))
-            : catalogResource;
+    private async registerCatalog(catalogResource: AppCatalogFactoryResource): Promise<void> {
+        const catalog = await catalogResource.factory(this.adminizer.appManager.createRuntime(this.appName));
 
         const resourceId = this.adminizer.catalogHandler.register(this.appName, catalog);
         this.adminizer.emitter.emit("app:catalog:registered", {
@@ -136,6 +115,29 @@ class RuntimeAppSetupContext implements AppSetupContext {
                 slug: catalog.slug,
             });
         });
+
+        for (const template of catalogResource.templates ?? []) {
+            const templateResourceId = this.adminizer.catalogTemplateComponentHandler.register(
+                this.appName,
+                catalog.slug,
+                template
+            );
+            this.adminizer.emitter.emit("app:catalog-template-component:registered", {
+                appName: this.appName,
+                resourceId: templateResourceId,
+                catalog: catalog.slug,
+                type: template.type,
+            });
+            this.disposers.push(() => {
+                this.adminizer.catalogTemplateComponentHandler.unregister(templateResourceId);
+                this.adminizer.emitter.emit("app:catalog-template-component:unregistered", {
+                    appName: this.appName,
+                    resourceId: templateResourceId,
+                    catalog: catalog.slug,
+                    type: template.type,
+                });
+            });
+        }
     }
 
     private async registerModelAccess(access: AppModelAccessResource): Promise<void> {
@@ -210,10 +212,6 @@ class RuntimeAppSetupContext implements AppSetupContext {
         }
 
         throw new Error(`Adapter was not provided for app model registration "${this.appName}"`);
-    }
-
-    private isCatalogFactory(catalog: AppCatalogResource): catalog is Exclude<AppCatalogResource, AbstractCatalog> {
-        return "factory" in catalog;
     }
 
 }

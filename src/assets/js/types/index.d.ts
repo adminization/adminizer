@@ -138,8 +138,7 @@ export interface Catalog {
 export interface CatalogTemplateComponentRecord {
     id: string;
     appName: string;
-    catalog?: string | string[];
-    catalogs: string[];
+    catalog: string;
     type: string;
     component: string;
     exportName?: string;

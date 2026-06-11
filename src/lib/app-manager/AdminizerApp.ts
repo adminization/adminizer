@@ -104,10 +104,9 @@ export interface AppModelResource<T = any> {
 
 export interface AppCatalogFactoryResource {
     id: string;
+    templates?: CatalogTemplateComponentResource[];
     factory: (runtime: AppRuntime) => AbstractCatalog | Promise<AbstractCatalog>;
 }
-
-export type AppCatalogResource = AbstractCatalog | AppCatalogFactoryResource;
 
 /**
  * Resource registration API provided while an app is being enabled.
@@ -122,8 +121,7 @@ export interface AppSetupContext {
     controller(controller: AppController): string;
     config(config: AppConfigPatch, id?: string): void;
     accessRight(token: AccessRightsToken): void;
-    catalog(catalog: AppCatalogResource): void;
-    catalogTemplateComponent(component: CatalogTemplateComponentResource): void;
+    catalog(catalog: AppCatalogFactoryResource): void;
     model<T = any>(model: AppModelResource<T>): void;
     modelAccess(access: AppModelAccessResource): void;
     listener(event: AppEventName, handler: AppEventHandler): void;

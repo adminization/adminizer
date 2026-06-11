@@ -1,6 +1,5 @@
 export interface CatalogTemplateComponentResource {
     id: string;
-    catalog?: string | string[];
     type: string;
     component: string;
     exportName?: string;
@@ -9,7 +8,7 @@ export interface CatalogTemplateComponentResource {
 export interface CatalogTemplateComponentRecord extends CatalogTemplateComponentResource {
     id: string;
     appName: string;
-    catalogs: string[];
+    catalog: string;
     enabled: boolean;
 }
 
@@ -21,27 +20,19 @@ function normalizeCatalog(catalog: string): string {
     return catalog.toLowerCase();
 }
 
-function normalizeCatalogs(catalog?: string | string[]): string[] {
-    if (!catalog) {
-        return [];
-    }
-
-    return (Array.isArray(catalog) ? catalog : [catalog]).map(normalizeCatalog);
-}
-
 export class CatalogTemplateComponentHandler {
     private records = new Map<string, CatalogTemplateComponentRecord>();
 
-    register(appName: string, resource: CatalogTemplateComponentResource): string {
-        const id = `${appName}:${resource.id}`;
+    register(appName: string, catalog: string, resource: CatalogTemplateComponentResource): string {
+        const normalizedCatalog = normalizeCatalog(catalog);
+        const id = `${appName}:${normalizedCatalog}:${resource.id}`;
         if (this.records.has(id)) {
             throw new Error(`Catalog template component "${id}" is already registered`);
         }
 
-        const catalogs = normalizeCatalogs(resource.catalog);
-        const existing = this.getByType(resource.type, catalogs);
+        const existing = this.getByType(resource.type, normalizedCatalog);
         if (existing) {
-            throw new Error(`Catalog template component for type "${resource.type}" is already registered in the same catalog scope`);
+            throw new Error(`Catalog template component for type "${resource.type}" is already registered in catalog "${normalizedCatalog}"`);
         }
 
         this.records.set(id, {
@@ -49,7 +40,7 @@ export class CatalogTemplateComponentHandler {
             id,
             appName,
             type: normalizeType(resource.type),
-            catalogs,
+            catalog: normalizedCatalog,
             enabled: true,
         });
 
@@ -84,24 +75,14 @@ export class CatalogTemplateComponentHandler {
 
     getByCatalog(catalog: string): CatalogTemplateComponentRecord[] {
         const normalizedCatalog = normalizeCatalog(catalog);
-        return this.getAll().filter((record) =>
-            record.catalogs.length === 0 || record.catalogs.includes(normalizedCatalog)
-        );
+        return this.getAll().filter((record) => record.catalog === normalizedCatalog);
     }
 
-    getByType(type: string, catalogs?: string[]): CatalogTemplateComponentRecord | undefined {
+    getByType(type: string, catalog: string): CatalogTemplateComponentRecord | undefined {
         const normalizedType = normalizeType(type);
-        const normalizedCatalogs = catalogs?.map(normalizeCatalog) ?? [];
+        const normalizedCatalog = normalizeCatalog(catalog);
         return this.getAll().find((record) =>
-            record.type === normalizedType && this.hasScopeConflict(record.catalogs, normalizedCatalogs)
+            record.type === normalizedType && record.catalog === normalizedCatalog
         );
-    }
-
-    private hasScopeConflict(a: string[], b: string[]): boolean {
-        if (a.length === 0 || b.length === 0) {
-            return true;
-        }
-
-        return a.some((catalog) => b.includes(catalog));
     }
 }

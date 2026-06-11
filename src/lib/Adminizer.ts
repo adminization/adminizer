@@ -75,28 +75,28 @@ export class Adminizer {
     public config!: AdminpanelConfig
     private readonly _emitter: EventEmitter
     ormAdapters: AbstractAdapter[]
-    middlewareManager!: MiddlewareManager
-    accessRightsHelper!: AccessRightsHelper
-    configHelper!: ConfigHelper
+    middlewareManager: MiddlewareManager
+    accessRightsHelper: AccessRightsHelper
+    configHelper: ConfigHelper
     menuHelper!: MenuHelper
     router!: Router
     notificationHandler!: NotificationHandler;
     historyHandler!: HistoryHandler;
     aiAssistantHandler?: AiAssistantHandler;
-    modelHandler!: ModelHandler
+    modelHandler: ModelHandler
     widgetHandler: WidgetHandler
     customFilterHandler!: CustomFilterHandler
     vite: ViteDevServer
-    controlsHandler!: ControlsHandler
-    catalogHandler!: CatalogHandler
-    catalogTemplateComponentHandler!: CatalogTemplateComponentHandler
-    mediaManagerHandler!: MediaManagerHandler
-    feedbackHandler!: FeedbackHandler
+    controlsHandler: ControlsHandler
+    catalogHandler: CatalogHandler
+    catalogTemplateComponentHandler: CatalogTemplateComponentHandler
+    mediaManagerHandler: MediaManagerHandler
+    feedbackHandler: FeedbackHandler
     appManager: AppManager
     controllerHandler: ControllerHandler
     assetHandler: AssetHandler
     configLayerHandler: ConfigLayerHandler
-    accessRightsHandler!: AccessRightsHandler
+    accessRightsHandler: AccessRightsHandler
 
     // Constants
     jwtSecret: string = process.env.JWT_SECRET ?? uuid()
@@ -139,6 +139,19 @@ export class Adminizer {
         this.app = express();
         this._emitter = new EventEmitter();
         this.ormAdapters = ormAdapters;
+
+        this.modelHandler = new ModelHandler();
+        this.middlewareManager = new MiddlewareManager(this);
+        this.accessRightsHelper = new AccessRightsHelper(this);
+        this.accessRightsHandler = new AccessRightsHandler(this);
+        this.configHelper = new ConfigHelper(this);
+        this.widgetHandler = new WidgetHandler(this);
+        this.controlsHandler = new ControlsHandler();
+        this.catalogHandler = new CatalogHandler();
+        this.catalogTemplateComponentHandler = new CatalogTemplateComponentHandler();
+        this.mediaManagerHandler = new MediaManagerHandler();
+        this.feedbackHandler = new FeedbackHandler(this);
+
         this.controllerHandler = new ControllerHandler(this);
         this.assetHandler = new AssetHandler(this);
         this.configLayerHandler = new ConfigLayerHandler(this);
@@ -251,8 +264,6 @@ export class Adminizer {
         this.emitter.emit('adminizer:init');
 
 
-        this.modelHandler = new ModelHandler();
-
         // TODO: 'hot reload' unbind models
         bindModels(this);
         this.modelHandler.configureInternalAccess(buildInternalModelAccess(this.config, this.modelHandler));
@@ -260,24 +271,10 @@ export class Adminizer {
 
         this.config.rootPath = path.resolve(import.meta.dirname + "/..")
 
-        this.middlewareManager = new MiddlewareManager(this);
         await this.middlewareManager.loadMiddlewares();
 
         // TODO: 'hot reload' problem with deleting access right tokens
-        this.accessRightsHelper = new AccessRightsHelper(this);
-        this.accessRightsHandler = new AccessRightsHandler(this);
-
-        // Helpers go to construtor
-        this.configHelper = new ConfigHelper(this);
-
         this.menuHelper = new MenuHelper(this.config)
-
-        this.widgetHandler = new WidgetHandler(this);
-
-        this.catalogHandler = new CatalogHandler();
-        this.catalogTemplateComponentHandler = new CatalogTemplateComponentHandler();
-
-        this.mediaManagerHandler = new MediaManagerHandler();
 
         bindExpressUtils(this.app);
         bindReqFunctions(this);
@@ -304,7 +301,6 @@ export class Adminizer {
         }
 
         //bind controls
-        this.controlsHandler = new ControlsHandler()
         bindControls(this)
 
 
@@ -319,9 +315,6 @@ export class Adminizer {
         if (this.config.aiAssistant?.enabled) bindAiAssistant(this);
 
         if (this.config.history?.enabled) bindHistory(this)
-
-        // FeedbackHandler registers its own route lazily when handler.register() is called
-        this.feedbackHandler = new FeedbackHandler(this)
 
         this.router = new Router(this)
         await this.router.bind(); // must be after binding policies and req/res functions

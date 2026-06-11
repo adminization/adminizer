@@ -151,7 +151,7 @@ ctx.catalogTemplateComponent({
 });
 ```
 
-When `getCatalog` is called, `catalogController` includes `templateComponents: req.adminizer.catalogTemplateComponentHandler.getByCatalog(_catalog.slug)`. The frontend matches `template.type.toLowerCase()` against those records, dynamically imports `component`, and renders `exportName` or the default export.
+When `getCatalog` is called, the controller resolves the registered template components for the catalog slug. The frontend matches `template.type.toLowerCase()` against those records, dynamically imports `component`, and renders `exportName` or the default export.
 
 Template props are documented in [BuildingModules.md](BuildingModules.md#catalog-template-components).
 

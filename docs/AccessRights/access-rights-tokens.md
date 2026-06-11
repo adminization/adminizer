@@ -5,31 +5,42 @@ When Adminizer starts, every configured model gets 4 access rights tokens:
 - update
 - delete
 
-You can also create custom access rights tokens using function `registerToken` of `AccessRightsHelper`.
+You can also create custom access rights tokens for app features.
 
 > Everything that is unresolved is prohibited
 
-These tokens can be used to give users rights to see information of specific Model, to create new models or edit it.
-Also, you can use tokens to create access rights to global and inline actions, or to Model tools.
-In controllers you should check access rights through `hasPermission`.
+These tokens can be used to give users rights to see information of a specific model, create or edit records, access global and inline actions, or use model tools.
 
-Example:
+For an Adminizer app, register the token and protect the controller through `AppSetupContext`:
 
 ```ts
-if (req.adminizer.config.auth.enable) {
-    if (!req.user) {
-        return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
-    }
+ctx.accessRight({
+  id: "reports-export",
+  name: "Export reports",
+  description: "Permission to export reports",
+  department: "Reports",
+});
 
-    if (!req.adminizer.accessRightsHelper.hasPermission('tokenName', req.user)) {
-        return res.sendStatus(403);
-    }
-}
+ctx.controller({
+  id: "export",
+  method: "post",
+  route: "/reports/export",
+  middleware: async (req, res) => {
+    // Use req.runtime for app capabilities.
+    return res.json({ success: true });
+  },
+  policies: [
+    { type: "auth", mode: "api" },
+    { type: "permission", token: "reports-export", mode: "api" },
+  ],
+});
 ```
 
 ### Registering Custom Tokens
 
-Custom tokens let you restrict access to additional features beyond the standard CRUD actions. Register them when your application starts:
+Custom tokens let you restrict access to additional features beyond the standard CRUD actions. Apps should register them through `ctx.accessRight()` so `AppManager` owns their lifecycle.
+
+For host-level startup code outside an Adminizer app, tokens can still be registered directly:
 
 ```ts
 adminizer.accessRightsHelper.registerTokens([

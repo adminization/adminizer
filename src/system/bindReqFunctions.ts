@@ -3,14 +3,40 @@ import {I18n} from "../lib/I18n";
 import {parse} from "cookie";
 import {verifyUser} from "../lib/helper/jwt";
 
+const ADMINIZER_REQUEST_DEPRECATION_MESSAGE =
+    "req.adminizer is deprecated and will no longer be available starting with Adminizer v6. Use req.runtime instead.";
+
+export function createDeprecatedAdminizerProxy(
+    adminizer: Adminizer,
+    warn: (message: string) => void = (message) => Adminizer.log.warn(message)
+): Adminizer {
+    let warned = false;
+
+    return new Proxy(adminizer, {
+        get(target, property, receiver) {
+            if (!warned) {
+                warned = true;
+                warn(ADMINIZER_REQUEST_DEPRECATION_MESSAGE);
+            }
+
+            return Reflect.get(target, property, receiver);
+        },
+    });
+}
+
 export default function bindReqFunctions(adminizer: Adminizer) {
+    const deprecatedAdminizer = createDeprecatedAdminizerProxy(adminizer);
 
     let bindReqFunctionsF = async function (req: ReqType, res: ResType, next: () => void) {
 
         /**
          * Add adminizer to use in controllers
          * */
-        req.adminizer = adminizer;
+        req.adminizer = deprecatedAdminizer;
+
+        // TODO Adminizer v6: replace this temporary base scope when req.adminizer is removed.
+        // App controllers receive an app-scoped runtime from ControllerHandler before execution.
+        req.runtime = adminizer.appManager.createRuntime("__request__");
 
 
         /**
@@ -56,10 +82,10 @@ export default function bindReqFunctions(adminizer: Adminizer) {
         const token = cookies.adminizer_jwt;
 
         if (token) {
-            const user = verifyUser(token, req.adminizer.jwtSecret);
+            const user = verifyUser(token, adminizer.jwtSecret);
             if (user) {
                 // Load user with groups (Sequelize adapter auto-populates associations in _findOne)
-                req.user = await req.adminizer.modelHandler.internal("auth").get("UserAP").findOne({where: {id: user.id}});
+                req.user = await adminizer.modelHandler.internal("auth").get("UserAP").findOne({where: {id: user.id}});
             }
         }
 

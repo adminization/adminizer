@@ -287,7 +287,7 @@ export class TestGroup extends AbstractGroup<TestItem> {
             type: type,
             data: {
                 item: item,
-                path: process.env.ADMINIZER_ENV === 'dev' ? '/modules/testCatalog/group.tsx' : `${req.adminizer.config.routePrefix}/assets/modules/Group.es.js`
+                path: process.env.ADMINIZER_ENV === 'dev' ? '/modules/testCatalog/group.tsx' : `${req.runtime.config.routePrefix}/assets/modules/Group.es.js`
             }
         })
     }
@@ -603,7 +603,7 @@ export class ExternalAction extends ActionHandler {
     public readonly selectedItemTypes: string[] = []
 
     getPopUpTemplate(req?: ReqType): Promise<string> {
-        return Promise.resolve(process.env.ADMINIZER_ENV === 'dev' ? '/modules/testCatalog/action.tsx' : `${req.adminizer.config.routePrefix}/assets/modules/catalogAction.es.js`);
+        return Promise.resolve(process.env.ADMINIZER_ENV === 'dev' ? '/modules/testCatalog/action.tsx' : `${req.runtime.config.routePrefix}/assets/modules/catalogAction.es.js`);
     }
 
     getLink(data?: any): Promise<string> {

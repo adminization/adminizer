@@ -23,7 +23,7 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
         this.config = {
             route: "/module-manager",
             sidebarId: "module-manager",
-            title: "Менеджер модулей",
+            title: "Module Manager",
             icon: "settings",
             section: "Platform",
             componentFile: path.resolve(import.meta.dirname, "ModuleManager.es.js"),
@@ -97,18 +97,12 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
 
     private renderModule(moduleComponent: string): MiddlewareType {
         return async (req, res) => {
-            const installedApps = req.adminizer.appManager.getInstalledApps().map(name => ({
-                name,
-                app: req.adminizer.appManager.getApp(name),
-                state: req.adminizer.appManager.getState(name)
-            }));
-
-            const modules = installedApps
+            const modules = req.runtime.apps.list()
                 .filter(({name}) => name !== "module-manager")
-                .map(({name, app, state}) => ({
+                .map(({name, version, state}) => ({
                     name,
-                    version: app?.version || "unknown",
-                    state: state || "unknown"
+                    version,
+                    state,
                 }));
 
             return req.Inertia.render({
@@ -130,16 +124,16 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
         }
 
         if (name === "module-manager") {
-            return res.status(400).json({error: "Модуль 'module-manager' нельзя включить через этот интерфейс"});
+            return res.status(400).json({error: "The 'module-manager' app cannot be enabled through this interface"});
         }
 
         try {
-            await req.adminizer.appManager.enable(name);
+            await req.runtime.apps.enable(name);
             return res.json({
                 success: true,
             });
         } catch (error) {
-            req.flash.setFlashMessage('error', `Ошибка при включении модуля ${name}.`);
+            req.flash.setFlashMessage('error', `Failed to enable app ${name}.`);
             return res.status(500).json({error: error.message});
         }
     };
@@ -151,16 +145,16 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
         }
 
         if (name === "module-manager") {
-            return res.status(400).json({error: "Модуль 'module-manager' нельзя отключить"});
+            return res.status(400).json({error: "The 'module-manager' app cannot be disabled"});
         }
 
         try {
-            await req.adminizer.appManager.disable(name);
+            await req.runtime.apps.disable(name);
             return res.json({
                 success: true
             })
         } catch (error) {
-            req.flash.setFlashMessage('error', `Ошибка при выключении модуля ${name}.`);
+            req.flash.setFlashMessage('error', `Failed to disable app ${name}.`);
             return res.status(500).json({error: error.message});
         }
     };
@@ -172,27 +166,17 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
         }
 
         if (name === "module-manager") {
-            return res.status(400).json({error: "Модуль 'module-manager' нельзя удалить"});
+            return res.status(400).json({error: "The 'module-manager' app cannot be unregistered"});
         }
 
         try {
-            await req.adminizer.appManager.unregister(name);
-            
-            // Логирование для проверки состояния после удаления
-            console.log('--- Проверка состояния после удаления модуля:', name, '---');
-            console.log('Список установленных приложений:', req.adminizer.appManager.getInstalledApps());
-            console.log('Состояние модуля:', req.adminizer.appManager.getState(name));
-            console.log('Объект модуля:', req.adminizer.appManager.getApp(name));
-            console.log('Контроллеры модуля:', req.adminizer.controllerHandler.getByApp(name));
-            console.log('Ассеты модуля:', req.adminizer.assetHandler.getByApp(name));
-            console.log('Конфигурация модуля:', req.adminizer.configLayerHandler.getByApp(name));
-            console.log('--- Проверка завершена ---');
-            
+            await req.runtime.apps.unregister(name);
+
             return res.json({
                 success: true
             })
         } catch (error) {
-            req.flash.setFlashMessage('error', `Ошибка при удалении модуля ${name}.`);
+            req.flash.setFlashMessage('error', `Failed to unregister app ${name}.`);
             return res.status(500).json({error: error.message});
         }
     };

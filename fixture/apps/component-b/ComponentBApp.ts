@@ -36,6 +36,11 @@ export class ComponentBApp extends AbstractAdminizerApp<ComponentBAppConfig> {
     }
 
     setup(ctx: AppSetupContext): void {
+        ctx.modelAccess({
+            id: "users",
+            models: ["UserAP"],
+        });
+
         const moduleComponent = ctx.asset({
             id: "component",
             filePath: this.config.componentFile,
@@ -74,7 +79,7 @@ export class ComponentBApp extends AbstractAdminizerApp<ComponentBAppConfig> {
 
     private renderModule(moduleComponent: string): MiddlewareType {
         return async (req, res) => {
-            const users = await req.adminizer.modelHandler.internal("auth").get<UserAP>("userap").find({});
+            const users = await req.runtime.models.get<UserAP>("UserAP").find({});
 
             return req.Inertia.render({
                 component: "module",
@@ -98,7 +103,7 @@ export class ComponentBApp extends AbstractAdminizerApp<ComponentBAppConfig> {
             });
         }
 
-        await req.adminizer.sendNotification({
+        await req.runtime.notifications.send({
             title: "Test notification",
             message: req.body.message,
             notificationClass: "general",

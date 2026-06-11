@@ -11,13 +11,14 @@ import {
     AppModelAccessResource,
     AppModelResource,
     AppRuntime,
+    AppRuntimeAppState,
     AppSetupContext
 } from "./AdminizerApp";
 import type {AccessRightsToken} from "../../interfaces/types";
 import type {AbstractCatalog} from "../catalog/AbstractCatalog";
 import type {CatalogTemplateComponentResource} from "../catalog/CatalogTemplateComponentHandler";
 
-export type AppState = "registered" | "enabled" | "disabled" | "unregistered" | "failed";
+export type AppState = AppRuntimeAppState;
 
 interface InstalledApp {
     app: AbstractAdminizerApp;
@@ -93,7 +94,7 @@ class RuntimeAppSetupContext implements AppSetupContext {
 
     listener(event: AppEventName, handler: AppEventHandler): void {
         const resourceId = `${this.appName}:${event.toString()}:${this.disposers.length + 1}`;
-        const listener = (payload: unknown) => handler(payload, this.createRuntime());
+        const listener = (payload: unknown) => handler(payload, this.adminizer.appManager.createRuntime(this.appName));
         this.adminizer.emitter.on(event, listener);
         this.adminizer.emitter.emit("app:listener:registered", {
             appName: this.appName,
@@ -118,7 +119,7 @@ class RuntimeAppSetupContext implements AppSetupContext {
 
     private async registerCatalog(catalogResource: AppCatalogResource): Promise<void> {
         const catalog = this.isCatalogFactory(catalogResource)
-            ? await catalogResource.factory(this.createRuntime())
+            ? await catalogResource.factory(this.adminizer.appManager.createRuntime(this.appName))
             : catalogResource;
 
         const resourceId = this.adminizer.catalogHandler.register(this.appName, catalog);
@@ -215,19 +216,6 @@ class RuntimeAppSetupContext implements AppSetupContext {
         return "factory" in catalog;
     }
 
-    private createRuntime(): AppRuntime {
-        return {
-            models: this.adminizer.modelHandler.createAppAccess(this.appName),
-            config: {
-                routePrefix: this.adminizer.config.routePrefix,
-                getModelConfig: (modelName: string) => {
-                    const models = this.adminizer.config.models ?? {};
-                    const modelKey = Object.keys(models).find((key) => key.toLowerCase() === modelName.toLowerCase());
-                    return modelKey ? models[modelKey] : undefined;
-                },
-            },
-        };
-    }
 }
 
 export class AppManager {
@@ -337,6 +325,43 @@ export class AppManager {
 
     getState(name: string): AppState | undefined {
         return this.installedApps.get(name)?.state;
+    }
+
+    createRuntime(appName: string): AppRuntime {
+        return {
+            models: this.adminizer.modelHandler.createAppAccess(appName),
+            config: {
+                routePrefix: this.adminizer.config.routePrefix,
+                getModelConfig: (modelName: string) => {
+                    const models = this.adminizer.config.models ?? {};
+                    const modelKey = Object.keys(models).find((key) => key.toLowerCase() === modelName.toLowerCase());
+                    return modelKey ? models[modelKey] : undefined;
+                },
+            },
+            notifications: {
+                send: (notification) => this.adminizer.sendNotification(notification),
+            },
+            apps: {
+                list: () => this.getInstalledApps().map((name) => this.getRuntimeApp(name)!),
+                get: (name) => this.getRuntimeApp(name),
+                enable: (name) => this.enable(name),
+                disable: (name) => this.disable(name),
+                unregister: (name) => this.unregister(name),
+            },
+        };
+    }
+
+    private getRuntimeApp(name: string) {
+        const installed = this.installedApps.get(name);
+        if (!installed) {
+            return undefined;
+        }
+
+        return {
+            name,
+            version: installed.app.version,
+            state: installed.state,
+        };
     }
 
     private async disposeResources(installed: InstalledApp): Promise<void> {

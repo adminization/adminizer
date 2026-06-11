@@ -46,6 +46,7 @@ export class ControllerHandler {
                     return next();
                 }
 
+                req.runtime = this.adminizer.appManager.createRuntime(appName);
                 return controller.middleware(req, res, next);
             },
             this.resolvePolicies(controller.policies)

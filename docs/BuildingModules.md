@@ -4,6 +4,40 @@ Adminizer modules are backend-first extensions built around `AbstractAdminizerAp
 
 Older standalone React page modules and custom field controls still exist as frontend patterns, but a full Adminizer module should be installed through `adminizer.appManager`.
 
+## App Boundary
+
+An app must not accept, store, or depend on an `Adminizer` instance. The host application owns Adminizer and uses it only to enable the app:
+
+```ts
+await adminizer.init(adminpanelConfig);
+await adminizer.appManager.enable(new MyApp({
+  route: "/my-app",
+}));
+```
+
+The app constructor accepts only its own configuration and optional app-level dependencies:
+
+```ts
+// Correct
+new MyApp({ route: "/my-app" });
+
+// Do not do this
+new MyApp(adminizer, { route: "/my-app" });
+```
+
+This boundary lets `AppManager` control resource ownership, cleanup, model permissions, and the capabilities exposed to each app.
+
+Use the API supplied for each lifecycle phase:
+
+| App code | Access point |
+|---|---|
+| `setup()` | Register resources through `AppSetupContext`. |
+| App controller | Use the app-scoped `req.runtime`. |
+| Catalog factory | Use the `runtime` factory argument. |
+| Event listener | Use the `runtime` handler argument. |
+
+`req.adminizer` is a deprecated compatibility API. It will not be available starting with Adminizer v6 and must not be used in app code.
+
 ## Core Types
 
 Import module contracts from Adminizer:
@@ -45,7 +79,7 @@ await adminizer.init(adminpanelConfig);
 await adminizer.appManager.enable(new MyApp());
 ```
 
-`AppManager.enable(app)` registers the app if needed, runs `setup(ctx)`, waits for deferred model/model-access/catalog registrations, and stores disposers for later `disable()` or `unregister()`.
+`AppManager.enable(app)` registers the app if needed, runs `setup(ctx)`, waits for deferred model/model-access/catalog registrations, and stores disposers for later `disable()` or `unregister()`. `setup()` receives only `AppSetupContext`; it does not receive `Adminizer`.
 
 ## Resource Registration
 
@@ -67,7 +101,7 @@ Registration order after `setup()` is intentional: runtime models first, model a
 
 ## App Runtime
 
-Catalog factories and event listeners receive `AppRuntime`:
+`AppRuntime` is the public capability object for app code. App controllers receive it through `req.runtime`; catalog factories and event listeners receive the same app-scoped runtime as an argument.
 
 ```ts
 interface AppRuntime {
@@ -75,6 +109,18 @@ interface AppRuntime {
   config: {
     readonly routePrefix: string;
     getModelConfig(modelName: string): ModelConfig | undefined;
+  };
+  notifications: {
+    send(
+      notification: Omit<INotification, "id" | "createdAt" | "icon">
+    ): Promise<boolean>;
+  };
+  apps: {
+    list(): AppRuntimeApp[];
+    get(name: string): AppRuntimeApp | undefined;
+    enable(name: string): Promise<void>;
+    disable(name: string): Promise<void>;
+    unregister(name: string): Promise<void>;
   };
 }
 ```
@@ -93,9 +139,33 @@ ctx.catalog({
 });
 ```
 
+For controllers, register model access during setup and read the model through `req.runtime`:
+
+```ts
+setup(ctx: AppSetupContext): void {
+  ctx.modelAccess({
+    id: "users",
+    models: ["UserAP"],
+  });
+
+  ctx.controller({
+    id: "users",
+    method: "get",
+    route: "/my-app/users",
+    middleware: async (req, res) => {
+      const users = await req.runtime.models.get<UserAP>("UserAP").find({});
+      return res.json({ users });
+    },
+    policies: [{ type: "auth", mode: "api" }],
+  });
+}
+```
+
+`ControllerHandler` assigns the runtime for the app that registered the controller before its middleware executes. Do not capture `Adminizer` in a controller closure and do not use `req.adminizer`.
+
 ## Routes And Policies
 
-`ctx.controller()` registers routes through `ControllerHandler`. The route is automatically prefixed with `adminizer.config.routePrefix`.
+`ctx.controller()` registers routes through `ControllerHandler`. The route is automatically prefixed with the configured Adminizer route prefix, which is available to the controller as `req.runtime.config.routePrefix`.
 
 ```ts
 const pageUrl = ctx.controller({
@@ -429,8 +499,8 @@ The fixture contains three current app-module examples:
 
 | App | Files | Demonstrates |
 |---|---|---|
-| `component-b` | `fixture/apps/component-b/*` | Page module, asset registration, UI route, JSON API route, sidebar config patch. |
-| `module-manager` | `fixture/apps/module-manager/*` | Access right token, permission-protected page/API routes, app lifecycle control through `AppManager`. |
+| `component-b` | `fixture/apps/component-b/*` | Page module, asset registration, scoped model access through `req.runtime.models`, notifications, UI/API routes, sidebar config patch. |
+| `module-manager` | `fixture/apps/module-manager/*` | Access right token, permission-protected page/API routes, app lifecycle control through `req.runtime.apps`. |
 | `navigation` | `fixture/apps/navigation/*` | Runtime model, model access, catalog factory, catalog template components, sidebar links, `model:updated` listener. |
 
 ## Field Controls
@@ -440,6 +510,8 @@ Custom form controls are still implemented through `AbstractControls` and `admin
 ## Checklist
 
 - App has stable `name` and `version`.
+- App constructor accepts app config/dependencies, never an `Adminizer` instance.
+- App controllers use `req.runtime`; they do not use the deprecated `req.adminizer`.
 - All registered resources have deterministic `id` values.
 - UI controllers render through `req.Inertia.render({ component: "module", props: { moduleComponent, ... } })`.
 - API controllers use `mode: "api"` policies and return JSON.

@@ -6,6 +6,7 @@ import {Inertia} from "../lib/inertia/inertiaAdapter";
 import {Flash} from "../lib/inertia/flash";
 import { UserAP } from "../models/UserAP";
 import { GroupAP } from "../models/GroupAP";
+import { AppRuntime } from "../lib/app-manager/AdminizerApp";
 
 declare global {
 	/** @deprecated use import from TS model decalration */
@@ -75,7 +76,11 @@ declare global {
 		route: {
 			[key: string]: string
 		}
+        /**
+         * @deprecated Will be removed in Adminizer v6. Use `runtime` in app controllers.
+         */
 		adminizer: Adminizer
+        runtime: AppRuntime
 		upload: (options?: { destination?: string; filename?: (file: Express.Multer.File) => string }) => multer.Multer
 		i18n: I18n,
 		allowedFileTypes: string[],

@@ -88,12 +88,7 @@ declare global {
 		params: Record<string, string>
 	}
 
-	type ResType = Response & {
-		/**
-		 * @deprecated // TODO delete after finish catalog
-		 */
-		viewAdmin(specifiedPath: string, locals?: any, cb_view?: Function): void
-	}
+	type ResType = Response
 
 	type MiddlewareType = (req: ReqType, res: ResType, next: NextFunction) => void
 	type PropType<TObj, TProp extends keyof TObj> = TObj[TProp];

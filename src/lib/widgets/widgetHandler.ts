@@ -57,13 +57,19 @@ export class WidgetHandler {
         this.adminizer = adminizer;
     }
 
+    private resolveAccessRightsToken(widget: WidgetType): string {
+        return widget.accessRightsToken?.toLowerCase() ?? `widget-${widget.id}`;
+    }
+
     public add(widget: WidgetType): void {
-        this.adminizer.accessRightsHelper.registerToken({
-            id: `widget-${widget.id}`,
-            name: widget.name,
-            description: widget.description,
-            department: widget.department
-        });
+        if (!widget.accessRightsToken) {
+            this.adminizer.accessRightsHelper.registerToken({
+                id: `widget-${widget.id}`,
+                name: widget.name,
+                description: widget.description,
+                department: widget.department
+            });
+        }
         this.widgets.push(widget);
     }
 
@@ -185,7 +191,7 @@ export class WidgetHandler {
             let id_key = 0
             for (const widget of this.widgets) {
                 if (widget.widgetType === 'switcher') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, dashboardUser)) {
+                    if (this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
                         widgets.push({
                             id: `${widget.id}__${id_key}`,
                             type: widget.widgetType,
@@ -198,7 +204,7 @@ export class WidgetHandler {
                         })
                     }
                 } else if (widget.widgetType === 'info') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, dashboardUser)) {
+                    if (this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
                         widgets.push({
                             id: `${widget.id}__${id_key}`,
                             type: widget.widgetType,
@@ -213,7 +219,7 @@ export class WidgetHandler {
                         })
                     }
                 } else if (widget.widgetType === 'action') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, dashboardUser)) {
+                    if (this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
                         widgets.push({
                             id: `${widget.id}__${id_key}`,
                             type: widget.widgetType,
@@ -226,7 +232,7 @@ export class WidgetHandler {
                         })
                     }
                 } else if (widget.widgetType === 'link') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, dashboardUser)) {
+                    if (this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
                         let links_id_key = 0
                         for (const link of widget.links) {
                             widgets.push({
@@ -243,7 +249,7 @@ export class WidgetHandler {
                         }
                     }
                 } else if (widget.widgetType === 'custom') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(`widget-${widget.id}`, dashboardUser)) {
+                    if (this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
                         widgets.push({
                             id: `${widget.id}_${id_key}`,
                             type: widget.widgetType,

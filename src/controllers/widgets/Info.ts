@@ -14,7 +14,7 @@ export async function widgetInfoController(req: ReqType, res: ResType) {
 	/** get state */
 	if (req.method.toUpperCase() === 'GET') {
 		try {
-			let text = await widget.getInfo();
+			let text = await widget.getInfo({ user: req.user });
 			return res.send(text)
 		} catch (e) {
 			return res.status(500).send({ error: e.message || 'Internal Server Error' });

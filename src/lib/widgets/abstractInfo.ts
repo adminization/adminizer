@@ -1,4 +1,9 @@
 import { BaseWidget } from "./abstractWidgetBase";
+
+export interface WidgetInfoContext {
+	user?: ReqType["user"];
+}
+
 export abstract class InfoBase extends BaseWidget {
 
 	public readonly widgetType = "info"
@@ -19,5 +24,5 @@ export abstract class InfoBase extends BaseWidget {
 	public readonly linkType?: 'self' | 'blank';
 
 	/** Get info */
-	public abstract getInfo(): Promise<string>
+	public abstract getInfo(context?: WidgetInfoContext): Promise<string>
 }

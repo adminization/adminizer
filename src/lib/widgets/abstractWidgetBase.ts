@@ -5,6 +5,9 @@ export abstract class BaseWidget {
 	/** Widget unique id */
 	public abstract readonly id: string;
 
+	/** Optional pre-existing access token used instead of widget-specific token */
+	public readonly accessRightsToken?: string;
+
 	/** Widget Name */
 	public abstract readonly name: string;
 

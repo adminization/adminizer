@@ -298,6 +298,13 @@ export abstract class AbstractCatalog {
         }
     }
 
+    /**
+     * Registers the catalog access right through the legacy Adminizer API.
+     *
+     * @deprecated Starting with Adminizer v6, register access rights through
+     * `ctx.accessRight(...)` in the app's `setup` method.
+     * @param adminizer Adminizer instance used for legacy access-right registration.
+     */
     private _bindAccessRight(adminizer: Adminizer) {
         setTimeout(() => {
             const postfix = this.id ? `${this.slug}-${this.id}` : `${this.slug}`
@@ -310,6 +317,14 @@ export abstract class AbstractCatalog {
         }, 100)
     }
 
+    /**
+     * @deprecated The `adminizer` parameter is deprecated and will be removed in
+     * Adminizer v6. Register the catalog through `AppManager` using
+     * `ctx.catalog(...)`, and register its access rights using
+     * `ctx.accessRight(...)`.
+     * @param adminizer Adminizer instance used by the legacy registration flow.
+     * @param items Catalog item types.
+     */
     protected constructor(adminizer: Adminizer, items: BaseItem<any>[]) {
         for (const item of items) {
             this.additemTypes(item)

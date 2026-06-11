@@ -182,12 +182,13 @@ class RuntimeAppSetupContext implements AppSetupContext {
         }
     }
 
+    // TODO adminizer больше ен создаёт модели
     private async createModelFromRuntimeDefinition<T = any>(model: AppModelResource<T>) {
         const ormAdapter = this.resolveModelAdapter(model.adapter);
         const registeredModel = await ormAdapter.registerRuntimeModel({
             modelName: model.name,
             schema: model.schema,
-            sync: model.sync,
+            sync: model.sync, // TODO cделать через env
         });
 
         return new ormAdapter.Model(model.name, registeredModel);

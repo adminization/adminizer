@@ -52,7 +52,17 @@ import { AssetHandler } from "./app-manager/AssetHandler";
 import { ConfigLayerHandler } from "./app-manager/ConfigLayerHandler";
 import { AccessRightsHandler } from "./access-rights/AccessRightsHandler";
 
+export interface EmitAsyncOptions {
+    /**
+     * Maximum time to wait for each listener. Set to 0 to disable the timeout.
+     * @default 10000
+     */
+    timeoutMs?: number
+}
+
 export class Adminizer {
+    private static readonly defaultListenerTimeoutMs = 10_000
+
     // Preconfigures
     /**
      * If you convey this default Middleware, it will add it to the very top of the router,
@@ -340,11 +350,57 @@ export class Adminizer {
     /**
      * Runs event listeners and waits for async module side effects before continuing.
      */
-    public async emitAsync<TPayload = unknown>(event: string | symbol, payload: TPayload): Promise<void> {
+    public async emitAsync<TPayload = unknown>(
+        event: string | symbol,
+        payload: TPayload,
+        options: EmitAsyncOptions = {},
+    ): Promise<void> {
+        const timeoutMs = options.timeoutMs ?? Adminizer.defaultListenerTimeoutMs;
+        if (!Number.isFinite(timeoutMs) || timeoutMs < 0) {
+            throw new RangeError("emitAsync timeoutMs must be a finite non-negative number");
+        }
+
         await Promise.all(
-            this._emitter.listeners(event).map((listener) =>
-                Promise.resolve((listener as (payload: TPayload) => void | Promise<void>)(payload))
-            )
+            this._emitter.listeners(event).map(async (listener, listenerIndex) => {
+                const listenerName = listener.name || "<anonymous>";
+                let timeout: NodeJS.Timeout | undefined;
+
+                try {
+                    const listenerPromise = Promise.resolve().then(() =>
+                        (listener as (payload: TPayload) => void | Promise<void>).call(this._emitter, payload)
+                    );
+
+                    if (timeoutMs === 0) {
+                        await listenerPromise;
+                        return;
+                    }
+
+                    const timeoutPromise = new Promise<never>((_, reject) => {
+                        timeout = setTimeout(() => {
+                            reject(new Error(
+                                `Listener "${listenerName}" for event "${String(event)}" timed out after ${timeoutMs} ms`
+                            ));
+                        }, timeoutMs);
+                    });
+
+                    await Promise.race([listenerPromise, timeoutPromise]);
+                } catch (error) {
+                    const normalizedError = error instanceof Error ? error : new Error(String(error));
+                    Adminizer.logger.error("Async event listener failed", {
+                        event: String(event),
+                        listener: listenerName,
+                        listenerIndex,
+                        timeoutMs,
+                        error: normalizedError.message,
+                        stack: normalizedError.stack,
+                    });
+                    throw error;
+                } finally {
+                    if (timeout) {
+                        clearTimeout(timeout);
+                    }
+                }
+            })
         );
     }
 

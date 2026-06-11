@@ -38,6 +38,7 @@ export class NavigationApp extends AbstractAdminizerApp<NavigationAppConfig> {
             devUrl: this.config.devComponentUrl,
         });
 
+        // Перенести в регистрацию каталога
         ctx.catalogTemplateComponent({
             id: "model-link-template",
             catalog: "navigation",

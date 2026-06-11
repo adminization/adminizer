@@ -6,6 +6,7 @@ import {verifyUser} from "../lib/helper/jwt";
 export default function bindReqFunctions(adminizer: Adminizer) {
 
     let bindReqFunctionsF = async function (req: ReqType, res: ResType, next: () => void) {
+
         /**
          * Add adminizer to use in controllers
          * */

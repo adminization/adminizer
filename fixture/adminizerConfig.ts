@@ -24,7 +24,7 @@ const models: AdminpanelConfig["models"] = {
                 title: 'Images',
                 type: 'mediamanager',
                 options: {
-                    id: "default", // 'default' is default instance (src/lib/mediamanager/DefaultMediaManager)
+                    id: "default",
                     group: 'banner',
                     accept: ['image/jpeg, image/png']
                 }
@@ -419,7 +419,7 @@ const models: AdminpanelConfig["models"] = {
                 title: 'Images 1',
                 type: 'mediamanager',
                 options: {
-                    id: "default", // 'default' is default instance (src/lib/mediamanager/DefaultMediaManager)
+                    id: "default",
                     group: 'banner',
                     accept: ['image/svg+xml']
                 }
@@ -428,7 +428,7 @@ const models: AdminpanelConfig["models"] = {
                 title: 'Images 2',
                 type: 'mediamanager',
                 options: {
-                    id: 'default', // 'default' is default instance (src/lib/mediamanager/DefaultMediaManager)
+                    id: 'default',
                     group: 'avatars',
                     initTab: 'table-application',
                     accept: ['image/jpeg']

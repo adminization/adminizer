@@ -1,4 +1,4 @@
-import type {Adminizer} from "../Adminizer";
+import {Adminizer} from "../Adminizer";
 import {
     AbstractAdminizerApp,
     AppAsset,
@@ -8,6 +8,7 @@ import {
     AppEventHandler,
     AppEventName,
     AppCatalogFactoryResource,
+    AppMediaManagerResource,
     AppModelAccessResource,
     AppModelResource,
     AppRuntime,
@@ -28,6 +29,7 @@ class RuntimeAppSetupContext implements AppSetupContext {
     readonly disposers: AppDisposer[] = [];
     private readonly pendingModelRegistrations: Array<() => Promise<void>> = [];
     private readonly pendingModelAccessRegistrations: Array<() => Promise<void>> = [];
+    private readonly pendingMediaManagerRegistrations: Array<() => Promise<void>> = [];
     private readonly pendingCatalogRegistrations: Array<() => Promise<void>> = [];
     private configLayerIndex = 0;
     private modelAccessIndex = 0;
@@ -73,6 +75,10 @@ class RuntimeAppSetupContext implements AppSetupContext {
         this.pendingModelAccessRegistrations.push(() => this.registerModelAccess(access));
     }
 
+    mediaManager(resource: AppMediaManagerResource): void {
+        this.pendingMediaManagerRegistrations.push(() => this.registerMediaManager(resource));
+    }
+
     listener(event: AppEventName, handler: AppEventHandler): void {
         const resourceId = `${this.appName}:${event.toString()}:${this.disposers.length + 1}`;
         const listener = (payload: unknown) => handler(payload, this.adminizer.appManager.createRuntime(this.appName));
@@ -95,7 +101,26 @@ class RuntimeAppSetupContext implements AppSetupContext {
     async waitForPendingRegistrations(): Promise<void> {
         await this.runRegistrationPhase(this.pendingModelRegistrations);
         await this.runRegistrationPhase(this.pendingModelAccessRegistrations);
+        await this.runRegistrationPhase(this.pendingMediaManagerRegistrations);
         await this.runRegistrationPhase(this.pendingCatalogRegistrations);
+    }
+
+    private async registerMediaManager(resource: AppMediaManagerResource): Promise<void> {
+        const manager = await resource.factory(this.adminizer.appManager.createRuntime(this.appName));
+        const resourceId = this.adminizer.mediaManagerHandler.register(this.appName, manager);
+        this.adminizer.emitter.emit("app:media-manager:registered", {
+            appName: this.appName,
+            resourceId,
+            managerId: manager.id,
+        });
+        this.disposers.push(() => {
+            this.adminizer.mediaManagerHandler.unregister(resourceId);
+            this.adminizer.emitter.emit("app:media-manager:unregistered", {
+                appName: this.appName,
+                resourceId,
+                managerId: manager.id,
+            });
+        });
     }
 
     private async registerCatalog(catalogResource: AppCatalogFactoryResource): Promise<void> {
@@ -252,6 +277,13 @@ export class AppManager {
             throw new Error(`App "${appName}" is not registered`);
         }
 
+        if (this.adminizer.config.system?.defaultORM === "typeorm") {
+            Adminizer.log.warn(
+                `App "${appName}" is being enabled with experimental TypeORM support. ` +
+                "App entities must be registered before DataSource.initialize(); dynamic model installation is unavailable."
+            );
+        }
+
         if (installed.state === "enabled") {
             return;
         }
@@ -277,6 +309,7 @@ export class AppManager {
             });
         } catch (error) {
             installed.state = "failed";
+            installed.disposers.push(...ctx.disposers);
             await this.disposeResources(installed);
             this.adminizer.emitter.emit("app:enable:failed", {
                 appName,

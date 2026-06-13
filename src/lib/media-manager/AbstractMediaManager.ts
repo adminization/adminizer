@@ -1,5 +1,5 @@
+import type {MediaManagerMetaAP} from "../../models/MediaManagerMetaAP";
 import {Adminizer} from "../Adminizer";
-import {MediaManagerMetaAP} from "../../models/MediaManagerMetaAP";
 
 export interface MediaManagerItem {
     id?: string;
@@ -195,21 +195,32 @@ export abstract class AbstractMediaManager {
     public readonly itemTypes: File<MediaManagerItem>[] = [];
 
     /**
-     * @protected
+     * Registers the media manager access right through the legacy Adminizer API.
+     *
+     * @deprecated Starting with Adminizer v6, register access rights through
+     * `ctx.accessRight(...)` in the app's `setup` method.
+     * @param adminizer Adminizer instance used for legacy access-right registration.
      */
-    protected constructor(adminizer: Adminizer) {
-        this._bindAccessRight(adminizer)
-    }
-
     private _bindAccessRight(adminizer: Adminizer) {
         setTimeout(() => {
             adminizer.accessRightsHelper.registerToken({
                 id: `mediaManager-${this.id}`,
                 name: this.id,
                 description: `Access to edit media-manager for ${this.id}`,
-                department: 'media-manager',
+                department: "media-manager",
             });
-        }, 100)
+        }, 100);
+    }
+
+    /**
+     * @deprecated The `adminizer` parameter is deprecated and will be removed in
+     * Adminizer v6. Register the media manager through `AppManager` using
+     * `ctx.mediaManager(...)`, and register its access right using
+     * `ctx.accessRight(...)`.
+     * @param adminizer Adminizer instance used by the legacy registration flow.
+     */
+    protected constructor(adminizer: Adminizer) {
+        this._bindAccessRight(adminizer);
     }
 
     /**

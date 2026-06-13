@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {afterEach, describe, expect, it} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 import {Sequelize} from "sequelize-typescript";
 import {DataSource} from "typeorm";
 import {Adminizer} from "../src/lib/Adminizer";
@@ -16,6 +16,12 @@ import {
     installNavigationSequelizeModel,
     navigationModelName,
 } from "../fixture/apps/navigation/NavigationModel";
+import {MediaManagerApp} from "../fixture/apps/media-manager/MediaManagerApp";
+import {
+    installMediaManagerSequelizeModels,
+    mediaManagerModelNames,
+} from "../fixture/apps/media-manager/MediaManagerModels";
+import {AbstractMediaManager} from "../src/lib/media-manager/AbstractMediaManager";
 
 describe("model registration ownership", () => {
     const sequelizeConnections: Sequelize[] = [];
@@ -103,6 +109,102 @@ describe("model registration ownership", () => {
         );
     });
 
+    it("registers and disposes the fixture media manager as an app", async () => {
+        const orm = createSequelize();
+        await orm.sync();
+        await installMediaManagerSequelizeModels(orm, true);
+
+        const adminizer = createAdminizer(new SequelizeAdapter(orm), "sequelize");
+        await adminizer.appManager.enable(new MediaManagerApp({
+            fileStoragePath: ".tmp/test-media",
+        }));
+
+        expect(adminizer.mediaManagerHandler.getByApp("media-manager")).toHaveLength(1);
+        expect(adminizer.modelHandler.model.has(mediaManagerModelNames.media)).toBe(true);
+        expect(adminizer.controllerHandler.getByApp("media-manager")).toHaveLength(0);
+
+        const mediaItem = await orm.models[mediaManagerModelNames.media].create({
+            parent: null,
+            mimeType: "image/png",
+            path: ".tmp/test-media/media-manager/test.png",
+            size: 10,
+            group: "test",
+            tag: "origin",
+            url: "/media-manager/test.png",
+            filename: "test",
+        });
+        const manager = adminizer.mediaManagerHandler.get("default");
+        await manager.setRelations([{id: String(mediaItem.get("id"))}], "Example", 1, "image");
+        const relations = await manager.getRelations("Example", "image", 1);
+        expect(relations).toMatchObject([{
+            id: mediaItem.get("id"),
+            mimeType: "image/png",
+            filename: "test",
+        }]);
+
+        const variant = await orm.models[mediaManagerModelNames.media].create({
+            parentId: mediaItem.get("id"),
+            mimeType: "image/png",
+            path: ".tmp/test-media/media-manager/test_sm.png",
+            size: 5,
+            group: "test",
+            tag: "size:sm",
+            url: "/media-manager/test_sm.png",
+            filename: "test",
+        });
+        await orm.models[mediaManagerModelNames.meta].create({
+            key: "imageSizes",
+            value: {width: 100, height: 100},
+            isPublic: false,
+            parentId: variant.get("id"),
+        });
+        const variants = await manager.getVariants({
+            id: String(mediaItem.get("id")),
+            parent: null,
+            mimeType: "image/png",
+            path: ".tmp/test-media/media-manager/test.png",
+            size: 10,
+            group: "test",
+            tag: "origin",
+            url: "/media-manager/test.png",
+            filename: "test",
+        });
+        expect(variants[0].meta).toMatchObject([{
+            key: "imageSizes",
+            value: {width: 100, height: 100},
+        }]);
+
+        await adminizer.appManager.disable("media-manager");
+
+        expect(adminizer.mediaManagerHandler.getByApp("media-manager")).toHaveLength(0);
+        expect(adminizer.modelHandler.model.has(mediaManagerModelNames.media)).toBe(false);
+        expect(adminizer.controllerHandler.getByApp("media-manager")).toHaveLength(0);
+    });
+
+    it("keeps legacy media manager registration available", async () => {
+        vi.useFakeTimers();
+        try {
+            const registerToken = vi.fn();
+            const manager = new LegacyMediaManager({
+                accessRightsHelper: {registerToken},
+            } as Adminizer);
+            const adminizer = createAdminizer(new SequelizeAdapter(createSequelize()), "sequelize");
+
+            adminizer.mediaManagerHandler.add(manager);
+            await vi.advanceTimersByTimeAsync(100);
+
+            expect(adminizer.mediaManagerHandler.get("legacy")).toBe(manager);
+            expect(registerToken).toHaveBeenCalledWith({
+                id: "mediaManager-legacy",
+                name: "legacy",
+                description: "Access to edit media-manager for legacy",
+                department: "media-manager",
+            });
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     function createSequelize(): Sequelize {
         const orm = new Sequelize({
             dialect: "sqlite",
@@ -113,6 +215,28 @@ describe("model registration ownership", () => {
         return orm;
     }
 });
+
+class LegacyMediaManager extends AbstractMediaManager {
+    readonly id = "legacy";
+
+    constructor(adminizer: Adminizer) {
+        super(adminizer);
+    }
+
+    async getAll() {
+        return {data: [], next: false};
+    }
+
+    async setRelations(): Promise<void> {}
+
+    async getRelations() {
+        return [];
+    }
+
+    async searchAll() {
+        return [];
+    }
+}
 
 class ModelOnlyApp extends AbstractAdminizerApp {
     readonly name = "model-only";

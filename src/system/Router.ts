@@ -75,7 +75,7 @@ export default class Router {
             Adminizer.log.error(`Method "Router.bind(...)" allowed for run only one time`);
             return;
         }
-        
+
         const adminizer = this.adminizer
 
         if (
@@ -201,7 +201,7 @@ export default class Router {
             `${adminizer.config.routePrefix}/catalog/:slug`,
             withPolicies(catalogController, requireAuthUI(), requirePermission(catalogToken, { mode: "ui" }))
         );
-        
+
         /**
          * Media Manager
          */
@@ -217,7 +217,10 @@ export default class Router {
             `${adminizer.config.routePrefix}/media-manager-uploader/:id`,
             withPolicies(mediaManagerController, requireAuthUI(), requirePermission(mediaManagerToken, { mode: "ui" }))
         );
-        adminizer.app.all(`${adminizer.config.routePrefix}/get-thumbs`, adminizer.middlewareManager.bindMiddlewares(middlewares, thumbController));
+        adminizer.app.all(
+            `${adminizer.config.routePrefix}/get-thumbs`,
+            adminizer.middlewareManager.bindMiddlewares(middlewares, thumbController)
+        );
 
         /**
          * Upload images CKeditor5
@@ -613,4 +616,3 @@ export default class Router {
         }
     }
 }
-

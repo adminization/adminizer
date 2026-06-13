@@ -59,6 +59,8 @@ import {ModuleManagerApp} from "./apps/module-manager/ModuleManagerApp";
 import {NavigationApp} from "./apps/navigation/NavigationApp";
 import {navigationAppConfig} from "./apps/navigation/navigationConfig";
 import {installNavigationSequelizeModel, navigationModelName} from "./apps/navigation/NavigationModel";
+import {MediaManagerApp} from "./apps/media-manager/MediaManagerApp";
+import {installMediaManagerSequelizeModels} from "./apps/media-manager/MediaManagerModels";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
@@ -193,6 +195,10 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
         if (ormType === "sequelize") {
             const sequelizeAdapter = adminizer.getOrmAdapter("sequelize") as SequelizeAdapter;
+            await installMediaManagerSequelizeModels(sequelizeAdapter.sequelize, true);
+            await adminizer.appManager.enable(new MediaManagerApp({
+                ...adminpanelConfig.mediamanager!,
+            }));
             await installNavigationSequelizeModel(
                 sequelizeAdapter.sequelize,
                 navigationAppConfig.model ?? navigationModelName,

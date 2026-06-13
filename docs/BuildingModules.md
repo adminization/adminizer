@@ -286,9 +286,25 @@ Disabling an app removes its Adminizer model wrapper but does not remove the nat
 
 ### TypeORM
 
-TypeORM support remains experimental. A TypeORM entity required by an app must be included in `DataSource.entities` before `dataSource.initialize()`. TypeORM does not support the Sequelize-style dynamic app model installation used by the fixture.
+TypeORM support remains experimental. Core logs a warning whenever an app is enabled while `system.defaultORM` is `typeorm`. A TypeORM entity required by an app must be included in `DataSource.entities` before `dataSource.initialize()`. TypeORM does not support the Sequelize-style dynamic app model installation used by the fixture.
 
 Apps without their own models can still be enabled normally with TypeORM. An app with a model can also be enabled when its entity was registered before initialization. If the entity is missing, `AppManager` fails during `enable()` with an error explaining this requirement.
+
+## Media Manager Resources
+
+An app can own a media manager implementation:
+
+```ts
+ctx.mediaManager({
+  factory: (runtime) => new MyMediaManager(runtime, config),
+});
+```
+
+The manager is created after the app models and scoped model access are registered. Disabling the app unregisters the manager automatically. The app owns its access right, models, model access, and storage implementation.
+
+In Adminizer v5, the media manager HTTP API, upload adapter, thumbnail endpoint, public-file binding, and file icons remain in core for legacy compatibility. A manager registered through `mediaManagerHandler.add()` and a manager registered through `ctx.mediaManager()` use the same core routes. This transport layer is planned to move to the system runtime in v6.
+
+The fixture default implementation is in `fixture/apps/media-manager`. Its Sequelize installer runs after `adminizer.init()` and before `appManager.enable()`. It is intentionally not enabled in the TypeORM fixture: TypeORM remains experimental and app entities must be registered in `DataSource.entities` before `initialize()`.
 
 ## Catalog Template Components
 
@@ -500,13 +516,14 @@ npm run build:apps
 
 ## Fixture Examples
 
-The fixture contains three current app-module examples:
+The fixture contains four current app-module examples:
 
 | App | Files | Demonstrates |
 |---|---|---|
 | `component-b` | `fixture/apps/component-b/*` | Page module, asset registration, scoped model access through `req.runtime.models`, notifications, UI/API routes, sidebar config patch. |
 | `module-manager` | `fixture/apps/module-manager/*` | Access right token, permission-protected page/API routes, app lifecycle control through `req.runtime.apps`. |
 | `navigation` | `fixture/apps/navigation/*` | Runtime model, model access, catalog factory, catalog template components, sidebar links, `model:updated` listener. |
+| `media-manager` | `fixture/apps/media-manager/*` | Dynamic Sequelize models, app-owned storage implementation, scoped model access, manager registration, lifecycle cleanup. |
 
 ## Field Controls
 

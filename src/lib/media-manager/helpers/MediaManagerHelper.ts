@@ -12,6 +12,7 @@ import {
     ModelConfig
 } from "../../../interfaces/adminpanelConfig";
 import {Adminizer} from "../../Adminizer";
+import type {AppRuntime} from "../../app-manager/AdminizerApp";
 
 type PostParams = Record<string, string | number | boolean | object | string[] | number[] | null>;
 
@@ -176,39 +177,45 @@ export async function deleteRelationsMediaManager(adminizer: Adminizer, model: s
     }
 }
 
+type MediaManagerModelHost = Adminizer | Pick<AppRuntime, "models">;
+
 /**
- * @param adminizer
- * @param variants
- * @param model
+ * Reload variants through the model adapter so their associations are populated.
+ *
+ * Supports both the legacy Adminizer path and app-scoped model access.
  */
-export async function populateVariants(adminizer: Adminizer, variants: MediaManagerItem[], model: string): Promise<MediaManagerItem[]> {
-    let items: MediaManagerItem[] = []
-    const mediaModel = adminizer.modelHandler.internal("media-manager").get<MediaManagerItem>(model);
-    for (let variant of variants) {
-        variant = await mediaModel.findOne({where: {id: variant.id}})
-        items.push(variant)
+export async function populateVariants(
+    host: MediaManagerModelHost,
+    variants: MediaManagerItem[],
+    model: string
+): Promise<MediaManagerItem[]> {
+    const mediaModel = "models" in host
+        ? host.models.get<MediaManagerItem>(model)
+        : host.modelHandler.internal("media-manager").get<MediaManagerItem>(model);
+    const items: MediaManagerItem[] = [];
+
+    for (const variant of variants ?? []) {
+        const populated = await mediaModel.findOne({where: {id: variant.id}});
+        if (populated) {
+            items.push(populated);
+        }
     }
     return items;
 }
 
-
 export function getAssociationFieldName(model: any, associationName: string): string {
     const attributes = model.attributes || {};
 
-    // For your case: file connection uses fileId
-    if (associationName === 'file') {
-        // We check whether there is a file connection and what via it has
-        if (attributes.file?.type === 'association' && attributes.file.via) {
-            return attributes.file.via; // Returns 'fileId'
+    if (associationName === "file") {
+        if (attributes.file?.type === "association" && attributes.file.via) {
+            return attributes.file.via;
         }
 
-        // Or just check for the presence of fileId
         if (attributes.fileId) {
-            return 'fileId';
+            return "fileId";
         }
     }
 
-    // General case
     const idField = `${associationName}Id`;
     return attributes[idField] ? idField : associationName;
 }

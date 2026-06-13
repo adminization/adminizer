@@ -60,8 +60,8 @@ const MediaVariants = ({item, messages, destroy}: MediaVariantsProps) => {
     }
 
 
-    const imageSize = (meta: MediaMeta[]) => {
-        let size = meta.find((e) => e.key === "imageSizes") as Record<string, any>;
+    const imageSize = (meta?: MediaMeta[]) => {
+        let size = meta?.find((e) => e.key === "imageSizes") as Record<string, any> | undefined;
         if (size) {
             return `${size.value.width}x${size.value.height}`;
         } else {

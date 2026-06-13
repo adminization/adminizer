@@ -3,6 +3,7 @@ import type {AccessRightsToken, INotification} from "../../interfaces/types";
 import type {AbstractCatalog} from "../catalog/AbstractCatalog";
 import type {CatalogTemplateComponentResource} from "../catalog/CatalogTemplateComponentHandler";
 import type {AppModelAccess} from "../model/ModelHandler";
+import type {AbstractMediaManager} from "../media-manager/AbstractMediaManager";
 
 export type AppDisposer = () => void | Promise<void>;
 export type AppEventName = string | symbol;
@@ -106,6 +107,10 @@ export interface AppCatalogFactoryResource {
     factory: (runtime: AppRuntime) => AbstractCatalog | Promise<AbstractCatalog>;
 }
 
+export interface AppMediaManagerResource {
+    factory: (runtime: AppRuntime) => AbstractMediaManager | Promise<AbstractMediaManager>;
+}
+
 /**
  * Resource registration API provided while an app is being enabled.
  *
@@ -120,6 +125,7 @@ export interface AppSetupContext {
     config(config: AppConfigPatch, id?: string): void;
     accessRight(token: AccessRightsToken): void;
     catalog(catalog: AppCatalogFactoryResource): void;
+    mediaManager(resource: AppMediaManagerResource): void;
     model(model: AppModelResource): void;
     modelAccess(access: AppModelAccessResource): void;
     listener(event: AppEventName, handler: AppEventHandler): void;

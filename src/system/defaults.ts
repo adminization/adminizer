@@ -180,9 +180,6 @@ let adminpanelConfig: AdminpanelConfig = {
         origin: 'http://localhost:8080',
         path: 'api/*'
     },
-    mediamanager: {
-        fileStoragePath: '.tmp/public',
-    },
     filters: {
         enabled: false
     }

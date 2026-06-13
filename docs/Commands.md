@@ -57,7 +57,7 @@ Development mode is detected with `ADMINIZER_ENV=dev`. The bundled `dev` scripts
   Build Adminizer frontend assets with Vite.
 
 - **`npm run copy:backend`**
-  Copy backend files before compilation.
+  Copy backend resources before compilation, including `translations`, `files`, and `fileicons` used by the core media manager routes.
 
 ## App And Module Builds
 

@@ -18,6 +18,7 @@
 * [App Modules](BuildingModules.md)
 * [Catalogs](Catalog.md)
 * [Navigation Module](Navigation.md)
+* [Media Manager](MediaManager.md)
 * [Admin Controls](Controls.md)
 * [Widgets](Configuration/Widgets.md)
 * [Global UI Components](GlobalUI.md)

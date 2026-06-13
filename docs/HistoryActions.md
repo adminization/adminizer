@@ -59,7 +59,7 @@ This built-in adapter uses the `HistoryActionsAP` model to persist history recor
 
 4. **Security**
    - Respects RBAC (Role-Based Access Control).
-   - Internal models (like `UserAP`, `MediaManagerAP`, etc.) are excluded by default.
+   - Adminizer infrastructure models are excluded by default. The app-owned media manager models remain excluded by name for v5 compatibility, but they are not core system models.
    - Configurable extra exclusions via `config.history.excludeModels`.
 
 ---

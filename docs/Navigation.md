@@ -257,31 +257,32 @@ private renderUrlPath(record: any): string {
 
 ## Template Components
 
-The module registers three catalog template component records:
+The module registers three catalog template component records with its catalog:
 
 ```ts
-ctx.catalogTemplateComponent({
-  id: "model-link-template",
-  catalog: "navigation",
-  type: "navigation.model-link",
-  component: catalogTemplates,
-  exportName: "NavigationModelLinkTemplate",
-});
-
-ctx.catalogTemplateComponent({
-  id: "group-template",
-  catalog: "navigation",
-  type: "navigation.group",
-  component: catalogTemplates,
-  exportName: "NavigationGroupTemplate",
-});
-
-ctx.catalogTemplateComponent({
-  id: "link-template",
-  catalog: "navigation",
-  type: "navigation.link",
-  component: catalogTemplates,
-  exportName: "NavigationLinkTemplate",
+ctx.catalog({
+  id: "navigation",
+  templates: [
+    {
+      id: "model-link-template",
+      type: "navigation.model-link",
+      component: catalogTemplates,
+      exportName: "NavigationModelLinkTemplate",
+    },
+    {
+      id: "group-template",
+      type: "navigation.group",
+      component: catalogTemplates,
+      exportName: "NavigationGroupTemplate",
+    },
+    {
+      id: "link-template",
+      type: "navigation.link",
+      component: catalogTemplates,
+      exportName: "NavigationLinkTemplate",
+    },
+  ],
+  factory: (runtime) => new NavigationCatalog(runtime, config),
 });
 ```
 
@@ -424,5 +425,5 @@ if (existing.length === 0) {
 - Instantiate `new NavigationApp(config)` after `adminizer.init()`.
 - Install the native Sequelize model before enabling the app.
 - The app attaches the installed `Navigation` model through `ctx.model()`.
-- Catalog form UI is connected through `ctx.catalogTemplateComponent()`.
+- Catalog form UI is connected through the `templates` array of `ctx.catalog()`.
 - Keep Sequelize as the default recommendation. TypeORM remains experimental.

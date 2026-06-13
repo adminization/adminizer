@@ -101,7 +101,7 @@ npm install material-icons --legacy-peer-deps
 
 **Description:**
 
-Starting the application may fail with an error similar to:
+Enabling a Sequelize app may fail with an error similar to:
 
 ```
 Error: Naming collision between attribute 'parentNode' and association 'parentNode' on model MediaManagerAP
@@ -109,10 +109,10 @@ Error: Naming collision between attribute 'parentNode' and association 'parentNo
 
 **Cause:**
 
-Both an attribute and an association shared the alias `parentNode` in the `MediaManagerAP` model. Sequelize treats association aliases as properties on the model, so duplicate names are not allowed.
+An attribute and an association share the same name. Sequelize exposes association aliases as model properties, so an alias cannot duplicate an attribute.
 
 **Solution:**
 
-Rename the association or attribute so that they use unique names. In version 4.2.1, the `parentNode` association has been renamed to `parent` across the related models.
+Rename either the attribute or the association alias. The fixture media manager uses the `parentId` attribute and the `parent` association alias; use `fixture/apps/media-manager/MediaManagerModels.ts` as the reference schema.
 
 

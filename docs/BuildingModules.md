@@ -1,6 +1,6 @@
 # Adminizer App Modules
 
-Adminizer modules are backend-first extensions built around `AbstractAdminizerApp` and `AppManager`. A module can register routes, frontend assets, config patches, access rights, existing ORM models, model access scopes, catalogs, catalog template components, and event listeners. This is the current extension mechanism for features such as the fixture module pages, module manager, and navigation catalog.
+Adminizer modules are backend-first extensions built around `AbstractAdminizerApp` and `AppManager`. A module can register routes, frontend assets, config patches, access rights, existing ORM models, model access scopes, media managers, catalogs with template components, and event listeners. This is the current extension mechanism for features such as the fixture module pages, media manager, module manager, and navigation catalog.
 
 Older standalone React page modules and custom field controls still exist as frontend patterns, but a full Adminizer module should be installed through `adminizer.appManager`.
 
@@ -79,7 +79,7 @@ await adminizer.init(adminpanelConfig);
 await adminizer.appManager.enable(new MyApp());
 ```
 
-`AppManager.enable(app)` registers the app if needed, runs `setup(ctx)`, waits for deferred model/model-access/catalog registrations, and stores disposers for later `disable()` or `unregister()`. `setup()` receives only `AppSetupContext`; it does not receive `Adminizer`.
+`AppManager.enable(app)` registers the app if needed, runs `setup(ctx)`, waits for deferred model, model-access, media-manager, and catalog registrations, and stores disposers for later `disable()` or `unregister()`. `setup()` receives only `AppSetupContext`; it does not receive `Adminizer`.
 
 ## Resource Registration
 
@@ -93,15 +93,15 @@ await adminizer.appManager.enable(new MyApp());
 | `ctx.accessRight(token)` | Register an access rights token owned by the app. |
 | `ctx.model(model)` | Attach an existing ORM model to the app. The model must be installed before the app is enabled. |
 | `ctx.modelAccess(access)` | Allow the app runtime to access selected models through `runtime.models`. |
-| `ctx.catalog(catalog)` | Register a catalog directly or through a factory that receives `AppRuntime`. |
-| `ctx.catalogTemplateComponent(component)` | Register a React template component for catalog add/edit forms. |
+| `ctx.mediaManager(resource)` | Register an app-owned media manager through a factory that receives `AppRuntime`. |
+| `ctx.catalog(catalog)` | Register a catalog factory and its optional React template components. |
 | `ctx.listener(event, handler)` | Subscribe to Adminizer events. The handler receives `(payload, runtime)`. |
 
-Registration order after `setup()` is intentional: app model bindings first, model access second, catalogs third. This lets catalog factories safely use models owned by the same app.
+Registration order after `setup()` is intentional: app model bindings first, model access second, media managers third, and catalogs fourth. This lets factories safely use models owned by the same app.
 
 ## App Runtime
 
-`AppRuntime` is the public capability object for app code. App controllers receive it through `req.runtime`; catalog factories and event listeners receive the same app-scoped runtime as an argument.
+`AppRuntime` is the public capability object for app code. App controllers receive it through `req.runtime`; media manager factories, catalog factories, and event listeners receive the same app-scoped runtime as an argument.
 
 ```ts
 interface AppRuntime {
@@ -306,6 +306,8 @@ In Adminizer v5, the media manager HTTP API, upload adapter, thumbnail endpoint,
 
 The fixture default implementation is in `fixture/apps/media-manager`. Its Sequelize installer runs after `adminizer.init()` and before `appManager.enable()`. It is intentionally not enabled in the TypeORM fixture: TypeORM remains experimental and app entities must be registered in `DataSource.entities` before `initialize()`.
 
+`AbstractMediaManager` still accepts `Adminizer` in its constructor and registers its access right through `_bindAccessRight()` for the legacy v5 path. Existing integrations may continue to instantiate a custom manager and call `adminizer.mediaManagerHandler.add(manager)` until v6. App-owned managers should register their access right with `ctx.accessRight()` and pass a no-op legacy host to the base constructor; see the fixture implementation and [MediaManager.md](MediaManager.md).
+
 ## Catalog Template Components
 
 Catalog item types return add/edit templates with a `type` string:
@@ -319,7 +321,7 @@ async getAddTemplate(req: ReqType) {
 }
 ```
 
-A module maps that template `type` to a React component through `ctx.catalogTemplateComponent()`:
+A module maps that template `type` to a React component in the `templates` array of `ctx.catalog()`:
 
 ```ts
 const catalogTemplates = ctx.asset({
@@ -328,16 +330,19 @@ const catalogTemplates = ctx.asset({
   devUrl: "/apps/my-app/CatalogTemplates.tsx",
 });
 
-ctx.catalogTemplateComponent({
-  id: "item-form",
-  catalog: "my-catalog",
-  type: "my-catalog.item-form",
-  component: catalogTemplates,
-  exportName: "MyCatalogItemTemplate",
+ctx.catalog({
+  id: "my-catalog",
+  templates: [{
+    id: "item-form",
+    type: "my-catalog.item-form",
+    component: catalogTemplates,
+    exportName: "MyCatalogItemTemplate",
+  }],
+  factory: (runtime) => new MyCatalog(runtime),
 });
 ```
 
-`catalog` can be a string, an array of catalog slugs, or omitted. Omit it only for a global template type. `CatalogTemplateComponentHandler` prevents two enabled components from claiming the same template type in the same catalog scope.
+Template components are scoped to the catalog returned by the same resource. `CatalogTemplateComponentHandler` prevents two enabled components from claiming the same template type in that catalog scope.
 
 Template props on the frontend:
 
@@ -539,5 +544,5 @@ Custom form controls are still implemented through `AbstractControls` and `admin
 - API controllers use `mode: "api"` policies and return JSON.
 - Frontend assets are registered through `ctx.asset()` with both `filePath` and `devUrl` when local development is needed.
 - App-specific models are declared with `ctx.model()` and allowed with `ctx.modelAccess()` before catalogs use them.
-- Catalog templates are registered with `ctx.catalogTemplateComponent()` instead of hard-coded paths in catalog data.
+- Catalog templates are registered in `ctx.catalog({ templates: [...] })` instead of hard-coded paths in catalog data.
 - Module UI uses `window.UIComponents`, `window.JSComponents`, `window.adminApi`, and global React/Lucide exports instead of bundling duplicates.

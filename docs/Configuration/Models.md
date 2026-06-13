@@ -36,6 +36,12 @@ await adminizer.init(config);
 
 App-owned Sequelize models may be installed later, immediately before `appManager.enable(app)`.
 
+## App-Owned Models
+
+Models registered by apps are not part of the core system contract. `AppManager` only attaches an existing ORM model through `ctx.model()`; it does not define tables or synchronize schemas.
+
+The fixture media manager is an example. Its `MediaManagerAP`, `MediaManagerMetaAP`, and `MediaManagerAssociationsAP` models are installed by `fixture/apps/media-manager/MediaManagerModels.ts` after `adminizer.init()` and before the media manager app is enabled. Adminizer does not require or create these models unless that app is used.
+
 ## TypeORM
 
 TypeORM support is experimental. System entities must be included in `DataSource.entities` before initialization:

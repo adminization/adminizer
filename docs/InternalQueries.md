@@ -162,7 +162,7 @@ Each internal access scope has an allowlist of models. Built-in scopes include:
 | `auth` | Login, registration, init user |
 | `users` | Built-in user/group controllers |
 | `filters` | Saved filters and filter columns |
-| `media-manager` | Media manager system models |
+| `media-manager` | Legacy v5 access to app-owned media manager models |
 | `history` | History actions |
 | `notifications` | Notification models |
 | `navigation` | Navigation storage |
@@ -191,3 +191,5 @@ const filters = await adminizer.modelHandler
 ```
 
 Use `DataAccessor` for normal user-facing model operations. Use `internal(...)` only for system-level Adminizer modules or trusted integrations.
+
+The `media-manager` scope is retained for compatibility. It does not make media manager models part of the core system contract and does not create them. New media manager apps should declare model access through `ctx.modelAccess()` and use `runtime.models`.

@@ -1,6 +1,6 @@
 # Next.js Integration Guide
 
-This guide helps you integrate Adminizer with Next.js applications, especially when using standalone build mode.
+This guide helps you integrate Adminizer with Next.js applications, especially when using standalone build mode. Sequelize is the recommended adapter. TypeORM support is experimental.
 
 ## Quick Start
 
@@ -50,38 +50,45 @@ Create a catch-all API route for Adminizer:
 Create `pages/api/adminizer/[[...adminizer]].ts`:
 
 ```typescript
-import { Adminizer } from 'adminizer';
+import { Adminizer, SequelizeAdapter } from 'adminizer';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { DataSource } from 'typeorm';
+import { Sequelize } from 'sequelize';
+import { registerSequelizeSystemModels } from '../../../server/adminizer-system-models';
 
-// Initialize your database connection
-const AppDataSource = new DataSource({
-  type: 'sqlite',
-  database: 'database.sqlite',
-  synchronize: true,
+const sequelize = new Sequelize({
+  dialect: 'sqlite',
+  storage: 'database.sqlite',
   logging: false,
-  entities: [/* your entities */],
 });
 
 let adminizer: Adminizer | null = null;
+let initialization: Promise<Adminizer> | null = null;
 
 async function getAdminizer() {
-  if (!adminizer) {
-    if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
-    }
-
-    adminizer = new Adminizer({
-      // Your configuration here
-      routePrefix: '/api/adminizer',
-      models: {
-        // Your models configuration
-      },
-    });
-
-    await adminizer.init(AppDataSource);
+  if (adminizer) {
+    return adminizer;
   }
-  return adminizer;
+  if (!initialization) {
+    initialization = (async () => {
+      registerSequelizeSystemModels(sequelize);
+      // Prefer project migrations in production.
+      await sequelize.sync();
+
+      const instance = new Adminizer([
+        new SequelizeAdapter(sequelize),
+      ]);
+      await instance.init({
+        routePrefix: '/api/adminizer',
+        system: { defaultORM: 'sequelize' },
+        models: {
+          // Your model configuration.
+        },
+      });
+      adminizer = instance;
+      return instance;
+    })();
+  }
+  return initialization;
 }
 
 export default async function handler(
@@ -111,31 +118,11 @@ export default async function handler(
 
 #### App Router
 
-Create `app/api/adminizer/[[...adminizer]]/route.ts`:
+Next.js App Router handlers use the Web `Request`/`Response` API, while `adminizer.getMiddleware()` is Express-compatible middleware. Use a Node/Express custom server or an adapter that bridges those APIs; do not pass an App Router request directly to Adminizer middleware.
 
-```typescript
-import { Adminizer } from 'adminizer';
-import { NextRequest, NextResponse } from 'next/server';
-import { DataSource } from 'typeorm';
+### TypeORM
 
-// Similar initialization as above
-
-export async function GET(request: NextRequest) {
-  // Handle GET requests
-}
-
-export async function POST(request: NextRequest) {
-  // Handle POST requests
-}
-
-export async function PUT(request: NextRequest) {
-  // Handle PUT requests
-}
-
-export async function DELETE(request: NextRequest) {
-  // Handle DELETE requests
-}
-```
+TypeORM system entities can be used, but all system and app entities must be included in `DataSource.entities` before `dataSource.initialize()`. Dynamic app model installation after initialization is not supported. See [System Models](Configuration/Models.md#typeorm) and [App Models](BuildingModules.md#typeorm).
 
 ## Docker Configuration
 
@@ -261,22 +248,23 @@ NEXT_PUBLIC_API_URL=http://localhost:3000
 Make sure your database is properly initialized before calling `adminizer.init()`:
 
 ```typescript
-if (!AppDataSource.isInitialized) {
-  await AppDataSource.initialize();
-}
+registerSequelizeSystemModels(sequelize);
+await sequelize.authenticate();
+await sequelize.sync(); // Prefer migrations in production.
+
+const adminizer = new Adminizer([
+  new SequelizeAdapter(sequelize),
+]);
+await adminizer.init(config);
 ```
 
 ### Session Issues
 
-If you're having session problems, ensure you've set a proper session secret:
+Authentication requires stable secrets in the server environment. Do not generate them per request or per serverless invocation:
 
-```typescript
-const adminizer = new Adminizer({
-  // ... other config
-  security: {
-    sessionSecret: process.env.SESSION_SECRET || 'your-secret-key',
-  },
-});
+```dotenv
+JWT_SECRET=replace-with-a-stable-secret
+AP_PASSWORD_SALT=replace-with-a-stable-salt
 ```
 
 ## Additional Resources

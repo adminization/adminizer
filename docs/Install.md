@@ -19,6 +19,9 @@ You need to prepare and configure at least one adapter:
 - For **TypeORM**, use the experimental `TypeOrmAdapter` only after testing it against your project models.
 - Or _use any other ORM_ by implementing a custom adapter that extends AbstractAdapter.
 Adminizer is designed to be flexible and can be integrated with any ORM or data source.
+
+The host application must register the required Adminizer system models before calling `adminizer.init()`. Adminizer validates those models at startup but does not create or synchronize them. See [System Models](Configuration/Models.md).
+
 ---
 
 ## 3. Initialize Adminizer
@@ -61,7 +64,7 @@ After that, the Adminizer panel will be available at a URL like `http://localhos
 # Minimum Requirements to Run Adminizer
 
 - An Adminizer instance (`new Adminizer([...])`).
-- At least one adapter (can be empty or connected to a database).
+- At least one adapter containing the required Adminizer system models.
 - A call to the `init` method with basic configuration.
 - A server that routes requests to Adminizer.
 
@@ -172,3 +175,5 @@ async function start() {
 start();
 
 ```
+
+The media manager is not a built-in system model set. Its storage models and implementation must be provided by an app and enabled after `adminizer.init()`. See [Media Manager](MediaManager.md) and the reference implementation in `fixture/apps/media-manager`.

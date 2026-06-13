@@ -123,7 +123,7 @@ return {
 
 ### Registered catalog template component
 
-Current module-based catalogs should return a stable template type and register the React component through `ctx.catalogTemplateComponent()`:
+Current module-based catalogs should return a stable template type and register the React component in the `templates` array of `ctx.catalog()`:
 
 ```ts
 // Item type
@@ -142,12 +142,15 @@ async getAddTemplate(req: ReqType) {
 
 ```ts
 // App setup
-ctx.catalogTemplateComponent({
-  id: "product-form",
-  catalog: "products",
-  type: "products.product-form",
-  component: productTemplatesAsset,
-  exportName: "ProductFormTemplate",
+ctx.catalog({
+  id: "products",
+  templates: [{
+    id: "product-form",
+    type: "products.product-form",
+    component: productTemplatesAsset,
+    exportName: "ProductFormTemplate",
+  }],
+  factory: (runtime) => new ProductsCatalog(runtime),
 });
 ```
 

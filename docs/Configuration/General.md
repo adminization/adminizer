@@ -27,13 +27,14 @@ const config: AdminizerConfig = {
 | `models` | Object with model definitions. |
 | `dashboard` | Enable dashboard widgets. |
 | `showVersion` | Display Adminizer version in the sidebar. |
+| `system.defaultORM` | Adapter that owns the required system models. Sequelize is recommended; TypeORM is experimental. |
 | `system.internalModelAccess` | Extend allowlisted internal model access scopes for trusted system modules. |
 
 Additional options like `welcome`, `translation` and `administrator` credentials can also be provided.
 
 ## Migrations
 
-Starting with Adminizer 5, built-in migrations are not supported. Projects should manage database schema changes with their own ORM or migration tool. For Sequelize projects, register Adminizer system models and synchronize or migrate them through the host application's database workflow.
+Starting with Adminizer 5, built-in migrations are not supported. Projects should manage database schema changes with their own ORM or migration tool. For Sequelize projects, register Adminizer system models and synchronize or migrate them through the host application's database workflow. See [System Models](Models.md).
 
 **`favicon` examples**
 

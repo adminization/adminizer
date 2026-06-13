@@ -65,7 +65,7 @@ class RuntimeAppSetupContext implements AppSetupContext {
         this.pendingCatalogRegistrations.push(() => this.registerCatalog(catalog));
     }
 
-    model<T = any>(model: AppModelResource<T>): void {
+    model(model: AppModelResource): void {
         this.pendingModelRegistrations.push(() => this.registerModel(model));
     }
 
@@ -161,8 +161,24 @@ class RuntimeAppSetupContext implements AppSetupContext {
         });
     }
 
-    private async registerModel<T = any>(model: AppModelResource<T>): Promise<void> {
-        const modelInstance = await this.createModelFromRuntimeDefinition(model);
+    private async registerModel(model: AppModelResource): Promise<void> {
+        const ormAdapter = this.resolveModelAdapter(model.adapter);
+        const registeredModel = ormAdapter.getModel(model.name);
+        if (!registeredModel) {
+            if (ormAdapter.ormType === "typeorm") {
+                throw new Error(
+                    `App "${this.appName}" requires TypeORM entity "${model.name}". ` +
+                    "TypeORM entities must be registered in DataSource before initialize(). " +
+                    "Dynamic app model installation is supported only for Sequelize."
+                );
+            }
+            throw new Error(
+                `App "${this.appName}" requires model "${model.name}", but it was not provided by adapter ` +
+                `"${ormAdapter.ormType}". Install the app model before enabling the app.`
+            );
+        }
+
+        const modelInstance = new ormAdapter.Model(model.name, registeredModel);
         const resourceId = this.adminizer.modelHandler.register(this.appName, model.name, modelInstance);
         this.adminizer.emitter.emit("app:model:registered", {
             appName: this.appName,
@@ -183,18 +199,6 @@ class RuntimeAppSetupContext implements AppSetupContext {
         for (const registration of registrations) {
             await registration();
         }
-    }
-
-    // TODO adminizer больше ен создаёт модели
-    private async createModelFromRuntimeDefinition<T = any>(model: AppModelResource<T>) {
-        const ormAdapter = this.resolveModelAdapter(model.adapter);
-        const registeredModel = await ormAdapter.registerRuntimeModel({
-            modelName: model.name,
-            schema: model.schema,
-            sync: model.sync, // TODO cделать через env
-        });
-
-        return new ormAdapter.Model(model.name, registeredModel);
     }
 
     private resolveModelAdapter(adapterName?: string) {

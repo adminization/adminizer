@@ -23,13 +23,18 @@ The fixture enables navigation after `adminizer.init()` and only for Sequelize:
 ```ts
 await adminizer.init(adminpanelConfig);
 
-await adminizer.appManager.enable(new NavigationApp({
-  ...navigationAppConfig,
-  sync: true,
-}));
+await installNavigationSequelizeModel(
+  sequelize,
+  navigationAppConfig.model ?? "Navigation",
+  true
+);
+
+await adminizer.appManager.enable(new NavigationApp(navigationAppConfig));
 ```
 
-Sequelize is the recommended/default ORM path. TypeORM support in the project is experimental, and the fixture does not currently enable the navigation app for TypeORM.
+The installer adds the native model after Adminizer startup but before the app is enabled. `AppManager` only attaches the existing model to the app.
+
+Sequelize is the recommended/default ORM path. TypeORM support in the project is experimental, and the fixture does not enable the navigation app for TypeORM. A TypeORM version would have to include the navigation entity in `DataSource.entities` before `initialize()`.
 
 ## Configuration
 
@@ -94,8 +99,8 @@ export const navigationAppConfig: NavigationAppConfig = {
 |---|---|---|
 | Access right | `ctx.accessRight()` | Token `catalog-navigation`. Used by navigation sidebar links. |
 | Template asset | `ctx.asset()` | Serves `NavigationCatalogTemplates.es.js` in production or `NavigationCatalogTemplates.tsx` in dev. |
-| Catalog template components | `ctx.catalogTemplateComponent()` | Maps `navigation.model-link`, `navigation.group`, and `navigation.link` to React exports. |
-| Runtime model | `ctx.model()` | Registers the storage model. Default name is `Navigation`. |
+| Catalog template components | `ctx.catalog({ templates })` | Maps `navigation.model-link`, `navigation.group`, and `navigation.link` to React exports. |
+| App model | `ctx.model()` | Attaches the installed storage model. Default name is `Navigation`. |
 | Model access | `ctx.modelAccess()` | Allows the app to read/write the storage model and source content models. |
 | Config layer | `ctx.config()` | Hides the storage model from navbar/list UI and adds one sidebar link per section. |
 | Catalog | `ctx.catalog({ factory })` | Creates `NavigationCatalog`, waits for `catalog.ready()`, then registers it. |
@@ -105,28 +110,28 @@ Navigation setup is owned by the app module, not by core initialization.
 
 ## Storage Model
 
-The default runtime model name is `Navigation` (`navigationModelName`). The schema is:
+The default model name is `Navigation` (`navigationModelName`). Its Sequelize definition contains:
 
 ```ts
-export const navigationSchema = {
+orm.define("Navigation", {
   id: {
-    type: "number",
+    type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },
   label: {
-    type: "string",
-    required: true,
+    type: DataTypes.STRING,
+    allowNull: false,
     unique: true,
   },
   tree: {
-    type: "json",
-    required: true,
+    type: DataTypes.JSON,
+    allowNull: false,
   },
-};
+});
 ```
 
-`ctx.model({ name: this.config.model, schema: navigationSchema, sync: this.config.sync })` registers it through the active ORM adapter. In fixture usage, `sync: true` creates/synchronizes the model automatically for local development.
+`installNavigationSequelizeModel()` defines and optionally synchronizes the native Sequelize model. The app then calls `ctx.model({ name: this.config.model })` to declare ownership of that existing model.
 
 The storage model is hidden from the regular model UI by a config layer:
 
@@ -370,10 +375,12 @@ Example response shape:
 Seed after the module is enabled and the catalog storage is ready:
 
 ```ts
-await adminizer.appManager.enable(new NavigationApp({
-  ...navigationAppConfig,
-  sync: true,
-}));
+await installNavigationSequelizeModel(
+  sequelize,
+  navigationAppConfig.model ?? "Navigation",
+  true
+);
+await adminizer.appManager.enable(new NavigationApp(navigationAppConfig));
 
 const navCatalog = adminizer.catalogHandler.getCatalog("navigation") as any;
 await navCatalog.ready?.();
@@ -415,6 +422,7 @@ if (existing.length === 0) {
 ## Implementation Notes
 
 - Instantiate `new NavigationApp(config)` after `adminizer.init()`.
-- The fixture module registers the `Navigation` storage model at runtime through `ctx.model()`.
+- Install the native Sequelize model before enabling the app.
+- The app attaches the installed `Navigation` model through `ctx.model()`.
 - Catalog form UI is connected through `ctx.catalogTemplateComponent()`.
 - Keep Sequelize as the default recommendation. TypeORM remains experimental.

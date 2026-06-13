@@ -20,6 +20,7 @@ export * from "./interfaces/internalModelAccess";
 export * from "./interfaces/MaaterialIcons"
 export * from "./lib/model/AbstractModel";
 export * from "./lib/model/InternalModelAccessFactory";
+export * from "./system/systemModelContracts";
 export * from "./lib/model/adapter/sequelize"
 export * from "./lib/model/adapter/typeorm"
 export * from "./lib/media-manager/AbstractMediaManager";

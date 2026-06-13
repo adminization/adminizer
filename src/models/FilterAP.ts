@@ -1,5 +1,4 @@
-import { UserAP } from "./UserAP";
-import { FilterColumnAP } from "./FilterColumnAP";
+import type {FilterColumnAP} from "./FilterColumnAP";
 
 /**
  * Filter operators for query conditions
@@ -59,75 +58,6 @@ export interface FilterCondition {
  * Filter visibility types
  */
 export type FilterVisibility = 'private' | 'public' | 'groups' | 'system';
-
-/**
- * Filter model schema
- */
-export default {
-    id: {
-        type: "string",
-        primaryKey: true
-        // UUID will be generated before create
-    },
-    name: {
-        type: "string",
-        required: true
-    },
-    description: {
-        type: "string"
-    },
-    modelName: {
-        type: "string",
-        required: true
-    },
-    conditions: {
-        type: "json"
-    },
-    sortField: {
-        type: "string"
-    },
-    sortDirection: {
-        type: "string"
-        // 'ASC' or 'DESC'
-    },
-    visibility: {
-        type: "string"
-        // 'private' | 'public' | 'groups' | 'system'
-    },
-    ownerId: {
-        type: "number"
-    },
-    groupIds: {
-        type: "json"
-    },
-    apiEnabled: {
-        type: "boolean"
-    },
-    apiKey: {
-        type: "string"
-    },
-    icon: {
-        type: "string"
-    },
-    color: {
-        type: "string"
-    },
-    version: {
-        type: "number"
-    },
-    columns: {
-        collection: "FilterColumnAP",
-        via: "filter"
-    },
-    createdAt: {
-        type: 'datetime',
-        autoCreatedAt: true
-    },
-    updatedAt: {
-        type: 'datetime',
-        autoUpdatedAt: true
-    }
-}
 
 /**
  * FilterAP interface for TypeScript

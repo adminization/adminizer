@@ -1,6 +1,6 @@
 # Adminizer App Modules
 
-Adminizer modules are backend-first extensions built around `AbstractAdminizerApp` and `AppManager`. A module can register routes, frontend assets, config patches, access rights, runtime models, model access scopes, catalogs, catalog template components, and event listeners. This is the current extension mechanism for features such as the fixture module pages, module manager, and navigation catalog.
+Adminizer modules are backend-first extensions built around `AbstractAdminizerApp` and `AppManager`. A module can register routes, frontend assets, config patches, access rights, existing ORM models, model access scopes, catalogs, catalog template components, and event listeners. This is the current extension mechanism for features such as the fixture module pages, module manager, and navigation catalog.
 
 Older standalone React page modules and custom field controls still exist as frontend patterns, but a full Adminizer module should be installed through `adminizer.appManager`.
 
@@ -91,13 +91,13 @@ await adminizer.appManager.enable(new MyApp());
 | `ctx.controller(controller)` | Register an Express route under `config.routePrefix`; returns the resolved full path. |
 | `ctx.config(patch, id?)` | Merge a config patch into `adminizer.config`. Arrays of objects with `id` are merged by id; other arrays are appended. |
 | `ctx.accessRight(token)` | Register an access rights token owned by the app. |
-| `ctx.model(model)` | Register a runtime model through the active ORM adapter. Sequelize is the primary supported adapter. |
+| `ctx.model(model)` | Attach an existing ORM model to the app. The model must be installed before the app is enabled. |
 | `ctx.modelAccess(access)` | Allow the app runtime to access selected models through `runtime.models`. |
 | `ctx.catalog(catalog)` | Register a catalog directly or through a factory that receives `AppRuntime`. |
 | `ctx.catalogTemplateComponent(component)` | Register a React template component for catalog add/edit forms. |
 | `ctx.listener(event, handler)` | Subscribe to Adminizer events. The handler receives `(payload, runtime)`. |
 
-Registration order after `setup()` is intentional: runtime models first, model access second, catalogs third. This lets catalog factories safely use models registered by the same app.
+Registration order after `setup()` is intentional: app model bindings first, model access second, catalogs third. This lets catalog factories safely use models owned by the same app.
 
 ## App Runtime
 
@@ -259,25 +259,36 @@ ctx.config({
 });
 ```
 
-## Runtime Models
+## App Models
 
-A module can register its own internal storage model:
+A module declares ownership of an ORM model by name:
 
 ```ts
 ctx.model({
   name: "MyAppState",
-  schema: {
-    id: { type: "number", autoIncrement: true, primaryKey: true },
-    label: { type: "string", required: true, unique: true },
-    payload: { type: "json", required: true },
-  },
-  sync: true,
 });
 
 ctx.modelAccess({ models: ["MyAppState"] });
 ```
 
-`adapter` is optional. If omitted, Adminizer uses `config.system.defaultORM` or the only registered ORM adapter. Sequelize is the recommended default; TypeORM is experimental.
+`AppManager` does not define tables, register native ORM models, or synchronize schemas. The host or module installer must complete those operations before `appManager.enable()`.
+
+For Sequelize, models can be installed after `adminizer.init()` and immediately before enabling the app:
+
+```ts
+await installMyAppSequelizeModels(sequelize);
+await adminizer.appManager.enable(new MyApp());
+```
+
+Disabling an app removes its Adminizer model wrapper but does not remove the native Sequelize model or its table.
+
+`adapter` is optional. If omitted, Adminizer uses `config.system.defaultORM` or the only registered ORM adapter.
+
+### TypeORM
+
+TypeORM support remains experimental. A TypeORM entity required by an app must be included in `DataSource.entities` before `dataSource.initialize()`. TypeORM does not support the Sequelize-style dynamic app model installation used by the fixture.
+
+Apps without their own models can still be enabled normally with TypeORM. An app with a model can also be enabled when its entity was registered before initialization. If the entity is missing, `AppManager` fails during `enable()` with an error explaining this requirement.
 
 ## Catalog Template Components
 
@@ -386,12 +397,6 @@ export class MyCatalogApp extends AbstractAdminizerApp<MyCatalogAppConfig> {
 
     ctx.model({
       name: "MyCatalogStorage",
-      schema: {
-        id: { type: "number", autoIncrement: true, primaryKey: true },
-        label: { type: "string", required: true, unique: true },
-        tree: { type: "json", required: true },
-      },
-      sync: true,
     });
 
     ctx.modelAccess({ models: ["MyCatalogStorage"] });

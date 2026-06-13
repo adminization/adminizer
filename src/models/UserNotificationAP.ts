@@ -1,22 +1,4 @@
-import { NotificationAP } from "./NotificationAP";
-export default {
-    id: {
-        type: "number",
-        autoIncrement: true,
-        primaryKey: true
-    },
-    userId: {
-        type: "number",
-        required: true
-    },
-    notificationId: {
-        model: "NotificationAP"
-    },
-    read: {
-        type: "boolean",
-        defaultsTo: false
-    }
-}
+import type {NotificationAP} from "./NotificationAP";
 
 export interface UserNotificationAP {
     id: number,

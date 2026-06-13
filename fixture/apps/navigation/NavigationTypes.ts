@@ -20,5 +20,4 @@ export interface NavigationAppConfig {
     allowContentInGroup?: boolean;
     items: NavigationItemConfig[];
     movingGroupsRootOnly?: boolean;
-    sync?: boolean;
 }

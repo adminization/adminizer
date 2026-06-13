@@ -23,6 +23,7 @@ import {JsonSchema as JsonSchemaSequelize} from "./models/sequelize/JsonSchema";
 import {Test as TestSequelize} from "./models/sequelize/Test";
 import {Category as CategorySequelize} from "./models/sequelize/Category";
 import {TestCatalog as TestCatalogSequelize} from "./models/sequelize/TestCatalog";
+import {registerSequelizeSystemModels} from "./models/sequelize/systemModels";
 import {SequelizeAdapter} from "../dist/lib/model/adapter/sequelize";
 import {DataSource} from "typeorm";
 import {TypeOrmAdapter} from "../dist/lib/model/adapter/typeorm";
@@ -32,6 +33,7 @@ import {JsonSchemaTypeOrm} from "./models/typeorm/JsonSchema";
 import {TestTypeOrm} from "./models/typeorm/Test";
 import {CategoryTypeOrm} from "./models/typeorm/Category";
 import {TestCatalogTypeOrm} from "./models/typeorm/TestCatalog";
+import {typeOrmSystemModels} from "./models/typeorm/systemModels";
 
 
 //Widgets imports
@@ -56,7 +58,7 @@ import {ComponentBApp} from "./apps/component-b/ComponentBApp";
 import {ModuleManagerApp} from "./apps/module-manager/ModuleManagerApp";
 import {NavigationApp} from "./apps/navigation/NavigationApp";
 import {navigationAppConfig} from "./apps/navigation/navigationConfig";
-import {navigationModelName} from "./apps/navigation/NavigationModel";
+import {installNavigationSequelizeModel, navigationModelName} from "./apps/navigation/NavigationModel";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
@@ -77,7 +79,7 @@ if (ormType === "sequelize") {
         logging: false,
     });
     await orm.authenticate();
-    await SequelizeAdapter.registerSystemModels(orm);
+    registerSequelizeSystemModels(orm);
     orm.addModels([ExampleSequelize, TestSequelize, JsonSchemaSequelize, CategorySequelize, TestCatalogSequelize]);
     TestSequelize.associate(orm);
     ExampleSequelize.associate(orm);
@@ -101,12 +103,11 @@ if (ormType === "sequelize") {
 } else if (ormType === "typeorm") {
     const tmpDir = path.join(process.cwd(), ".tmp");
     const dbPath = path.join(tmpDir, "adminizer_fixture_typeorm.sqlite");
-    const systemEntities = await TypeOrmAdapter.loadSystemEntities();
     const dataSource = new DataSource({
         type: "sqlite",
         database: dbPath,
         entities: [
-            ...systemEntities,
+            ...typeOrmSystemModels,
             ExampleTypeOrm,
             TestTypeOrm,
             JsonSchemaTypeOrm,
@@ -191,9 +192,14 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
         await adminizer.init(adminpanelConfig as unknown as AdminpanelConfig)
 
         if (ormType === "sequelize") {
+            const sequelizeAdapter = adminizer.getOrmAdapter("sequelize") as SequelizeAdapter;
+            await installNavigationSequelizeModel(
+                sequelizeAdapter.sequelize,
+                navigationAppConfig.model ?? navigationModelName,
+                true
+            );
             await adminizer.appManager.enable(new NavigationApp({
                 ...navigationAppConfig,
-                sync: true,
             }));
         }
 

@@ -101,11 +101,12 @@ Example:
 import { Adminizer, SequelizeAdapter } from "adminizer";
 import { Sequelize, DataTypes } from "sequelize";
 import express from "express";
+import { registerSequelizeSystemModels } from "./models/adminizer-system-models";
 
 async function start() {
     // 1. Initialize Sequelize
     const sequelize = new Sequelize('sqlite::memory:', { logging: false });
-    await SequelizeAdapter.registerSystemModels(sequelize);
+    registerSequelizeSystemModels(sequelize);
 
     // 2. Define a model
     const Example = sequelize.define('example', {

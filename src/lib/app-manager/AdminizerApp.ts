@@ -95,11 +95,9 @@ export interface AppModelAccessResource {
     models: string[];
 }
 
-export interface AppModelResource<T = any> {
+export interface AppModelResource {
     name: string;
     adapter?: string;
-    schema: Record<string, any>;
-    sync?: boolean;
 }
 
 export interface AppCatalogFactoryResource {
@@ -122,7 +120,7 @@ export interface AppSetupContext {
     config(config: AppConfigPatch, id?: string): void;
     accessRight(token: AccessRightsToken): void;
     catalog(catalog: AppCatalogFactoryResource): void;
-    model<T = any>(model: AppModelResource<T>): void;
+    model(model: AppModelResource): void;
     modelAccess(access: AppModelAccessResource): void;
     listener(event: AppEventName, handler: AppEventHandler): void;
 }

@@ -1,6 +1,3 @@
-import fs from "fs";
-import path from "path";
-import { pathToFileURL, fileURLToPath } from "url";
 import {
     Brackets,
     DataSource,
@@ -265,40 +262,6 @@ export function createTypeOrmEntitySchemaFromAdminizerSchema(
         columns,
         relations,
     });
-}
-
-export async function loadSystemTypeOrmEntities(): Promise<EntitySchema[]> {
-    const currentDir = import.meta.url ? path.dirname(fileURLToPath(import.meta.url)) : process.cwd();
-    const possiblePaths = [
-        path.resolve(currentDir, "../../../../models"),
-        path.resolve(currentDir, "../../../../src/models"),
-        path.resolve(currentDir, "../../../models"),
-        path.resolve(currentDir, "../../../src/models"),
-        path.resolve(process.cwd(), "node_modules/adminizer/src/models"),
-        path.resolve(process.cwd(), "node_modules/adminizer/models"),
-    ];
-
-    const modelsDir = possiblePaths.find((possiblePath) => fs.existsSync(possiblePath));
-    if (!modelsDir) {
-        return [];
-    }
-
-    let files = fs.readdirSync(modelsDir).filter((file) => file.endsWith(".js"));
-    if (!files.length) {
-        files = fs.readdirSync(modelsDir).filter((file) => file.endsWith(".ts") && !file.endsWith(".d.ts"));
-    }
-
-    const schemas: Record<string, AdminizerSchema> = {};
-    for (const file of files) {
-        const modelName = path.basename(file, path.extname(file));
-        const filePath = path.resolve(modelsDir, file);
-        const mod = await import(pathToFileURL(filePath).href);
-        schemas[modelName] = mod.default;
-    }
-
-    return Object.entries(schemas).map(([modelName, schema]) =>
-        createTypeOrmEntitySchemaFromAdminizerSchema(modelName, schema, schemas)
-    );
 }
 
 export class TypeOrmModel<T extends ObjectLiteral> extends AbstractModel<T> {
@@ -963,7 +926,4 @@ export class TypeOrmAdapter extends AbstractAdapter {
         return createTypeOrmEntitySchemaFromAdminizerSchema(modelName, schema, allSchemas);
     }
 
-    static async loadSystemEntities(): Promise<EntitySchema[]> {
-        return await loadSystemTypeOrmEntities();
-    }
 }

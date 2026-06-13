@@ -1,7 +1,7 @@
 import path from "path";
 import {AbstractAdminizerApp, AppSetupContext} from "../../../dist";
 import {NavigationCatalog} from "./NavigationCatalog";
-import {navigationModelName, navigationSchema} from "./NavigationModel";
+import {navigationModelName} from "./NavigationModel";
 import type {NavigationAppConfig} from "./NavigationTypes";
 
 const NAVIGATION_ACCESS_TOKEN = "catalog-navigation";
@@ -40,8 +40,6 @@ export class NavigationApp extends AbstractAdminizerApp<NavigationAppConfig> {
 
         ctx.model({
             name: this.config.model,
-            schema: navigationSchema,
-            sync: this.config.sync,
         });
 
         ctx.modelAccess({

@@ -1,26 +1,4 @@
-import { FilterAP } from "./FilterAP";
-
-/**
- * FilterColumnAP model schema
- * Represents column configuration for a filter
- */
-export default {
-    id: {
-        type: "number",
-        autoIncrement: true,
-        primaryKey: true
-    },
-    filter: {
-        model: 'FilterAP'
-    },
-    fieldName: {
-        type: "string",
-        required: true
-    },
-    order: {
-        type: "number"
-    }
-}
+import type {FilterAP} from "./FilterAP";
 
 /**
  * FilterColumnAP interface for TypeScript

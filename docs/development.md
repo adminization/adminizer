@@ -38,15 +38,15 @@ Adminizer uses `ADMINIZER_ENV=dev` to switch on development behavior such as Vit
   Compile the shared UI TypeScript package.
 
 - **`npm run build:assets`**
-  Build Adminizer frontend assets with Vite.
+  Build the main Adminizer frontend assets and all built-in control ES modules with Vite.
+
+- **`npm run build:controls`**
+  Build only the built-in control ES modules and their styles.
 
 ## App And Module Builds
 
 - **`npm run build:apps`**
-  Builds fixture app modules: component-b, module-manager, and navigation catalog templates.
-
-- **`npm run build:react-quill`**
-  Builds the React-Quill WYSIWYG control module.
+  Builds all fixture app frontend modules: component-b, module-manager, navigation catalog templates, and the React-Quill control.
 
 - **`npm run build:catalog-modules`**
   Builds test catalog modules from `modules/testCatalog`.

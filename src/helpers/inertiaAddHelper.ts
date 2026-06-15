@@ -7,11 +7,13 @@ import {
     TuiEditorOptions,
     WysiwygOptions
 } from "../interfaces/adminpanelConfig";
-import { AbstractControls, ControlType } from "../lib/controls/AbstractControls";
-import chalk from "chalk";
+import { Control, ControlType } from "../lib/controls/Control";
 import { ModelAnyField } from "../lib/model/AbstractModel";
 import { isObject } from "./JsUtils";
 import { MediaManagerHandler } from "../lib/media-manager/MediaManagerHandler";
+import {Adminizer} from "../lib/Adminizer";
+
+const missingControlWarnings = new Set<string>();
 
 /**
  * Get ISO week number from date
@@ -116,6 +118,7 @@ export default function inertiaAddHelper(req: ReqType, modelResource: ModelResou
         let value = record ? record[key] : undefined
         let relatedModel: string | undefined = undefined
         let canCreateRelated = false
+        const controlContext = `${modelResource.name}.${key}`
 
         //@ts-ignore TODO: fix field type
         if (modelResource.config.model && req.adminizer.configHelper.isId(field, modelResource.config.model)) {
@@ -192,31 +195,31 @@ export default function inertiaAddHelper(req: ReqType, modelResource: ModelResou
 
         if (['ckeditor', 'wysiwyg', 'texteditor', 'word'].includes(type)) {
             fieldType = 'wysiwyg';
-            options = getControlsOptions(fieldConfig, req, fieldType as ControlType, 'ckeditor')
+            options = getControlsOptions(fieldConfig, req, fieldType as ControlType, 'ckeditor', controlContext)
         }
 
         if (['tui', 'tuieditor', 'toast-ui'].includes(type)) {
             fieldType = 'markdown';
-            options = getControlsOptions(fieldConfig, req, fieldType as ControlType, 'toast-ui')
+            options = getControlsOptions(fieldConfig, req, fieldType as ControlType, 'toast-ui', controlContext)
         }
 
         if (type === 'table') {
             fieldType = 'table';
-            options = getControlsOptions(fieldConfig, req, fieldType as ControlType, 'handsontable')
+            options = getControlsOptions(fieldConfig, req, fieldType as ControlType, 'handsontable', controlContext)
         }
         if (['jsoneditor', 'json', 'array', 'object'].includes(type)) {
             fieldType = 'jsonEditor';
-            options = getControlsOptions(fieldConfig, req, fieldType as ControlType, 'jsoneditor')
+            options = getControlsOptions(fieldConfig, req, fieldType as ControlType, 'jsoneditor', controlContext)
         }
 
         if (['ace', 'html', 'xml', 'aceeditor', 'code'].includes(type)) {
             fieldType = 'codeEditor';
-            options = getControlsOptions(fieldConfig, req, fieldType as ControlType, 'monaco')
+            options = getControlsOptions(fieldConfig, req, fieldType as ControlType, 'monaco', controlContext)
         }
 
         if (['geojson', 'geo-polygon', 'geo-marker'].includes(type)) {
             fieldType = 'geoJson';
-            options = getControlsOptions(fieldConfig, req, fieldType as ControlType, 'leaflet')
+            options = getControlsOptions(fieldConfig, req, fieldType as ControlType, 'leaflet', controlContext)
         }
 
         if (type === 'mediamanager' || type === 'single-file') {
@@ -249,18 +252,25 @@ export default function inertiaAddHelper(req: ReqType, modelResource: ModelResou
     return props
 }
 
-export function getControlsOptions(fieldConfig: Field["config"], req: ReqType, type: ControlType, defaultControlName: string) {
+export function getControlsOptions(
+    fieldConfig: Field["config"],
+    req: ReqType,
+    type: ControlType,
+    defaultControlName: string,
+    context?: string
+) {
     if (!isObject(fieldConfig)) throw `Type error: fieldConfig is object`
     const fieldOptions = fieldConfig?.options as WysiwygOptions | TuiEditorOptions | HandsontableOptions;
 
-    const control = getControl(req, type, fieldOptions?.name, defaultControlName);
+    const control = getControl(req, type, fieldOptions?.name, defaultControlName, context);
     const editorName = control.getName();
+    const shouldUseFieldConfig = !fieldOptions?.name || fieldOptions.name === editorName;
 
     const options = {
         name: editorName,
         config: {
             ...(control?.getConfig() || {}), // Base config of the editor
-            ...(fieldOptions?.config || {}), // Additional config provided in the field config
+            ...(shouldUseFieldConfig ? fieldOptions?.config || {} : {}),
         },
         path: control.getJsPath(),
         cssPath: control.getCssPath(),
@@ -270,6 +280,7 @@ export function getControlsOptions(fieldConfig: Field["config"], req: ReqType, t
     if (
         type === 'wysiwyg'
         && editorName === 'ckeditor'
+        && shouldUseFieldConfig
         && (fieldOptions as WysiwygOptions)?.config?.items
     ) {
         options.config = {items: (fieldOptions as WysiwygOptions).config.items};
@@ -311,23 +322,39 @@ export function inputText(type: string, isIn: string[]) {
     }
 }
 
-export function getControl(req: ReqType, type: ControlType, name: string | undefined, defaultControlName: string) {
-    let control: AbstractControls;
-    let editorName = defaultControlName // default editor name
+export function getControl(
+    req: ReqType,
+    type: ControlType,
+    name: string | undefined,
+    defaultControlName: string,
+    context?: string
+): Control {
+    const requestedControlName = name ?? defaultControlName;
+    const requestedControl = req.adminizer.controlsHandler.get(type, requestedControlName);
+    if (requestedControl) {
+        return requestedControl;
+    }
 
-    // Determine which editor to use
     if (name) {
-        editorName = name;
+        const warningKey = `${context ?? "unknown"}:${type}:${name}:${defaultControlName}`;
+        if (!missingControlWarnings.has(warningKey)) {
+            missingControlWarnings.add(warningKey);
+            Adminizer.log.warn(
+                `Control "${name}" for ${context ?? `type "${type}"`} is unavailable; ` +
+                `falling back to "${defaultControlName}".`
+            );
+        }
     }
-    // Get the editor instance
-    control = req.adminizer.controlsHandler.get(type, editorName);
 
-    // Fallback to ckeditor if specified editor not found
-    if (!control) {
-        console.log(chalk.yellow(`Control ${type} - ${name} not found, falling back to default`));
-        control = req.adminizer.controlsHandler.get(type, defaultControlName);
+    const defaultControl = req.adminizer.controlsHandler.get(type, defaultControlName);
+    if (!defaultControl) {
+        throw new Error(
+            `Default control "${defaultControlName}" for type "${type}" is not registered` +
+            (context ? ` (${context})` : "")
+        );
     }
-    return control;
+
+    return defaultControl;
 }
 
 export function setAssociationValues(field: Field, value: string[]) {

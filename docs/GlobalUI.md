@@ -37,3 +37,11 @@ export default function Example() {
 Make sure the Adminizer bundle is loaded before your module so that `registerUIComponents()` has populated `window.UIComponents`.
 
 The `registerUIComponents()` function automatically creates `window.UIComponents` if it doesn't already exist. This avoids runtime errors like `Uncaught TypeError: Cannot convert undefined or null to object` when the container is missing.
+
+## Built-In Control Globals
+
+`window.JSComponents` also exposes selected built-in controls such as `VanillaJSONEditor`, `HandsonTable`, and `MonacoEditor`.
+
+These exports are lazy proxies. Registering UI globals does not place the control implementations in the main Adminizer bundle and does not download them on dashboard entry. The corresponding ES module and production stylesheet are loaded when the proxy is first rendered.
+
+App-owned custom controls should use `ctx.control()` instead of adding new entries to `window.JSComponents`. See [Controls](Controls.md).

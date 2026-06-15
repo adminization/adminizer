@@ -1,17 +1,9 @@
-import {AbstractControls, ControlType, Config, Path} from "../AbstractControls";
-import {Adminizer} from "../../Adminizer";
+import {Control, ControlType, Config, Path} from "../Control";
 
-export class CKeditor extends AbstractControls {
+export class CKeditor implements Control {
     readonly name: string = 'ckeditor';
     readonly type: ControlType = 'wysiwyg';
-    readonly path: Path = {
-        cssPath: `${this.routPrefix}/assets/controls/ckeditor.css`,
-        jsPath:
-            {
-                dev: "/src/assets/js/controls/ckeditor.tsx",
-                production: `${this.routPrefix}/assets/controls/ckeditor.es.js`
-            }
-    }
+    readonly path: Path;
     readonly config: Config = {
         items: [
             'sourceEditing',
@@ -38,8 +30,14 @@ export class CKeditor extends AbstractControls {
         ],
     };
 
-    constructor(adminizer: Adminizer) {
-        super(adminizer);
+    constructor(routePrefix: string) {
+        this.path = {
+            cssPath: `${routePrefix}/assets/controls/ckeditor.css`,
+            jsPath: {
+                dev: "/src/assets/js/controls/ckeditor.tsx",
+                production: `${routePrefix}/assets/controls/ckeditor.es.js`
+            }
+        };
     }
 
     getConfig(): Config {

@@ -4,6 +4,7 @@ import type {AbstractCatalog} from "../catalog/AbstractCatalog";
 import type {CatalogTemplateComponentResource} from "../catalog/CatalogTemplateComponentHandler";
 import type {AppModelAccess} from "../model/ModelHandler";
 import type {AbstractMediaManager} from "../media-manager/AbstractMediaManager";
+import type {Config, ControlType} from "../controls/Control";
 
 export type AppDisposer = () => void | Promise<void>;
 export type AppEventName = string | symbol;
@@ -46,6 +47,15 @@ export interface AppAsset {
     filePath: string;
     route?: string;
     devUrl?: string;
+}
+
+export interface AppControlResource {
+    id?: string;
+    type: ControlType;
+    name: string;
+    config?: Config;
+    component: AppAsset;
+    stylesheet?: AppAsset;
 }
 
 /**
@@ -121,6 +131,7 @@ export interface AppMediaManagerResource {
  */
 export interface AppSetupContext {
     asset(asset: AppAsset): string;
+    control(control: AppControlResource): void;
     controller(controller: AppController): string;
     config(config: AppConfigPatch, id?: string): void;
     accessRight(token: AccessRightsToken): void;

@@ -19,4 +19,19 @@ Field definitions can be placed globally under `models.fields` or inside an acti
 
 ### Types
 
-Commonly used field types include `string`, `password`, `date`, `datetime`, `integer`, `boolean`, `text`, `select` and more. When a `text` field has the `editor` option, a WYSIWYG control will be used.
+Commonly used field types include `string`, `password`, `date`, `datetime`, `integer`, `boolean`, `text`, `select`, `wysiwyg`, `markdown`, `table`, `jsonEditor`, `codeEditor`, and `geoJson`.
+
+Control fields can select a registered implementation by name:
+
+```ts
+editor: {
+  title: "Editor",
+  type: "wysiwyg",
+  options: {
+    name: "react-quill",
+    config: {},
+  },
+}
+```
+
+Control JavaScript and CSS are loaded when the field is rendered. If the named control is unavailable, Adminizer logs a server warning and uses the built-in default for that control type. See [Controls](../Controls.md).

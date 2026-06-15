@@ -1,22 +1,21 @@
-import {AbstractControls, ControlType, Config, Path} from "../AbstractControls";
-import {Adminizer} from "../../Adminizer";
+import {Control, ControlType, Config, Path} from "../Control";
 
-export class GeoEditor extends AbstractControls{
+export class GeoEditor implements Control {
     readonly config: Config = {
         mode: "all"
     };
     readonly name: string = "leaflet";
-    readonly path: Path = {
-        cssPath: `${this.routPrefix}/assets/controls/leaflet.css`,
-        jsPath: {
-            dev: "/src/assets/js/controls/leaflet.tsx",
-            production: `${this.routPrefix}/assets/controls/leaflet.es.js`
-        }
-    };
+    readonly path: Path;
     readonly type: ControlType = 'geoJson';
 
-    constructor(adminizer: Adminizer) {
-        super(adminizer);
+    constructor(routePrefix: string) {
+        this.path = {
+            cssPath: `${routePrefix}/assets/controls/leaflet.css`,
+            jsPath: {
+                dev: "/src/assets/js/controls/leaflet.tsx",
+                production: `${routePrefix}/assets/controls/leaflet.es.js`
+            }
+        };
     }
 
     getConfig(): Config | undefined {

@@ -2,6 +2,7 @@ import {Adminizer} from "../Adminizer";
 import {
     AbstractAdminizerApp,
     AppAsset,
+    AppControlResource,
     AppConfigPatch,
     AppController,
     AppDisposer,
@@ -16,6 +17,7 @@ import {
     AppSetupContext
 } from "./AdminizerApp";
 import type {AccessRightsToken} from "../../interfaces/types";
+import type {Control} from "../controls/Control";
 
 export type AppState = AppRuntimeAppState;
 
@@ -44,6 +46,41 @@ class RuntimeAppSetupContext implements AppSetupContext {
         const url = this.adminizer.assetHandler.register(this.appName, asset);
         this.disposers.push(() => this.adminizer.assetHandler.unregister(resourceId));
         return url;
+    }
+
+    control(resource: AppControlResource): void {
+        const jsUrl = this.asset(resource.component);
+        const cssUrl = resource.stylesheet ? this.asset(resource.stylesheet) : undefined;
+        const control: Control = {
+            name: resource.name,
+            type: resource.type,
+            getName: () => resource.name,
+            getConfig: () => resource.config,
+            getJsPath: () => jsUrl,
+            getCssPath: () => cssUrl,
+        };
+        const resourceId = `${this.appName}:${resource.id ?? `${resource.type}:${resource.name}`}`;
+
+        this.adminizer.controlsHandler.add(control);
+        this.adminizer.emitter.emit("app:control:registered", {
+            appName: this.appName,
+            resourceId,
+            type: resource.type,
+            name: resource.name,
+            jsUrl,
+            cssUrl,
+        });
+        this.disposers.push(() => {
+            if (this.adminizer.controlsHandler.get(resource.type, resource.name) === control) {
+                this.adminizer.controlsHandler.remove(resource.type, resource.name);
+            }
+            this.adminizer.emitter.emit("app:control:unregistered", {
+                appName: this.appName,
+                resourceId,
+                type: resource.type,
+                name: resource.name,
+            });
+        });
     }
 
     controller(controller: AppController): string {

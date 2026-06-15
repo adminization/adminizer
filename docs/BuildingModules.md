@@ -1,8 +1,8 @@
 # Adminizer App Modules
 
-Adminizer modules are backend-first extensions built around `AbstractAdminizerApp` and `AppManager`. A module can register routes, frontend assets, config patches, access rights, existing ORM models, model access scopes, media managers, catalogs with template components, and event listeners. This is the current extension mechanism for features such as the fixture module pages, media manager, module manager, and navigation catalog.
+Adminizer modules are backend-first extensions built around `AbstractAdminizerApp` and `AppManager`. A module can register routes, frontend assets, form controls, config patches, access rights, existing ORM models, model access scopes, media managers, catalogs with template components, and event listeners. This is the current extension mechanism for features such as the fixture module pages, media manager, module manager, navigation catalog, and React-Quill control.
 
-Older standalone React page modules and custom field controls still exist as frontend patterns, but a full Adminizer module should be installed through `adminizer.appManager`.
+Older standalone React page modules may still exist as frontend patterns, but a full Adminizer module should be installed through `adminizer.appManager`.
 
 ## App Boundary
 
@@ -88,6 +88,7 @@ await adminizer.appManager.enable(new MyApp());
 | Method | Purpose |
 |---|---|
 | `ctx.asset(asset)` | Expose a JS/CSS/static file and return its URL. In `ADMINIZER_ENV=dev`, `devUrl` is returned directly. In production, Adminizer creates a static controller for `filePath`. |
+| `ctx.control(control)` | Register an app-owned form control with its component asset, optional stylesheet asset, type, name, and base config. |
 | `ctx.controller(controller)` | Register an Express route under `config.routePrefix`; returns the resolved full path. |
 | `ctx.config(patch, id?)` | Merge a config patch into `adminizer.config`. Arrays of objects with `id` are merged by id; other arrays are appended. |
 | `ctx.accessRight(token)` | Register an access rights token owned by the app. |
@@ -521,7 +522,7 @@ npm run build:apps
 
 ## Fixture Examples
 
-The fixture contains four current app-module examples:
+The fixture contains five current app-module examples:
 
 | App | Files | Demonstrates |
 |---|---|---|
@@ -529,10 +530,11 @@ The fixture contains four current app-module examples:
 | `module-manager` | `fixture/apps/module-manager/*` | Access right token, permission-protected page/API routes, app lifecycle control through `req.runtime.apps`. |
 | `navigation` | `fixture/apps/navigation/*` | Runtime model, model access, catalog factory, catalog template components, sidebar links, `model:updated` listener. |
 | `media-manager` | `fixture/apps/media-manager/*` | Dynamic Sequelize models, app-owned storage implementation, scoped model access, manager registration, lifecycle cleanup. |
+| `quill-editor` | `fixture/apps/quill-editor/*` | App-owned WYSIWYG control, lazy component and stylesheet assets, and a dedicated ES module build. |
 
 ## Field Controls
 
-Custom form controls are still implemented through `AbstractControls` and `adminizer.controlsHandler`, not through `AppManager` yet. See [Controls.md](Controls.md) for that API.
+Custom form controls are app-owned resources registered through `ctx.control()`. Their JavaScript and optional stylesheet are loaded only when the field renderer mounts the control. Disabling the app unregisters the control and removes its asset routes. See [Controls.md](Controls.md) for the complete contract, build configuration, field configuration, and fallback behavior.
 
 ## Checklist
 
@@ -543,6 +545,7 @@ Custom form controls are still implemented through `AbstractControls` and `admin
 - UI controllers render through `req.Inertia.render({ component: "module", props: { moduleComponent, ... } })`.
 - API controllers use `mode: "api"` policies and return JSON.
 - Frontend assets are registered through `ctx.asset()` with both `filePath` and `devUrl` when local development is needed.
+- Custom form controls are registered through `ctx.control()` with deterministic component and stylesheet asset IDs.
 - App-specific models are declared with `ctx.model()` and allowed with `ctx.modelAccess()` before catalogs use them.
 - Catalog templates are registered in `ctx.catalog({ templates: [...] })` instead of hard-coded paths in catalog data.
 - Module UI uses `window.UIComponents`, `window.JSComponents`, `window.adminApi`, and global React/Lucide exports instead of bundling duplicates.

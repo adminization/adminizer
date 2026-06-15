@@ -204,33 +204,34 @@ const models: AdminpanelConfig["models"] = {
                 title: 'Editor',
                 type: 'wysiwyg',
                 options: {
-                    // name: 'react-quill',
-                    name: 'ckeditor',
-                    config: {
-                        items: [
-                            // 'sourceEditing', // This is for test, see full list of items in src/lib/controls/wysiwyg/CKeditor.ts
-                            // 'showBlocks',
-                            // '|',
-                            'heading',
-                            '|',
-                            'bold',
-                            'italic',
-                            'underline',
-                            '|',
-                            // 'horizontalLine',
-                            'link',
-                            'insertImage',
-                            'insertTable',
-                            'blockQuote',
-                            '|',
-                            'alignment',
-                            '|',
-                            'bulletedList',
-                            'numberedList',
-                            'outdent',
-                            'indent',
-                        ]
-                    }
+                    name: 'react-quill',
+                    config: {},
+                    // name: 'ckeditor',
+                    // config: {
+                    //     items: [
+                    //         // 'sourceEditing', // This is for test, see full list of items in src/lib/controls/wysiwyg/CKeditor.ts
+                    //         // 'showBlocks',
+                    //         // '|',
+                    //         'heading',
+                    //         '|',
+                    //         'bold',
+                    //         'italic',
+                    //         'underline',
+                    //         '|',
+                    //         // 'horizontalLine',
+                    //         'link',
+                    //         'insertImage',
+                    //         'insertTable',
+                    //         'blockQuote',
+                    //         '|',
+                    //         'alignment',
+                    //         '|',
+                    //         'bulletedList',
+                    //         'numberedList',
+                    //         'outdent',
+                    //         'indent',
+                    //     ]
+                    // }
                 }
             },
             testRelationExample: {

@@ -4,21 +4,25 @@ Adminizer can be extended with custom controls and dashboard widgets.
 
 ## Controls
 
-Controls are reusable form inputs. Create a class extending `AbstractControls` and register it via `ControlsHandler`:
+Controls are reusable form inputs loaded only when their field is rendered. Custom controls are registered as app-owned resources through `ctx.control()`:
 
 ```ts
-class ReactQuill extends AbstractControls {
-  readonly name = 'react-quill';
-  readonly type = 'wysiwyg';
-  readonly path = {
-    jsPath: { dev: '/modules/react-quill.tsx', production: '/assets/react-quill.es.js' },
-    cssPath: '/assets/react-quill.css'
-  };
+setup(ctx: AppSetupContext): void {
+  ctx.control({
+    type: "wysiwyg",
+    name: "react-quill",
+    component: {
+      id: "editor",
+      filePath: path.resolve(import.meta.dirname, "react-quill-editor.es.js"),
+      devUrl: "/apps/react-quill/react-quill-editor.tsx",
+    },
+    stylesheet: {
+      id: "editor-css",
+      filePath: path.resolve(import.meta.dirname, "react-quill-editor.css"),
+      devUrl: "/apps/react-quill/react-quill-editor.css",
+    },
+  });
 }
-
-adminizer.emitter.on('adminizer:loaded', () => {
-  adminizer.controlsHandler.add(new ReactQuill(adminizer));
-});
 ```
 
 After registration the control can be referenced in field options:
@@ -30,6 +34,8 @@ editor: {
   options: { name: 'react-quill' }
 }
 ```
+
+Enable the owning app after `adminizer.init()`. See [Controls](../Controls.md) for the complete app, Vite build, lazy-loading, and fallback behavior.
 
 ## Widgets
 

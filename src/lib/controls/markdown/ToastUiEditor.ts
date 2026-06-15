@@ -1,7 +1,6 @@
-import {AbstractControls, ControlType, Path, Config } from "../AbstractControls";
-import {Adminizer} from "../../Adminizer";
+import {Control, ControlType, Path, Config } from "../Control";
 
-export class ToastUiEditor extends AbstractControls{
+export class ToastUiEditor implements Control {
     readonly config: Record<string, string | string[] | object | number | boolean> = {
         hideModeSwitch: true,
         height: '400px',
@@ -9,18 +8,17 @@ export class ToastUiEditor extends AbstractControls{
         previewStyle: 'vertical',
     };
     readonly name: string = 'toast-ui';
-    readonly path: Path = {
-        cssPath: `${this.routPrefix}/assets/controls/toast-ui.css`,
-        jsPath:
-            {
-                dev: "/src/assets/js/controls/toast-ui.tsx",
-                production: `${this.routPrefix}/assets/controls/toast-ui.es.js`
-            }
-    }
+    readonly path: Path;
     readonly type: ControlType = 'markdown';
 
-    constructor(adminizer: Adminizer) {
-        super(adminizer);
+    constructor(routePrefix: string) {
+        this.path = {
+            cssPath: `${routePrefix}/assets/controls/toast-ui.css`,
+            jsPath: {
+                dev: "/src/assets/js/controls/toast-ui.tsx",
+                production: `${routePrefix}/assets/controls/toast-ui.es.js`
+            }
+        };
     }
 
     getConfig(): Config | undefined {

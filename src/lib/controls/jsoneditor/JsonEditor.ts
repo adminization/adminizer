@@ -1,21 +1,19 @@
-import {AbstractControls, ControlType, Path, Config } from "../AbstractControls";
-import {Adminizer} from "../../Adminizer";
+import {Control, ControlType, Path, Config } from "../Control";
 
-export class JsonEditor extends AbstractControls{
+export class JsonEditor implements Control {
     readonly config: Record<string, string | string[] | object | number | boolean> = {};
     readonly name: string = 'jsoneditor';
-    readonly path: Path = {
-        cssPath: `${this.routPrefix}/assets/controls/jsoneditor.css`,
-        jsPath:
-            {
-                dev: "/src/assets/js/controls/jsoneditor.tsx",
-                production: `${this.routPrefix}/assets/controls/jsoneditor.es.js`
-            }
-    }
+    readonly path: Path;
     readonly type: ControlType = 'jsonEditor';
 
-    constructor(adminizer: Adminizer) {
-        super(adminizer);
+    constructor(routePrefix: string) {
+        this.path = {
+            cssPath: `${routePrefix}/assets/controls/jsoneditor.css`,
+            jsPath: {
+                dev: "/src/assets/js/controls/jsoneditor.tsx",
+                production: `${routePrefix}/assets/controls/jsoneditor.es.js`
+            }
+        };
     }
 
     getConfig(): Config | undefined {

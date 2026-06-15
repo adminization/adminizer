@@ -1,7 +1,6 @@
-import {AbstractControls, ControlType, Config, Path} from "../AbstractControls";
-import {Adminizer} from "../../Adminizer";
+import {Control, ControlType, Config, Path} from "../Control";
 
-export class Handsontable extends AbstractControls{
+export class Handsontable implements Control {
     readonly config: Config = {
         rowHeaders: true,
         height: 'auto',
@@ -11,18 +10,17 @@ export class Handsontable extends AbstractControls{
         licenseKey: 'non-commercial-and-evaluation', // for non-commercial use only
     };
     readonly name: string = "handsontable";
-    readonly path: Path = {
-        cssPath: `${this.routPrefix}/assets/controls/handsontable.css`,
-        jsPath:
-            {
-                dev: "/src/assets/js/controls/handsontable.tsx",
-                production: `${this.routPrefix}/assets/controls/handsontable.es.js`
-            }
-    }
+    readonly path: Path;
     readonly type: ControlType = 'table';
 
-    constructor(adminizer: Adminizer) {
-        super(adminizer);
+    constructor(routePrefix: string) {
+        this.path = {
+            cssPath: `${routePrefix}/assets/controls/handsontable.css`,
+            jsPath: {
+                dev: "/src/assets/js/controls/handsontable.tsx",
+                production: `${routePrefix}/assets/controls/handsontable.es.js`
+            }
+        };
     }
 
     getConfig(): Config | undefined {

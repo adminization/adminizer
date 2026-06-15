@@ -1,22 +1,21 @@
-import {AbstractControls, ControlType, Config, Path} from "../AbstractControls";
-import {Adminizer} from "../../Adminizer";
+import {Control, ControlType, Config, Path} from "../Control";
 
-export class MonacoEditor extends AbstractControls{
+export class MonacoEditor implements Control {
     readonly config: Config = {
         language: "javascript",
     };
     readonly name: string = 'monaco';
-    readonly path: Path = {
-        cssPath: "",
-        jsPath: {
-            dev: "/src/assets/js/controls/monaco.tsx",
-            production: `${this.routPrefix}/assets/controls/monaco.es.js`
-        }
-    };
+    readonly path: Path;
     readonly type: ControlType = 'codeEditor';
 
-    constructor(adminizer: Adminizer) {
-        super(adminizer);
+    constructor(routePrefix: string) {
+        this.path = {
+            cssPath: "",
+            jsPath: {
+                dev: "/src/assets/js/controls/monaco.tsx",
+                production: `${routePrefix}/assets/controls/monaco.es.js`
+            }
+        };
     }
 
     getConfig(): Config {

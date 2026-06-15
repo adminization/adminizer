@@ -7,16 +7,17 @@ import {MonacoEditor} from "../lib/controls/codeEditor/MonacoEditor";
 import {GeoEditor} from "../lib/controls/geojsoneditor/GeoEditor";
 
 export function bindControls(adminizer: Adminizer): void {
+    const routePrefix = adminizer.config.routePrefix
     // bind wysiwyg
-    adminizer.controlsHandler.add(new CKeditor(adminizer))
+    adminizer.controlsHandler.add(new CKeditor(routePrefix))
     // bind markdown
-    adminizer.controlsHandler.add(new ToastUiEditor(adminizer))
+    adminizer.controlsHandler.add(new ToastUiEditor(routePrefix))
     // bind table
-    adminizer.controlsHandler.add(new Handsontable(adminizer))
+    adminizer.controlsHandler.add(new Handsontable(routePrefix))
     // bind json editor
-    adminizer.controlsHandler.add(new JsonEditor(adminizer))
+    adminizer.controlsHandler.add(new JsonEditor(routePrefix))
     // bind code editor
-    adminizer.controlsHandler.add(new MonacoEditor(adminizer))
+    adminizer.controlsHandler.add(new MonacoEditor(routePrefix))
     //bind geo json editor
-    adminizer.controlsHandler.add(new GeoEditor(adminizer))
+    adminizer.controlsHandler.add(new GeoEditor(routePrefix))
 }

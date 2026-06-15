@@ -1,12 +1,12 @@
-import { AbstractControls, ControlType } from "./AbstractControls";
+import {Control, ControlType} from "./Control";
 
 export class ControlsHandler {
     // Storage: ControlType => (name => control)
-    private controls = new Map<ControlType, Map<string, AbstractControls>>();
+    private controls = new Map<ControlType, Map<string, Control>>();
 
 
     // Add a control (type is automatically determined)
-    public add(control: AbstractControls): void {
+    public add(control: Control): void {
         const { type, name } = control;
 
         if (!this.controls.has(type)) {
@@ -25,14 +25,14 @@ export class ControlsHandler {
     public  get<T extends ControlType>(
         type: T,
         name: string
-    ): AbstractControls | undefined {
+    ): Control | undefined {
         return this.controls.get(type)?.get(name);
     }
 
     // Get all controls of specific type
     public  getByType<T extends ControlType>(
         type: T
-    ): AbstractControls[] {
+    ): Control[] {
         const typeGroup = this.controls.get(type);
         return typeGroup ? Array.from(typeGroup.values()) : [];
     }
@@ -43,29 +43,12 @@ export class ControlsHandler {
     }
 
     // Get all controls (grouped by type)
-    public getAll(): Record<ControlType, AbstractControls[]> {
+    public getAll(): Record<ControlType, Control[]> {
         return Object.fromEntries(
             Array.from(this.controls.entries()).map(([type, group]) => [
                 type,
                 Array.from(group.values())
             ])
-        ) as Record<ControlType, AbstractControls[]>;
-    }
-
-    public collectAndGenerateStyleLinks(): string[] {
-        const stylesheets: string[] = [];
-
-        const allControls = this.getAll();
-
-        Object.values(allControls).forEach(controls => {
-            controls.forEach(control => {
-                const cssPath = control.getCssPath();
-                if (cssPath) {
-                    stylesheets.push(cssPath);
-                }
-            });
-        });
-
-        return stylesheets
+        ) as Record<ControlType, Control[]>;
     }
 }

@@ -12,8 +12,6 @@ import {sendNotificationsWithDelay} from "./helpers/notifications";
 // OpenAiDataAgentService is imported dynamically only when AI assistant is enabled
 import cors from 'cors';
 
-import {ReactQuill} from "../modules/controls/wysiwyg/ReactQuill";
-
 // Sequelize imports
 import {Sequelize} from "sequelize-typescript";
 import fs from 'fs/promises';
@@ -61,6 +59,7 @@ import {navigationAppConfig} from "./apps/navigation/navigationConfig";
 import {installNavigationSequelizeModel, navigationModelName} from "./apps/navigation/NavigationModel";
 import {MediaManagerApp} from "./apps/media-manager/MediaManagerApp";
 import {installMediaManagerSequelizeModels} from "./apps/media-manager/MediaManagerModels";
+import {ReactQuillApp} from "./apps/quill-editor/ReactQuill";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
@@ -165,11 +164,6 @@ async function cleanTempFolder() {
 async function ormSharedFixtureLift(adminizer: Adminizer) {
     process.env.ROUTE_PREFIX = adminpanelConfig.routePrefix;
 
-    // add custom control wysiwyg
-    // adminizer.emitter.on('adminizer:loaded', () => {
-    //     adminizer.controlsHandler.add(new ReactQuill(adminizer))
-    // })
-
     // Test cors
     adminizer.emitter.on('adminizer:loaded', () => {
         corsApi(adminizer)
@@ -192,6 +186,9 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
         }
 
         await adminizer.init(adminpanelConfig as unknown as AdminpanelConfig)
+
+
+        await adminizer.appManager.enable(new ReactQuillApp());
 
         if (ormType === "sequelize") {
             const sequelizeAdapter = adminizer.getOrmAdapter("sequelize") as SequelizeAdapter;

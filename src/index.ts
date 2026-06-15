@@ -24,7 +24,7 @@ export * from "./system/systemModelContracts";
 export * from "./lib/model/adapter/sequelize"
 export * from "./lib/model/adapter/typeorm"
 export * from "./lib/media-manager/AbstractMediaManager";
-export * from "./lib/controls/AbstractControls";
+export * from "./lib/controls/Control";
 export * from "./lib/controls/ControlsHandler";
 export * from "./lib/Adminizer";
 export * from "./lib/I18n";

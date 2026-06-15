@@ -12,11 +12,11 @@ export class Handsontable extends AbstractControls{
     };
     readonly name: string = "handsontable";
     readonly path: Path = {
-        cssPath: "",
+        cssPath: `${this.routPrefix}/assets/controls/handsontable.css`,
         jsPath:
             {
-                dev: "",
-                production: ""
+                dev: "/src/assets/js/controls/handsontable.tsx",
+                production: `${this.routPrefix}/assets/controls/handsontable.es.js`
             }
     }
     readonly type: ControlType = 'table';
@@ -33,12 +33,14 @@ export class Handsontable extends AbstractControls{
         return this.name;
     }
 
-    getJsPath(): undefined {
-        return undefined;
+    getJsPath(): string {
+        return process.env.ADMINIZER_ENV === 'dev'
+            ? this.path.jsPath.dev
+            : this.path.jsPath.production;
     }
 
-    getCssPath(): undefined {
-        return undefined
+    getCssPath(): string | undefined {
+        return process.env.ADMINIZER_ENV === 'dev' ? undefined : this.path.cssPath;
     }
 
 }

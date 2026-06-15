@@ -253,30 +253,28 @@ export function getControlsOptions(fieldConfig: Field["config"], req: ReqType, t
     if (!isObject(fieldConfig)) throw `Type error: fieldConfig is object`
     const fieldOptions = fieldConfig?.options as WysiwygOptions | TuiEditorOptions | HandsontableOptions;
 
-    let control = getControl(req, type, fieldOptions?.name, defaultControlName);
-    let editorName = control.getName();
+    const control = getControl(req, type, fieldOptions?.name, defaultControlName);
+    const editorName = control.getName();
 
-    let options = {
+    const options = {
         name: editorName,
         config: {
             ...(control?.getConfig() || {}), // Base config of the editor
             ...(fieldOptions?.config || {}), // Additional config provided in the field config
         },
-        path: control?.getJsPath() || {},
+        path: control.getJsPath(),
+        cssPath: control.getCssPath(),
     };
 
-    if (type === 'wysiwyg') {
-        let options = {
-            name: editorName,
-            config: control?.getConfig() || {},
-            path: control?.getJsPath() || {},
-        };
-
-        // If items are provided, use them instead of the editor's config
-        if ((fieldOptions as WysiwygOptions)?.config?.items && editorName === 'ckeditor') {
-            options.config = { items: (fieldOptions as WysiwygOptions).config.items };
-        }
+    // If items are provided, use them instead of the CKEditor defaults.
+    if (
+        type === 'wysiwyg'
+        && editorName === 'ckeditor'
+        && (fieldOptions as WysiwygOptions)?.config?.items
+    ) {
+        options.config = {items: (fieldOptions as WysiwygOptions).config.items};
     }
+
     return options
 }
 

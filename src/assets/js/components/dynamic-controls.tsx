@@ -1,42 +1,71 @@
-import React, {FC, useState, useEffect, useCallback} from "react";
+import {type ComponentType as ReactComponentType, useEffect, useState} from "react";
+import {loadControlModule} from "@/components/control-loader";
+
+interface DynamicControlProps {
+    options?: Record<string, any>
+    initialValue: any
+    onChange: (value: any) => void
+    name: string
+    disabled?: boolean
+}
 
 export interface ComponentType {
-    default: FC<{
-        options?: Record<string, string>
-        initialValue: string
-        onChange?: (value: string) => void
-        name: string
-    }>;
+    default: ReactComponentType<DynamicControlProps>;
 }
 
 interface Props {
     moduleComponent: string;
-    options?: Record<string, string>
-    initialValue: string
+    cssPath?: string;
+    options?: Record<string, any>
+    initialValue: any
     onChange: (value: any) => void
     name: string,
     disabled?: boolean
 }
 
-export default function DynamicControls({moduleComponent, initialValue, onChange, name}: Props) {
-    const [Component, setComponent] = useState<React.ReactElement | null>(null);
-
-    const memoizedOnChange = useCallback(onChange, []);
+export default function DynamicControls({
+    moduleComponent,
+    cssPath,
+    options,
+    initialValue,
+    onChange,
+    name,
+    disabled,
+}: Props) {
+    const [Component, setComponent] = useState<ReactComponentType<DynamicControlProps> | null>(null);
 
     useEffect(() => {
-        const initModule = async () => {
-            const Module = await import(/* @vite-ignore */ moduleComponent as string);
-            const Component = Module.default as ComponentType['default'];
-            setComponent(
-                <Component
-                    initialValue={initialValue}
-                    onChange={memoizedOnChange}
-                    name={name}
-                />
-            );
-        }
-        initModule();
-    }, [initialValue, moduleComponent, memoizedOnChange])
+        let active = true;
 
-    return Component
+        const initModule = async () => {
+            const module = await loadControlModule<DynamicControlProps>(
+                moduleComponent,
+                cssPath
+            );
+            if (active) {
+                setComponent(() => module.default);
+            }
+        }
+
+        setComponent(null);
+        void initModule();
+
+        return () => {
+            active = false;
+        };
+    }, [moduleComponent, cssPath]);
+
+    if (!Component) {
+        return null;
+    }
+
+    return (
+        <Component
+            initialValue={initialValue}
+            options={options}
+            onChange={onChange}
+            name={name}
+            disabled={disabled}
+        />
+    );
 }

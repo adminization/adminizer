@@ -7,7 +7,11 @@ export class MonacoEditor extends AbstractControls{
     };
     readonly name: string = 'monaco';
     readonly path: Path = {
-        cssPath: "", jsPath: {dev: "", production: ""}
+        cssPath: "",
+        jsPath: {
+            dev: "/src/assets/js/controls/monaco.tsx",
+            production: `${this.routPrefix}/assets/controls/monaco.es.js`
+        }
     };
     readonly type: ControlType = 'codeEditor';
 
@@ -24,7 +28,9 @@ export class MonacoEditor extends AbstractControls{
     }
 
     getJsPath(): string | undefined {
-        return undefined;
+        return process.env.ADMINIZER_ENV === 'dev'
+            ? this.path.jsPath.dev
+            : this.path.jsPath.production;
     }
 
     getName(): string {

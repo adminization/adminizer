@@ -10,11 +10,11 @@ export class ToastUiEditor extends AbstractControls{
     };
     readonly name: string = 'toast-ui';
     readonly path: Path = {
-        cssPath: "",
+        cssPath: `${this.routPrefix}/assets/controls/toast-ui.css`,
         jsPath:
             {
-                dev: "",
-                production: ""
+                dev: "/src/assets/js/controls/toast-ui.tsx",
+                production: `${this.routPrefix}/assets/controls/toast-ui.es.js`
             }
     }
     readonly type: ControlType = 'markdown';
@@ -27,12 +27,14 @@ export class ToastUiEditor extends AbstractControls{
         return this.config;
     }
 
-    getJsPath(): undefined {
-        return undefined;
+    getJsPath(): string {
+        return process.env.ADMINIZER_ENV === 'dev'
+            ? this.path.jsPath.dev
+            : this.path.jsPath.production;
     }
 
-    getCssPath(): undefined {
-        return undefined
+    getCssPath(): string | undefined {
+        return process.env.ADMINIZER_ENV === 'dev' ? undefined : this.path.cssPath;
     }
 
     getName(): string {

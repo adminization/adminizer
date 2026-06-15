@@ -5,11 +5,11 @@ export class JsonEditor extends AbstractControls{
     readonly config: Record<string, string | string[] | object | number | boolean> = {};
     readonly name: string = 'jsoneditor';
     readonly path: Path = {
-        cssPath: "",
+        cssPath: `${this.routPrefix}/assets/controls/jsoneditor.css`,
         jsPath:
             {
-                dev: "",
-                production: ""
+                dev: "/src/assets/js/controls/jsoneditor.tsx",
+                production: `${this.routPrefix}/assets/controls/jsoneditor.es.js`
             }
     }
     readonly type: ControlType = 'jsonEditor';
@@ -22,12 +22,14 @@ export class JsonEditor extends AbstractControls{
         return this.config;
     }
 
-    getJsPath(): undefined {
-        return undefined;
+    getJsPath(): string {
+        return process.env.ADMINIZER_ENV === 'dev'
+            ? this.path.jsPath.dev
+            : this.path.jsPath.production;
     }
 
-    getCssPath(): undefined {
-        return undefined
+    getCssPath(): string | undefined {
+        return process.env.ADMINIZER_ENV === 'dev' ? undefined : this.path.cssPath;
     }
 
     getName(): string {

@@ -30,12 +30,6 @@ export default defineConfig({
             output: {
                 entryFileNames: '[name].js',
                 assetFileNames: '[name]-[hash][extname]',
-                manualChunks: {
-                    vendor: ['react', 'react-dom'],
-                    monaco: ['@monaco-editor/react'],
-                    handsontable: ['@handsontable/react-wrapper', 'handsontable'],
-                    jsoneditor: ['vanilla-jsoneditor']
-                }
             },
         },
     },

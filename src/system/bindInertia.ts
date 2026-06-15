@@ -88,14 +88,6 @@ export function bindInertia(adminizer: Adminizer) {
                 scripts.push(`<script type="module" src="${href}"></script>`);
             }
 
-
-            // Load modules CSS
-            const modulesCss = adminizer.controlsHandler.collectAndGenerateStyleLinks()
-            modulesCss.forEach(cssPath => {
-                preloadLinks.push(`<link rel="preload" href="${cssPath}" as="style">`);
-                stylesheets.push(`<link rel="stylesheet" href="${cssPath}">`);
-            })
-
             // Route prefix script
             const routePrefixScript = `<script>window.routePrefix = "${adminizer.config.routePrefix}";</script>`;
 

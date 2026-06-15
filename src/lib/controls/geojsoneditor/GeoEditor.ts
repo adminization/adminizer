@@ -7,7 +7,11 @@ export class GeoEditor extends AbstractControls{
     };
     readonly name: string = "leaflet";
     readonly path: Path = {
-        cssPath: "", jsPath: {dev: "", production: ""}
+        cssPath: `${this.routPrefix}/assets/controls/leaflet.css`,
+        jsPath: {
+            dev: "/src/assets/js/controls/leaflet.tsx",
+            production: `${this.routPrefix}/assets/controls/leaflet.es.js`
+        }
     };
     readonly type: ControlType = 'geoJson';
 
@@ -20,11 +24,13 @@ export class GeoEditor extends AbstractControls{
     }
 
     getCssPath(): string | undefined {
-        return undefined;
+        return process.env.ADMINIZER_ENV === 'dev' ? undefined : this.path.cssPath;
     }
 
     getJsPath(): string | undefined {
-        return undefined;
+        return process.env.ADMINIZER_ENV === 'dev'
+            ? this.path.jsPath.dev
+            : this.path.jsPath.production;
     }
 
     getName(): string {

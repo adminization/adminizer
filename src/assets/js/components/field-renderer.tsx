@@ -8,17 +8,11 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/c
 import DynamicControls from "@/components/dynamic-controls.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {Field, Media} from "@/types";
-import AdminCKEditor from "@/components/ckeditor/ckeditor.tsx";
 
 import MultiSelect from "@/components/multi-select.tsx";
 import {Layout} from '@/components/media-manager/Item.tsx';
 import {useRelationStack} from "@/components/relation/RelationDialogStack";
 
-const TuiLazy = lazy(() => import('@/components/toast-editor.tsx'));
-const HandsonTableLazy = lazy(() => import('@/components/handsontable.tsx'));
-const JsonEditorLazy = lazy(() => import('@/components/VanillaJSONEditor.tsx'));
-const GeoJsonEditorLazy = lazy(() => import("@/components/geo-json.tsx"));
-const MonacoLazy = lazy(() => import('@/components/monaco-editor.tsx'));
 const MediaLazy = lazy(() => import('@/components/media-manager/media-manager.tsx'));
 
 type FieldValue = string | boolean | number | Date | any[] | Content;
@@ -203,94 +197,46 @@ const FieldRenderer: FC<{
             )
         }
         case 'wysiwyg':
-            if (field.options?.name === 'ckeditor') {
-                return (
-                    <AdminCKEditor
-                        initialValue={value as string ?? ''}
-                        onChange={handleEditorChange}
-                        options={field.options?.config as { items: string[] }}
-                        disabled={processing || field.disabled}
-                    />
-                )
-            } else {
-                return (
-                    <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
-                                     initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
-                                     onChange={handleEditorChange} disabled={processing || field.disabled}/>
-                )
-            }
-        case 'markdown':                    
-            if (field.options?.name === 'toast-ui') {
-                return (
-                    <TuiLazy initialValue={value as string ?? ''} options={field.options?.config}
-                             onChange={handleEditorChange} disabled={processing || field.disabled}/>
-                )
-            } else {
-                return (
-                    <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
-                                     initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
-                                     onChange={handleEditorChange} disabled={processing || field.disabled}/>
-                )
-            }
+        case 'markdown':
+            return (
+                <DynamicControls moduleComponent={field.options?.path as string}
+                                 cssPath={field.options?.cssPath as string | undefined}
+                                 options={field.options?.config}
+                                 initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
+                                 onChange={handleEditorChange} disabled={processing || field.disabled}/>
+            )
         case 'table':
-            if (field.options?.name === 'handsontable') {
-                return (
-                    <HandsonTableLazy data={value as any[]} config={field.options?.config}
-                                      onChange={handleTableChange} disabled={processing || field.disabled}/>
-                )
-            } else {
-                return (
-                    <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
-                                     initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
-                                     onChange={handleEditorChange} disabled={processing || field.disabled}/>
-                )
-            }
+            return (
+                <DynamicControls moduleComponent={field.options?.path as string}
+                                 cssPath={field.options?.cssPath as string | undefined}
+                                 options={field.options?.config}
+                                 initialValue={value as any[] ?? []} name={`${field.type}-${field.name}`}
+                                 onChange={handleTableChange} disabled={processing || field.disabled}/>
+            )
         case 'jsonEditor':
-            
-            if (field.options?.name === 'jsoneditor') {
-                return (
-                    <JsonEditorLazy content={value as Content} name={`${field.type}-${field.name}`}
-                                    onChange={handleJSONChange} {...field.options?.config}
-                                    disabled={processing || field.disabled}
-                    />
-                )
-            } else {
-                return (
-                    <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
-                                     initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
-                                     onChange={handleJSONChange} disabled={processing || field.disabled}/>
-                )
-            }
+            return (
+                <DynamicControls moduleComponent={field.options?.path as string}
+                                 cssPath={field.options?.cssPath as string | undefined}
+                                 options={field.options?.config}
+                                 initialValue={value as Content} name={`${field.type}-${field.name}`}
+                                 onChange={handleJSONChange} disabled={processing || field.disabled}/>
+            )
         case 'codeEditor':
-            if (field.options?.name === 'monaco') {
-                return (
-                    <MonacoLazy value={value as string ?? ''} onChange={handleCodeChange}
-                                options={field.options?.config} disabled={processing || field.disabled}/>
-                )
-            } else {
-                return (
-                    <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
-                                     initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
-                                     onChange={handleJSONChange} disabled={processing || field.disabled}/>
-                )
-            }
+            return (
+                <DynamicControls moduleComponent={field.options?.path as string}
+                                 cssPath={field.options?.cssPath as string | undefined}
+                                 options={field.options?.config}
+                                 initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
+                                 onChange={handleCodeChange} disabled={processing || field.disabled}/>
+            )
         case 'geoJson':
-            if (field.options?.name === 'leaflet') {
-                return (
-                    <GeoJsonEditorLazy
-                        mode="all"
-                        initialFeatures={value as [] ?? undefined}
-                        onFeaturesChange={handleGeoJsonChange}
-                        disabled={processing || field.disabled}
-                    />
-                )
-            } else {
-                return (
-                    <DynamicControls moduleComponent={field.options?.path as string} options={field.options?.config}
-                                     initialValue={value as string ?? ''} name={`${field.type}-${field.name}`}
-                                     onChange={handleJSONChange} disabled={processing || field.disabled}/>
-                )
-            }
+            return (
+                <DynamicControls moduleComponent={field.options?.path as string}
+                                 cssPath={field.options?.cssPath as string | undefined}
+                                 options={field.options?.config}
+                                 initialValue={value as [] ?? []} name={`${field.type}-${field.name}`}
+                                 onChange={handleGeoJsonChange} disabled={processing || field.disabled}/>
+            )
         case 'mediamanager':
         case 'single-file':
                         return (

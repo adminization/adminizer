@@ -5,11 +5,11 @@ export class CKeditor extends AbstractControls {
     readonly name: string = 'ckeditor';
     readonly type: ControlType = 'wysiwyg';
     readonly path: Path = {
-        cssPath: "",
+        cssPath: `${this.routPrefix}/assets/controls/ckeditor.css`,
         jsPath:
             {
-                dev: "",
-                production: ""
+                dev: "/src/assets/js/controls/ckeditor.tsx",
+                production: `${this.routPrefix}/assets/controls/ckeditor.es.js`
             }
     }
     readonly config: Config = {
@@ -46,12 +46,14 @@ export class CKeditor extends AbstractControls {
         return this.config;
     }
 
-    getJsPath(): undefined {
-        return undefined;
+    getJsPath(): string {
+        return process.env.ADMINIZER_ENV === 'dev'
+            ? this.path.jsPath.dev
+            : this.path.jsPath.production;
     }
 
-    getCssPath(): undefined {
-        return undefined
+    getCssPath(): string | undefined {
+        return process.env.ADMINIZER_ENV === 'dev' ? undefined : this.path.cssPath;
     }
 
     getName(): string {

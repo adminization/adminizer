@@ -520,6 +520,8 @@ Use project-specific build scripts for modules. The fixture uses:
 npm run build:apps
 ```
 
+`build:apps` also runs `build:catalog-modules`, which builds the legacy virtual catalog React templates and actions from `fixture/virtual-catalog`.
+
 ## Fixture Examples
 
 The fixture contains five current app-module examples:

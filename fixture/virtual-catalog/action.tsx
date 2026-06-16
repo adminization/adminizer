@@ -1,8 +1,8 @@
-import {Label} from "@/components/ui/label.tsx";
-import {Input} from "@/components/ui/input.tsx";
+import {Label} from "@/components/ui/label";
+import {Input} from "@/components/ui/input";
 import {useState} from "react";
-import axios from "axios";
-import {Button} from "@/components/ui/button.tsx";
+import axios from "@/lib/axios-compat";
+import {Button} from "@/components/ui/button";
 
 interface ActionProps {
     items: any,
@@ -23,7 +23,7 @@ const Action = ({items, callback}: ActionProps) => {
                 items: items,
                 data: {number: number}
             }
-            const res = await axios.put('', {data: data, _method: 'handleAction'})
+            const res = await axios.put<any>('', {data: data, _method: 'handleAction'})
             if (res.data.data === 'ok') {
                 setMessage('Данные успешно отправлены.')
                 setTimeout(() => {

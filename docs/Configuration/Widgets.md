@@ -1,6 +1,6 @@
 This is an example of customizing a custom widget (CustomOne) in a React application that is built using Vite.
 
-### **1. Custom Widget Definition (`fixture/test-widgets/Custom.ts`)**
+### **1. Custom Widget Definition (`fixture/widgets/Custom.ts`)**
 - This is a widget class (`CustomOne`) that extends a base widget class (`CustomBase`).
 - It defines metadata for the widget, such as:
     - `id`, `name`, `description`, and `department` (e.g., `"test"`)
@@ -10,7 +10,7 @@ This is an example of customizing a custom widget (CustomOne) in a React applica
 - It specifies JavaScript paths for **development** (direct `.tsx` file) and **production** (a compiled `.es.js` file).
 - The widget is initialized with a `routePrefix` (likely a base URL for asset loading).
 
-### **2. React Component (`modules/test/ComponentB.tsx`)**
+### **2. React Component**
 - This is the actual UI implementation of the widget.
 - It displays:
     - A **message** (passed as a prop)
@@ -18,7 +18,7 @@ This is an example of customizing a custom widget (CustomOne) in a React applica
     - The **current counter value** (managed via React’s `useState`)
 - The button uses basic styling (similar to a styled button component).
 
-### **3. Vite Build Configuration (`modules/test/vite.config.module.ts`)**
+### **3. Vite Build Configuration**
 - Configures the build process for the React component.
 - **Key settings:**
     - Builds the component as an **ES module** (`lib` mode).
@@ -32,6 +32,6 @@ This is an example of customizing a custom widget (CustomOne) in a React applica
 2. **`ComponentB`** provides the interactive UI (a counter button with a message).
 3. **Vite** compiles the React component into a standalone ES module (`ComponentB.es.js`).
     - In **development**, it loads the `.tsx` file directly.
-    - In **production**, it loads the optimized `.es.js` file from a CDN-like path (`/assets/modules/`).
+    - In **production**, it should load the optimized `.es.js` file from a registered asset URL. Prefer `AssetHandler`/app asset routes for new code instead of manually copied static asset paths.
 
 This setup allows the widget to be reusable, dynamically loaded, and integrated into a larger application.

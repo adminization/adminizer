@@ -6,6 +6,7 @@ import {
     Item
 } from "../../dist";
 import {Adminizer} from "../../dist";
+import path from "path";
 import {v4 as uuid} from "uuid";
 
 interface TestItem extends Item {
@@ -196,16 +197,33 @@ export class TestCatalog extends AbstractCatalog {
     }
 
     constructor(adminizer: Adminizer, model: string) {
+        // TODO Adminizer v6: register catalogs through AppManager (`ctx.catalog(...)`).
+        // This legacy fixture receives `adminizer` only to bridge assets and access rights until that migration.
+        const groupComponentUrl = adminizer.assetHandler.register("virtual-catalog", {
+            id: "group",
+            filePath: path.resolve(import.meta.dirname, "Group.es.js"),
+            devUrl: "/fixture/virtual-catalog/group.tsx",
+        });
+        const actionComponentUrl = adminizer.assetHandler.register("virtual-catalog", {
+            id: "catalog-action",
+            filePath: path.resolve(import.meta.dirname, "catalogAction.es.js"),
+            devUrl: "/fixture/virtual-catalog/action.tsx",
+        });
         let storage = new TestCatalogStorageService(adminizer, model);
         StorageHandler.setStorage(storage);
         let items = []
-        items.push(new TestGroup(adminizer))
+        items.push(new TestGroup(adminizer, groupComponentUrl))
         items.push(new TestItemM(adminizer))
         items.push(new TestItemModel(adminizer))
         super(adminizer, items);
+        adminizer.catalogTemplateComponentHandler.register("virtual-catalog", this.slug, {
+            id: "group-template",
+            type: "component",
+            component: groupComponentUrl,
+        });
         this.addActionHandler(new Link())
         this.addActionHandler(new ContextAction())
-        this.addActionHandler(new ExternalAction())
+        this.addActionHandler(new ExternalAction(actionComponentUrl))
     }
 }
 
@@ -215,7 +233,7 @@ export class TestGroup extends AbstractGroup<TestItem> {
     allowedRoot: boolean = true;
     actionHandlers: ActionHandler[] = []
 
-    constructor(adminizer: Adminizer) {
+    constructor(adminizer: Adminizer, private componentUrl: string) {
         super();
         this.adminizer = adminizer;
     }
@@ -272,7 +290,7 @@ export class TestGroup extends AbstractGroup<TestItem> {
         return Promise.resolve({
             type: type,
             data: {
-                path: process.env.ADMINIZER_ENV === 'dev' ? '/modules/testCatalog/group.tsx' : `${this.adminizer.config.routePrefix}/assets/modules/Group.es.js`
+                path: this.componentUrl
             }
         })
     }
@@ -287,7 +305,7 @@ export class TestGroup extends AbstractGroup<TestItem> {
             type: type,
             data: {
                 item: item,
-                path: process.env.ADMINIZER_ENV === 'dev' ? '/modules/testCatalog/group.tsx' : `${req.runtime.config.routePrefix}/assets/modules/Group.es.js`
+                path: this.componentUrl
             }
         })
     }
@@ -602,8 +620,12 @@ export class ExternalAction extends ActionHandler {
     name: string = 'External Action';
     public readonly selectedItemTypes: string[] = []
 
+    constructor(private popupTemplateUrl: string) {
+        super();
+    }
+
     getPopUpTemplate(req?: ReqType): Promise<string> {
-        return Promise.resolve(process.env.ADMINIZER_ENV === 'dev' ? '/modules/testCatalog/action.tsx' : `${req.runtime.config.routePrefix}/assets/modules/catalogAction.es.js`);
+        return Promise.resolve(this.popupTemplateUrl);
     }
 
     getLink(data?: any): Promise<string> {

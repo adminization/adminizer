@@ -1,33 +1,43 @@
-import {Label} from "@/components/ui/label.tsx";
-import {Input} from "@/components/ui/input.tsx";
-import {Button} from "@/components/ui/button.tsx";
+import {Label} from "@/components/ui/label";
+import {Input} from "@/components/ui/input";
+import {Button} from "@/components/ui/button";
 import React, {useState, useEffect} from "react";
 import axios from "@/lib/axios-compat";
 import {LoaderCircle} from "lucide-react";
+import type {CatalogTemplateComponentProps} from "@/types";
 
-interface ItemProps{
-    update: boolean,
-    parentId: string,
+interface LegacyItemProps {
+    update?: boolean,
+    parentId?: string | number,
     item?: Record<string, any>
     items: {
         name: string,
         required: boolean
     }[],
-    callback: (item: any) => void
+    callback?: (item: any) => void
 }
 
-const Group = ({update = false, parentId, ...data}: ItemProps) => {
-    // Initializing the Form State
+type GroupProps = LegacyItemProps | CatalogTemplateComponentProps;
+
+function isTemplateProps(props: GroupProps): props is CatalogTemplateComponentProps {
+    return "mode" in props && "template" in props && "actions" in props;
+}
+
+const Group = (props: GroupProps) => {
+    const templateProps = isTemplateProps(props) ? props : null;
+    const legacyProps = templateProps ? null : props;
+    const update = templateProps ? templateProps.mode === "update" : legacyProps?.update ?? false;
+    const parentId = templateProps ? templateProps.parentId : legacyProps?.parentId;
+    const item = templateProps ? templateProps.template.data.item : legacyProps?.item;
+
     const [title, setTitle] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
-    // Initializing a form with data when mounting or changing data.item
-
     useEffect(() => {
-        if (data.item) {
-            setTitle(data.item.title);
+        if (item) {
+            setTitle(item.title ?? item.name ?? '');
         }
-    }, []);
+    }, [item]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setTitle(e.target.value)
@@ -43,15 +53,20 @@ const Group = ({update = false, parentId, ...data}: ItemProps) => {
             if (update) {
                 res = await axios.put<any>('', {
                     type: 'group',
-                    modelId: data.item?.id,
+                    modelId: item?.id,
                     data: {
-                        ...data.item,
+                        ...item,
                         name: title,
                         title: title
                     },
                     _method: 'updateItem'
                 });
-                data.callback(res.data.data);
+                if (templateProps) {
+                    templateProps.actions.close();
+                    await templateProps.actions.reload(res.data.data);
+                } else {
+                    legacyProps?.callback?.(res.data.data);
+                }
             } else {
                 await axios.post('', {
                     data: {
@@ -61,7 +76,12 @@ const Group = ({update = false, parentId, ...data}: ItemProps) => {
                     },
                     _method: 'createItem'
                 });
-                data.callback(null);
+                if (templateProps) {
+                    templateProps.actions.close();
+                    await templateProps.actions.reload(null);
+                } else {
+                    legacyProps?.callback?.(null);
+                }
             }
 
         } catch (e) {

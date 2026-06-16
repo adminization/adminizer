@@ -116,10 +116,12 @@ Older catalogs can return a custom component path in `data.path`. The catalog UI
 return {
   type: "component",
   data: {
-    path: "/assets/modules/my-catalog-form.es.js",
+    path: myCatalogFormUrl,
   },
 };
 ```
+
+Use `adminizer.assetHandler.register(...)` or `ctx.asset(...)` to produce `myCatalogFormUrl`; do not rely on manually copied files under the static assets directory. In development, the registered asset can point at a Vite-served `.tsx` URL such as `/fixture/virtual-catalog/group.tsx`; in production, `AssetHandler` serves the built `.es.js` file through an app asset route.
 
 ### Registered catalog template component
 

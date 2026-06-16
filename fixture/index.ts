@@ -297,8 +297,8 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
             req.url.startsWith('/@react-refresh') ||
             req.url.startsWith('/node_modules') ||
             req.url.startsWith('/@fs') ||
-            req.url.startsWith('/modules') ||
-            req.url.startsWith('/fixture/apps')
+            req.url.startsWith('/fixture/apps') ||
+            req.url.startsWith('/fixture/virtual-catalog')
         ) {
             adminizer.vite.middlewares(req, res, next);
         } else {

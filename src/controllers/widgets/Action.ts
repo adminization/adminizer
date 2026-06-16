@@ -13,8 +13,11 @@ export async function widgetActionController(req: ReqType, res: ResType) {
 
 	else if (req.method.toUpperCase() === 'POST') {
 		try {
-			await widget.action();
-			return res.json({ok: true})
+			const data = await widget.action();
+			if (data && typeof data === "object" && !Array.isArray(data)) {
+				return res.json({ok: true, ...data})
+			}
+			return res.json({ok: true, data})
 		} catch (error) {
 			return res.json(error)
 		}

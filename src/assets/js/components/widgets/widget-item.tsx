@@ -7,6 +7,7 @@ import { router } from "@inertiajs/react";
 import { ComponentType } from "@/pages/module.tsx";
 import { LoaderCircle } from "lucide-react";
 import { useI18n } from "@/hooks/use-i18n";
+import { toast } from "sonner";
 
 type WidgetType = 'info' | 'switcher' | 'action' | 'link' | 'custom' | undefined;
 
@@ -40,6 +41,7 @@ const WidgetItem: React.FC<WidgetProps> = ({ widgets, draggable, ID }) => {
     });
 
     const [Component, setComponent] = useState<React.ReactElement | null>(null);
+    const [isActionPending, setIsActionPending] = useState(false);
 
     const widgetRef = useRef<HTMLDivElement>(null);
 
@@ -117,15 +119,21 @@ const WidgetItem: React.FC<WidgetProps> = ({ widgets, draggable, ID }) => {
     };
 
     const handleActionWidget = async (api: string) => {
+        setIsActionPending(true);
         try {
-            await adminApi.post(api);
+            const response = await adminApi.post<{ count?: number; data?: unknown }>(api);
+            const count = response.data?.count;
+            toast.success(count !== undefined ? `${t("Action completed")}: ${count}` : t("Action completed"));
         } catch (error) {
             console.error('Error performing widget action:', error);
+            toast.error(t("Action failed"));
+        } finally {
+            setIsActionPending(false);
         }
     };
 
     const widgetAction = async () => {
-        if (!widgetType || draggable) return;
+        if (!widgetType || draggable || isActionPending) return;
 
         // Check if info widget has a link
         const widget = widgets.find((e) => e.id === ID);
@@ -162,7 +170,8 @@ const WidgetItem: React.FC<WidgetProps> = ({ widgets, draggable, ID }) => {
         if (draggable) return 'widget-flexible--flex';
         const widget = widgets.find((e) => e.id === ID);
         const hasLink = widgetType === 'info' && widget?.link;
-        return (widgetType !== 'info' || hasLink) ? 'cursor-pointer hover:brightness-110' : '';
+        const actionClass = (widgetType !== 'info' || hasLink) ? 'cursor-pointer hover:brightness-110' : '';
+        return isActionPending ? `${actionClass} pointer-events-none opacity-60` : actionClass;
     };
 
     const renderWidgetContent = () => {
@@ -186,11 +195,16 @@ const WidgetItem: React.FC<WidgetProps> = ({ widgets, draggable, ID }) => {
             ) : (
                 <div
                     id={ID}
-                    className={`transition rounded-md birder w-full h-full ${getWidgetClass()}`}
+                    className={`relative transition rounded-md birder w-full h-full ${getWidgetClass()}`}
                     style={{ backgroundColor: widgetState.backgroundColor }}
                     onClick={widgetAction}
                     ref={widgetRef}
                 >
+                    {isActionPending && (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-black/20">
+                            <LoaderCircle className="size-8 animate-spin text-white" />
+                        </div>
+                    )}
                     <div className="text-amber-50 flex flex-col justify-between gap-2.5 p-3 w-full h-full">
                         <div>
                             <span className="font-bold">{widgetState.name}</span>

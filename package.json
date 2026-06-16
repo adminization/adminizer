@@ -21,7 +21,7 @@
 		"dev:typeorm:no-seed": "cross-env ADMINIZER_ENV=dev NO_SEED_DATA=true ORM=typeorm tsx watch --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
 		"dev:no-seed-clean": "cross-env ADMINIZER_ENV=dev NO_SEED_DATA=true CLEAN_TMP=true ORM=sequelize tsx watch --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
 		"dev:cors": "cross-env ADMINIZER_ENV=dev NO_SEED_DATA=true ORM=sequelize FRONTEND_URL=http://localhost:8080 tsx watch --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
-		"build:assets": "vite build && vite build --config vite.config.controls.ts",
+		"build:assets": "vite build && vite build --config vite.config.controls.ts && vite build --config fixture/widgets/vite.config.widget.ts",
 		"build:controls": "vite build --config vite.config.controls.ts",
 		"compile:backend": "tsc -p src/tsconfig.json && node ./scripts/appendJsExtension.js",
 		"compile:ui": "tsc -p tsconfig.ui.json",
@@ -31,7 +31,7 @@
 		"build": "npm run copy:backend && npm run compile:backend && npm run compile:ui && npm run build:assets",
 		"build:catalog-modules": "cross-env CATALOG_COMPONENT=catalogAction vite build --config fixture/virtual-catalog/vite.config.module.ts && cross-env CATALOG_COMPONENT=Group vite build --config fixture/virtual-catalog/vite.config.module.ts",
 		"start:typeorm:seed": "cross-env ORM=typeorm tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
-		"build:apps": "vite build --config fixture/apps/notification-sender/vite.config.module.ts && vite build --config fixture/apps/module-manager/vite.config.module.ts && vite build --config fixture/apps/navigation/vite.config.module.ts && vite build --config fixture/apps/quill-editor/vite.config.module.ts && npm run build:catalog-modules"
+		"build:apps": "vite build --config fixture/apps/notification-sender/vite.config.module.ts && vite build --config fixture/apps/module-manager/vite.config.module.ts && vite build --config fixture/apps/navigation/vite.config.module.ts && vite build --config fixture/apps/quill-editor/vite.config.module.ts && vite build --config fixture/apps/widgets/vite.config.module.ts && npm run build:catalog-modules"
 	},
 	"keywords": [],
 	"author": "Siziy Ivan <xziy88@gmail.com>",

@@ -181,7 +181,7 @@ export default class Router {
          * Widgets Custom
          */
         adminizer.app.all(
-            `${adminizer.config.routePrefix}/widgets-action/:widgetId`,
+            `${adminizer.config.routePrefix}/widgets-custom/:widgetId`,
             withPolicies(widgetCustomController, requireAuthUI(), requirePermission(widgetToken, { mode: "ui" }))
         );
 

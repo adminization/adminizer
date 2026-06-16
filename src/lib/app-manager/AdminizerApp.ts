@@ -1,4 +1,4 @@
-import type {AdminpanelConfig, ModelConfig} from "../../interfaces/adminpanelConfig";
+import type {AdminpanelConfig, AdminpanelIcon, ModelConfig} from "../../interfaces/adminpanelConfig";
 import type {AccessRightsToken, INotification} from "../../interfaces/types";
 import type {AbstractCatalog} from "../catalog/AbstractCatalog";
 import type {CatalogTemplateComponentResource} from "../catalog/CatalogTemplateComponentHandler";
@@ -57,6 +57,73 @@ export interface AppControlResource {
     component: AppAsset;
     stylesheet?: AppAsset;
 }
+
+export interface AppWidgetBaseResource {
+    id: string;
+    name: string;
+    description: string;
+    icon?: AdminpanelIcon | string;
+    department: string;
+    backgroundCSS?: string | null;
+    size?: {
+        h: number;
+        w: number;
+    } | null;
+    accessRightsToken?: string;
+    group?: string;
+}
+
+export interface AppWidgetContext {
+    runtime: AppRuntime;
+}
+
+export interface AppWidgetInfoContext extends AppWidgetContext {
+    user?: ReqType["user"];
+}
+
+export interface AppInfoWidgetResource extends AppWidgetBaseResource {
+    type: "info";
+    link?: string;
+    linkType?: "self" | "blank";
+    getInfo(context: AppWidgetInfoContext): Promise<string> | string;
+}
+
+export interface AppActionWidgetResource extends AppWidgetBaseResource {
+    type: "action";
+    action(context: AppWidgetContext): Promise<unknown> | unknown;
+}
+
+export interface AppSwitchWidgetResource extends AppWidgetBaseResource {
+    type: "switcher";
+    getState(context: AppWidgetContext): Promise<boolean> | boolean;
+    switchIt(context: AppWidgetContext): Promise<boolean> | boolean;
+}
+
+export interface AppLinkWidgetLink {
+    name: string;
+    description: string;
+    icon?: AdminpanelIcon | string;
+    link: string;
+    linkType: "self" | "blank";
+    backgroundCSS?: string | null;
+}
+
+export interface AppLinkWidgetResource extends AppWidgetBaseResource {
+    type: "link";
+    links: AppLinkWidgetLink[];
+}
+
+export interface AppCustomWidgetResource extends AppWidgetBaseResource {
+    type: "custom";
+    component: AppAsset;
+}
+
+export type AppWidgetResource =
+    | AppInfoWidgetResource
+    | AppActionWidgetResource
+    | AppSwitchWidgetResource
+    | AppLinkWidgetResource
+    | AppCustomWidgetResource;
 
 /**
  * Public capabilities available to an Adminizer app at runtime.
@@ -132,6 +199,7 @@ export interface AppMediaManagerResource {
 export interface AppSetupContext {
     asset(asset: AppAsset): string;
     control(control: AppControlResource): void;
+    widget(widget: AppWidgetResource): void;
     controller(controller: AppController): string;
     config(config: AppConfigPatch, id?: string): void;
     accessRight(token: AccessRightsToken): void;

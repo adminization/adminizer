@@ -32,6 +32,15 @@ export interface WidgetConfig {
     group?: string;
 }
 
+interface AppCustomWidget {
+    scriptUrl?: string;
+    group?: string;
+}
+
+interface LegacyCustomWidgetAsset {
+    scriptUrl?: string;
+}
+
 export interface WidgetLayoutItem {
     x: number;
     y: number;
@@ -51,6 +60,7 @@ export interface WidgetsLayouts {
 
 export class WidgetHandler {
     private widgets: WidgetType[] = [];
+    private widgetAssetIds = new Map<string, string>();
     public adminizer: Adminizer;
 
     constructor(adminizer: Adminizer) {
@@ -62,13 +72,27 @@ export class WidgetHandler {
     }
 
     public add(widget: WidgetType): void {
+        let assetId: string | undefined;
+        try {
+            assetId = this.registerCustomWidgetAsset(widget);
+        } catch (error) {
+            throw error;
+        }
+
         if (!widget.accessRightsToken) {
-            this.adminizer.accessRightsHelper.registerToken({
-                id: `widget-${widget.id}`,
-                name: widget.name,
-                description: widget.description,
-                department: widget.department
-            });
+            try {
+                this.adminizer.accessRightsHelper.registerToken({
+                    id: `widget-${widget.id}`,
+                    name: widget.name,
+                    description: widget.description,
+                    department: widget.department
+                });
+            } catch (error) {
+                if (assetId) {
+                    this.adminizer.assetHandler.unregister(assetId);
+                }
+                throw error;
+            }
         }
         this.widgets.push(widget);
     }
@@ -85,9 +109,40 @@ export class WidgetHandler {
         if (this.widgets.length) {
             const index = this.widgets.findIndex(widget => widget.id === id);
             if (index !== -1) {
+                const assetId = this.widgetAssetIds.get(id);
+                if (assetId) {
+                    this.adminizer.assetHandler.unregister(assetId);
+                    this.widgetAssetIds.delete(id);
+                }
                 this.widgets.splice(index, 1);
             }
         }
+    }
+
+    private registerCustomWidgetAsset(widget: WidgetType): string | undefined {
+        if (widget.widgetType !== "custom" || !widget.asset) {
+            return undefined;
+        }
+
+        const appName = `legacy-widget-${widget.id}`;
+        const scriptUrl = this.adminizer.assetHandler.register(appName, widget.asset);
+        (widget as CustomBase & LegacyCustomWidgetAsset).scriptUrl = scriptUrl;
+
+        const assetId = `${appName}:${widget.asset.id}`;
+        this.widgetAssetIds.set(widget.id, assetId);
+        return assetId;
+    }
+
+    private resolveCustomWidgetScriptUrl(widget: CustomBase & AppCustomWidget): string {
+        if (widget.scriptUrl) {
+            return widget.scriptUrl;
+        }
+
+        if (widget.jsPath) {
+            return process.env.ADMINIZER_ENV === 'dev' ? widget.jsPath.dev : widget.jsPath.production;
+        }
+
+        throw new Error(`Custom widget "${widget.id}" must provide either asset or jsPath`);
     }
 
     private async resolveDashboardUser(user?: UserAP): Promise<UserAP | null> {
@@ -200,7 +255,8 @@ export class WidgetHandler {
                             icon: widget.icon as AdminpanelIcon,
                             name: i18n.__(widget.name),
                             backgroundCSS: widget.backgroundCSS ?? null,
-                            size: widget.size ?? null
+                            size: widget.size ?? null,
+                            group: (widget as WidgetType & AppCustomWidget).group
                         })
                     }
                 } else if (widget.widgetType === 'info') {
@@ -215,7 +271,8 @@ export class WidgetHandler {
                             backgroundCSS: widget.backgroundCSS ?? null,
                             size: widget.size ?? null,
                             link: widget.link,
-                            linkType: widget.linkType
+                            linkType: widget.linkType,
+                            group: (widget as WidgetType & AppCustomWidget).group
                         })
                     }
                 } else if (widget.widgetType === 'action') {
@@ -228,7 +285,8 @@ export class WidgetHandler {
                             icon: widget.icon as AdminpanelIcon,
                             name: i18n.__(widget.name),
                             backgroundCSS: widget.backgroundCSS ?? null,
-                            size: widget.size ?? null
+                            size: widget.size ?? null,
+                            group: (widget as WidgetType & AppCustomWidget).group
                         })
                     }
                 } else if (widget.widgetType === 'link') {
@@ -243,7 +301,8 @@ export class WidgetHandler {
                                 description: i18n.__(link.description),
                                 link: link.link,
                                 icon: link.icon,
-                                backgroundCSS: link.backgroundCSS
+                                backgroundCSS: link.backgroundCSS,
+                                group: (widget as WidgetType & AppCustomWidget).group
                             })
                             links_id_key++;
                         }
@@ -259,7 +318,8 @@ export class WidgetHandler {
                             name: i18n.__(widget.name),
                             backgroundCSS: widget.backgroundCSS ?? null,
                             size: widget.size ?? null,
-                            scriptUrl: process.env.ADMINIZER_ENV === 'dev' ? widget.jsPath.dev : widget.jsPath.production,
+                            scriptUrl: this.resolveCustomWidgetScriptUrl(widget as CustomBase & AppCustomWidget),
+                            group: (widget as WidgetType & AppCustomWidget).group
                         })
                     }
                 } else {

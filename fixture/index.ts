@@ -60,6 +60,7 @@ import {installNavigationSequelizeModel, navigationModelName} from "./apps/navig
 import {MediaManagerApp} from "./apps/media-manager/MediaManagerApp";
 import {installMediaManagerSequelizeModels} from "./apps/media-manager/MediaManagerModels";
 import {ReactQuillApp} from "./apps/quill-editor/ReactQuill";
+import {WidgetsApp} from "./apps/widgets/WidgetsApp";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
@@ -209,6 +210,9 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
         // add NotificationSender -- user message notification sender
         await adminizer.appManager.enable(new NotificationSenderApp());
 
+        // add Widgets -- dashboard widgets registered through AppManager
+        await adminizer.appManager.enable(new WidgetsApp());
+
         // add ModuleManager -- module manager
         await adminizer.appManager.enable(new ModuleManagerApp());
 
@@ -298,6 +302,7 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
             req.url.startsWith('/node_modules') ||
             req.url.startsWith('/@fs') ||
             req.url.startsWith('/fixture/apps') ||
+            req.url.startsWith('/fixture/widgets') ||
             req.url.startsWith('/fixture/virtual-catalog')
         ) {
             adminizer.vite.middlewares(req, res, next);

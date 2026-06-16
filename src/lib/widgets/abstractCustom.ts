@@ -1,4 +1,5 @@
 import {MaterialIcon} from "../../interfaces/MaaterialIcons";
+import type {AppAsset} from "../app-manager/AdminizerApp";
 
 export abstract class CustomBase {
     /** Widget unique id */
@@ -10,11 +11,14 @@ export abstract class CustomBase {
     /** Widget Name */
     public abstract readonly name: string;
 
-    /** JS module file path */
-    public abstract readonly jsPath: {
+    /** JS module URL fallback for legacy custom widgets without asset metadata */
+    public readonly jsPath?: {
         dev: string
         production: string
     }
+
+    /** JS module asset served by Adminizer asset handler */
+    public readonly asset?: AppAsset;
 
     /** For group access rights by department */
     public abstract readonly department: string;

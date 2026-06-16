@@ -541,6 +541,11 @@ const config: AdminpanelConfig = {
         defaultWidgets: [
             'action_one',
             'info_one',
+            'app_info_widget',
+            'app_switcher_widget',
+            'app_action_widget',
+            'app_link_widget',
+            'app_custom_counter',
             'siteLinks',
             'site_custom',
             'site_switcher'

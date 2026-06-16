@@ -14,10 +14,13 @@ import {
     AppModelResource,
     AppRuntime,
     AppRuntimeAppState,
-    AppSetupContext
+    AppSetupContext,
+    AppWidgetResource
 } from "./AdminizerApp";
 import type {AccessRightsToken} from "../../interfaces/types";
 import type {Control} from "../controls/Control";
+import type {WidgetType} from "../widgets/widgetHandler";
+import type {WidgetInfoContext} from "../widgets/abstractInfo";
 
 export type AppState = AppRuntimeAppState;
 
@@ -79,6 +82,40 @@ class RuntimeAppSetupContext implements AppSetupContext {
                 resourceId,
                 type: resource.type,
                 name: resource.name,
+            });
+        });
+    }
+
+    widget(resource: AppWidgetResource): void {
+        if (this.adminizer.widgetHandler.getById(resource.id)) {
+            throw new Error(`Widget "${resource.id}" is already registered`);
+        }
+
+        const accessRightsToken = resource.accessRightsToken ?? `widget-${resource.id}`;
+        if (!resource.accessRightsToken) {
+            this.accessRight({
+                id: accessRightsToken,
+                name: resource.name,
+                description: resource.description,
+                department: resource.department,
+            });
+        }
+
+        const widget = this.createWidget(resource, accessRightsToken);
+        this.adminizer.widgetHandler.add(widget);
+        this.adminizer.emitter.emit("app:widget:registered", {
+            appName: this.appName,
+            resourceId: `${this.appName}:${resource.id}`,
+            type: resource.type,
+            id: resource.id,
+        });
+        this.disposers.push(() => {
+            this.adminizer.widgetHandler.removeById(resource.id);
+            this.adminizer.emitter.emit("app:widget:unregistered", {
+                appName: this.appName,
+                resourceId: `${this.appName}:${resource.id}`,
+                type: resource.type,
+                id: resource.id,
             });
         });
     }
@@ -261,6 +298,78 @@ class RuntimeAppSetupContext implements AppSetupContext {
         for (const registration of registrations) {
             await registration();
         }
+    }
+
+    private createWidget(resource: AppWidgetResource, accessRightsToken: string): WidgetType {
+        const runtime = () => this.adminizer.appManager.createRuntime(this.appName);
+        const base = {
+            id: resource.id,
+            name: resource.name,
+            description: resource.description,
+            icon: resource.icon,
+            department: resource.department,
+            backgroundCSS: resource.backgroundCSS ?? null,
+            size: resource.size ?? null,
+            accessRightsToken,
+            group: resource.group,
+        };
+
+        if (resource.type === "info") {
+            return {
+                ...base,
+                widgetType: "info",
+                link: resource.link,
+                linkType: resource.linkType,
+                getInfo: (context?: WidgetInfoContext) => resource.getInfo({
+                    ...context,
+                    runtime: runtime(),
+                }),
+            } as WidgetType;
+        }
+
+        if (resource.type === "switcher") {
+            return {
+                ...base,
+                widgetType: "switcher",
+                getState: () => resource.getState({
+                    runtime: runtime(),
+                }),
+                switchIt: () => resource.switchIt({
+                    runtime: runtime(),
+                }),
+            } as WidgetType;
+        }
+
+        if (resource.type === "action") {
+            return {
+                ...base,
+                widgetType: "action",
+                action: () => resource.action({
+                    runtime: runtime(),
+                }),
+            } as WidgetType;
+        }
+
+        if (resource.type === "link") {
+            return {
+                ...base,
+                widgetType: "link",
+                links: resource.links,
+                getLinks: async () => resource.links,
+            } as WidgetType;
+        }
+
+        const scriptUrl = this.asset(resource.component);
+        return {
+            ...base,
+            widgetType: "custom",
+            routePrefix: this.adminizer.config.routePrefix,
+            jsPath: {
+                dev: scriptUrl,
+                production: scriptUrl,
+            },
+            scriptUrl,
+        } as WidgetType;
     }
 
     private resolveModelAdapter(adapterName?: string) {

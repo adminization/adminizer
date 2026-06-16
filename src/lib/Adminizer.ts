@@ -1,5 +1,6 @@
 import express, {Express} from "express";
 import cookieParser from 'cookie-parser'
+import * as fs from "fs";
 import * as path from "path";
 import winston from "winston";
 import chalk from "chalk";
@@ -14,7 +15,7 @@ import bindDashboardWidgets from "../system/bindDashboardWidgets";
 import bindMediaManager from "../system/bindMediaManager";
 import bindAccessRights from "../system/bindAccessRights";
 import bindAuthorization from "../system/bindAuthorization";
-import bindModels from "../system/bindModels";
+import {validateSystemModels} from "../system/validateSystemModels";
 import bindTranslations from "../system/bindTranslations";
 import {ModelHandler} from "./model/ModelHandler";
 import {WidgetHandler} from "./widgets/widgetHandler";
@@ -51,6 +52,66 @@ import { ControllerHandler } from "./app-manager/ControllerHandler";
 import { AssetHandler } from "./app-manager/AssetHandler";
 import { ConfigLayerHandler } from "./app-manager/ConfigLayerHandler";
 import { AccessRightsHandler } from "./access-rights/AccessRightsHandler";
+
+const logFilePath = "logs/app.log";
+
+function ensureLogDirectory(filePath: string): void {
+    const logDirectory = path.dirname(filePath);
+
+    if (logDirectory !== ".") {
+        fs.mkdirSync(logDirectory, {recursive: true});
+    }
+}
+
+function isFileLoggingEnabled(): boolean {
+    return ["1", "true", "yes"].includes(
+        (process.env.ADMINIZER_LOG_TO_FILE ?? "").toLowerCase()
+    );
+}
+
+export function createAdminizerLogger(): winston.Logger {
+    const transports: winston.transport[] = [
+        new winston.transports.Console({
+            format: winston.format.combine(
+                winston.format.timestamp(),
+                winston.format.printf(({timestamp, level, message, ...meta}) => {
+                    const metaString = Object.keys(meta).length ? JSON.stringify(meta) : "";
+                    const colors: Record<string, (s: string) => string> = {
+                        error: chalk.red,
+                        warn: chalk.yellow,
+                        info: chalk.green,
+                        http: chalk.magenta,
+                        verbose: chalk.cyan,
+                        debug: chalk.blue,
+                        silly: chalk.gray,
+                    };
+                    const colorize = colors[level] ?? chalk.white;
+                    const line = `[${timestamp}] ${level.toUpperCase()}: ${message} ${metaString}`;
+                    return colorize(line);
+                })
+            )
+        }),
+    ];
+
+    if (isFileLoggingEnabled()) {
+        ensureLogDirectory(logFilePath);
+        transports.push(new winston.transports.File({
+            filename: logFilePath,
+        }));
+    }
+
+    return winston.createLogger({
+        level: process.env.LOG_LEVEL ?? "debug",
+        format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.printf(({timestamp, level, message, ...meta}) => {
+                const metaString = Object.keys(meta).length ? JSON.stringify(meta) : "";
+                return `[${timestamp}] ${level.toUpperCase()}: ${message} ${metaString}`;
+            })
+        ),
+        transports,
+    });
+}
 
 export interface EmitAsyncOptions {
     /**
@@ -101,39 +162,7 @@ export class Adminizer {
     // Constants
     jwtSecret: string = process.env.JWT_SECRET ?? uuid()
 
-    static logger = winston.createLogger({
-        level: process.env.LOG_LEVEL ?? "debug",
-        format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.printf(({timestamp, level, message, ...meta}) => {
-                const metaString = Object.keys(meta).length ? JSON.stringify(meta) : "";
-                return `[${timestamp}] ${level.toUpperCase()}: ${message} ${metaString}`;
-            })
-        ),
-        transports: [
-            new winston.transports.Console({
-                format: winston.format.combine(
-                    winston.format.timestamp(),
-                    winston.format.printf(({timestamp, level, message, ...meta}) => {
-                        const metaString = Object.keys(meta).length ? JSON.stringify(meta) : "";
-                        const colors: Record<string, (s: string) => string> = {
-                            error: chalk.red,
-                            warn: chalk.yellow,
-                            info: chalk.green,
-                            http: chalk.magenta,
-                            verbose: chalk.cyan,
-                            debug: chalk.blue,
-                            silly: chalk.gray,
-                        };
-                        const colorize = colors[level] ?? chalk.white;
-                        const line = `[${timestamp}] ${level.toUpperCase()}: ${message} ${metaString}`;
-                        return colorize(line);
-                    })
-                )
-            }),
-            new winston.transports.File({filename: "logs/app.log"}),
-        ],
-    })
+    static logger = createAdminizerLogger()
 
     constructor(ormAdapters: AbstractAdapter[]) {
         this.app = express();
@@ -263,10 +292,10 @@ export class Adminizer {
 
         this.emitter.emit('adminizer:init');
 
-
-        // TODO: 'hot reload' unbind models
-        bindModels(this);
+        // validate models
+        validateSystemModels(this);
         this.modelHandler.configureInternalAccess(buildInternalModelAccess(this.config, this.modelHandler));
+
         bindCustomFilterHandlers(this);
 
         this.config.rootPath = path.resolve(import.meta.dirname + "/..")

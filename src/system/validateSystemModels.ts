@@ -2,7 +2,7 @@ import { Adminizer } from "../lib/Adminizer";
 import type {AbstractAdapter} from "../lib/model/AbstractModel";
 import {SYSTEM_MODEL_CONTRACTS, validateSystemModelContract} from "./systemModelContracts";
 
-export default function bindModels(adminizer: Adminizer) {
+export function validateSystemModels(adminizer: Adminizer) {
 	let defaultOrmAdapter = adminizer.config.system?.defaultORM;
 	if (!defaultOrmAdapter && adminizer.ormAdapters.length === 1) {
 		defaultOrmAdapter = adminizer.ormAdapters[0].ormType;

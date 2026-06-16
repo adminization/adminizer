@@ -112,6 +112,7 @@ Important variables include:
 5. After code changes, run `npm run compile:backend` by default.
 6. Update documentation only when the user explicitly asks.
 7. Do not translate technical artifacts (paths, keys, code identifiers).
+8. rg is not available in the environment, use PowerShell search.
 
 ## Completion Checklist
 

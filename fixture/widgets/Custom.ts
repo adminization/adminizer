@@ -2,8 +2,8 @@ import {CustomBase} from '../../dist';
 
 export class CustomOne extends CustomBase {
     jsPath: { dev: string; production: string; } = {
-        dev: '/modules/test/ComponentB.tsx',
-        production: `${this.routePrefix}/assets/modules/ComponentB.es.js`
+        dev: '/modules/test/CustomWidget.tsx',
+        production: `${this.routePrefix}/assets/modules/CustomWidget.es.js`
     };
     readonly id: string = 'site_custom';
     readonly department: string = 'test';

@@ -528,7 +528,7 @@ The fixture contains five current app-module examples:
 
 | App | Files | Demonstrates |
 |---|---|---|
-| `component-b` | `fixture/apps/component-b/*` | Page module, asset registration, scoped model access through `req.runtime.models`, notifications, UI/API routes, sidebar config patch. |
+| `notification-sender` | `fixture/apps/notification-sender/*` | Page module, asset registration, scoped model access through `req.runtime.models`, user message notifications, UI/API routes, sidebar config patch. |
 | `module-manager` | `fixture/apps/module-manager/*` | Access right token, permission-protected page/API routes, app lifecycle control through `req.runtime.apps`. |
 | `navigation` | `fixture/apps/navigation/*` | Runtime model, model access, catalog factory, catalog template components, sidebar links, `model:updated` listener. |
 | `media-manager` | `fixture/apps/media-manager/*` | Dynamic Sequelize models, app-owned storage implementation, scoped model access, manager registration, lifecycle cleanup. |

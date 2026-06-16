@@ -6,7 +6,7 @@ import {
     UserAP,
 } from "../../../dist";
 
-interface ComponentBAppConfig {
+interface NotificationSenderAppConfig {
     route: string;
     sidebarId: string;
     title: string;
@@ -16,21 +16,21 @@ interface ComponentBAppConfig {
     devComponentUrl: string;
 }
 
-export class ComponentBApp extends AbstractAdminizerApp<ComponentBAppConfig> {
-    readonly name = "component-b";
+export class NotificationSenderApp extends AbstractAdminizerApp<NotificationSenderAppConfig> {
+    readonly name = "notification-sender";
     readonly version = "1.0.0";
-    declare readonly config: ComponentBAppConfig;
+    declare readonly config: NotificationSenderAppConfig;
 
-    constructor(config: Partial<ComponentBAppConfig> = {}) {
+    constructor(config: Partial<NotificationSenderAppConfig> = {}) {
         super();
         this.config = {
-            route: "/module-test",
-            sidebarId: "component-b",
-            title: "Test Module",
+            route: "/notification-sender",
+            sidebarId: "notification-sender",
+            title: "Notification Sender",
             icon: "360",
             section: "Platform",
-            componentFile: path.resolve(import.meta.dirname, "ComponentB.es.js"),
-            devComponentUrl: "/fixture/apps/component-b/ComponentB.tsx",
+            componentFile: path.resolve(import.meta.dirname, "NotificationSender.es.js"),
+            devComponentUrl: "/fixture/apps/notification-sender/NotificationSender.tsx",
             ...config,
         };
     }
@@ -104,7 +104,7 @@ export class ComponentBApp extends AbstractAdminizerApp<ComponentBAppConfig> {
         }
 
         await req.runtime.notifications.send({
-            title: "Test notification",
+            title: "User message",
             message: req.body.message,
             notificationClass: "general",
             channel: "",
@@ -112,7 +112,7 @@ export class ComponentBApp extends AbstractAdminizerApp<ComponentBAppConfig> {
         });
 
         return res.json({
-            test: req.body,
+            data: req.body,
         });
     };
 }

@@ -65,7 +65,7 @@ Development mode is detected with `ADMINIZER_ENV=dev`. The bundled `dev` scripts
 ## App And Module Builds
 
 - **`npm run build:apps`**
-  Builds all fixture app frontend modules and fixture virtual catalog components: component-b, module-manager, navigation catalog templates, React-Quill, and virtual catalog React templates/actions.
+  Builds all fixture app frontend modules and fixture virtual catalog components: notification-sender, module-manager, navigation catalog templates, React-Quill, and virtual catalog React templates/actions.
 
 - **`npm run build:catalog-modules`**
   Builds fixture virtual catalog React components from `fixture/virtual-catalog`.

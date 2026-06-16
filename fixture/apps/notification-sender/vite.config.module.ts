@@ -51,10 +51,10 @@ export default defineConfig({
         outDir: path.resolve(import.meta.dirname, ''),
         emptyOutDir: false,
         lib: {
-            entry: path.resolve(import.meta.dirname, 'ComponentB'),
-            name: 'ComponentB',
+            entry: path.resolve(import.meta.dirname, 'NotificationSender'),
+            name: 'NotificationSender',
             formats: ['es'],
-            fileName: (format) => `ComponentB.${format}.js`,
+            fileName: (format) => `NotificationSender.${format}.js`,
         },
         rollupOptions: {
             external: [

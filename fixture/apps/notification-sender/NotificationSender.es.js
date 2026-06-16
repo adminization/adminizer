@@ -26,7 +26,7 @@ function R() {
   return w || (w = 1, x.exports = g()), x.exports;
 }
 var e = R();
-const u = window.React.useState, I = window.UIComponents.Button, T = window.UIComponents.Select, U = window.UIComponents.SelectContent, j = window.UIComponents.SelectItem, k = window.UIComponents.SelectTrigger, N = window.UIComponents.SelectValue, b = window.axios, E = window.UIComponents.Textarea, p = window.UIComponents.Label, L = window.UIComponents.Checkbox, _ = window.UIComponents.Toaster, f = window.sonner.toast, A = window.LucideReact;
+const u = window.React.useState, I = window.UIComponents.Button, T = window.UIComponents.Select, k = window.UIComponents.SelectContent, j = window.UIComponents.SelectItem, U = window.UIComponents.SelectTrigger, N = window.UIComponents.SelectValue, b = window.axios, E = window.UIComponents.Textarea, p = window.UIComponents.Label, L = window.UIComponents.Checkbox, _ = window.UIComponents.Toaster, f = window.sonner.toast, A = window.LucideReact;
 function F({ data: d }) {
   const [l, a] = u(""), [i, t] = u(""), [n, r] = u(!1), [o, v] = u(!1), C = async (s) => {
     s.preventDefault(), r(!0);
@@ -67,8 +67,8 @@ function F({ data: d }) {
             value: l,
             disabled: o,
             children: [
-              /* @__PURE__ */ e.jsx(k, { id: "user-select", className: "w-full", children: /* @__PURE__ */ e.jsx(N, { placeholder: "-- Выберите --" }) }),
-              /* @__PURE__ */ e.jsx(U, { children: d?.users?.length > 0 ? d.users.map((s) => /* @__PURE__ */ e.jsx(j, { value: s.id.toString(), children: s.fullName }, s.id)) : /* @__PURE__ */ e.jsx(j, { value: "", disabled: !0, children: "Пользователей нет" }) })
+              /* @__PURE__ */ e.jsx(U, { id: "user-select", className: "w-full", children: /* @__PURE__ */ e.jsx(N, { placeholder: "-- Выберите --" }) }),
+              /* @__PURE__ */ e.jsx(k, { children: d?.users?.length > 0 ? d.users.map((s) => /* @__PURE__ */ e.jsx(j, { value: s.id.toString(), children: s.fullName }, s.id)) : /* @__PURE__ */ e.jsx(j, { value: "", disabled: !0, children: "Пользователей нет" }) })
             ]
           }
         )

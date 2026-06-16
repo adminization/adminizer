@@ -24,7 +24,7 @@ interface AppContentProps {
     };
 }
 
-export default function allUsersNotification({data}: AppContentProps) {
+export default function NotificationSender({data}: AppContentProps) {
     const [selectedUser, setSelectedUser] = useState<string>("");
     const [inputMessage, setInputMessage] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);

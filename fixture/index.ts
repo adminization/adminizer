@@ -52,7 +52,7 @@ import cookieParser from "cookie-parser";
 import {corsApi} from "./cors-api/api";
 import {renderIndexPage, NavTreeNode} from "./pages/indexPage";
 import {FileFeedbackHandler} from "./feedback/FileFeedbackHandler";
-import {ComponentBApp} from "./apps/component-b/ComponentBApp";
+import {NotificationSenderApp} from "./apps/notification-sender/NotificationSenderApp";
 import {ModuleManagerApp} from "./apps/module-manager/ModuleManagerApp";
 import {NavigationApp} from "./apps/navigation/NavigationApp";
 import {navigationAppConfig} from "./apps/navigation/navigationConfig";
@@ -206,8 +206,8 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
             }));
         }
 
-        // add ComponentB -- test module
-        await adminizer.appManager.enable(new ComponentBApp());
+        // add NotificationSender -- user message notification sender
+        await adminizer.appManager.enable(new NotificationSenderApp());
 
         // add ModuleManager -- module manager
         await adminizer.appManager.enable(new ModuleManagerApp());

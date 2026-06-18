@@ -31,7 +31,7 @@
 		"build": "npm run copy:backend && npm run compile:backend && npm run compile:ui && npm run build:assets",
 		"build:catalog-modules": "cross-env CATALOG_COMPONENT=catalogAction vite build --config fixture/virtual-catalog/vite.config.module.ts && cross-env CATALOG_COMPONENT=Group vite build --config fixture/virtual-catalog/vite.config.module.ts",
 		"start:typeorm:seed": "cross-env ORM=typeorm tsx --tsconfig ./fixture/tsconfig.json ./fixture/index.ts",
-		"build:apps": "vite build --config fixture/apps/notification-sender/vite.config.module.ts && vite build --config fixture/apps/module-manager/vite.config.module.ts && vite build --config fixture/apps/navigation/vite.config.module.ts && vite build --config fixture/apps/quill-editor/vite.config.module.ts && vite build --config fixture/apps/widgets/vite.config.module.ts && npm run build:catalog-modules"
+		"build:apps": "vite build --config fixture/apps/notification-sender/vite.config.module.ts && vite build --config fixture/apps/module-manager/vite.config.module.ts && vite build --config fixture/apps/navigation/vite.config.module.ts && vite build --config fixture/apps/quill-editor/vite.config.module.ts && vite build --config fixture/apps/widgets/vite.config.module.ts && vite build --config fixture/apps/handsontable-test/vite.config.module.ts && npm run build:catalog-modules"
 	},
 	"keywords": [],
 	"author": "Siziy Ivan <xziy88@gmail.com>",

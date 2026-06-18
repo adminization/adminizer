@@ -61,6 +61,7 @@ import {MediaManagerApp} from "./apps/media-manager/MediaManagerApp";
 import {installMediaManagerSequelizeModels} from "./apps/media-manager/MediaManagerModels";
 import {ReactQuillApp} from "./apps/quill-editor/ReactQuill";
 import {WidgetsApp} from "./apps/widgets/WidgetsApp";
+import {HandsontableTestApp} from "./apps/handsontable-test/HandsontableTestApp";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
@@ -212,6 +213,9 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
         // add Widgets -- dashboard widgets registered through AppManager
         await adminizer.appManager.enable(new WidgetsApp());
+
+        // add HandsontableTest -- production JSComponents smoke test
+        await adminizer.appManager.enable(new HandsontableTestApp());
 
         // add ModuleManager -- module manager
         await adminizer.appManager.enable(new ModuleManagerApp());

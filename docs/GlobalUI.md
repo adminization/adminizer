@@ -44,4 +44,24 @@ The `registerUIComponents()` function automatically creates `window.UIComponents
 
 These exports are lazy proxies. Registering UI globals does not place the control implementations in the main Adminizer bundle and does not download them on dashboard entry. The corresponding ES module and production stylesheet are loaded when the proxy is first rendered.
 
+When app modules need the heavy built-in controls in local development, import Adminizer's lazy proxy modules instead of importing `@/components/...` directly:
+
+```tsx
+import HandsonTable from "@/js-components/handsontable";
+import MonacoEditor from "@/js-components/monaco";
+import VanillaJSONEditor from "@/js-components/jsoneditor";
+```
+
+Externalize the same imports in the module Vite config:
+
+```ts
+viteExternalsPlugin({
+  "@/js-components/handsontable": ["JSComponents", "HandsonTable"],
+  "@/js-components/monaco": ["JSComponents", "MonacoEditor"],
+  "@/js-components/jsoneditor": ["JSComponents", "VanillaJSONEditor"],
+});
+```
+
+This keeps development and production behavior aligned: the module loads only a small proxy first, while the control implementation and styles are loaded on first render.
+
 App-owned custom controls should use `ctx.control()` instead of adding new entries to `window.JSComponents`. See [Controls](Controls.md).

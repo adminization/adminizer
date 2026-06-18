@@ -219,6 +219,17 @@ interface MonacoEditorProps {
     disabled?: boolean;
 }
 
+interface HandsonTableProps {
+    /** Table rows. Use arrays or row objects depending on the Handsontable config. */
+    data?: unknown[][] | Record<string, unknown>[];
+    /** Handsontable GridSettings. Put colHeaders, columns, rowHeaders, licenseKey, etc. here. */
+    config: Record<string, unknown>;
+    /** Called with the updated source data after user edits. */
+    onChange: (data: unknown) => void;
+    /** Makes table read-only and visually dimmed */
+    disabled?: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // window augmentation
 // ---------------------------------------------------------------------------
@@ -823,9 +834,17 @@ declare global {
          * Handsontable spreadsheet grid. For heavy editable data tables.
          * See https://handsontable.com/docs for full config.
          * @example
-         * <HandsonTable data={rows} colHeaders={['Name', 'Value']} licenseKey="non-commercial-and-evaluation" />
+         * <HandsonTable
+         *   data={rows}
+         *   config={{
+         *     colHeaders: ['Name', 'Value'],
+         *     rowHeaders: true,
+         *     licenseKey: 'non-commercial-and-evaluation',
+         *   }}
+         *   onChange={setRows}
+         * />
          */
-        HandsonTable: FC<{ data?: unknown[][]; colHeaders?: string[]; rowHeaders?: boolean; licenseKey: string; [k: string]: unknown }>;
+        HandsonTable: FC<HandsonTableProps>;
 
         /**
          * Interactive JSON editor (vanilla-jsoneditor).

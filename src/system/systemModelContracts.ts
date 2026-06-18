@@ -18,7 +18,7 @@ export interface SystemModelContract {
 
 export const SYSTEM_MODEL_CONTRACTS: readonly SystemModelContract[] = [
     {
-        name: "UserAP",
+        name: "UserAP", //"-> User"
         primaryKey: "id",
         attributes: {
             id: {type: "number"},

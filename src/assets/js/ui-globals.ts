@@ -211,37 +211,15 @@ import {
     TooltipContent,
     TooltipProvider,
 } from '@/components/ui/tooltip.tsx';
-import {createLazyControl} from "@/components/control-loader";
+import VanillaJSONEditor from "@/js-components/jsoneditor";
+import HandsonTable from "@/js-components/handsontable";
+import MonacoEditor from "@/js-components/monaco";
 import MultiSelect from '@/components/multi-select';
 import * as sonner from 'sonner';
 import axios from '@/lib/axios-compat';
 import { adminApi } from '@/lib/admin-api';
 import DeleteModal from "@/components/modals/del-modal";
 import AddForm from "@/components/add-form";
-
-const getControlModulePath = (name: string): string => import.meta.env.DEV
-    ? `/src/assets/js/controls/${name}.tsx`
-    : `${window.routePrefix}/assets/controls/${name}.es.js`;
-
-const getControlCssPath = (name: string): string | undefined => import.meta.env.DEV
-    ? undefined
-    : `${window.routePrefix}/assets/controls/${name}.css`;
-
-const VanillaJSONEditor = createLazyControl<any>(
-    () => getControlModulePath('jsoneditor'),
-    () => getControlCssPath('jsoneditor'),
-    'Component'
-);
-const HandsonTable = createLazyControl<any>(
-    () => getControlModulePath('handsontable'),
-    () => getControlCssPath('handsontable'),
-    'Component'
-);
-const MonacoEditor = createLazyControl<any>(
-    () => getControlModulePath('monaco'),
-    () => getControlCssPath('monaco'),
-    'Component'
-);
 
 export function registerUIComponents(): void {
 

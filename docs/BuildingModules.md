@@ -514,6 +514,24 @@ export default defineConfig({
 });
 ```
 
+For heavy built-in `window.JSComponents` controls, import Adminizer's lazy proxy modules in development and externalize those imports in production:
+
+```tsx
+import HandsonTable from "@/js-components/handsontable";
+import MonacoEditor from "@/js-components/monaco";
+import VanillaJSONEditor from "@/js-components/jsoneditor";
+```
+
+```ts
+viteExternalsPlugin({
+  "@/js-components/handsontable": ["JSComponents", "HandsonTable"],
+  "@/js-components/monaco": ["JSComponents", "MonacoEditor"],
+  "@/js-components/jsoneditor": ["JSComponents", "VanillaJSONEditor"],
+});
+```
+
+Do not import `@/components/handsontable`, `@/components/monaco-editor`, or `@/components/VanillaJSONEditor` directly from app modules when you want lazy loading. Those component imports bypass the control proxy layer that loads the production assets and related styles on demand.
+
 Use project-specific build scripts for modules. The fixture uses:
 
 ```bash

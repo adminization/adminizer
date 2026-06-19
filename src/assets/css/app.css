@@ -144,8 +144,62 @@
     }
 }
 
-.ck-content{
+.editor-container,
+.editor-container__editor,
+.ck-editor,
+.ck-editor__main {
+    max-width: 100%;
+    min-width: 0;
+}
+
+.ck-content {
     @apply min-h-[400px];
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.ck-content p,
+.ck-content li,
+.ck-content blockquote,
+.ck-content td,
+.ck-content th {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.ck-content ul,
+.ck-content ol {
+    margin: 1em 0;
+    padding-left: 2rem;
+}
+
+.ck-content ul {
+    list-style-type: disc;
+}
+
+.ck-content ol {
+    list-style-type: decimal;
+}
+
+.ck-content li {
+    display: list-item;
+}
+
+.ck-content ul ul {
+    list-style-type: circle;
+}
+
+.ck-content ul ul ul {
+    list-style-type: square;
+}
+
+.ck-content ol ol {
+    list-style-type: lower-alpha;
+}
+
+.ck-content ol ol ol {
+    list-style-type: lower-roman;
 }
 
 .toastui-editor-defaultUI-toolbar {

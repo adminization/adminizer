@@ -200,7 +200,7 @@ const AddForm: FC<{
         };
 
         return (
-            <>
+            <div className="w-full min-w-0">
                 <div className="w-full sticky z-[1001] top-0 bg-background shadow-md lg:hidden">
                     <div className="p-4 flex gap-4">
                         {!catalog && (
@@ -335,7 +335,7 @@ const AddForm: FC<{
                         }}
                     />}
                 </div>
-            </>
+            </div>
         );
     };
 

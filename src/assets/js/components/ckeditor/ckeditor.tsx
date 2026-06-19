@@ -199,7 +199,7 @@ export default function AdminCKEditor({ initialValue, onChange, options, disable
     }, [initialValue]);
 
     return (
-        <div className={`max-fit ${disabled ? 'pointer-events-none opacity-50 cursor-not-allowed' : ''}`}>
+        <div className={`w-full min-w-0 ${disabled ? 'pointer-events-none opacity-50 cursor-not-allowed' : ''}`}>
             <div className="editor-container editor-container_classic-editor">
                 <div className="editor-container__editor">
                     <div>

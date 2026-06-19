@@ -30,7 +30,7 @@ An abstract base class defining the contract for all history adapters. It includ
 
 ## Default Adapter: `DefaultHistoryAdapter`
 
-This built-in adapter uses the `HistoryActionsAP` model to persist history records in the database.
+This built-in adapter uses the canonical `HistoryActions` system model to persist history records in the database.
 
 ### How It Works
 
@@ -94,7 +94,7 @@ You can replace or extend the default behavior by implementing your own adapter.
 
 ```ts
 import { AbstractHistoryAdapter } from '../lib/history-actions/AbstractHistoryAdapter';
-import { HistoryActionsAP, UserAP } from '../models';
+import { HistoryActions, User } from '../models';
 
 export class MyCustomHistoryAdapter extends AbstractHistoryAdapter {
   public id = 'myadapter'; // must be unique

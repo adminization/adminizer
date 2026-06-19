@@ -1,4 +1,4 @@
-import { FilterCondition } from "../models/FilterAP";
+import { FilterCondition } from "../models/Filter";
 
 /**
  * Input format for list/feed/export query builder.

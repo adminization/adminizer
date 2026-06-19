@@ -8,8 +8,8 @@ import { Adminizer } from "../../lib/Adminizer";
  */
 export async function getAllUserFilters(req: ReqType, res: ResType) {
     const filterService = new FilterService(req.adminizer);
-    const userModel = req.adminizer.modelHandler.model.get('userap');
-    const groupModel = req.adminizer.modelHandler.model.get('groupap');
+    const userModel = req.adminizer.modelHandler.model.get('User');
+    const groupModel = req.adminizer.modelHandler.model.get('Group');
 
     // Cache for group names: { groupId: groupName }
     const groupNamesCache: Record<number, string> = {};

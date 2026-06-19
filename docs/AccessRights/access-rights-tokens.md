@@ -58,7 +58,7 @@ Assign the token to a group so members inherit the permission:
 ```ts
 await adminizer.modelHandler
   .internal("access-rights")
-  .get("GroupAP")
+  .get("Group")
   .update({ where: { name: 'managers' } }, { tokens: ['reports-export'] });
 ```
 

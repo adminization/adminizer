@@ -1,7 +1,7 @@
 import {generate} from "password-hash";
 import{ inertiaRegisterHelper} from "../helpers/inertiaAutHelper";
-import { UserAP } from "../models/UserAP";
-import { GroupAP } from "../models/GroupAP";
+import { User } from "../models/User";
+import { Group } from "../models/Group";
 import { generateUserApiKey } from "../helpers/apiKeyHelper";
 
 export default async function register(req: ReqType, res: ResType) {
@@ -9,8 +9,8 @@ export default async function register(req: ReqType, res: ResType) {
         return res.redirect(`${req.adminizer.config.routePrefix}/`);
     }
     const authModels = req.adminizer.modelHandler.internal("auth");
-    const userModel = authModels.get<UserAP>("UserAP");
-    const groupModel = authModels.get<GroupAP>("GroupAP");
+    const userModel = authModels.get<User>("User");
+    const groupModel = authModels.get<Group>("Group");
 
     if (req.method.toUpperCase() === "POST") {
         
@@ -29,7 +29,7 @@ export default async function register(req: ReqType, res: ResType) {
             }
         }
 
-        let user: UserAP;
+        let user: User;
         try {
             user = await userModel.findOne({where: {login: req.body.login}});
         } catch (e) {
@@ -50,7 +50,7 @@ export default async function register(req: ReqType, res: ResType) {
             try {
                 let passwordHashed = generate(req.body.login + req.body.password + process.env.AP_PASSWORD_SALT);
                 let password = 'masked';
-                let userap: UserAP = await userModel.create({
+                let User: User = await userModel.create({
                     login: req.body.login,
                     passwordHashed: passwordHashed,
                     fullName: req.body.fullName,
@@ -58,11 +58,11 @@ export default async function register(req: ReqType, res: ResType) {
                     locale: req.body.locale,
                     apiKey: generateUserApiKey()
                 });
-                let defaultUserGroup: GroupAP = await groupModel.findOne({where: {name: req.adminizer.config.registration.defaultUserGroup}});
+                let defaultUserGroup: Group = await groupModel.findOne({where: {name: req.adminizer.config.registration.defaultUserGroup}});
                 
-                await userModel.updateOne({where: {id: userap.id}}, {
+                await userModel.updateOne({where: {id: User.id}}, {
                     groups: [defaultUserGroup.id]
-                }); // instead of UserAP.addToCollection;
+                }); // instead of User.addToCollection;
 
                 return req.Inertia.redirect(`${req.adminizer.config.routePrefix}`)
             } catch (e) {

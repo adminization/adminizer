@@ -16,7 +16,7 @@ import {
     ModelStatic,
 } from 'sequelize';
 import {Example} from './Example';
-import {UserAP} from '../../../dist';
+import {User} from '../../../dist';
 import {JsonSchema} from './JsonSchema';
 
 @Table({tableName: 'test', timestamps: true})
@@ -55,20 +55,20 @@ export class Test extends Model<
     declare schema: JsonSchema;
 
     // ——————————————————————————————————————————————
-    // Owner (1-to-1 with UserAP at runtime)
+    // Owner (1-to-1 with UserAP host model at runtime)
     // ——————————————————————————————————————————————
     @Column({type: DataType.INTEGER, allowNull: true})
     declare ownerId: number;
-    declare owner?: UserAP;
+    declare owner?: User;
 
     // ——————————————————————————————————————————————
-    // Many-to-many with UserAP via `test_useraps`
+    // Many-to-many with UserAP host model via `test_useraps`
     // ——————————————————————————————————————————————
-    declare userAPs?: UserAP[];
+    declare userAPs?: User[];
 
     static associate(sequelize: Sequelize) {
-        const UserAPModel = sequelize.model('UserAP') as ModelStatic<Model<UserAP>>;
-        // 1-to-1: ownerId -> one UserAP
+        const UserAPModel = sequelize.model('UserAP') as ModelStatic<Model<User>>;
+        // 1-to-1: ownerId -> one UserAP host model
         this.belongsTo(UserAPModel, {
             foreignKey: 'ownerId',
             as: 'owner',

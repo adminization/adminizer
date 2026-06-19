@@ -2,7 +2,7 @@ import {v4 as uuid} from 'uuid';
 import {Adminizer} from '../Adminizer';
 import {AbstractAiModelService} from './AbstractAiModelService';
 import {AiAssistantMessage, AiAssistantModelInfo} from '../../interfaces/types';
-import {UserAP} from '../../models/UserAP';
+import {User} from '../../models/User';
 
 export class AiAssistantHandler {
     private readonly models = new Map<string, AbstractAiModelService>();
@@ -36,7 +36,7 @@ export class AiAssistantHandler {
     }
 
     async sendMessage(
-        user: UserAP,
+        user: User,
         modelId: string,
         prompt: string,
     ): Promise<{history: AiAssistantMessage[]}> {

@@ -85,7 +85,7 @@ export default function bindReqFunctions(adminizer: Adminizer) {
             const user = verifyUser(token, adminizer.jwtSecret);
             if (user) {
                 // Load user with groups (Sequelize adapter auto-populates associations in _findOne)
-                req.user = await adminizer.modelHandler.internal("auth").get("UserAP").findOne({where: {id: user.id}});
+                req.user = await adminizer.modelHandler.internal("auth").get("User").findOne({where: {id: user.id}});
             }
         }
 

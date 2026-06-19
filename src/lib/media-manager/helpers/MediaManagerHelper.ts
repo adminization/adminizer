@@ -126,7 +126,7 @@ export async function updateCurrentHistoryMediaManagerData(
     const mediaData = collectMediaManagerHistoryData(fields, reqData);
     if (!Object.keys(mediaData).length) return;
 
-    const historyModel = adminizer.modelHandler.internal("history").get("HistoryActionsAP");
+    const historyModel = adminizer.modelHandler.internal("history").get("HistoryActions");
 
     const currentHistory = await historyModel.findOne({
         where: {

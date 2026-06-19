@@ -3,21 +3,21 @@ import { AbstractModel } from "./AbstractModel";
 import { createInternalModelRepository } from "./internalModelRepository";
 
 export const DEFAULT_INTERNAL_MODEL_ACCESS: InternalModelAccessMap = {
-    auth: ["UserAP", "GroupAP"],
-    "access-rights": ["UserAP", "GroupAP"],
-    users: ["UserAP", "GroupAP"],
-    filters: ["FilterAP", "FilterColumnAP", "UserAP", "GroupAP"],
+    auth: ["User", "Group"],
+    "access-rights": ["User", "Group"],
+    users: ["User", "Group"],
+    filters: ["Filter", "FilterColumn", "User", "Group"],
     "media-manager": [
         "MediaManagerAP",
         "MediaManagerMetaAP",
         "MediaManagerAssociationsAP",
-        "HistoryActionsAP"
+        "HistoryActions"
     ],
-    history: ["HistoryActionsAP", "UserAP"],
+    history: ["HistoryActions", "User"],
     "data-accessor": [],
-    notifications: ["NotificationAP", "UserNotificationAP", "UserAP"],
-    feed: ["FilterAP", "UserAP"],
-    widgets: ["UserAP", "FilterAP"]
+    notifications: ["Notification", "UserNotification", "User"],
+    feed: ["Filter", "User"],
+    widgets: ["User", "Filter"]
 };
 
 function normalizeName(name: string): string {

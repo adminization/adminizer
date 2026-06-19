@@ -1,6 +1,6 @@
 import {AbstractAiModelService} from './AbstractAiModelService';
 import {AiAssistantMessage} from '../../interfaces/types';
-import {UserAP} from '../../models/UserAP';
+import {User} from '../../models/User';
 import {Adminizer} from '../Adminizer';
 import {ActionType, ModelConfig} from '../../interfaces/adminpanelConfig';
 import {ModelResource} from '../../interfaces/types';
@@ -15,7 +15,7 @@ interface AgentInstruction {
     criteria?: Record<string, unknown>;
 }
 
-type DataAccessorFactory = (modelResource: ModelResource, user: UserAP, action: ActionType) => DataAccessor;
+type DataAccessorFactory = (modelResource: ModelResource, user: User, action: ActionType) => DataAccessor;
 
 const ACTION_TOKENS: Record<ActionType, 'create' | 'read' | 'update' | 'delete'> = {
     add: 'create',
@@ -37,7 +37,7 @@ export class OpenAiModelService extends AbstractAiModelService {
         this.createAccessor = accessorFactory ?? ((modelResource, user, action) => new DataAccessor(adminizer, user, modelResource, action));
     }
 
-    public async generateReply(prompt: string, _history: AiAssistantMessage[], user: UserAP): Promise<string> {
+    public async generateReply(prompt: string, _history: AiAssistantMessage[], user: User): Promise<string> {
         const instruction = this.parseInstruction(prompt);
 
         if (!instruction) {
@@ -52,7 +52,7 @@ export class OpenAiModelService extends AbstractAiModelService {
         }
     }
 
-    private async handleCreate(instruction: AgentInstruction, user: UserAP): Promise<string> {
+    private async handleCreate(instruction: AgentInstruction, user: User): Promise<string> {
         const modelResource = this.resolveModelResource(instruction.modelResource);
         if (!modelResource || !modelResource.model) {
             return `Model "${instruction.modelResource}" is not available in this project.`;
@@ -187,7 +187,7 @@ export class OpenAiModelService extends AbstractAiModelService {
         return {...baseConfig, ...config};
     }
 
-    private userHasPermission(modelResource: ModelResource, user: UserAP, action: ActionType): boolean {
+    private userHasPermission(modelResource: ModelResource, user: User, action: ActionType): boolean {
         const token = this.getPermissionToken(modelResource, action);
         return this.adminizer.accessRightsHelper.hasPermission(token, user);
     }

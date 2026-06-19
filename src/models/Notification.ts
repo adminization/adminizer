@@ -1,6 +1,6 @@
 import {Model} from "sequelize";
 
-export interface NotificationAP {
+export interface Notification {
     id: string;
     title: string;
     message: string;
@@ -10,6 +10,6 @@ export interface NotificationAP {
     createdAt: Date;
 }
 
-export interface NotificationAPModel extends Model<NotificationAP>, NotificationAP {
-    toJSON(): NotificationAP;
+export interface NotificationModel extends Model<Notification>, Notification {
+    toJSON(): Notification;
 }

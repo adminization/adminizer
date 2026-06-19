@@ -1,4 +1,4 @@
-import { FilterCondition, FilterOperator } from '../../models/FilterAP';
+import { FilterCondition, FilterOperator } from '../../models/Filter';
 import { FILTER_SECURITY_LIMITS } from '../list-query-builder/ListQueryBuilder';
 
 /**

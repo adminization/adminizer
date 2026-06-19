@@ -1,4 +1,4 @@
-import { GroupAP } from "../models/GroupAP";
+import { Group } from "../models/Group";
 import {Adminizer} from "../lib/Adminizer";
 import { GROUP_FILTER_VISIBILITY_TOKEN } from "../policies/permissionResolvers";
 
@@ -38,8 +38,8 @@ export default async function bindAccessRights(adminizer: Adminizer) {
 
     // Default user group
     if (adminizer.config.registration && adminizer.config.registration.enable) {
-        const groupModel = adminizer.modelHandler.internal("access-rights").get<GroupAP>("GroupAP");
-        let defaultUserGroupRecord: GroupAP = await groupModel.findOne({where: {name: adminizer.config.registration.defaultUserGroup}});
+        const groupModel = adminizer.modelHandler.internal("access-rights").get<Group>("Group");
+        let defaultUserGroupRecord: Group = await groupModel.findOne({where: {name: adminizer.config.registration.defaultUserGroup}});
         if (!defaultUserGroupRecord) {
             await groupModel.create({
                 name: adminizer.config.registration.defaultUserGroup,

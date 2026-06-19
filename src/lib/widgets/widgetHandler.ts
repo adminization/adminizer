@@ -5,11 +5,11 @@ import { LinkBase } from "./abstractLink";
 import { CustomBase } from "./abstractCustom";
 import { AdminpanelIcon } from "../../interfaces/adminpanelConfig";
 import { Adminizer } from "../Adminizer";
-import { UserAP } from "../../models/UserAP";
+import { User } from "../../models/User";
 import * as process from "node:process";
 import { I18n } from "../I18n";
 import { FilterService } from "../filters/FilterService";
-import { FilterAP } from "../../models/FilterAP";
+import { Filter } from "../../models/Filter";
 
 export type WidgetType = (SwitchBase | InfoBase | ActionBase | LinkBase | CustomBase);
 
@@ -145,7 +145,7 @@ export class WidgetHandler {
         throw new Error(`Custom widget "${widget.id}" must provide either asset or jsPath`);
     }
 
-    private async resolveDashboardUser(user?: UserAP): Promise<UserAP | null> {
+    private async resolveDashboardUser(user?: User): Promise<User | null> {
         if (user) {
             return user;
         }
@@ -153,7 +153,7 @@ export class WidgetHandler {
         const adminLogin = this.adminizer.config.administrator?.login ?? "admin";
         const fallbackUser = await this.adminizer.modelHandler
             .internal("widgets")
-            .get<UserAP>("UserAP")
+            .get<User>("User")
             .findOne({where: {login: adminLogin}});
         return fallbackUser ?? null;
     }
@@ -173,7 +173,7 @@ export class WidgetHandler {
         return modelConfig.title || modelKey;
     }
 
-    private buildFilterDescription(filter: FilterAP, modelTitle: string, i18n: I18n): string {
+    private buildFilterDescription(filter: Filter, modelTitle: string, i18n: I18n): string {
         const visibilityMap: Record<string, string> = {
             private: i18n.__("Private"),
             public: i18n.__("Public"),
@@ -185,7 +185,7 @@ export class WidgetHandler {
         return `${modelTitle} - ${visibilityTitle}`;
     }
 
-    private async getBuiltInFilterWidgets(user: UserAP, i18n: I18n): Promise<WidgetConfig[]> {
+    private async getBuiltInFilterWidgets(user: User, i18n: I18n): Promise<WidgetConfig[]> {
         const models = this.adminizer.config.models ?? {};
         const modelNames = Object.keys(models);
         const filterService = new FilterService(this.adminizer);
@@ -196,7 +196,7 @@ export class WidgetHandler {
                 continue;
             }
 
-            let filters: FilterAP[] = [];
+            let filters: Filter[] = [];
             try {
                 filters = await filterService.getFiltersForModel(modelName, user, {
                     includePublic: true,
@@ -235,7 +235,7 @@ export class WidgetHandler {
         return result;
     }
 
-    public async getAll(user: UserAP | undefined, i18n: I18n): Promise<WidgetConfig[]> {
+    public async getAll(user: User | undefined, i18n: I18n): Promise<WidgetConfig[]> {
         let widgets: WidgetConfig[] = []
         const dashboardUser = await this.resolveDashboardUser(user);
         if (!dashboardUser) {
@@ -346,12 +346,12 @@ export class WidgetHandler {
         layout: WidgetsLayouts,
         defaultWidgets?: string[]
     }> {
-        let user: UserAP;
+        let user: User;
         let result: { widgets: WidgetConfig[], layout: WidgetsLayouts, defaultWidgets?: string[] } = {
             widgets: [],
             layout: { lg: [], md: [], sm: [], xs: [], xxs: [] }
         };
-        const userModel = this.adminizer.modelHandler.internal("widgets").get<UserAP>("UserAP");
+        const userModel = this.adminizer.modelHandler.internal("widgets").get<User>("User");
 
         if (!auth) {
             user = await userModel.findOne({where: {login: this.adminizer.config.administrator?.login ?? 'admin'}});
@@ -382,13 +382,13 @@ export class WidgetHandler {
         widgets: WidgetConfig[],
         layout: WidgetsLayouts
     }, auth: boolean): Promise<number> {
-        const userModel = this.adminizer.modelHandler.internal("widgets").get<UserAP>("UserAP");
+        const userModel = this.adminizer.modelHandler.internal("widgets").get<User>("User");
 
         if (!auth) {
-            let updatedUser: UserAP = await userModel.updateOne({where: {login: this.adminizer.config.administrator?.login ?? 'admin'}}, { widgets: body })
+            let updatedUser: User = await userModel.updateOne({where: {login: this.adminizer.config.administrator?.login ?? 'admin'}}, { widgets: body })
             return updatedUser.id
         } else {
-            let updatedUser: UserAP = await userModel.updateOne({where: {id: id}}, { widgets: body })
+            let updatedUser: User = await userModel.updateOne({where: {id: id}}, { widgets: body })
             return updatedUser.id
         }
 

@@ -1,13 +1,13 @@
-import type {UserAP} from "./UserAP"
+import type {User} from "./User"
 
-export interface HistoryActionsAP {
+export interface HistoryActions {
     id?: number,
     modelId: number | string,
     modelName: string,
     action: string,
     data: any,
     diff: any,
-    user: UserAP,
+    user: User,
     isCurrent: boolean,
     createdAt?: number,
     updatedAt?: number,

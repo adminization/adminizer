@@ -178,7 +178,10 @@ export default function inertiaAddHelper(req: ReqType, modelResource: ModelResou
             const { initValue, initOptions } = setAssociationValues(field, value as string[])
             options = initOptions
             value = initValue
-            relatedModel = (field.model?.model || field.model?.collection) as string | undefined
+            const rawRelatedModel = (field.model?.model || field.model?.collection) as string | undefined
+            relatedModel = rawRelatedModel
+                ? req.adminizer.modelHandler.resolveModelName(rawRelatedModel)
+                : undefined
             if (relatedModel && req.user) {
                 canCreateRelated = req.adminizer.accessRightsHelper.hasPermission(`create-${relatedModel}-model`, req.user)
             } else if (relatedModel && !req.adminizer.config.auth?.enable) {
@@ -391,7 +394,7 @@ export function setAssociationValues(field: Field, value: string[]) {
     for (let opt of config.records) {
         const optAny = opt as Record<string, any>;
 
-        const displayField = typeof field.modelConfig.titleField !== 'undefined'
+        const displayField = typeof field.modelConfig?.titleField !== 'undefined'
             ? field.modelConfig.titleField
             : typeof optAny.title !== 'undefined'
                 ? 'title'

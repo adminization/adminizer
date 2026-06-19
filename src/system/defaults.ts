@@ -52,9 +52,9 @@ let adminpanelConfig: AdminpanelConfig = {
      * List of admin pages
      */
     models: {
-        UserAP: {
+        User: {
             title: "Users",
-            model: "userap",
+            model: "User",
             icon: "people",
             navbar: {
                 section: "System"
@@ -97,9 +97,9 @@ let adminpanelConfig: AdminpanelConfig = {
                 }
             }
         },
-        GroupAP: {
+        Group: {
             title: "Groups",
-            model: "groupap",
+            model: "Group",
             icon: "group_add",
             navbar: {
                 section: "System"

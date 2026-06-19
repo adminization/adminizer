@@ -1,11 +1,11 @@
-import { HistoryActionsAP } from "../../models/HistoryActionsAP";
-import { UserAP } from "../../models/UserAP";
+import { HistoryActions } from "../../models/HistoryActions";
+import { User } from "../../models/User";
 import { Adminizer } from "../Adminizer";
 import { AbstractHistoryAdapter } from "./AbstractHistoryAdapter";
 
 export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
     public id: string = 'default';
-    public model: string = 'historyactionsap';
+    public model: string = 'HistoryActions';
 
 
     constructor(adminizer: Adminizer) {
@@ -14,22 +14,22 @@ export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
     }
 
     private historyModel() {
-        return this.adminizer.modelHandler.internal("history").get<HistoryActionsAP>(this.model);
+        return this.adminizer.modelHandler.internal("history").get<HistoryActions>(this.model);
     }
 
     private userModel() {
-        return this.adminizer.modelHandler.internal("history").get<UserAP>("UserAP");
+        return this.adminizer.modelHandler.internal("history").get<User>("User");
     }
 
     public async getAllHistory(
-        user: UserAP,
+        user: User,
         forUserName: string,
         modelName: string,
         limit: number = 15,
         skip: number = 0,
         from?: Date,
         to?: Date
-    ): Promise<{ data: HistoryActionsAP[] }> {
+    ): Promise<{ data: HistoryActions[] }> {
 
         let userId = null;
         if (forUserName !== 'all') {
@@ -54,7 +54,7 @@ export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
         }
 
         let totalFetched = 0;
-        let resultItems: HistoryActionsAP[] = [];
+        let resultItems: HistoryActions[] = [];
         let currentSkip = skip;
 
         // Add more until you get the required amount
@@ -96,7 +96,7 @@ export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
         };
     }
 
-    public async getAllModelHistory(modelId: string | number, modelName: string, user: UserAP): Promise<HistoryActionsAP[]> {
+    public async getAllModelHistory(modelId: string | number, modelName: string, user: User): Promise<HistoryActions[]> {
         try {
             const history = await this.historyModel().find({
                 where: { modelName: modelName, modelId: String(modelId) },
@@ -109,13 +109,13 @@ export class DefaultHistoryAdapter extends AbstractHistoryAdapter {
         }
     }
 
-    public async getModelFieldsHistory(historyId: number, user: UserAP): Promise<Record<string, any>> {
+    public async getModelFieldsHistory(historyId: number, user: User): Promise<Record<string, any>> {
         const history = await this.historyModel().findOne({where: {id: historyId}})
 
         return await this._getModelFieldsHistory(history, user)
     }
 
-    public async setHistory(data: Omit<HistoryActionsAP, "createdAt" | "updatedAt" | "user"> & { user: string | number }): Promise<void> {
+    public async setHistory(data: Omit<HistoryActions, "createdAt" | "updatedAt" | "user"> & { user: string | number }): Promise<void> {
         try {
             await this.historyModel().update(
                 {

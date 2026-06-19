@@ -3,8 +3,8 @@ import {MaterialIcon} from "./MaaterialIcons";
 import {EditorOptions} from "@toast-ui/editor/types/editor";
 // @ts-ignore - settings.d.ts exists but is not exposed via handsontable's package.json exports
 import {GridSettings as HandsontableSettings} from "handsontable/settings";
-import {GroupAP} from "../models/GroupAP";
-import {UserAP} from "../models/UserAP";
+import {Group} from "../models/Group";
+import {User} from "../models/User";
 import {InternalModelAccessMap} from "./internalModelAccess";
 
 /**
@@ -114,7 +114,7 @@ export interface AdminpanelConfig {
         /**
          * Optional additional link at the bottom of the login page
          * Example:
-         *  addishinalLoginPage: { link: '/model/userap/register', textKey: 'Additional login page' }
+         *  addishinalLoginPage: { link: '/model/User/register', textKey: 'Additional login page' }
          *  link can be relative to routePrefix (e.g. 'model/help' or '/model/help') or absolute (https://...)
          */
         addishinalLoginPage?: {
@@ -154,13 +154,13 @@ export interface AdminpanelConfig {
          * Optional callback to filter or transform all navbar links after models have been processed.
          * Receives all links (static + model-generated) and the current user; returns the final array.
          */
-        handleAdditionalLinks?: (user: UserAP, allLinks: HrefConfig[]) => HrefConfig[]
+        handleAdditionalLinks?: (user: User, allLinks: HrefConfig[]) => HrefConfig[]
         /**
          * Per-section handlers, applied after all links (static + model-generated) are collected.
          * Each key is a section name; the handler receives links belonging to that section.
          */
         sectionHandlers?: {
-            [section: string]: (user: UserAP, links: HrefConfig[]) => HrefConfig[]
+            [section: string]: (user: User, links: HrefConfig[]) => HrefConfig[]
         }
     }
     /**
@@ -462,10 +462,10 @@ export interface ModelConfig {
      * */
     identifierField?: string
     /** In this field we can set model field, for which we want to check user access right.
-     *  May be association or association-many to UserAP or GroupAP */
+     *  May be association or association-many to User or Group */
     userAccessRelation?: {
         field: string // field that associates to the intermediate model
-        via?: string // field in intermediate model that associates with userap/groupap
+        via?: string // field in intermediate model that associates with User/Group
     } | string
     userAccessRelationCallback?: (userWithGroups: UserWithGroups, record: any) => boolean
     /**
@@ -475,7 +475,7 @@ export interface ModelConfig {
      */
 }
 
-type UserWithGroups = UserAP & { groups: GroupAP[] }
+type UserWithGroups = User & { groups: Group[] }
 
 export type ModelFieldConfig = (BaseFieldConfig | TuiEditorFieldConfig) & { groupsAccessRights?: string[] }
 

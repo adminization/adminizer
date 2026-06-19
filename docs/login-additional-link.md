@@ -23,7 +23,7 @@ auth: {
   captcha: true,
   // Shown as a plain link at the bottom of the login card
   addishinalLoginPage: {
-    link: '/model/userap/register', // becomes <routePrefix>/model/userap/register
+    link: '/model/User/register', // becomes <routePrefix>/model/User/register
     textKey: 'Additional login page' // optional; defaults to this value
   }
 }

@@ -1,11 +1,11 @@
 import { Adminizer } from "../lib/Adminizer";
-import { FilterAP } from "../models/FilterAP";
+import { Filter } from "../models/Filter";
 import { DataAccessor } from "../lib/DataAccessor";
 import { ListQueryBuilder } from "../lib/list-query-builder/ListQueryBuilder";
 import { ListQueryBuilderParams } from "../interfaces/listQueryBuilder";
 import { Field, Fields } from "../helpers/fieldsHelper";
 import { FilterService } from "../lib/filters/FilterService";
-import { UserAP } from "../models/UserAP";
+import { User } from "../models/User";
 import { ControllerHelper } from "../helpers/controllerHelper";
 import { convertDatetimeConditions } from "../helpers/filterDatetimeHelper";
 
@@ -40,14 +40,14 @@ export class FeedService {
     /**
      * Find filter by apiKey and verify it's enabled
      */
-    async findFilterByApiKey(apiKey: string): Promise<FilterAP | null> {
+    async findFilterByApiKey(apiKey: string): Promise<Filter | null> {
         if (!apiKey) {
             return null;
         }
 
         return await this.adminizer.modelHandler
             .internal("feed")
-            .get<FilterAP>("FilterAP")
+            .get<Filter>("Filter")
             .findOne({where: {apiKey, apiEnabled: true, visibility: 'private'}});
     }
 
@@ -56,7 +56,7 @@ export class FeedService {
      * Bypasses permission checks by building fields directly from model config
      * Also bypasses DataAccessor to avoid user-based filtering
      */
-    private async fetchFilterData(filter: FilterAP, adminizer?: Adminizer, user?: UserAP): Promise<{
+    private async fetchFilterData(filter: Filter, adminizer?: Adminizer, user?: User): Promise<{
         records: any[];
         fields: Fields;
         modelName: string;
@@ -167,7 +167,7 @@ export class FeedService {
     /**
      * Generate JSON feed
      */
-    async generateJsonFeed(filter: FilterAP, adminizer?: Adminizer, user?: UserAP): Promise<any> {
+    async generateJsonFeed(filter: Filter, adminizer?: Adminizer, user?: User): Promise<any> {
         const { records, fields, modelName } = await this.fetchFilterData(filter, adminizer, user);
 
         const exportData = this.prepareExportData(records, fields);
@@ -188,7 +188,7 @@ export class FeedService {
     /**
      * Generate Atom XML feed
      */
-    async generateAtomFeed(filter: FilterAP, adminizer?: Adminizer, user?: UserAP): Promise<string> {
+    async generateAtomFeed(filter: Filter, adminizer?: Adminizer, user?: User): Promise<string> {
         const { records, fields, modelName } = await this.fetchFilterData(filter, adminizer, user);
         const exportData = this.prepareExportData(records, fields);
 
@@ -215,7 +215,7 @@ export class FeedService {
      * Build Atom XML string
      */
     private buildAtomXml(
-        filter: FilterAP,
+        filter: Filter,
         modelName: string,
         entries: FeedEntry[],
         adminizerInstance?: Adminizer

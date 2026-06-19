@@ -4,19 +4,19 @@ import multer from "multer";
 import {I18n} from "../lib/I18n";
 import {Inertia} from "../lib/inertia/inertiaAdapter";
 import {Flash} from "../lib/inertia/flash";
-import { UserAP } from "../models/UserAP";
-import { GroupAP } from "../models/GroupAP";
+import { User } from "../models/User";
+import { Group } from "../models/Group";
 import { AppRuntime } from "../lib/app-manager/AdminizerApp";
 
 declare global {
 	/** @deprecated use import from TS model decalration */
 	type ModelsAP = {
-		// GroupAP: {
+		// Group: {
 		// 	id?: number
 		// 	name: string,
 		// 	description?: string
 		// 	tokens?:string[]
-		// 	users?: UserAP[]
+		// 	users?: User[]
 		// }
 
 		MediaManagerAP: {
@@ -55,17 +55,17 @@ declare global {
     type reqSession = {
         flashMessages: Record<string, string[]>;
         xInertiaCurrentComponent: string | undefined;
-        UserAP: UserAP
+        User: User
         messages: {
             adminError: string[],
             adminSuccess: string[]
         }
-        userPretended?: UserAP
+        userPretended?: User
     }
     type FlashMessages = 'info' | 'error' | 'success' | string;
 
  	type ReqType = Request & {
-		user: UserAP;
+		user: User;
         Inertia: Inertia;
         flash: Flash<FlashMessages>;
 		session: reqSession,

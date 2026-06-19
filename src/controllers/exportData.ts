@@ -4,8 +4,8 @@ import { ListQueryBuilder } from "../lib/list-query-builder/ListQueryBuilder";
 import { ListQueryBuilderParams } from "../interfaces/listQueryBuilder";
 import { Adminizer } from "../lib/Adminizer";
 import { Field, Fields } from "../helpers/fieldsHelper";
-import { FilterCondition } from "../models/FilterAP";
-import { FilterColumnAP } from "../models/FilterColumnAP";
+import { FilterCondition } from "../models/Filter";
+import { FilterColumn } from "../models/FilterColumn";
 import { FilterService } from "../lib/filters/FilterService";
 import { convertDatetimeConditions } from "../helpers/filterDatetimeHelper";
 
@@ -43,7 +43,7 @@ export default async function exportData(req: ReqType, res: ResType) {
 
     // Load filter if provided
     let filters: FilterCondition[] = [];
-    let savedColumns: FilterColumnAP[] = [];
+    let savedColumns: FilterColumn[] = [];
 
     if (filterId) {
         try {
@@ -56,7 +56,7 @@ export default async function exportData(req: ReqType, res: ResType) {
                         filter: 'temporary',
                         fieldName: col.fieldName,
                         order: col.order !== undefined ? col.order : index
-                    } as FilterColumnAP));
+                    } as FilterColumn));
                 }
             } else if (filterId !== 'temporary') {
                 const filterService = new FilterService(req.adminizer);
@@ -137,7 +137,7 @@ export default async function exportData(req: ReqType, res: ResType) {
 /**
  * Apply custom column configuration for export
  */
-function applyCustomColumnsForExport(fields: Fields, columns: FilterColumnAP[]): Fields {
+function applyCustomColumnsForExport(fields: Fields, columns: FilterColumn[]): Fields {
     const sortedColumns = [...columns].sort((a, b) => (a.order || 0) - (b.order || 0));
     const visibleColumns = sortedColumns.filter(col => fields[col.fieldName]);
 

@@ -1,5 +1,5 @@
-import { GroupAP } from "../models/GroupAP";
-import { UserAP } from "../models/UserAP";
+import { Group } from "../models/Group";
+import { User } from "../models/User";
 import {AccessRightsToken, ModelResource, PropsField} from "../interfaces/types";
 
 
@@ -28,11 +28,11 @@ interface listProps extends Record<string | number | symbol, unknown>{
 }
 
 export function inertiaGroupHelper(
-    modelResource: ModelResource, req: ReqType, users: UserAP[],
+    modelResource: ModelResource, req: ReqType, users: User[],
     groupedTokens: {
         [key: string]: AccessRightsToken[]
     },
-    group?: GroupAP, view: boolean = false) {
+    group?: Group, view: boolean = false) {
     let props: listProps = {
         edit: !!group,
         view: view,

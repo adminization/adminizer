@@ -1,7 +1,7 @@
 import {DataAccessor} from "../DataAccessor";
 import {formatChanges, sanitizeForDiff} from "../../helpers/diffHelpers";
 import {diff} from "deep-object-diff";
-import { HistoryActionsAP } from "../../models/HistoryActionsAP";
+import { HistoryActions } from "../../models/HistoryActions";
 import { QueryCriteria } from "../../interfaces/queryCriteria";
 import { InternalModelCreateData, InternalModelRepository, InternalModelUpdateData } from "../../interfaces/internalModelAccess";
 import { INTERNAL_MODEL_ACCESS_TOKEN } from "./internalModelAccessToken";
@@ -150,7 +150,7 @@ export abstract class AbstractModel<T> {
         };
     }
 
-    private async setHistory(dataAccessor: DataAccessor, data: Omit<HistoryActionsAP, "id" | "createdAt" | "updatedAt" | "isCurrent" | "user"> & {user: string | number}){
+    private async setHistory(dataAccessor: DataAccessor, data: Omit<HistoryActions, "id" | "createdAt" | "updatedAt" | "isCurrent" | "user"> & {user: string | number}){
         if(!dataAccessor.adminizer.config.history?.enabled) return;
 
         const adapter = dataAccessor.adminizer.config.history?.adapter ?? 'default';
@@ -377,10 +377,12 @@ export abstract class AbstractAdapter {
 
     public readonly orm: any;
     public readonly ormType: string;
+    public readonly systemModels: SystemModelBindings;
 
-    protected constructor(type: string, orm: any) {
+    protected constructor(type: string, orm: any, options: AbstractAdapterOptions = {}) {
         this.ormType = type;
         this.orm = orm;
+        this.systemModels = options.systemModels ?? {};
     }
 
     abstract get models(): Record<string, any>
@@ -391,6 +393,16 @@ export abstract class AbstractAdapter {
     /** Return full model object */
     abstract getModel(modelName: string): any;
 
+}
+
+export type SystemModelBindingValue = string | {
+    model: string;
+};
+
+export type SystemModelBindings = Record<string, SystemModelBindingValue>;
+
+export interface AbstractAdapterOptions {
+    systemModels?: SystemModelBindings;
 }
 
 

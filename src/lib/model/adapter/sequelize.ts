@@ -8,7 +8,7 @@ import {
     BelongsToMany,
     HasOne
 } from "sequelize";
-import {AbstractAdapter, AbstractModel, Attribute} from "../AbstractModel";
+import {AbstractAdapter, AbstractAdapterOptions, AbstractModel, Attribute} from "../AbstractModel";
 import { CriteriaPopulate, CriteriaSelect, QueryCriteria } from "../../../interfaces/queryCriteria";
 import {v4 as uuid} from "uuid";
 
@@ -1019,8 +1019,8 @@ export class SequelizeAdapter extends AbstractAdapter {
     public sequelize: Sequelize;
     public Model = SequelizeModel;
 
-    constructor(sequelize: Sequelize) {
-        super("sequelize", sequelize);
+    constructor(sequelize: Sequelize, options: AbstractAdapterOptions = {}) {
+        super("sequelize", sequelize, options);
         this.sequelize = sequelize;
     }
 

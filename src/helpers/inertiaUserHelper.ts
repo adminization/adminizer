@@ -1,5 +1,5 @@
-import { GroupAP } from "../models/GroupAP";
-import { UserAP } from "../models/UserAP";
+import { Group } from "../models/Group";
+import { User } from "../models/User";
 import {ModelResource, PropsField} from "../interfaces/types";
 
 interface listProps extends Record<string | number | symbol, unknown> {
@@ -26,7 +26,7 @@ interface listProps extends Record<string | number | symbol, unknown> {
     apiKey?: string;
 }
 
-export function inertiaUserHelper(modelResource: ModelResource, req: ReqType, groups: GroupAP[], user?: UserAP, view: boolean = false) {
+export function inertiaUserHelper(modelResource: ModelResource, req: ReqType, groups: Group[], user?: User, view: boolean = false) {
     let props: listProps = {
         edit: !!user,
         view: view,
@@ -36,7 +36,7 @@ export function inertiaUserHelper(modelResource: ModelResource, req: ReqType, gr
         },
         userPretend: {
             label: req.i18n.__('Pretend to be a user'),
-            postLink: `${req.adminizer.config.routePrefix}/model/userap/login`
+            postLink: `${req.adminizer.config.routePrefix}/model/User/login`
         },
         passwordError: req.i18n.__('Values in "password" and "repeatPassword" fields should be the same'),
         btnSave: {

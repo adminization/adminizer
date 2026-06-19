@@ -6,8 +6,8 @@ import {inertiaGroupHelper} from "../helpers/inertiaGroupHelper";
 import {AccessRightsToken} from "../interfaces/types";
 import inertiaAddHelper from "../helpers/inertiaAddHelper";
 import {FieldsHelper} from "../helpers/fieldsHelper";
-import {UserAP} from "../models/UserAP";
-import {GroupAP} from "../models/GroupAP";
+import {User} from "../models/User";
+import {Group} from "../models/Group";
 import {BaseFieldConfig, MediaManagerOptionsField} from "../interfaces/adminpanelConfig";
 import {getRelationsMediaManager} from "../lib/media-manager/helpers/MediaManagerHelper";
 
@@ -40,30 +40,30 @@ export default async function view(req: ReqType, res: ResType) {
 
     switch (modelResource.config.model) {
 
-        case 'userap':
-            let groups: GroupAP[];
+        case 'User':
+            let groups: Group[];
             try {
-                groups = await req.adminizer.modelHandler.internal("users").get<GroupAP>("GroupAP").find({});
+                groups = await req.adminizer.modelHandler.internal("users").get<Group>("Group").find({});
             } catch (e) {
                 Adminizer.log.error(e)
             }
-            const userProps = inertiaUserHelper(modelResource, req, groups, record as UserAP, true)
+            const userProps = inertiaUserHelper(modelResource, req, groups, record as User, true)
             return req.Inertia.render({
                 component: 'add-user',
                 props: userProps
             })
 
-        case 'groupap':
-            let users: UserAP[]
+        case 'Group':
+            let users: User[]
             try {
-                users = await req.adminizer.modelHandler.internal("users").get<UserAP>("UserAP").find({where: {isAdministrator: false}});
+                users = await req.adminizer.modelHandler.internal("users").get<User>("User").find({where: {isAdministrator: false}});
             } catch (e) {
                 Adminizer.log.error(e)
             }
 
-            let group: GroupAP
+            let group: Group
             try {
-                group = await req.adminizer.modelHandler.internal("users").get<GroupAP>("GroupAP").findOne({where: {id: Number(req.params.id)}});
+                group = await req.adminizer.modelHandler.internal("users").get<Group>("Group").findOne({where: {id: Number(req.params.id)}});
             } catch (e) {
                 Adminizer.log.error('Admin edit error: ');
                 Adminizer.log.error(e);

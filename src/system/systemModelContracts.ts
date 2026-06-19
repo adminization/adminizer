@@ -16,9 +16,25 @@ export interface SystemModelContract {
     attributes: Record<string, SystemModelAttributeContract>;
 }
 
+export const SYSTEM_MODEL_NAMES = [
+    "User",
+    "Group",
+    "Filter",
+    "FilterColumn",
+    "HistoryActions",
+    "Notification",
+    "UserNotification",
+] as const;
+
+export type SystemModelName = typeof SYSTEM_MODEL_NAMES[number];
+
+export interface ValidateSystemModelContractOptions {
+    resolveRelationTarget?: (target: string) => string;
+}
+
 export const SYSTEM_MODEL_CONTRACTS: readonly SystemModelContract[] = [
     {
-        name: "UserAP", //"-> User"
+        name: "User",
         primaryKey: "id",
         attributes: {
             id: {type: "number"},
@@ -33,25 +49,25 @@ export const SYSTEM_MODEL_CONTRACTS: readonly SystemModelContract[] = [
             isDeleted: {type: "boolean"},
             isActive: {type: "boolean"},
             isAdministrator: {type: "boolean"},
-            groups: {relation: {kind: "many", target: "GroupAP"}},
+            groups: {relation: {kind: "many", target: "Group"}},
             widgets: {type: "json"},
             isConfirmed: {type: "boolean"},
             apiKey: {type: "string", columnName: "userApiKey"},
         },
     },
     {
-        name: "GroupAP",
+        name: "Group",
         primaryKey: "id",
         attributes: {
             id: {type: "number"},
             name: {type: "string", required: true},
             description: {type: "string"},
             tokens: {type: "json"},
-            users: {relation: {kind: "many", target: "UserAP"}},
+            users: {relation: {kind: "many", target: "User"}},
         },
     },
     {
-        name: "FilterAP",
+        name: "Filter",
         primaryKey: "id",
         attributes: {
             id: {type: "string"},
@@ -69,23 +85,23 @@ export const SYSTEM_MODEL_CONTRACTS: readonly SystemModelContract[] = [
             icon: {type: "string"},
             color: {type: "string"},
             version: {type: "number"},
-            columns: {relation: {kind: "many", target: "FilterColumnAP"}},
+            columns: {relation: {kind: "many", target: "FilterColumn"}},
             createdAt: {type: "string"},
             updatedAt: {type: "string"},
         },
     },
     {
-        name: "FilterColumnAP",
+        name: "FilterColumn",
         primaryKey: "id",
         attributes: {
             id: {type: "number"},
-            filter: {relation: {kind: "one", target: "FilterAP"}},
+            filter: {relation: {kind: "one", target: "Filter"}},
             fieldName: {type: "string", required: true},
             order: {type: "number"},
         },
     },
     {
-        name: "HistoryActionsAP",
+        name: "HistoryActions",
         primaryKey: "id",
         attributes: {
             id: {type: "number"},
@@ -94,7 +110,7 @@ export const SYSTEM_MODEL_CONTRACTS: readonly SystemModelContract[] = [
             action: {type: "string"},
             data: {type: "json"},
             diff: {type: "json"},
-            user: {relation: {kind: "one", target: "UserAP"}},
+            user: {relation: {kind: "one", target: "User"}},
             isCurrent: {type: "boolean"},
             createdAt: {type: "string"},
             updatedAt: {type: "string"},
@@ -102,7 +118,7 @@ export const SYSTEM_MODEL_CONTRACTS: readonly SystemModelContract[] = [
         },
     },
     {
-        name: "NotificationAP",
+        name: "Notification",
         primaryKey: "id",
         attributes: {
             id: {type: "number"},
@@ -116,12 +132,12 @@ export const SYSTEM_MODEL_CONTRACTS: readonly SystemModelContract[] = [
         },
     },
     {
-        name: "UserNotificationAP",
+        name: "UserNotification",
         primaryKey: "id",
         attributes: {
             id: {type: "number"},
             userId: {type: "number", required: true},
-            notificationId: {relation: {kind: "one", target: "NotificationAP"}},
+            notificationId: {relation: {kind: "one", target: "Notification"}},
             read: {type: "boolean"},
         },
     },
@@ -129,7 +145,8 @@ export const SYSTEM_MODEL_CONTRACTS: readonly SystemModelContract[] = [
 
 export function validateSystemModelContract(
     model: AbstractModel<any>,
-    contract: SystemModelContract
+    contract: SystemModelContract,
+    options: ValidateSystemModelContractOptions = {}
 ): void {
     const errors: string[] = [];
 
@@ -158,10 +175,11 @@ export function validateSystemModelContract(
         if (expected.relation) {
             const expectedType = expected.relation.kind === "many" ? "association-many" : "association";
             const actualTarget = actual.model ?? actual.collection;
+            const resolvedActualTarget = actualTarget ? options.resolveRelationTarget?.(actualTarget) ?? actualTarget : actualTarget;
             if (actual.type !== expectedType) {
                 errors.push(`association "${attributeName}" must have kind "${expected.relation.kind}"`);
             }
-            if (actualTarget?.toLowerCase() !== expected.relation.target.toLowerCase()) {
+            if (resolvedActualTarget?.toLowerCase() !== expected.relation.target.toLowerCase()) {
                 errors.push(
                     `association "${attributeName}" must target "${expected.relation.target}", received "${actualTarget}"`
                 );

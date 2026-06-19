@@ -2,37 +2,70 @@
 
 Adminizer does not create or synchronize ORM models. The host application owns ORM initialization and must register all Adminizer system models before calling `adminizer.init()`.
 
-The required system models are:
+Adminizer core uses canonical system model names without project-specific suffixes:
 
-- `UserAP`
-- `GroupAP`
-- `FilterAP`
-- `FilterColumnAP`
-- `HistoryActionsAP`
-- `NotificationAP`
-- `UserNotificationAP`
+- `User`
+- `Group`
+- `Filter`
+- `FilterColumn`
+- `HistoryActions`
+- `Notification`
+- `UserNotification`
 
-During startup Adminizer obtains these models from `config.system.defaultORM` and validates their fields, primary keys, and required associations. Extra fields are allowed. Startup fails immediately when a model is missing or does not satisfy the system contract.
+During startup Adminizer obtains these models from the adapter selected by `config.system.defaultORM` and validates their fields, primary keys, and required associations. Extra fields are allowed. Startup fails immediately when a model is missing or does not satisfy the system contract.
 
-The fixture implementations are the current reference:
+## Host Model Names
 
-- `fixture/models/sequelize/systemModels.ts`
-- `fixture/models/typeorm/systemModels.ts`
+The ORM model name does not have to match the Adminizer canonical name. If a project already has host models named `UserAP`, `GroupAP`, or even custom names such as `Cats`, pass the mapping to the adapter:
+
+```ts
+const adapter = new SequelizeAdapter(sequelize, {
+  systemModels: {
+    User: "UserAP",
+    Group: "GroupAP",
+    Filter: "FilterAP",
+    FilterColumn: "FilterColumnAP",
+    HistoryActions: "HistoryActionsAP",
+    Notification: "NotificationAP",
+    UserNotification: "UserNotificationAP",
+  },
+});
+```
+
+Adminizer will use `User`, `Group`, and the other canonical names internally, while validating and querying the mapped host ORM models. The same binding also works as a runtime alias, so app code with access to that model can resolve either the canonical name or the mapped host name.
+
+If your host ORM models already use canonical names, no mapping is required:
+
+```ts
+const adapter = new SequelizeAdapter(sequelize);
+```
 
 ## Sequelize
 
-Sequelize is the primary and recommended ORM. Register system models in the host Sequelize instance, define their associations, synchronize or migrate the database, and then construct Adminizer:
+Sequelize is the primary and recommended ORM. Register system models in the host Sequelize instance, define their associations, synchronize or migrate the database, and then construct Adminizer with the adapter:
 
 ```ts
 registerSequelizeSystemModels(sequelize);
 await sequelize.sync();
 
 const adminizer = new Adminizer([
-  new SequelizeAdapter(sequelize),
+  new SequelizeAdapter(sequelize, {
+    systemModels: {
+      User: "UserAP",
+      Group: "GroupAP",
+      Filter: "FilterAP",
+      FilterColumn: "FilterColumnAP",
+      HistoryActions: "HistoryActionsAP",
+      Notification: "NotificationAP",
+      UserNotification: "UserNotificationAP",
+    },
+  }),
 ]);
 
 await adminizer.init(config);
 ```
+
+The fixture helper `registerSequelizeSystemModels` still registers host models with the `AP` suffix. That is fixture-specific naming, not a core requirement.
 
 App-owned Sequelize models may be installed later, immediately before `appManager.enable(app)`.
 
@@ -56,6 +89,18 @@ const dataSource = new DataSource({
 });
 
 await dataSource.initialize();
+
+const adapter = new TypeOrmAdapter(dataSource, {
+  systemModels: {
+    User: "UserAP",
+    Group: "GroupAP",
+    Filter: "FilterAP",
+    FilterColumn: "FilterColumnAP",
+    HistoryActions: "HistoryActionsAP",
+    Notification: "NotificationAP",
+    UserNotification: "UserNotificationAP",
+  },
+});
 ```
 
 App entities must also be included before `dataSource.initialize()`. Dynamic installation of app models into an initialized TypeORM `DataSource` is not supported. Apps without models continue to work, and apps with models work only when their entities were registered before initialization.

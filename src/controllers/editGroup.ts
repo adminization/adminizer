@@ -2,29 +2,29 @@ import {ControllerHelper} from "../helpers/controllerHelper";
 import {AccessRightsToken} from "../interfaces/types";
 import {Adminizer} from "../lib/Adminizer";
 import {inertiaGroupHelper} from "../helpers/inertiaGroupHelper";
-import { UserAP } from "../models/UserAP";
-import { GroupAP } from "../models/GroupAP";
+import { User } from "../models/User";
+import { Group } from "../models/Group";
 
 export default async function editGroup(req: ReqType, res: ResType) {
 
     let modelResource = ControllerHelper.findModelResource(req);
     const internalUsers = req.adminizer.modelHandler.internal("users");
-    const userModel = internalUsers.get<UserAP>("UserAP");
-    const groupModel = internalUsers.get<GroupAP>("GroupAP");
+    const userModel = internalUsers.get<User>("User");
+    const groupModel = internalUsers.get<Group>("Group");
 
     //Check id
     if (!req.params.id) {
         return res.status(404).send({error: 'Not Found'});
     }
 
-    let users: UserAP[]
+    let users: User[]
     try {
         users = await userModel.find({where: {isAdministrator: false}});
     } catch (e) {
         Adminizer.log.error(e)
     }
 
-    let group: GroupAP
+    let group: Group
     try {
         group = await groupModel.findOne({where: {id: Number(req.params.id)}});
     } catch (e) {
@@ -66,7 +66,7 @@ export default async function editGroup(req: ReqType, res: ResType) {
             }
         }
 
-        let updatedGroup: GroupAP
+        let updatedGroup: Group
         try {
             updatedGroup = await groupModel.updateOne({where: {id: group.id}}, {
                 name: req.body.name, description: req.body.description,
@@ -75,7 +75,7 @@ export default async function editGroup(req: ReqType, res: ResType) {
             Adminizer.log.debug(`Group was updated: `, updatedGroup);
 
             req.flash.setFlashMessage('success', 'Group was updated !');
-            return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/groupap`)
+            return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/Group`)
 
         } catch (e) {
             Adminizer.log.error(e);

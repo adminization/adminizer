@@ -2,7 +2,7 @@ import { Fields } from '../../helpers/fieldsHelper';
 import { AbstractModel } from '../model/AbstractModel';
 import { DataAccessor } from '../DataAccessor';
 import { BaseFieldConfig } from '../../interfaces/adminpanelConfig';
-import { FilterCondition, FilterOperator } from '../../models/FilterAP';
+import { FilterCondition, FilterOperator } from '../../models/Filter';
 import { CustomFilterHandler } from '../filters/CustomFilterHandler';
 import { ListQueryBuilderParams, ListQueryBuilderResult } from '../../interfaces/listQueryBuilder';
 import { CriteriaWhere } from '../../interfaces/queryCriteria';

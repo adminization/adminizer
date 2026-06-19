@@ -81,7 +81,7 @@ export function SavedFiltersList({
             // Если 401 - редирект на логин
             if (error.response?.status === 401) {
                 console.error('Session expired, redirecting to login...');
-                window.location.href = '/adminizer/model/userap/login';
+                window.location.href = '/adminizer/model/User/login';
                 return;
             }
         } finally {
@@ -104,7 +104,7 @@ export function SavedFiltersList({
             // Если 401 - редирект на логин
             if (error.response?.status === 401) {
                 console.error('Session expired, redirecting to login...');
-                window.location.href = '/adminizer/model/userap/login';
+                window.location.href = '/adminizer/model/User/login';
                 return;
             }
 

@@ -9,7 +9,7 @@ import {
     SelectQueryBuilder,
 } from "typeorm";
 import { v4 as uuid } from "uuid";
-import { AbstractAdapter, AbstractModel, Attribute, ModelAttributes } from "../AbstractModel";
+import { AbstractAdapter, AbstractAdapterOptions, AbstractModel, Attribute, ModelAttributes } from "../AbstractModel";
 import { CriteriaPopulate, CriteriaSelect, QueryCriteria } from "../../../interfaces/queryCriteria";
 
 /**
@@ -894,8 +894,8 @@ export class TypeOrmAdapter extends AbstractAdapter {
     public dataSource: DataSource;
     public Model = TypeOrmModel;
 
-    constructor(dataSource: DataSource) {
-        super("typeorm", dataSource);
+    constructor(dataSource: DataSource, options: AbstractAdapterOptions = {}) {
+        super("typeorm", dataSource, options);
         this.dataSource = dataSource;
     }
 

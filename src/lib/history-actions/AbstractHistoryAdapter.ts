@@ -1,5 +1,5 @@
-import { HistoryActionsAP } from "../../models/HistoryActionsAP";
-import { UserAP } from "../../models/UserAP";
+import { HistoryActions } from "../../models/HistoryActions";
+import { User } from "../../models/User";
 import { Adminizer } from "../Adminizer";
 import { Field, Fields } from "../../helpers/fieldsHelper";
 import { ActionType, ModelConfig } from "../../interfaces/adminpanelConfig";
@@ -19,14 +19,14 @@ import {
  * These models are internal or administrative and should not appear in user-accessible history.
  */
 const EXCLUDED_MODELS = new Set([
-    'HistoryActionsAP',
+    'HistoryActions',
     'MediaManagerAP',
     'MediaManagerAssociationsAP',
     'MediaManagerMetaAP',
-    'NotificationAP',
-    'UserNotificationAP',
-    'UserAP',
-    'GroupAP'
+    'Notification',
+    'UserNotification',
+    'User',
+    'Group'
 ]);
 
 /**
@@ -108,7 +108,7 @@ export abstract class AbstractHistoryAdapter {
      * @param modelName - Name of the model.
      * @returns Promise resolving to an array of history records.
      */
-    public abstract getAllModelHistory(modelId: string | number, modelName: string, user: UserAP): Promise<HistoryActionsAP[]>;
+    public abstract getAllModelHistory(modelId: string | number, modelName: string, user: User): Promise<HistoryActions[]>;
 
     /**
      * Retrieves all accessible history records for a user.
@@ -117,7 +117,7 @@ export abstract class AbstractHistoryAdapter {
      * @param modelName - Optional model name to filter results.
      * @returns Promise resolving to a record of history data.
      */
-    public abstract getAllHistory(user: UserAP, forUserName: string, modelName: string, limit?: number, offset?: number, from?: Date, to?: Date): Promise<{ data: HistoryActionsAP[] }>;
+    public abstract getAllHistory(user: User, forUserName: string, modelName: string, limit?: number, offset?: number, from?: Date, to?: Date): Promise<{ data: HistoryActions[] }>;
 
     /**
      * Saves a new history record.
@@ -125,7 +125,7 @@ export abstract class AbstractHistoryAdapter {
      * @param data - History data excluding auto-generated fields (`id`, `createdAt`, `updatedAt`, `isCurrent`).
      * @returns Promise resolving when the record is saved.
      */
-    public abstract setHistory(data: Omit<HistoryActionsAP, "id" | "createdAt" | "updatedAt" | "isCurrent" | "user"> & { user: string | number }): Promise<void>;
+    public abstract setHistory(data: Omit<HistoryActions, "id" | "createdAt" | "updatedAt" | "isCurrent" | "user"> & { user: string | number }): Promise<void>;
 
     /**
      * Retrieves detailed history data for a specific history record.
@@ -135,7 +135,7 @@ export abstract class AbstractHistoryAdapter {
      * @param user - User requesting the data (used for access control).
      * @returns Promise resolving to formatted history data.
      */
-    public abstract getModelFieldsHistory(historyId: number, user: UserAP): Promise<Record<string, any>>;
+    public abstract getModelFieldsHistory(historyId: number, user: User): Promise<Record<string, any>>;
 
     /**
      * Gets a list of models for which the user has update permissions.
@@ -144,7 +144,7 @@ export abstract class AbstractHistoryAdapter {
      * @param user - User whose permissions are checked.
      * @returns Array of model names (in lowercase) the user can access.
      */
-    public getModels(user: UserAP): string[] {
+    public getModels(user: User): string[] {
         const models = this.adminizer.modelHandler.all
             .filter(model => !this.excludedModels.has(model.modelname))
             .map(model => model.modelname.toLowerCase());
@@ -169,7 +169,7 @@ export abstract class AbstractHistoryAdapter {
     * @returns A promise resolving to filtered history records accessible to the user.
     * @protected
     */
-    protected async _getAllModelHistory(history: HistoryActionsAP[], user: UserAP): Promise<HistoryActionsAP[]> {
+    protected async _getAllModelHistory(history: HistoryActions[], user: User): Promise<HistoryActions[]> {
         const accessToUsersHistory = this.adminizer.accessRightsHelper.enoughPermissions([
             `users-history-${this.id}`
         ], user);
@@ -193,14 +193,14 @@ export abstract class AbstractHistoryAdapter {
      * @returns A promise resolving to enhanced history records with `displayName` property.
      * @protected
      */
-    protected async _getAllHistory(history: HistoryActionsAP[], user: UserAP): Promise<(HistoryActionsAP & { displayName: string })[]> {
+    protected async _getAllHistory(history: HistoryActions[], user: User): Promise<(HistoryActions & { displayName: string })[]> {
         try {
             const accessModels = this.getModels(user);
             const accessToUsersHistory = this.adminizer.accessRightsHelper.enoughPermissions([
                 `users-history-${this.id}`
             ], user);
 
-            let accessHistory: HistoryActionsAP[] = [];
+            let accessHistory: HistoryActions[] = [];
                         
             if (!accessToUsersHistory) {
                 history = history.filter((historyRecord) => {
@@ -254,7 +254,7 @@ export abstract class AbstractHistoryAdapter {
      * @returns Promise resolving to formatted data object.
      * @protected
      */
-    protected async _getModelFieldsHistory(history: HistoryActionsAP, user: UserAP): Promise<Record<string, any>> {
+    protected async _getModelFieldsHistory(history: HistoryActions, user: User): Promise<Record<string, any>> {
         const modelResource = this.findModelResource(history);
         const dataAccessor = new DataAccessor(this.adminizer, user, modelResource, "edit");
         let fields = dataAccessor.getFieldsConfig();
@@ -319,8 +319,8 @@ export abstract class AbstractHistoryAdapter {
     * @returns A promise resolving to an array of records with `displayName` property.
     * @protected
     */
-    protected async setModelsDisplayName(history: HistoryActionsAP[]): Promise<(HistoryActionsAP & { displayName: string })[]> {
-        const modifiedHistory: (HistoryActionsAP & { displayName: string })[] = [];
+    protected async setModelsDisplayName(history: HistoryActions[]): Promise<(HistoryActions & { displayName: string })[]> {
+        const modifiedHistory: (HistoryActions & { displayName: string })[] = [];
 
         for (const historyRecord of history) {
             const modelResource = this.findModelResource(historyRecord);
@@ -391,7 +391,7 @@ export abstract class AbstractHistoryAdapter {
      * @returns ModelResource object with name, URI, model instance, and config.
      * @protected
      */
-    protected findModelResource(history: HistoryActionsAP): ModelResource {
+    protected findModelResource(history: HistoryActions): ModelResource {
         const modelResourceName = history.modelName;
 
         const modelResourceUri = `${this.adminizer.config.routePrefix}/model/${modelResourceName}`;
@@ -419,7 +419,7 @@ export abstract class AbstractHistoryAdapter {
      * @returns Promise resolving to updated fields with loaded associations.
      * @protected
      */
-    protected async loadAssociations(fields: Fields, user: UserAP, action?: ActionType): Promise<Fields> {
+    protected async loadAssociations(fields: Fields, user: User, action?: ActionType): Promise<Fields> {
 
         let loadAssoc = async (key: string, action?: ActionType) => {
             let fieldConfigConfig = fields[key].config as Field["config"];

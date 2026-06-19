@@ -2,21 +2,21 @@ import {ControllerHelper} from "../helpers/controllerHelper";
 import {Adminizer} from "../lib/Adminizer";
 import {generate} from "password-hash";
 import {inertiaUserHelper} from "../helpers/inertiaUserHelper";
-import { UserAP } from "../models/UserAP";
-import { GroupAP } from "../models/GroupAP";
+import { User } from "../models/User";
+import { Group } from "../models/Group";
 
 export default async function (req: ReqType, res: ResType) {
     let modelResource = ControllerHelper.findModelResource(req);
     const internalUsers = req.adminizer.modelHandler.internal("users");
-    const userModel = internalUsers.get<UserAP>("UserAP");
-    const groupModel = internalUsers.get<GroupAP>("GroupAP");
+    const userModel = internalUsers.get<User>("User");
+    const groupModel = internalUsers.get<Group>("Group");
 
     // Check id
     if (!req.params.id) {
         return res.status(404).send({error: 'Not Found'});
     }
 
-    let user: UserAP;
+    let user: User;
     try {
         user = await userModel.findOne({where: {id: Number(req.params.id)}});
     } catch (e) {
@@ -25,7 +25,7 @@ export default async function (req: ReqType, res: ResType) {
         res.status(500).send({error: 'Internal Server Error'});
     }
 
-    let groups: GroupAP[];
+    let groups: Group[];
     try {
         groups = await groupModel.find({});
     } catch (e) {
@@ -55,7 +55,7 @@ export default async function (req: ReqType, res: ResType) {
             locale = req.body.locale === 'default' ? req.adminizer.config.translation.defaultLocale : req.body.locale;
         }
 
-        let updatedUser: UserAP;
+        let updatedUser: User;
         try {
             updatedUser = await userModel.updateOne({where: {id: user.id}}, {
                 login: req.body.login, fullName: req.body.fullName,
@@ -73,7 +73,7 @@ export default async function (req: ReqType, res: ResType) {
             Adminizer.log.debug(`User was updated: `, updatedUser);
 
             req.flash.setFlashMessage('success', 'User was updated !');
-            return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/userap`)
+            return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/User`)
 
         } catch (e) {
             Adminizer.log.error(e);

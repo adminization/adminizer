@@ -1,6 +1,6 @@
 import {Adminizer} from '../Adminizer';
 import {AiAssistantMessage, AiAssistantModelInfo} from '../../interfaces/types';
-import {UserAP} from '../../models/UserAP';
+import {User} from '../../models/User';
 
 /**
  * Base class for AI assistant models. It is responsible for registering
@@ -40,6 +40,6 @@ export abstract class AbstractAiModelService {
     public abstract generateReply(
         prompt: string,
         history: AiAssistantMessage[],
-        user: UserAP,
+        user: User,
     ): Promise<string>;
 }

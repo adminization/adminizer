@@ -55,14 +55,15 @@ export class AppModelAccess {
  * Models are registered at startup via `bindModels`, then looked up by name from controllers,
  * services, helpers, and system utilities — without importing each model directly.
  *
- * Lookup is case-insensitive: `"UserAP"`, `"userap"`, and `"USERAP"` all resolve to the same model.
+ * Lookup is case-insensitive and can resolve aliases registered at startup via system model bindings.
  */
 export class ModelHandler {
 	private models: Map<string, ModelRecord> = new Map();
+	private modelAliases: Map<string, string> = new Map();
 	private internalAccess?: InternalModelAccessFactory;
 	private appAccessRecords = new Map<string, AppModelAccessRecord>();
 
-	add<T>(modelName: string, modelInstance: AbstractModel<T>): void {
+	add<T>(modelName: string, modelInstance: AbstractModel<T>, aliases: string[] = []): void {
 
 
 		const modelname = modelName.toLowerCase()
@@ -72,6 +73,7 @@ export class ModelHandler {
 			model: modelInstance,
 			enabled: true,
 		});
+		this.registerAliases(modelName, aliases);
 		Adminizer.log.debug(`Model with name [${modelname}] was registered`)
 	}
 
@@ -162,18 +164,23 @@ export class ModelHandler {
 
 	// TODO: 'hot reload' need add method for delete model & unbind
 
-	/** Improved model getter, so you can write both model.get("UserAP") and model.get("userap") */
+	/** Improved model getter with case-insensitive lookup and configured alias support. */
 	get model() {
 
 		return {
-			get: (modelName: string) => this.models.get(normalizeName(modelName))?.enabled
-				? this.models.get(normalizeName(modelName)).model
+			get: (modelName: string) => this.models.get(this.resolveName(modelName))?.enabled
+				? this.models.get(this.resolveName(modelName)).model
 				: undefined,
-			has: (modelName: string) => Boolean(this.models.get(normalizeName(modelName))?.enabled),
+			has: (modelName: string) => Boolean(this.models.get(this.resolveName(modelName))?.enabled),
 			entries: () => this.enabledModelEntries(),
 			keys: () => this.enabledModelKeys(),
 			values: () => this.enabledModelValues(),
 		};
+	}
+
+	resolveModelName(modelName: string): string {
+		const resolvedName = this.resolveName(modelName);
+		return this.models.get(resolvedName)?.name ?? modelName;
 	}
 
 	configureInternalAccess(accessMap?: InternalModelAccessMap): void {
@@ -212,6 +219,32 @@ export class ModelHandler {
 			}
 		}
 		return allowedModels;
+	}
+
+	private registerAliases(modelName: string, aliases: string[]): void {
+		const normalizedModelName = normalizeName(modelName);
+		for (const alias of aliases) {
+			const normalizedAlias = normalizeName(alias);
+			if (normalizedAlias === normalizedModelName) {
+				continue;
+			}
+
+			const existingTarget = this.modelAliases.get(normalizedAlias);
+			if (existingTarget && existingTarget !== normalizedModelName) {
+				throw new Error(`Model alias "${alias}" is already registered for model "${existingTarget}"`);
+			}
+
+			if (this.models.has(normalizedAlias) && normalizedAlias !== normalizedModelName) {
+				throw new Error(`Model alias "${alias}" conflicts with a registered model`);
+			}
+
+			this.modelAliases.set(normalizedAlias, normalizedModelName);
+		}
+	}
+
+	private resolveName(modelName: string): string {
+		const normalizedModelName = normalizeName(modelName);
+		return this.modelAliases.get(normalizedModelName) ?? normalizedModelName;
 	}
 
 	private *enabledModelEntries(): IterableIterator<[string, AbstractModel<any>]> {

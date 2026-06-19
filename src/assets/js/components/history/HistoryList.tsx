@@ -1,12 +1,12 @@
 import { FC, useEffect, useState } from "react"
 import { adminApi } from "@/lib/admin-api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { HistoryActionsAP } from "../../../../models/HistoryActionsAP";
+import { HistoryActions } from "../../../../models/HistoryActions";
 import { Button } from "@/components/ui/button";
 import { Braces, LoaderCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DiffViewer } from "@/components/history/DiffViewer";
-import { UserAP } from "../../../../models/UserAP";
+import { User } from "../../../../models/User";
 import { useI18n } from "@/hooks/use-i18n";
 
 interface HistoryListProps {
@@ -15,8 +15,8 @@ interface HistoryListProps {
     handleWatchHistory: (data: Record<string, any>) => void
 }
 
-export type HistoryItem = Omit<HistoryActionsAP, 'user'> & {
-    user: UserAP;
+export type HistoryItem = Omit<HistoryActions, 'user'> & {
+    user: User;
     displayName: string;
 };
 

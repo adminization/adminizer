@@ -144,16 +144,16 @@ adminizer.app.use(
 );
 
 req.Inertia.setViewData({
-    lang: req.session.UserAP?.locale || 'en',
+    lang: req.session.User?.locale || 'en',
 })
 
 const menuHelper = new InertiaMenuHelper(adminizer)
 
 req.Inertia.shareProps({
     auth: {
-        user: req.session.UserAP
+        user: req.session.User
     },
-    menu: req.session.UserAP ? menuHelper.getMenuItems(req) : null,
+    menu: req.session.User ? menuHelper.getMenuItems(req) : null,
     brand: menuHelper.getBrandTitle(),
     logout: menuHelper.getLogoutUrl(),
     //...

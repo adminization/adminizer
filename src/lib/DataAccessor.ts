@@ -11,8 +11,8 @@ import {
 import {Field, Fields} from "../helpers/fieldsHelper";
 import {ControllerHelper} from "../helpers/controllerHelper";
 import {Adminizer} from "./Adminizer";
-import { GroupAP } from "../models/GroupAP";
-import { UserAP } from "../models/UserAP";
+import { Group } from "../models/Group";
+import { User } from "../models/User";
 import { isObject } from "../helpers/JsUtils";
 import { CriteriaWhere, QueryCriteria } from "../interfaces/queryCriteria";
 
@@ -57,13 +57,13 @@ function mergeCriteriaWhere(criteriaWhere: QueryCriteria["where"], sanitizedCrit
 
 export class DataAccessor {
     public readonly adminizer: Adminizer;
-    user: UserAP;
+    user: User;
     modelResource: ModelResource;
     action: ActionType
     private fields: Fields = null;
     private actionVerb: string
 
-    constructor(adminizer: Adminizer, user: UserAP, modelResource: ModelResource, action: ActionType) {
+    constructor(adminizer: Adminizer, user: User, modelResource: ModelResource, action: ActionType) {
         this.adminizer = adminizer;
         this.user = user;
         this.modelResource = modelResource;
@@ -73,14 +73,33 @@ export class DataAccessor {
     }
 
     private getModelConfig(modelName: string): ModelConfig | undefined {
+        const resolvedModelName = this.adminizer.modelHandler.resolveModelName(modelName);
         const entry = Object.entries(this.adminizer.config.models)
-            .find(([key]) => key.toLowerCase() === modelName.toLowerCase());
+            .find(([key, config]) => {
+                if (key.toLowerCase() === resolvedModelName.toLowerCase()) {
+                    return true;
+                }
+
+                if (!isObject(config)) {
+                    return false;
+                }
+
+                return config.model?.toLowerCase() === resolvedModelName.toLowerCase();
+            });
         const config = entry ? entry[1] : undefined;
         return isObject(config) ? config as ModelConfig : undefined;
     }
 
     private accessRelationModel<T = any>(modelName: string) {
         return this.adminizer.modelHandler.internal("data-accessor").get<T>(modelName);
+    }
+
+    private resolveRelationTarget(modelName?: string): string | undefined {
+        if (!modelName) {
+            return undefined;
+        }
+
+        return this.adminizer.modelHandler.resolveModelName(modelName).toLowerCase();
     }
 
     /**
@@ -154,22 +173,23 @@ export class DataAccessor {
             let populatedModelFieldsConfig = {};
             if (modelField.type === "association" || modelField.type === "association-many") {
                 const modelName = modelField.model || modelField.collection;
-                
-                const tokenId = `read-${modelName}-${MODEL_TOKEN_SUFFIX}`;
-                if (!this.adminizer.accessRightsHelper.hasPermission(tokenId, this.user)) {
-                    Adminizer.log.silly(`No access rights to model: ${this.modelResource.model.modelname}`);
-                    return undefined;
-                }
+                const resolvedModelName = modelName ? this.adminizer.modelHandler.resolveModelName(modelName) : undefined;
 
-                if (modelName) {
+                if (modelName && resolvedModelName) {
+                    const tokenId = `read-${resolvedModelName}-${MODEL_TOKEN_SUFFIX}`;
+                    if (!this.adminizer.accessRightsHelper.hasPermission(tokenId, this.user)) {
+                        Adminizer.log.silly(`No access rights to model: ${this.modelResource.model.modelname}`);
+                        return undefined;
+                    }
+
                     const model = this.adminizer.modelHandler.model.get(modelName);
                     if (model) {
-                        populatedModelFieldsConfig = this.getAssociatedFieldsConfig(modelName);
-                        const modelCfg = this.getModelConfig(modelName);
+                        populatedModelFieldsConfig = this.getAssociatedFieldsConfig(resolvedModelName);
+                        const modelCfg = this.getModelConfig(resolvedModelName);
                         if (modelCfg) {
                             associatedModelConfig = modelCfg;
                         } else {
-                            Adminizer.log.error(`DataAccessor > getFieldsConfig > Model config not found: ${modelName}`);
+                            Adminizer.log.error(`DataAccessor > getFieldsConfig > Model config not found: ${resolvedModelName}`);
                         }
                     } else {
                         Adminizer.log.error(`DataAccessor > getFieldsConfig > Model not found: ${modelName} when ${key}`);
@@ -219,17 +239,17 @@ export class DataAccessor {
     }
 
     private getAssociatedFieldsConfig(modelName: string): { [fieldName: string]: Field } | undefined {
-        
-        const model = this.adminizer.modelHandler.model.get(modelName);
-        const modelConfig = this.getModelConfig(modelName);
+        const resolvedModelName = this.adminizer.modelHandler.resolveModelName(modelName);
+        const model = this.adminizer.modelHandler.model.get(resolvedModelName);
+        const modelConfig = this.getModelConfig(resolvedModelName);
         if (!model || !modelConfig) {
             return undefined;
         }
 
         // Check if user has access to the associated model
-        const tokenId = `read-${modelName}-${MODEL_TOKEN_SUFFIX}`;
+        const tokenId = `read-${resolvedModelName}-${MODEL_TOKEN_SUFFIX}`;
         if (!this.adminizer.accessRightsHelper.hasPermission(tokenId, this.user)) {
-            Adminizer.log.debug(`getAssociatedFieldsConfig > No access rights to ${this.actionVerb} model: ${modelName}`);
+            Adminizer.log.debug(`getAssociatedFieldsConfig > No access rights to ${this.actionVerb} model: ${resolvedModelName}`);
             return undefined;
         }
 
@@ -299,7 +319,7 @@ export class DataAccessor {
             return true;
         }
 
-        const userGroups = this.user.groups?.map((group: GroupAP) => group.name.toLowerCase());
+        const userGroups = this.user.groups?.map((group: Group) => group.name.toLowerCase());
         // Check if `groupsAccessRights` is set in the fieldConfig
         if (fieldConfig.groupsAccessRights) {
             const allowedGroups = fieldConfig.groupsAccessRights.map((item: string) => item.toLowerCase());
@@ -421,35 +441,37 @@ export class DataAccessor {
             if (typeof userAccessRelation === 'string') {
                 let accessField = userAccessRelation;
 
-                // Check if the relation points to `UserAP` or `GroupAP` in the model's attributes
+                // Check if the relation points to `User` or `Group` in the model's attributes
                 const modelAttributes = this.modelResource.model.attributes;
                 const relation = modelAttributes[accessField];
+                const relationModel = this.resolveRelationTarget(relation?.model);
+                const relationCollection = this.resolveRelationTarget(relation?.collection);
 
-                if (!relation || !['userap', 'groupap'].includes(relation.model.toLowerCase() || relation.collection.toLowerCase())) {
+                if (!relation || !['user', 'group'].includes(relationModel ?? relationCollection ?? "")) {
                     throw new Error(`Invalid userAccessRelation configuration for model ${modelName}`);
                 }
 
                 // Determine if the current user matches the access criteria
-                if (relation.model) {
-                    if (relation.model.toLowerCase() === 'userap') {
-                        // Filter by the user's ID if related to UserAP as a model
+                if (relationModel) {
+                    if (relationModel === 'user') {
+                        // Filter by the user's ID if related to User as a model
                         sanitizedCriteria = {...sanitizedCriteria, [accessField]: this.user.id};
-                    } else if (relation.model.toLowerCase() === 'groupap') {
-                        // Filter by user's group membership if related to GroupAP as a model
-                        const userGroups = this.user.groups?.map((group: GroupAP) => group.id);
+                    } else if (relationModel === 'group') {
+                        // Filter by user's group membership if related to Group as a model
+                        const userGroups = this.user.groups?.map((group: Group) => group.id);
                         sanitizedCriteria = {...sanitizedCriteria, [accessField]: {in: userGroups}};
                     }
                 }
 
                 /** Warning: collection relation access is not supported and needs adapter-level processing */
-                if (relation.collection) {
+                if (relationCollection) {
                     Adminizer.log.warn(`Collection relation is not supported and was not tested. You may have an error here: ${JSON.stringify(relation, null, 2)}`)
-                    if (relation.collection.toLowerCase() === 'userap') {
-                        // Ensure user's ID is part of the associated collection to UserAP
+                    if (relationCollection === 'user') {
+                        // Ensure user's ID is part of the associated collection to User
                         sanitizedCriteria = {...sanitizedCriteria, [accessField]: {contains: this.user.id}};
-                    } else if (relation.collection.toLowerCase() === 'groupap') {
-                        // Ensure user's groups intersect with the collection to GroupAP
-                        const userGroups = this.user.groups?.map((group: GroupAP) => group.id);
+                    } else if (relationCollection === 'group') {
+                        // Ensure user's groups intersect with the collection to Group
+                        const userGroups = this.user.groups?.map((group: Group) => group.id);
                         sanitizedCriteria = {...sanitizedCriteria, [accessField]: {intersects: userGroups}};
                     }
                 }
@@ -474,10 +496,10 @@ export class DataAccessor {
                 // Validate the `via` field in the intermediate model
                 const intermediateAttributes = intermediateModel.attributes;
                 const viaRelation = intermediateAttributes[via];
-                if (!viaRelation || viaRelation.model.toLowerCase() !== 'userap') {
+                if (!viaRelation || this.resolveRelationTarget(viaRelation.model) !== 'user') {
                     throw new Error(
                         `Unsupported or invalid via field "${via}" in intermediate model "${intermediateRelation.model}". ` +
-                        `Currently, only relations to "userap" are supported`
+                        `Currently, only relations to "User" are supported`
                     );
                 }
 
@@ -509,16 +531,17 @@ export class DataAccessor {
                     delete updatedRecord[accessField as keyof T];
                 }
 
-                // Check if the relation points to `UserAP` or `GroupAP` in the model's attributes
+                // Check if the relation points to `User` or `Group` in the model's attributes
                 const modelAttributes = this.modelResource.model.attributes;
                 const relation = modelAttributes[accessField];
-                if (relation && ['userap', 'groupap'].includes(relation.model.toLowerCase())) {
-                    if (relation.model.toLowerCase() === 'userap') {
+                const relationModel = this.resolveRelationTarget(relation?.model);
+                if (relation && ['user', 'group'].includes(relationModel ?? "")) {
+                    if (relationModel === 'user') {
                         if (!this.user.isAdministrator) {
                             updatedRecord[accessField as keyof T] = this.user.id as T[keyof T];
                         }
-                    } else if (relation.model.toLowerCase() === 'groupap') {
-                        const userGroups = this.user.groups as GroupAP[] || [];
+                    } else if (relationModel === 'group') {
+                        const userGroups = this.user.groups as Group[] || [];
                         if (userGroups.length === 1) {
                             updatedRecord[accessField as keyof T] = userGroups[0].id as T[keyof T];
                         } else {
@@ -550,10 +573,10 @@ export class DataAccessor {
                     // Validate the `via` field in the intermediate model
                     const intermediateAttributes = intermediateModel.attributes;
                     const viaRelation = intermediateAttributes[via];
-                    if (!viaRelation || !viaRelation.model || viaRelation.model.toLowerCase() !== 'userap') {
+                    if (!viaRelation || this.resolveRelationTarget(viaRelation.model) !== 'user') {
                         throw new Error(
                             `Unsupported or invalid via field "${via}" in intermediate model "${intermediateRelation.model}". ` +
-                            `Currently, only relations to "userap" are supported`
+                            `Currently, only relations to "User" are supported`
                         );
                     }
 

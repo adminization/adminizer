@@ -4,13 +4,13 @@ import _initUser from "../controllers/initUser";
 import {AdminpanelConfig} from "../interfaces/adminpanelConfig";
 import {Adminizer} from "../lib/Adminizer";
 import {generate} from "password-hash";
-import { UserAP } from "../models/UserAP";
+import { User } from "../models/User";
 import { generateUserApiKey } from "../helpers/apiKeyHelper";
 
 export default async function bindAuthorization(adminizer: Adminizer) {
-    const userModel = adminizer.modelHandler.internal("auth").get<UserAP>("UserAP");
+    const userModel = adminizer.modelHandler.internal("auth").get<User>("User");
 
-    let admins: UserAP[];
+    let admins: User[];
     try {
         admins = await userModel.find({where: {isAdministrator: true}});
     } catch (e) {
@@ -107,7 +107,7 @@ function getRandomInt(min: number, max: number) {
 
 
 async function initUserPolicy(req: ReqType, res: ResType, proceed: any) {
-    let admins: UserAP[] = await req.adminizer.modelHandler.internal("auth").get<UserAP>("UserAP").find({where: {isAdministrator: true}});
+    let admins: User[] = await req.adminizer.modelHandler.internal("auth").get<User>("User").find({where: {isAdministrator: true}});
     if (!admins || !admins.length) {
         return res.redirect(`${req.adminizer.config.routePrefix}/init_user`)
     }

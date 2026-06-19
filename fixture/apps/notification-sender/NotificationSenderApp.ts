@@ -3,7 +3,7 @@ import {
     AbstractAdminizerApp,
     AdminpanelIcon,
     AppSetupContext,
-    UserAP,
+    User,
 } from "../../../dist";
 
 interface NotificationSenderAppConfig {
@@ -79,7 +79,7 @@ export class NotificationSenderApp extends AbstractAdminizerApp<NotificationSend
 
     private renderModule(moduleComponent: string): MiddlewareType {
         return async (req, res) => {
-            const users = await req.runtime.models.get<UserAP>("UserAP").find({});
+            const users = await req.runtime.models.get<User>("UserAP").find({});
 
             return req.Inertia.render({
                 component: "module",

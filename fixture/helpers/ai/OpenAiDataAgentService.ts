@@ -12,10 +12,10 @@ import {AiAssistantMessage, ModelResource} from '../../../dist/interfaces/types'
 import {ModelConfig} from '../../../dist/interfaces/adminpanelConfig';
 import {Adminizer} from '../../../dist/lib/Adminizer';
 import {DataAccessor} from '../../../dist/lib/DataAccessor';
-import {UserAP} from '../../../dist/models/UserAP';
+import {User} from '../../../dist/models/User';
 
 interface AgentContext {
-    user: UserAP;
+    user: User;
 }
 
 export class OpenAiDataAgentService extends AbstractAiModelService {
@@ -46,7 +46,7 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
     public async generateReply(
         prompt: string,
         history: AiAssistantMessage[],
-        user: UserAP,
+        user: User,
     ): Promise<string> {
         if (!this.isEnabled()) {
             return 'The OpenAI data agent is not configured. Please set the OPENAI_API_KEY environment variable.';
@@ -80,7 +80,7 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
         }
     }
 
-    private createAgent(user: UserAP): Agent<AgentContext> {
+    private createAgent(user: User): Agent<AgentContext> {
         const accessibleModels = this.listReadableModels(user);
         const modelSummary = accessibleModels.length > 0
             ? accessibleModels.map(({name, config}) => `• ${name} (model key: ${config.model})`).join('\n')
@@ -461,7 +461,7 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
         });
     }
 
-    private listReadableModels(user: UserAP): Array<{name: string; config: ModelConfig}> {
+    private listReadableModels(user: User): Array<{name: string; config: ModelConfig}> {
         const readable: Array<{name: string; config: ModelConfig}> = [];
 
         for (const [entityName, rawConfig] of Object.entries(this.adminizer.config.models ?? {})) {

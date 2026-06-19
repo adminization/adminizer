@@ -11,7 +11,7 @@ import {
   } from 'sequelize-typescript';
   import {InferAttributes, InferCreationAttributes, ModelStatic, Optional, Sequelize} from 'sequelize';
   import { Test } from './Test';
-import {UserAP} from "../../../dist";
+import {User} from "../../../dist";
   
   
   @Table({ tableName: 'example', timestamps: true })
@@ -99,16 +99,16 @@ import {UserAP} from "../../../dist";
     declare geojson: object;
 
     // ——————————————————————————————————————————————
-    // Owner (1-to-1 with UserAP at runtime)
+    // Owner (1-to-1 with UserAP host model at runtime)
     // ——————————————————————————————————————————————
     @Column({ type: DataType.INTEGER, allowNull: true })
     declare ownerId: number;
 
-    declare owner?: UserAP;
+    declare owner?: User;
     static associate(sequelize: Sequelize) {
-      const UserAPModel = sequelize.model('UserAP') as ModelStatic<Model<UserAP>>;
+      const UserAPModel = sequelize.model('UserAP') as ModelStatic<Model<User>>;
       
-      // 1-to-1: ownerId -> one UserAP
+      // 1-to-1: ownerId -> one UserAP host model
       this.belongsTo(UserAPModel, {
         foreignKey: 'ownerId',
         as: 'owner',

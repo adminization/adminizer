@@ -1,7 +1,7 @@
-import {UserAP} from "../models/UserAP";
+import {User} from "../models/User";
 import {AccessRightsToken} from "../interfaces/types";
 import {Adminizer} from "../lib/Adminizer";
-import {GroupAP} from "../models/GroupAP";
+import {Group} from "../models/Group";
 import {bool} from "sharp";
 
 export class AccessRightsHelper {
@@ -72,7 +72,7 @@ export class AccessRightsHelper {
             .filter((item, pos, self) => self.indexOf(item) === pos);
     }
 
-    public enoughPermissions(tokens: string[], user: UserAP): boolean {
+    public enoughPermissions(tokens: string[], user: User): boolean {
         if (user.isAdministrator) {
             return true;
         }
@@ -85,7 +85,7 @@ export class AccessRightsHelper {
         return tokens.some((token) => this.hasPermission(token, user));
     }
 
-    public hasPermission(tokenId: string | undefined, user: UserAP, context?: string): boolean {
+    public hasPermission(tokenId: string | undefined, user: User, context?: string): boolean {
         if (!this.adminizer.config.auth.enable) {
             return true;
         }
@@ -112,14 +112,14 @@ export class AccessRightsHelper {
             Adminizer.log.error('User has no groups')
             return false
         }
-        return user.groups.some((group: GroupAP) => group.tokens?.includes(tokenId));
+        return user.groups.some((group: Group) => group.tokens?.includes(tokenId));
     }
 }
 
 
 export class GroupsAccessRightsHelper {
     static hasAccess(
-        user: UserAP,
+        user: User,
         groupsAccessRights?: string[]
     ): boolean {
         const userGroups = user.groups?.map(group => group.name.toLowerCase());

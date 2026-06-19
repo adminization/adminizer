@@ -45,7 +45,7 @@ export default async function feedController(req: ReqType, res: ResType) {
 
         const user = await req.adminizer.modelHandler
             .internal("feed")
-            .get("UserAP")
+            .get("User")
             .findOne({where: {apiKey: userKey}});
 
         if (!user) {

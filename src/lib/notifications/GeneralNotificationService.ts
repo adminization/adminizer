@@ -1,7 +1,7 @@
 import {AbstractNotificationService} from './AbstractNotificationService';
 import {INotification, INotificationEvent} from '../../interfaces/types';
 import {Adminizer} from '../Adminizer';
-import {NotificationAPModel} from "../../models/NotificationAP";
+import {NotificationModel} from "../../models/Notification";
 
 export class GeneralNotificationService extends AbstractNotificationService {
     public readonly notificationClass = 'general';
@@ -15,7 +15,7 @@ export class GeneralNotificationService extends AbstractNotificationService {
             notificationClass: this.notificationClass
         };
 
-        let notificationDB: NotificationAPModel;
+        let notificationDB: NotificationModel;
         try {
             notificationDB = await this.notificationModel().create(fullNotification);
 
@@ -33,7 +33,7 @@ export class GeneralNotificationService extends AbstractNotificationService {
                             Adminizer.log.warn(`[${this.notificationClass}] User ${user.id} doesn't have permission to receive this notification`)
                         }
                     } catch (error) {
-                        Adminizer.log.error('Error creating UserNotificationAP:', error);
+                        Adminizer.log.error('Error creating UserNotification:', error);
                     }
                 }
             }

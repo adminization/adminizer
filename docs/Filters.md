@@ -14,8 +14,8 @@ The filter subsystem allows users to:
 
 Main files:
 
-- `src/models/FilterAP.ts`
-- `src/models/FilterColumnAP.ts`
+- `src/models/Filter.ts`
+- `src/models/FilterColumn.ts`
 - `src/lib/filters/FilterService.ts`
 - `src/lib/query-builder/QueryBuilder.ts`
 - `src/interfaces/queryCriteria.ts`
@@ -24,7 +24,7 @@ Main files:
 
 ## Data Models
 
-### `FilterAP`
+### `Filter`
 
 | Field | Type | Notes |
 |---|---|---|
@@ -45,14 +45,14 @@ Main files:
 | `version` | `number` | Filter format version (`1`) |
 | `createdAt` / `updatedAt` | `Date` | Auto timestamps |
 
-### `FilterColumnAP`
+### `FilterColumn`
 
-`FilterColumnAP` stores one row per selected column:
+`FilterColumn` stores one row per selected column:
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | `number` | Auto-increment |
-| `filter` | `string \| FilterAP` | Relation to `FilterAP` |
+| `filter` | `string \| Filter` | Relation to `Filter` |
 | `fieldName` | `string` | Model field id |
 | `order` | `number` | Display order |
 
@@ -237,7 +237,7 @@ Requirements:
 - filter must have `apiEnabled: true`;
 - caller must provide `userKey` query parameter;
 - auth must be enabled globally (`config.auth.enable`);
-- `userKey` must match an existing user API key (`UserAP.apiKey`).
+- `userKey` must match an existing user API key (`User.apiKey`).
 
 Helper endpoints for user API keys:
 

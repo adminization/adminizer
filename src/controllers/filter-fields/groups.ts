@@ -4,9 +4,9 @@
  */
 export async function getAllGroups(req: ReqType, res: ResType) {
     try {
-        const groupModel = req.adminizer.modelHandler.model.get('groupap');
+        const groupModel = req.adminizer.modelHandler.model.get('Group');
         if (!groupModel) {
-            return res.status(500).send({ error: req.i18n.__('GroupAP model not found') });
+            return res.status(500).send({ error: req.i18n.__('Group model not found') });
         }
 
         const groups = await groupModel['_find']({});

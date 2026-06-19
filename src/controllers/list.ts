@@ -6,8 +6,8 @@ import {Adminizer} from "../lib/Adminizer";
 import {inertiaListHelper} from "../helpers/inertiaListHelper";
 import {Field, Fields} from "../helpers/fieldsHelper";
 import {BaseFieldConfig} from "../interfaces/adminpanelConfig";
-import {FilterCondition, FilterAP} from "../models/FilterAP";
-import {FilterColumnAP} from "../models/FilterColumnAP";
+import {FilterCondition, Filter} from "../models/Filter";
+import {FilterColumn} from "../models/FilterColumn";
 import {FilterService} from "../lib/filters/FilterService";
 import {convertDatetimeConditions} from "../helpers/filterDatetimeHelper";
 import { getUiTranslations } from "../lib/ui-i18n/getUiTranslations";
@@ -38,8 +38,8 @@ export default async function list(req: ReqType, res: ResType) {
 
     // Check for saved filter (filterId parameter)
     const filterId = req.query.filterId ? req.query.filterId.toString() : undefined;
-    let savedFilter: FilterAP | null = null;
-    let savedColumns: FilterColumnAP[] = [];
+    let savedFilter: Filter | null = null;
+    let savedColumns: FilterColumn[] = [];
     let filterError: string | null = null;
 
     if (filterId) {
@@ -58,7 +58,7 @@ export default async function list(req: ReqType, res: ResType) {
                     version: 1,
                     createdAt: new Date(),
                     updatedAt: new Date()
-                } as unknown as FilterAP;
+                } as unknown as Filter;
 
                 // Use temporary filter columns if available
                 if (tempFilter.columns && Array.isArray(tempFilter.columns)) {
@@ -67,7 +67,7 @@ export default async function list(req: ReqType, res: ResType) {
                         filter: 'temporary',
                         fieldName: col.fieldName,
                         order: col.order !== undefined ? col.order : index
-                    } as FilterColumnAP));
+                    } as FilterColumn));
                 } else {
                     savedColumns = [];
                 }
@@ -134,7 +134,7 @@ export default async function list(req: ReqType, res: ResType) {
 
     // Apply custom columns if filter has them
     let displayFields = getVisibleFields(fields);
-    let customColumnsConfig: FilterColumnAP[] | null = null;
+    let customColumnsConfig: FilterColumn[] | null = null;
 
     if (savedColumns.length > 0) {
         customColumnsConfig = savedColumns;
@@ -295,7 +295,7 @@ export default async function list(req: ReqType, res: ResType) {
  * Apply custom column configuration to fields
  * Returns fields filtered and ordered according to saved column config
  */
-function applyCustomColumns(fields: Fields, columns: FilterColumnAP[]): Fields {
+function applyCustomColumns(fields: Fields, columns: FilterColumn[]): Fields {
     // Sort columns by order
     const sortedColumns = [...columns].sort((a, b) => (a.order || 0) - (b.order || 0));
 

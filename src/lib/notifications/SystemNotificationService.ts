@@ -1,8 +1,8 @@
 import {AbstractNotificationService} from './AbstractNotificationService';
 import {INotification, INotificationEvent} from '../../interfaces/types';
 import {Adminizer} from '../Adminizer';
-import {NotificationAPModel} from "../../models/NotificationAP";
-import {UserAP} from "../../models/UserAP";
+import {NotificationModel} from "../../models/Notification";
+import {User} from "../../models/User";
 
 export class SystemNotificationService extends AbstractNotificationService {
     public readonly notificationClass = 'system';
@@ -20,18 +20,18 @@ export class SystemNotificationService extends AbstractNotificationService {
             channel: notification.channel ?? ''
         };
 
-        let notificationDB: NotificationAPModel;
+        let notificationDB: NotificationModel;
         try {
             notificationDB = await this.notificationModel().create(fullNotification);
 
-            const users = await this.userModel().find({}) as UserAP[];
+            const users = await this.userModel().find({}) as User[];
             for (const user of users) {
                 try {
                     if (this.adminizer.accessRightsHelper.hasPermission(`notification-${this.notificationClass}`, user)) {
                         await this.createUserNotification(notificationDB.id, user.id);
                     }
                 } catch (error) {
-                    Adminizer.log.error('Error creating UserNotificationAP:', error);
+                    Adminizer.log.error('Error creating UserNotification:', error);
                 }
             }
 

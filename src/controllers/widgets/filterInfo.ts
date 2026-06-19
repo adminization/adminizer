@@ -1,14 +1,14 @@
 import { FilterService } from "../../lib/filters/FilterService";
-import { FilterAP } from "../../models/FilterAP";
-import { UserAP } from "../../models/UserAP";
+import { Filter } from "../../models/Filter";
+import { User } from "../../models/User";
 
-async function resolveDashboardUser(req: ReqType): Promise<UserAP | null> {
+async function resolveDashboardUser(req: ReqType): Promise<User | null> {
     if (req.user) {
-        return req.user as UserAP;
+        return req.user as User;
     }
 
     const adminLogin = req.adminizer.config.administrator?.login ?? "admin";
-    const userModel = req.adminizer.modelHandler.internal("widgets").get<UserAP>("UserAP");
+    const userModel = req.adminizer.modelHandler.internal("widgets").get<User>("User");
     const user = await userModel.findOne({ where: { login: adminLogin } });
     return user ?? null;
 }
@@ -26,7 +26,7 @@ export async function widgetFilterInfoController(req: ReqType, res: ResType) {
 
     const filterService = new FilterService(req.adminizer);
 
-    let filter: FilterAP | null = null;
+    let filter: Filter | null = null;
     try {
         filter = await filterService.getFilterById(filterId, user);
     } catch {

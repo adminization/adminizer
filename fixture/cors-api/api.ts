@@ -1,6 +1,5 @@
-import {Adminizer, verifyUser, signUser} from "../../dist";
+import {Adminizer, verifyUser, signUser, User} from "../../dist";
 import {parse, serialize} from "cookie";
-import {UserAP} from "../../dist";
 
 export function corsApi(adminizer: Adminizer) {
     const routePrefix = adminizer.config.routePrefix || '';
@@ -56,7 +55,7 @@ export function corsApi(adminizer: Adminizer) {
             const {login, password} = req.body;
             const user = await adminizer.modelHandler
                 .internal("auth")
-                .get<UserAP>("UserAP")
+                .get<User>("User")
                 .findOne({where: {login: login}});
 
             if (!user?.id || !user.login) {

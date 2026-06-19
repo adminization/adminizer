@@ -1,7 +1,7 @@
 import { ControllerHelper } from "../../helpers/controllerHelper";
 import { FilterService } from "../../lib/filters/FilterService";
-import { FilterAP } from "../../models/FilterAP";
-import { FilterColumnAP } from "../../models/FilterColumnAP";
+import { Filter } from "../../models/Filter";
+import { FilterColumn } from "../../models/FilterColumn";
 import { Adminizer } from "../../lib/Adminizer";
 import { GROUP_FILTER_VISIBILITY_TOKEN } from "../../policies/permissionResolvers";
 
@@ -89,7 +89,7 @@ export async function getSavedFilters(req: ReqType, res: ResType) {
     });
 
     // Load owner info for each filter
-    const userModel = req.adminizer.modelHandler.model.get('userap');
+    const userModel = req.adminizer.modelHandler.model.get('User');
     const filtersWithOwner = await Promise.all(
         filters.map(async (filter) => {
             let ownerInfo = null;
@@ -196,7 +196,7 @@ export async function saveFilter(req: ReqType, res: ResType) {
             });
         }
 
-        let filter: FilterAP;
+        let filter: Filter;
 
         if (filterId && existingFilter && existingFilter.id === filterId) {
             // Update own existing filter - allow changing visibility
@@ -288,7 +288,7 @@ export async function saveFilter(req: ReqType, res: ResType) {
 
         // Save columns if provided
         if (columns && Array.isArray(columns)) {
-            const filterColumns: Partial<FilterColumnAP>[] = columns.map((col: any, index: number) => ({
+            const filterColumns: Partial<FilterColumn>[] = columns.map((col: any, index: number) => ({
                 fieldName: col.fieldName,
                 order: col.order !== undefined ? col.order : index
             }));

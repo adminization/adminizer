@@ -63,6 +63,15 @@ const sequelize = new Sequelize({
 
 let adminizer: Adminizer | null = null;
 let initialization: Promise<Adminizer> | null = null;
+const systemModels = {
+  User: 'UserAP',
+  Group: 'GroupAP',
+  Filter: 'FilterAP',
+  FilterColumn: 'FilterColumnAP',
+  HistoryActions: 'HistoryActionsAP',
+  Notification: 'NotificationAP',
+  UserNotification: 'UserNotificationAP',
+};
 
 async function getAdminizer() {
   if (adminizer) {
@@ -75,7 +84,7 @@ async function getAdminizer() {
       await sequelize.sync();
 
       const instance = new Adminizer([
-        new SequelizeAdapter(sequelize),
+        new SequelizeAdapter(sequelize, { systemModels }),
       ]);
       await instance.init({
         routePrefix: '/api/adminizer',
@@ -253,7 +262,7 @@ await sequelize.authenticate();
 await sequelize.sync(); // Prefer migrations in production.
 
 const adminizer = new Adminizer([
-  new SequelizeAdapter(sequelize),
+  new SequelizeAdapter(sequelize, { systemModels }),
 ]);
 await adminizer.init(config);
 ```

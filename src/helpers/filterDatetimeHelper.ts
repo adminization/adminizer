@@ -1,4 +1,4 @@
-import { FilterCondition } from "../models/FilterAP";
+import { FilterCondition } from "../models/Filter";
 
 export interface ConvertDatetimeConditionsOptions {
     dropEmptyValues?: boolean;

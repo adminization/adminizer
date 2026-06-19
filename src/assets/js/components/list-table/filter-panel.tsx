@@ -35,7 +35,7 @@ import MaterialIcon from '@/components/material-icon.tsx';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useFilterTranslations } from './use-filter-translations';
-import { FilterAP } from '../../../../models/FilterAP';
+import { Filter } from '../../../../models/Filter';
 
 export interface ColumnConfig {
     fieldName: string;
@@ -555,7 +555,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
         filterDialogRef.current?.open();
 
         try {
-            const response = await adminApi.get<{filters: FilterAP[]}>(`/adminizer/model/${modelName}/saved-filters`);
+            const response = await adminApi.get<{filters: Filter[]}>(`/adminizer/model/${modelName}/saved-filters`);
             const savedFilters = response.data?.filters || [];
             const targetFilter = savedFilters.find((filter: any) => String(filter.id) === String(targetFilterId));
 
@@ -587,7 +587,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
         }
 
         try {
-            const response = await adminApi.get<{filter: FilterAP}>(`/adminizer/model/${modelName}/filter/temporary`);
+            const response = await adminApi.get<{filter: Filter}>(`/adminizer/model/${modelName}/filter/temporary`);
             const filter = response.data?.filter;
 
             if (!filter) {
@@ -810,7 +810,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
                     }));
             }
 
-            const response = await adminApi.post<{filter: FilterAP}>(`/adminizer/model/${modelName}/filter`, payload);
+            const response = await adminApi.post<{filter: Filter}>(`/adminizer/model/${modelName}/filter`, payload);
             const filter = response.data.filter;
 
             // Очищаем временный фильтр после успешного сохранения
@@ -1014,7 +1014,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
 
             if (error.response?.status === 401) {
                 console.error('Session expired, redirecting to login...');
-                window.location.href = '/adminizer/model/userap/login';
+                window.location.href = '/adminizer/model/User/login';
                 return;
             }
 
@@ -1066,7 +1066,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
                     }));
             }
 
-            const response = await adminApi.post<{filter: FilterAP}>(`/adminizer/model/${modelName}/filter`, payload);
+            const response = await adminApi.post<{filter: Filter}>(`/adminizer/model/${modelName}/filter`, payload);
             const filter = response.data.filter;
 
             // Обновляем состояние

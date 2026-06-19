@@ -1,7 +1,7 @@
 import {Adminizer} from "../lib/Adminizer";
 import {generate} from "password-hash";
 import {inertiaInitUserHelper} from "../helpers/inertiaAutHelper";
-import { UserAP } from "../models/UserAP";
+import { User } from "../models/User";
 import { generateUserApiKey } from "../helpers/apiKeyHelper";
 
 export default async function initUser(req: ReqType, res: ResType) {
@@ -9,10 +9,10 @@ export default async function initUser(req: ReqType, res: ResType) {
         return res.redirect(`${req.adminizer.config.routePrefix}/`);
     }
 
-    const userModel = req.adminizer.modelHandler.internal("auth").get<UserAP>("UserAP");
-    let admins: UserAP[] = await userModel.find({where: {isAdministrator: true}});
+    const userModel = req.adminizer.modelHandler.internal("auth").get<User>("User");
+    let admins: User[] = await userModel.find({where: {isAdministrator: true}});
     if (admins.length) {
-        res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+        res.redirect(`${req.adminizer.config.routePrefix}/model/User/login`);
     }
 
     if (req.method.toUpperCase() === "POST") {

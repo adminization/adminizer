@@ -1,5 +1,5 @@
 export function redirectToLogin(req: ReqType, res: ResType): void {
-    const loginUrl = `${req.adminizer.config.routePrefix}/model/userap/login`;
+    const loginUrl = `${req.adminizer.config.routePrefix}/model/User/login`;
     const redirectTo = encodeURIComponent(req.originalUrl);
     res.redirect(`${loginUrl}?redirectTo=${redirectTo}`);
 }
@@ -16,12 +16,12 @@ export function inertiaLoginHelper(req: ReqType) {
         success: req.i18n.__("Verification complete!"),
         error: req.i18n.__("Error solving CAPTCHA. Try again."),
     };
-    props.submitLink = `${req.adminizer.config.routePrefix}/model/userap/login`
+    props.submitLink = `${req.adminizer.config.routePrefix}/model/User/login`
     props.redirectTo = (req.query?.redirectTo as string) || '';
     if (req.adminizer.config.registration?.enable === true) {
         props.registerLink = {
             title: req.i18n.__("Register"),
-            link: `${req.adminizer.config.routePrefix}/model/userap/register`
+            link: `${req.adminizer.config.routePrefix}/model/User/register`
         };
     }
     // Optional additional link at the bottom of login page
@@ -46,7 +46,7 @@ export function inertiaLoginHelper(req: ReqType) {
 
 export function inertiaRegisterHelper(req: ReqType) {
     let props: Record<string, unknown> = {};
-    props.submitLink = `${req.adminizer.config.routePrefix}/model/userap/register`
+    props.submitLink = `${req.adminizer.config.routePrefix}/model/User/register`
     props.header = {
         title: req.i18n.__("Create an Account"),
         desc: req.i18n.__("Please fill out the fields below")
@@ -60,7 +60,7 @@ export function inertiaRegisterHelper(req: ReqType) {
     props.localeLabel = req.i18n.__("Locale");
     props.submitButton = req.i18n.__("Register");
     props.backToLogin = {
-        link: `${req.adminizer.config.routePrefix}/model/userap/login`,
+        link: `${req.adminizer.config.routePrefix}/model/User/login`,
         text: req.i18n.__("Back to Login")
     }
     return props

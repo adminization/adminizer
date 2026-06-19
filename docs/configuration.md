@@ -597,10 +597,10 @@ module.exports = config;
             subItems?: HrefConfig[]
         }[]
         // Called after all links (static + model-generated) are collected. Returns final array.
-        handleAdditionalLinks: (user: UserAP, allLinks: HrefConfig[]) => HrefConfig[]
+        handleAdditionalLinks: (user: User, allLinks: HrefConfig[]) => HrefConfig[]
         // Per-section handlers, applied after all links are collected.
         sectionHandlers: {
-            [section: string]: (user: UserAP, links: HrefConfig[]) => HrefConfig[]
+            [section: string]: (user: User, links: HrefConfig[]) => HrefConfig[]
         }
     }
     // Policies that will be executed before going to every page

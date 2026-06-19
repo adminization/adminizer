@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { generate } from 'password-hash';
 import { DataSource } from 'typeorm';
-import { UserAP } from '../../dist';
+import { User } from '../../dist';
 import { Example } from '../models/sequelize/Example';
 export async function seedDatabase(
   collections: Record<string, any>,
@@ -102,7 +102,7 @@ export async function seedDatabase(
   // ------------------ Example Records ------------------ //
   const exampleCount = await exampleModel.count();
 
-  const allUsers: UserAP[] = await userModel.findAll();
+  const allUsers: User[] = await userModel.findAll();
 
     if (exampleCount === 0) {
       // Helper function to get ISO week number (YYYY-Www format)
@@ -152,7 +152,7 @@ export async function seedDatabase(
     const testCount = await testModel.count();
 
   if (testCount === 0) {
-    const allUsers: UserAP[] = await userModel.findAll();
+    const allUsers: User[] = await userModel.findAll();
 
     const allExamples: Example[] = await exampleModel.findAll();
 

@@ -146,7 +146,7 @@ For controllers, register model access during setup and read the model through `
 setup(ctx: AppSetupContext): void {
   ctx.modelAccess({
     id: "users",
-    models: ["UserAP"],
+    models: ["User"],
   });
 
   ctx.controller({
@@ -154,7 +154,7 @@ setup(ctx: AppSetupContext): void {
     method: "get",
     route: "/my-app/users",
     middleware: async (req, res) => {
-      const users = await req.runtime.models.get<UserAP>("UserAP").find({});
+      const users = await req.runtime.models.get<User>("User").find({});
       return res.json({ users });
     },
     policies: [{ type: "auth", mode: "api" }],

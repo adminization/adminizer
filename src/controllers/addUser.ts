@@ -2,23 +2,23 @@ import {ControllerHelper} from "../helpers/controllerHelper";
 import {Adminizer} from "../lib/Adminizer";
 import {generate} from 'password-hash';
 import {inertiaUserHelper} from "../helpers/inertiaUserHelper";
-import { UserAP } from "../models/UserAP";
-import { GroupAP } from "../models/GroupAP";
+import { User } from "../models/User";
+import { Group } from "../models/Group";
 import { generateUserApiKey } from "../helpers/apiKeyHelper";
 
 export default async function (req: ReqType, res: ResType) {
     let modelResource = ControllerHelper.findModelResource(req);
     const internalUsers = req.adminizer.modelHandler.internal("users");
-    const groupModel = internalUsers.get<GroupAP>("GroupAP");
-    const userModel = internalUsers.get<UserAP>("UserAP");
-    let groups: GroupAP[];
+    const groupModel = internalUsers.get<Group>("Group");
+    const userModel = internalUsers.get<User>("User");
+    let groups: Group[];
     try {
         groups = await groupModel.find({});
     } catch (e) {
         Adminizer.log.error(e)
     }
 
-    let user: UserAP;
+    let user: User;
 
     if (req.method.toUpperCase() === 'POST') {
         let userGroups = [];
@@ -52,7 +52,7 @@ export default async function (req: ReqType, res: ResType) {
             Adminizer.log.debug(`A new user was created: `, user);
 
             req.flash.setFlashMessage('success', 'A new user was created !');
-            return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/userap`)
+            return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/User`)
 
         } catch (e) {
             Adminizer.log.error(e);

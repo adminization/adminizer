@@ -4,7 +4,7 @@ import {inertiaLoginHelper} from "../helpers/inertiaAutHelper";
 import {Adminizer} from "../lib/Adminizer";
 import {signUser} from "../lib/helper/jwt";
 import {serialize} from "cookie";
-import {UserAP} from "../models/UserAP";
+import {User} from "../models/User";
 
 
 export default async function login(req: ReqType, res: ResType) {
@@ -18,9 +18,9 @@ export default async function login(req: ReqType, res: ResType) {
             let login = req.body.login;
             let password = req.body.password;
             let captchaSolution = req.body.captchaSolution;
-            const userModel = req.adminizer.modelHandler.internal("auth").get<UserAP>("UserAP");
+            const userModel = req.adminizer.modelHandler.internal("auth").get<User>("User");
 
-            let user: UserAP;
+            let user: User;
             try {
                 user = await userModel.findOne({where: {login: login}});
             } catch (e) {
@@ -137,9 +137,9 @@ export default async function login(req: ReqType, res: ResType) {
 
         // Force full page reload after logout
         if (req.headers['x-inertia']) {
-            return res.writeHead(409, { 'x-inertia-location': `${req.adminizer.config.routePrefix}/model/userap/login` }).end();
+            return res.writeHead(409, { 'x-inertia-location': `${req.adminizer.config.routePrefix}/model/User/login` }).end();
         }
-        return res.redirect(`${req.adminizer.config.routePrefix}/model/userap/login`);
+        return res.redirect(`${req.adminizer.config.routePrefix}/model/User/login`);
     }
     return res.status(404);
 }

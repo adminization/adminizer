@@ -1,8 +1,8 @@
 import { ControllerHelper } from "../../helpers/controllerHelper";
 import { DataAccessor } from "../../lib/DataAccessor";
 import { FilterService } from "../../lib/filters/FilterService";
-import { FilterAP } from "../../models/FilterAP";
-import { FilterColumnAP } from "../../models/FilterColumnAP";
+import { Filter } from "../../models/Filter";
+import { FilterColumn } from "../../models/FilterColumn";
 
 /**
  * GET /adminizer/model/:model/columns
@@ -37,7 +37,7 @@ export async function getModelColumns(req: ReqType, res: ResType) {
 
     // If filterId provided, also return filter's column configuration
     const filterId = req.query.filterId ? req.query.filterId.toString() : undefined;
-    let filterColumns: FilterColumnAP[] = [];
+    let filterColumns: FilterColumn[] = [];
 
     if (filterId && filterId !== 'temporary') {
         try {
@@ -58,7 +58,7 @@ export async function getModelColumns(req: ReqType, res: ResType) {
                 filter: 'temporary',
                 fieldName: col.fieldName,
                 order: col.order !== undefined ? col.order : index
-            } as FilterColumnAP));
+            } as FilterColumn));
         }
     }
 
@@ -103,8 +103,8 @@ export async function updateFilterColumns(req: ReqType, res: ResType) {
             return res.status(404).send({ error: req.i18n.__('Filter not found or access denied') });
         }
 
-        // Convert frontend column format to FilterColumnAP format
-        const filterColumns: Partial<FilterColumnAP>[] = columns.map((col: any, index: number) => ({
+        // Convert frontend column format to FilterColumn format
+        const filterColumns: Partial<FilterColumn>[] = columns.map((col: any, index: number) => ({
             fieldName: col.fieldName,
             order: col.order !== undefined ? col.order : index
         }));

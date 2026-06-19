@@ -1,7 +1,7 @@
 import type {WidgetConfig, WidgetsLayouts} from "../lib/widgets/widgetHandler";
-import type {GroupAP} from "./GroupAP";
+import type {Group} from "./Group";
 
-export interface UserAP {
+export interface User {
   id?: number;
   login: string;
   fullName?: string;
@@ -14,7 +14,7 @@ export interface UserAP {
   isDeleted?: boolean;
   isActive?: boolean;
   isAdministrator?: boolean;
-  groups?: GroupAP[];
+  groups?: Group[];
   widgets?: {
       widgets: WidgetConfig[],
       layout: WidgetsLayouts

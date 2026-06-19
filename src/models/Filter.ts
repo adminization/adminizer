@@ -1,4 +1,4 @@
-import type {FilterColumnAP} from "./FilterColumnAP";
+import type {FilterColumn} from "./FilterColumn";
 
 /**
  * Filter operators for query conditions
@@ -60,9 +60,9 @@ export interface FilterCondition {
 export type FilterVisibility = 'private' | 'public' | 'groups' | 'system';
 
 /**
- * FilterAP interface for TypeScript
+ * Filter interface for TypeScript
  */
-export interface FilterAP {
+export interface Filter {
     id?: string;                     // UUID
 
     // Core data
@@ -98,5 +98,5 @@ export interface FilterAP {
     updatedAt?: Date;
 
     // Relations
-    columns?: FilterColumnAP[];
+    columns?: FilterColumn[];
 }

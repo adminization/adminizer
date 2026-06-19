@@ -23,6 +23,16 @@ import {
 } from "../fixture/apps/media-manager/MediaManagerModels";
 import {AbstractMediaManager} from "../src/lib/media-manager/AbstractMediaManager";
 
+const fixtureSystemModelBindings: Record<string, string> = {
+    User: "UserAP",
+    Group: "GroupAP",
+    Filter: "FilterAP",
+    FilterColumn: "FilterColumnAP",
+    HistoryActions: "HistoryActionsAP",
+    Notification: "NotificationAP",
+    UserNotification: "UserNotificationAP",
+};
+
 describe("model registration ownership", () => {
     const sequelizeConnections: Sequelize[] = [];
     const typeOrmConnections: DataSource[] = [];
@@ -39,14 +49,19 @@ describe("model registration ownership", () => {
     it("validates fixture-provided Sequelize system models", () => {
         const orm = createSequelize();
         registerSequelizeSystemModels(orm);
-        const adapter = new SequelizeAdapter(orm);
+        const adapter = new SequelizeAdapter(orm, {
+            systemModels: fixtureSystemModelBindings,
+        });
 
         for (const contract of SYSTEM_MODEL_CONTRACTS) {
-            const registeredModel = adapter.getModel(contract.name);
+            const registeredModel = adapter.getModel(fixtureSystemModelBindings[contract.name] ?? contract.name);
             expect(registeredModel).toBeDefined();
             validateSystemModelContract(
                 new adapter.Model(contract.name, registeredModel),
-                contract
+                contract,
+                {
+                    resolveRelationTarget: (target) => resolveFixtureSystemRelationTarget(target),
+                }
             );
         }
     });
@@ -61,14 +76,19 @@ describe("model registration ownership", () => {
         });
         typeOrmConnections.push(dataSource);
         await dataSource.initialize();
-        const adapter = new TypeOrmAdapter(dataSource);
+        const adapter = new TypeOrmAdapter(dataSource, {
+            systemModels: fixtureSystemModelBindings,
+        });
 
         for (const contract of SYSTEM_MODEL_CONTRACTS) {
-            const registeredModel = adapter.getModel(contract.name);
+            const registeredModel = adapter.getModel(fixtureSystemModelBindings[contract.name] ?? contract.name);
             expect(registeredModel).toBeDefined();
             validateSystemModelContract(
                 new adapter.Model(contract.name, registeredModel),
-                contract
+                contract,
+                {
+                    resolveRelationTarget: (target) => resolveFixtureSystemRelationTarget(target),
+                }
             );
         }
     });
@@ -78,7 +98,9 @@ describe("model registration ownership", () => {
         await orm.sync();
         await installNavigationSequelizeModel(orm, navigationModelName, true);
 
-        const adminizer = createAdminizer(new SequelizeAdapter(orm), "sequelize");
+        const adminizer = createAdminizer(new SequelizeAdapter(orm, {
+            systemModels: fixtureSystemModelBindings,
+        }), "sequelize");
         await adminizer.appManager.enable(new ModelOnlyApp(navigationModelName, "sequelize"));
 
         expect(adminizer.modelHandler.model.has(navigationModelName)).toBe(true);
@@ -100,7 +122,9 @@ describe("model registration ownership", () => {
         typeOrmConnections.push(dataSource);
         await dataSource.initialize();
 
-        const adminizer = createAdminizer(new TypeOrmAdapter(dataSource), "typeorm");
+        const adminizer = createAdminizer(new TypeOrmAdapter(dataSource, {
+            systemModels: fixtureSystemModelBindings,
+        }), "typeorm");
 
         await expect(
             adminizer.appManager.enable(new ModelOnlyApp("MissingEntity", "typeorm"))
@@ -114,7 +138,9 @@ describe("model registration ownership", () => {
         await orm.sync();
         await installMediaManagerSequelizeModels(orm, true);
 
-        const adminizer = createAdminizer(new SequelizeAdapter(orm), "sequelize");
+        const adminizer = createAdminizer(new SequelizeAdapter(orm, {
+            systemModels: fixtureSystemModelBindings,
+        }), "sequelize");
         await adminizer.appManager.enable(new MediaManagerApp({
             fileStoragePath: ".tmp/test-media",
         }));
@@ -188,7 +214,9 @@ describe("model registration ownership", () => {
             const manager = new LegacyMediaManager({
                 accessRightsHelper: {registerToken},
             } as Adminizer);
-            const adminizer = createAdminizer(new SequelizeAdapter(createSequelize()), "sequelize");
+            const adminizer = createAdminizer(new SequelizeAdapter(createSequelize(), {
+                systemModels: fixtureSystemModelBindings,
+            }), "sequelize");
 
             adminizer.mediaManagerHandler.add(manager);
             await vi.advanceTimersByTimeAsync(100);
@@ -270,4 +298,13 @@ function createAdminizer(
         },
     } as any;
     return adminizer;
+}
+
+function resolveFixtureSystemRelationTarget(target: string): string {
+    const found = Object.entries(fixtureSystemModelBindings).find(([systemName, hostName]) =>
+        systemName.toLowerCase() === target.toLowerCase() ||
+        hostName.toLowerCase() === target.toLowerCase()
+    );
+
+    return found?.[0] ?? target;
 }

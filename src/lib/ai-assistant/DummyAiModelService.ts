@@ -1,6 +1,6 @@
 import {AbstractAiModelService} from './AbstractAiModelService';
 import {AiAssistantMessage} from '../../interfaces/types';
-import {UserAP} from '../../models/UserAP';
+import {User} from '../../models/User';
 import {Adminizer} from '../Adminizer';
 
 const DUMMY_RESPONSE = 'Ai-assystant dummy in deveploment';
@@ -17,7 +17,7 @@ export class DummyAiModelService extends AbstractAiModelService {
     public async generateReply(
         _prompt: string,
         _history: AiAssistantMessage[],
-        _user: UserAP,
+        _user: User,
     ): Promise<string> {
         return DUMMY_RESPONSE;
     }

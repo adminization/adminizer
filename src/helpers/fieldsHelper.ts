@@ -58,7 +58,8 @@ export class FieldsHelper {
 				return;
 			}
 
-			let Model = req.adminizer.modelHandler.model.get(modelName);
+			const resolvedModelName = req.adminizer.modelHandler.resolveModelName(modelName);
+			let Model = req.adminizer.modelHandler.model.get(resolvedModelName);
 			if (!Model) {
 				return;
 			}
@@ -69,8 +70,10 @@ export class FieldsHelper {
 				Adminizer.log.warn("Warning: executing malicious job trying to add a huge amount of records in field config," +
 					" please rewrite this part of code in the nearest future");
 				let modelResource: ModelResource = {
-					name: modelName, config: req.adminizer.config.models[modelName] as ModelConfig,
-					model: Model, uri: `${req.adminizer.config.routePrefix}/model/${modelName}`
+					name: resolvedModelName,
+					config: req.adminizer.config.models[resolvedModelName] as ModelConfig,
+					model: Model,
+					uri: `${req.adminizer.config.routePrefix}/model/${resolvedModelName}`
 				};
 				let dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "view");
 				list = await Model.find({}, dataAccessor);

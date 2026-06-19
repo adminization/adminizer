@@ -2,7 +2,7 @@ import {EventEmitter} from 'events';
 import {Adminizer} from '../Adminizer';
 import {AbstractNotificationService} from "./AbstractNotificationService";
 import {INotification} from '../../interfaces/types';
-import {UserAP} from "../../models/UserAP";
+import {User} from "../../models/User";
 
 export class NotificationHandler extends EventEmitter {
     private services: Map<string, AbstractNotificationService> = new Map();

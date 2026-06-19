@@ -61,7 +61,7 @@ const config: AdminizerConfig = {
   routePrefix: "/admin",
   system: {
     internalModelAccess: {
-      "my-module": ["UserAP", "FilterAP"]
+      "my-module": ["User", "Filter"]
     }
   }
 };
@@ -72,7 +72,7 @@ Usage:
 ```ts
 const filters = await adminizer.modelHandler
   .internal("my-module")
-  .get("FilterAP")
+  .get("Filter")
   .find({ where: { modelName: "Example" } });
 ```
 

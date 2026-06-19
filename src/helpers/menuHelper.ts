@@ -3,7 +3,7 @@
  *
  * @constructor
  */
-import { UserAP } from "../models/UserAP";
+import { User } from "../models/User";
 import { ActionType, AdminpanelConfig, HrefConfig, ModelConfig } from "../interfaces/adminpanelConfig";
 import { GroupsAccessRightsHelper } from "./accessRightsHelper";
 
@@ -189,7 +189,7 @@ export class MenuHelper {
      *
      * @returns {Array}
      */
-    public getMenuItems(user: UserAP): MenuItem[] {
+    public getMenuItems(user: User): MenuItem[] {
         let menus: MenuItem[] = [];
 
         const filtersDisabledGlobally = this.config.filters?.enabled === false;

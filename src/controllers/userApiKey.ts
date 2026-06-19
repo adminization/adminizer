@@ -12,7 +12,7 @@ export async function getUserApiKey(req: ReqType, res: ResType) {
     if (!req.user.apiKey) {
         const newKey = generateUserApiKey();
         try {
-            const userModel = req.adminizer.modelHandler.internal("auth").get("UserAP");
+            const userModel = req.adminizer.modelHandler.internal("auth").get("User");
             await userModel.updateOne({where: {id: req.user.id}}, { apiKey: newKey });
             req.user.apiKey = newKey;
         } catch (e) {
@@ -28,7 +28,7 @@ export async function regenerateUserApiKey(req: ReqType, res: ResType) {
     const newKey = generateUserApiKey();
 
     try {
-        const userModel = req.adminizer.modelHandler.internal("auth").get("UserAP");
+        const userModel = req.adminizer.modelHandler.internal("auth").get("User");
         await userModel.updateOne({where: {id: req.user.id}}, { apiKey: newKey });
         Adminizer.log.debug(`User ${req.user.id} regenerated their API key`);
         return res.json({ apiKey: newKey });

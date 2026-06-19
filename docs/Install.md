@@ -22,6 +22,8 @@ Adminizer is designed to be flexible and can be integrated with any ORM or data 
 
 The host application must register the required Adminizer system models before calling `adminizer.init()`. Adminizer validates those models at startup but does not create or synchronize them. See [System Models](Configuration/Models.md).
 
+Adminizer core refers to system models by canonical names such as `User` and `Group`. If your ORM models use different names, pass the mapping through the adapter `systemModels` option.
+
 ---
 
 ## 3. Initialize Adminizer
@@ -133,8 +135,18 @@ async function start() {
     // 3. Synchronize the database (this will create the table)
     await sequelize.sync({ force: true });
 
-    // 4. Create an adapter
-    const sequelizeAdapter = new SequelizeAdapter(sequelize);
+    // 4. Create an adapter and map Adminizer system names to host ORM model names
+    const sequelizeAdapter = new SequelizeAdapter(sequelize, {
+        systemModels: {
+            User: "UserAP",
+            Group: "GroupAP",
+            Filter: "FilterAP",
+            FilterColumn: "FilterColumnAP",
+            HistoryActions: "HistoryActionsAP",
+            Notification: "NotificationAP",
+            UserNotification: "UserNotificationAP",
+        },
+    });
 
     // 5. Create Adminizer instance
     const adminizer = new Adminizer([sequelizeAdapter]);

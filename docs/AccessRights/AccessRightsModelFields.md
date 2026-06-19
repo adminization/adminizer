@@ -1,7 +1,7 @@
 ### `DataAccessor` — Data Layer Mediator with Access Control
 
 
-> Everything that is not prohibited is allowed, Excluding ties to the UserAP model
+> Everything that is not prohibited is allowed, excluding ties to the canonical `User` model
 
 The `DataAccessor` class is a central utility for handling the interaction between users and the system's data models, while enforcing access control and configuration constraints.
 
@@ -16,7 +16,7 @@ This class:
 * Filters records according to configured access rules
 * Dynamically includes associated models and their configurations
 * Automatically applies or restricts data access based on user roles and group membership
-* Helps populate or restrict relation fields (e.g., `UserAP`, `GroupAP`) depending on ownership and configuration
+* Helps populate or restrict relation fields (e.g., `User`, `Group`) depending on ownership and configuration
 * Provides unified methods for reading (`process`, `processMany`), sanitizing (`sanitizeUserRelationAccess`), and updating (`setUserRelationAccess`) data records with permission logic baked in
 
 ---

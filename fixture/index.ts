@@ -72,6 +72,15 @@ process.env.JWT_SECRET = "fixture-jwt-secret"
 
 const ormType = process.env.ORM ?? "sequelize";
 let adminizer: Adminizer;
+const fixtureSystemModels = {
+    User: "UserAP",
+    Group: "GroupAP",
+    Filter: "FilterAP",
+    FilterColumn: "FilterColumnAP",
+    HistoryActions: "HistoryActionsAP",
+    Notification: "NotificationAP",
+    UserNotification: "UserNotificationAP",
+};
 
 if (ormType === "sequelize") {
     const tmpDir = path.join(process.cwd(), ".tmp");
@@ -88,7 +97,9 @@ if (ormType === "sequelize") {
     ExampleSequelize.associate(orm);
 
     await orm.sync({});
-    const sequelizeAdapter = new SequelizeAdapter(orm);
+    const sequelizeAdapter = new SequelizeAdapter(orm, {
+        systemModels: fixtureSystemModels,
+    });
     adminizer = new Adminizer([sequelizeAdapter]);
     await ormSharedFixtureLift(adminizer);
 
@@ -123,7 +134,9 @@ if (ormType === "sequelize") {
 
     await dataSource.initialize();
 
-    const typeOrmAdapter = new TypeOrmAdapter(dataSource);
+    const typeOrmAdapter = new TypeOrmAdapter(dataSource, {
+        systemModels: fixtureSystemModels,
+    });
     adminizer = new Adminizer([typeOrmAdapter]);
     await ormSharedFixtureLift(adminizer);
 

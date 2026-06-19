@@ -1,6 +1,6 @@
 import { Adminizer } from "../../lib/Adminizer";
 import { AbstractHistoryAdapter } from "../../lib/history-actions/AbstractHistoryAdapter";
-import { UserAP } from "../../models/UserAP";
+import { User } from "../../models/User";
 import { getUiTranslations } from "../../lib/ui-i18n/getUiTranslations";
 import { HISTORY_UI_TRANSLATION_KEYS } from "../../lib/ui-i18n/uiTranslationKeys";
 
@@ -12,13 +12,13 @@ export class HistoryController {
 
         if (req.method.toUpperCase() === 'GET') {
             const rawModels = adapter.getModels(req.user);
-            let users: UserAP[] = []
+            let users: User[] = []
 
             const accessToUsersHistory = req.adminizer.accessRightsHelper.enoughPermissions([
                 `users-history-${adapter.id}`
             ], req.user);
 
-            if (accessToUsersHistory) users = await req.adminizer.modelHandler.model.get('userap')['_find']({}) as UserAP[]
+            if (accessToUsersHistory) users = await req.adminizer.modelHandler.model.get('User')['_find']({}) as User[]
 
             // Getting an array of config.models keys in lowercase for comparison
             const normalizedModelConfig = new Map(
@@ -47,7 +47,7 @@ export class HistoryController {
                 props: {
                     title: req.i18n.__('History'),
                     models,
-                    users: users.map((user: UserAP) => ({
+                    users: users.map((user: User) => ({
                         name: user.login
                     })),
                     i18nPage

@@ -1,9 +1,9 @@
 import {EventEmitter} from 'events';
 import {Adminizer} from '../Adminizer';
 import {INotification, INotificationEvent} from '../../interfaces/types';
-import {NotificationAPModel} from "../../models/NotificationAP";
-import {UserAP} from "../../models/UserAP";
-import {UserNotificationAP} from "../../models/UserNotificationAP";
+import {NotificationModel} from "../../models/Notification";
+import {User} from "../../models/User";
+import {UserNotification} from "../../models/UserNotification";
 
 
 /**
@@ -66,15 +66,15 @@ export abstract class AbstractNotificationService extends EventEmitter {
     }
 
     protected notificationModel() {
-        return this.adminizer.modelHandler.internal("notifications").get<any>("NotificationAP");
+        return this.adminizer.modelHandler.internal("notifications").get<any>("Notification");
     }
 
     protected userNotificationModel() {
-        return this.adminizer.modelHandler.internal("notifications").get<any>("UserNotificationAP");
+        return this.adminizer.modelHandler.internal("notifications").get<any>("UserNotification");
     }
 
     protected userModel() {
-        return this.adminizer.modelHandler.internal("notifications").get<UserAP>("UserAP");
+        return this.adminizer.modelHandler.internal("notifications").get<User>("User");
     }
 
     private _bindAccessRight() {
@@ -94,9 +94,9 @@ export abstract class AbstractNotificationService extends EventEmitter {
      * The client is then added to the user's Map with the provided send function.
      * @param {string} clientId - The unique identifier of the client to be registered.
      * @param {(event: INotificationEvent) => void} sendFn - The function used to send notifications to the client.
-     * @param {UserAP} user - The user associated with the client.
+     * @param {User} user - The user associated with the client.
      */
-    addClient(clientId: string, sendFn: (event: INotificationEvent) => void, user: UserAP): void {
+    addClient(clientId: string, sendFn: (event: INotificationEvent) => void, user: User): void {
         const userId = user.id;
 
         // If the user does not yet have Map clients, create one
@@ -213,7 +213,7 @@ export abstract class AbstractNotificationService extends EventEmitter {
     }
 
     /**
-     * Creates a new user notification record in the 'usernotificationap' model.
+     * Creates a new user notification record in the 'UserNotification' model.
      * This method is used to associate a notification with a specific user and mark it as unread.
      * @param {string} notificationId - The unique identifier of the notification.
      * @param {number} [userId] - The ID of the user to associate the notification with. Optional.
@@ -234,7 +234,7 @@ export abstract class AbstractNotificationService extends EventEmitter {
     }
 
     /**
-     * Retrieves a user notification record from the 'usernotificationap' model.
+     * Retrieves a user notification record from the 'UserNotification' model.
      * The record is fetched based on the provided notification ID and user ID.
      * @param {string} notificationId - The unique identifier of the notification.
      * @param {number} userId - The ID of the user associated with the notification.
@@ -284,7 +284,7 @@ export abstract class AbstractNotificationService extends EventEmitter {
 
             if (query.id.length === 0) return []
 
-            const notificationsDB: NotificationAPModel[] = await this.notificationModel().find({
+            const notificationsDB: NotificationModel[] = await this.notificationModel().find({
                 where: query,
                 sort: 'createdAt DESC',
                 limit: limit,
@@ -301,17 +301,17 @@ export abstract class AbstractNotificationService extends EventEmitter {
 
     /**
      * Prepares notification data by enriching it with user-specific read status and icon information.
-     * @param {NotificationAPModel[]} notificationsDB - An array of raw notification records from the database.
+     * @param {NotificationModel[]} notificationsDB - An array of raw notification records from the database.
      * @param {number} userId - The ID of the user for whom the read status is determined.
      * @returns {Promise<INotification[]>} A promise that resolves with an array of enriched notification objects.
      */
-    protected async prepareNotification(notificationsDB: NotificationAPModel[], userId: number): Promise<INotification[]> {
+    protected async prepareNotification(notificationsDB: NotificationModel[], userId: number): Promise<INotification[]> {
         let notifications: INotification[] = [];
 
         for (const notification of notificationsDB) {
             let readStatus = false;
 
-            // Getting read status from UserNotificationAP
+            // Getting read status from UserNotification
             const userNotification = await this.getUserNotification(notification.id, userId);
             readStatus = userNotification ? userNotification.read : false;
 
@@ -347,7 +347,7 @@ export abstract class AbstractNotificationService extends EventEmitter {
 
             if (notificationIds.length === 0) return []
 
-            const notificationsDB: NotificationAPModel[] = await this.notificationModel().find({
+            const notificationsDB: NotificationModel[] = await this.notificationModel().find({
                 where: {
                     message: {contains: s},
                     id: notificationIds,

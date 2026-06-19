@@ -28,8 +28,13 @@ export * from "./lib/controls/Control";
 export * from "./lib/controls/ControlsHandler";
 export * from "./lib/Adminizer";
 export * from "./lib/I18n";
-export * from "./models/GroupAP"
-export * from "./models/UserAP"
+export * from "./models/Group"
+export * from "./models/User"
+export * from "./models/Filter"
+export * from "./models/FilterColumn"
+export * from "./models/HistoryActions"
+export * from "./models/Notification"
+export * from "./models/UserNotification"
 export * from "./models/MediaManagerAP"
 export * from "./models/MediaManagerAssociationsAP"
 export * from "./models/MediaManagerMetaAP"

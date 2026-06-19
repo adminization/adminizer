@@ -142,7 +142,7 @@ System modules should access internal models through `ModelHandler`:
 ```ts
 const user = await adminizer.modelHandler
   .internal("widgets")
-  .get("UserAP")
+  .get("User")
   .findOne({ where: { login: "admin" } });
 ```
 
@@ -150,7 +150,7 @@ This path is intended for trusted Adminizer subsystems that must bypass `DataAcc
 
 ```ts
 // Do not use in application/module code.
-adminizer.modelHandler.model.get("UserAP")["_findOne"](...)
+adminizer.modelHandler.model.get("User")["_findOne"](...)
 ```
 
 ## Allowlist Scopes
@@ -175,7 +175,7 @@ Projects can extend the allowlist with `system.internalModelAccess`:
 const config = {
   system: {
     internalModelAccess: {
-      "my-module": ["UserAP", "FilterAP"]
+      "my-module": ["User", "Filter"]
     }
   }
 };
@@ -186,7 +186,7 @@ Then use the custom scope:
 ```ts
 const filters = await adminizer.modelHandler
   .internal("my-module")
-  .get("FilterAP")
+  .get("Filter")
   .find({ where: { modelName: "Example" } });
 ```
 

@@ -61,6 +61,6 @@ export class InertiaMenuHelper {
     }
 
     public getLogoutUrl(){
-        return `${this.adminizer.config.routePrefix}/model/userap/logout`
+        return `${this.adminizer.config.routePrefix}/model/User/logout`
     }
 }

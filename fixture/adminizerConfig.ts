@@ -26,7 +26,7 @@ const models: AdminpanelConfig["models"] = {
                 options: {
                     id: "default",
                     group: 'banner',
-                    accept: ['image/jpeg, image/png']
+                    accept: ['image/jpeg', 'image/png']
                 }
             },
             schema: {}

@@ -13,6 +13,7 @@ import {InternalModelAccessMap} from "./internalModelAccess";
 export type ControllerFunction = (req: ReqType, res: ResType) => Promise<any>
 
 export type AdminpanelIcon = MaterialIcon
+export type NonEmptyArray<T> = [T, ...T[]]
 export type FieldsTypes =
     "string" |
     "password" |
@@ -570,7 +571,7 @@ export interface TuiEditorFieldConfig extends BaseFieldConfig {
 export interface MediaManagerOptionsField {
     id: 'default' | string
     group: string,
-    accept: string [],
+    accept: NonEmptyArray<string>,
     initTab?: 'tile-image' | 'table-video' | 'table-text' | 'table-application' | 'table-all' | 'tile-all'
     config?: Record<string, any>
     onlyView?: boolean

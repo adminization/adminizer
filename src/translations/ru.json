@@ -1,5 +1,6 @@
 {
   "Action completed": "Действие завершено",
+  "Action failed": "Не удалось выполнить действие",
   "Actions": "Действия",
   "All": "Все",
   "Are you sure?": "Вы уверены?",
@@ -294,7 +295,7 @@
   "GroupAP model not found": "Модель GroupAP не найдена",
   "Failed to load groups": "Не удалось загрузить группы",
   "Internal server error": "Внутренняя ошибка сервера",
-  "Filter visibility": "Видимость фильтра", 
+  "Filter visibility": "Видимость фильтра",
   "System": "Система",
   "W x H": "Ш x В",
   "Sizes": "Размеры",

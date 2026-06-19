@@ -121,9 +121,8 @@ const WidgetItem: React.FC<WidgetProps> = ({ widgets, draggable, ID }) => {
     const handleActionWidget = async (api: string) => {
         setIsActionPending(true);
         try {
-            const response = await adminApi.post<{ count?: number; data?: unknown }>(api);
-            const count = response.data?.count;
-            toast.success(count !== undefined ? `${t("Action completed")}: ${count}` : t("Action completed"));
+            await adminApi.post(api);
+            toast.success(t("Action completed"));
         } catch (error) {
             console.error('Error performing widget action:', error);
             toast.error(t("Action failed"));

@@ -34,6 +34,7 @@ export const COMMON_UI_TRANSLATION_KEYS = [
     "Visible",
     "Performing an action...",
     "Action completed",
+    "Action failed",
     "Save",
     "First",
     "Last",

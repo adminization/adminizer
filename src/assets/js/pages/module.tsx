@@ -57,7 +57,7 @@ export default function Module() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <div className="m-5">
+            <div className="m-2 md:m-5">
                 {Component || (
                     <LoaderCircle className="size-10 animate-spin text-neutral-500 mx-auto mt-[15%]"/>
                 )}

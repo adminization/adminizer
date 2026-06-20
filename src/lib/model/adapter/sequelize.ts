@@ -56,7 +56,7 @@ export function mapSequelizeToAdminizerAttributes(model: ModelStatic<any>): Reco
         switch (assoc.associationType) {
             case "BelongsTo": {
                 const a = assoc as BelongsTo;
-                result[a.foreignKey]["primaryKeyForAssociation"] = true;
+                markAssociationForeignKey(result, a.foreignKey);
                 result[alias] = {
                     type: "association",
                     model: a.target.name,
@@ -66,7 +66,7 @@ export function mapSequelizeToAdminizerAttributes(model: ModelStatic<any>): Reco
             }
             case "HasOne": {
                 const a = assoc as HasOne;
-                result[a.foreignKey]["primaryKeyForAssociation"] = true;
+                markAssociationForeignKey(result, a.foreignKey);
                 result[alias] = {
                     type: "association",
                     model: a.target.name,
@@ -99,6 +99,15 @@ export function mapSequelizeToAdminizerAttributes(model: ModelStatic<any>): Reco
     }
 
     return result;
+}
+
+function markAssociationForeignKey(
+    attributes: Record<string, Attribute>,
+    foreignKey: unknown,
+): void {
+    if (typeof foreignKey === "string" && attributes[foreignKey]) {
+        attributes[foreignKey].primaryKeyForAssociation = true;
+    }
 }
 
 type AbstractFieldType =

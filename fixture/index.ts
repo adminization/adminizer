@@ -92,6 +92,8 @@ if (ormType === "sequelize") {
     });
     await orm.authenticate();
     registerSequelizeSystemModels(orm);
+
+
     orm.addModels([ExampleSequelize, TestSequelize, JsonSchemaSequelize, CategorySequelize, TestCatalogSequelize]);
     TestSequelize.associate(orm);
     ExampleSequelize.associate(orm);

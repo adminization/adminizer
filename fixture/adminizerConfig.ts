@@ -473,7 +473,7 @@ const models: AdminpanelConfig["models"] = {
                 visible: false
             }
         }
-    },
+    }
 }
 
 const config: AdminpanelConfig = {

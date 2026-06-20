@@ -1,10 +1,11 @@
 import "reflect-metadata";
 import {afterEach, describe, expect, it, vi} from "vitest";
 import {Sequelize} from "sequelize-typescript";
+import {DataTypes} from "sequelize";
 import {DataSource} from "typeorm";
 import {Adminizer} from "../src/lib/Adminizer";
 import {AbstractAdminizerApp, AppSetupContext} from "../src/lib/app-manager/AdminizerApp";
-import {SequelizeAdapter} from "../src/lib/model/adapter/sequelize";
+import {mapSequelizeToAdminizerAttributes, SequelizeAdapter} from "../src/lib/model/adapter/sequelize";
 import {TypeOrmAdapter} from "../src/lib/model/adapter/typeorm";
 import {
     SYSTEM_MODEL_CONTRACTS,
@@ -64,6 +65,45 @@ describe("model registration ownership", () => {
                 }
             );
         }
+    });
+
+    it("maps Sequelize hasOne associations when the foreign key belongs to the target model", () => {
+        const orm = createSequelize();
+        const Message = orm.define("Message", {
+            id: {
+                type: DataTypes.UUID,
+                defaultValue: DataTypes.UUIDV4,
+                primaryKey: true,
+            },
+        });
+        const Favorite = orm.define("Favorite", {
+            id: {
+                type: DataTypes.UUID,
+                defaultValue: DataTypes.UUIDV4,
+                primaryKey: true,
+            },
+            message_id: {
+                type: DataTypes.UUID,
+                allowNull: false,
+            },
+        });
+
+        Message.hasOne(Favorite, {
+            foreignKey: "message_id",
+            as: "favorite",
+        });
+        Favorite.belongsTo(Message, {
+            foreignKey: "message_id",
+            as: "message",
+        });
+
+        expect(() => mapSequelizeToAdminizerAttributes(Message)).not.toThrow();
+        expect(mapSequelizeToAdminizerAttributes(Message).favorite).toMatchObject({
+            type: "association",
+            model: "Favorite",
+            via: "message_id",
+        });
+        expect(mapSequelizeToAdminizerAttributes(Favorite).message_id.primaryKeyForAssociation).toBe(true);
     });
 
     it("validates fixture-provided TypeORM system models", async () => {

@@ -971,18 +971,18 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         return Object.keys(this.model.associations).map(key => ({association: key}));
     }
 
-    private _buildAttributes(select?: CriteriaSelect): string[] | undefined {
+    private _buildAttributes(select?: CriteriaSelect, rawAttributes: Record<string, unknown> = this.model.rawAttributes): string[] | undefined {
         if (!select) {
             return undefined;
         }
 
         if (Array.isArray(select)) {
-            const attributes = select.filter((field) => this.model.rawAttributes?.[field]);
+            const attributes = select.filter((field) => rawAttributes?.[field]);
             return attributes.length ? attributes : undefined;
         }
 
         const attributes = Object.entries(select)
-            .filter(([field, enabled]) => enabled && this.model.rawAttributes?.[field])
+            .filter(([field, enabled]) => enabled && rawAttributes?.[field])
             .map(([field]) => field);
 
         return attributes.length ? attributes : undefined;
@@ -996,12 +996,13 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
             const {
                 where,
-                attributes,
                 order,
                 limit,
             } = this._convertAdminizerCriteriaToSequelizeOptions(nestedCriteria);
 
             const include: IncludeOptions = {association};
+            const targetAttributes = (this.model.associations[association] as any)?.target?.rawAttributes;
+            const attributes = this._buildAttributes(nestedCriteria.select, targetAttributes);
 
             if (where && (Object.keys(where).length > 0 || Object.getOwnPropertySymbols(where).length > 0)) {
                 include.where = where;

@@ -227,13 +227,13 @@ export abstract class AbstractModel<T> {
         criteria = await dataAccessor.sanitizeUserRelationAccess(criteria);
         let record = await this._findOne(criteria);
 
-        return record ? dataAccessor.process(record) : null;
+        return record ? dataAccessor.process(record, criteria) : null;
     }
 
     public async find(criteria: QueryCriteria<T>, dataAccessor: DataAccessor): Promise<Partial<T>[]> {
         criteria = await dataAccessor.sanitizeUserRelationAccess(criteria);
         let records = await this._find(criteria);
-        return records.map(record => dataAccessor.process(record));
+        return records.map(record => dataAccessor.process(record, criteria));
     }
 
     /**
@@ -283,7 +283,7 @@ export abstract class AbstractModel<T> {
             record
         );
 
-        return dataAccessor.process(record);
+        return dataAccessor.process(record, criteria);
     }
 
     public async update(criteria: QueryCriteria<T>, data: Partial<T>, dataAccessor: DataAccessor): Promise<Partial<T>[]> {
@@ -310,7 +310,7 @@ export abstract class AbstractModel<T> {
             }
         }
 
-        return records.map(record => dataAccessor.process(record));
+        return records.map(record => dataAccessor.process(record, criteria));
     }
 
     public async destroyOne(criteria: QueryCriteria<T>, dataAccessor: DataAccessor): Promise<Partial<T> | null> {
@@ -337,7 +337,7 @@ export abstract class AbstractModel<T> {
             {}
         );
 
-        return dataAccessor.process(record);
+        return dataAccessor.process(record, criteria);
     }
 
     public async destroy(criteria: QueryCriteria<T>, dataAccessor: DataAccessor): Promise<Partial<T>[]> {
@@ -363,7 +363,7 @@ export abstract class AbstractModel<T> {
             }
         }
 
-        return records.map(record => dataAccessor.process(record));
+        return records.map(record => dataAccessor.process(record, criteria));
     }
 
     public async count(criteria: QueryCriteria<T> = {}, dataAccessor: DataAccessor): Promise<number> {

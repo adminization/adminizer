@@ -92,6 +92,7 @@ await model.find({
 ## Populate
 
 `populate` describes relations to load. A relation can be `true` or another `QueryCriteria`.
+When a relation criteria contains `select`, the selected fields are evaluated against the related model, not the parent model.
 
 ```ts
 await mediaModel.find({

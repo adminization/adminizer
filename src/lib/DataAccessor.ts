@@ -14,7 +14,7 @@ import {Adminizer} from "./Adminizer";
 import { Group } from "../models/Group";
 import { User } from "../models/User";
 import { isObject } from "../helpers/JsUtils";
-import { CriteriaWhere, QueryCriteria } from "../interfaces/queryCriteria";
+import { CriteriaSelect, CriteriaWhere, QueryCriteria } from "../interfaces/queryCriteria";
 
 const MODEL_TOKEN_SUFFIX = "model";
 
@@ -330,10 +330,35 @@ export class DataAccessor {
         }
     }
 
+    private getSelectedFields(select?: CriteriaSelect): Set<string> | undefined {
+        if (!select) {
+            return undefined;
+        }
+
+        if (Array.isArray(select)) {
+            return new Set(select);
+        }
+
+        return new Set(
+            Object.entries(select)
+                .filter(([, enabled]) => enabled)
+                .map(([field]) => field)
+        );
+    }
+
+    private getPopulateCriteria(criteria: QueryCriteria | undefined, fieldKey: string): QueryCriteria | undefined {
+        const populateConfig = criteria?.populate?.[fieldKey];
+        return populateConfig && populateConfig !== true ? populateConfig : undefined;
+    }
+
+    private canUseSelectedFieldFallback(): boolean {
+        return this.user.isAdministrator || this.adminizer.config.auth?.enable === false;
+    }
+
     /**
      * Returns filtered record applying config from this.fields on this record
      * @data - record from a specific model */
-    public process<T>(record: T): Partial<T> {
+    public process<T>(record: T, criteria?: QueryCriteria): Partial<T> {
         // Initialize fields configuration, if it was not already set
         if (!this.fields) {
             this.fields = this.getFieldsConfig();
@@ -353,6 +378,8 @@ export class DataAccessor {
             // Check access to the field
             if (this.checkFieldAccess(fieldKey, fieldConfig.config)) {
                 const fieldType = fieldConfig.config.type;
+                const populateCriteria = this.getPopulateCriteria(criteria, fieldKey);
+                const selectedAssociatedFields = this.getSelectedFields(populateCriteria?.select);
                 // Handle fields that are not associations
                 if (fieldType !== 'association' && fieldType !== 'association-many') {
                     filteredRecord[fieldKey] = fieldValue;
@@ -362,7 +389,7 @@ export class DataAccessor {
                     if (Array.isArray(fieldValue)) {
                         // If the field value is an array of objects
                         filteredRecord[fieldKey] = (fieldValue.every(item => typeof item === 'object')
-                            ? fieldValue.map(associatedRecord => this.filterAssociatedRecord(associatedRecord, fieldConfig.populated))
+                            ? fieldValue.map(associatedRecord => this.filterAssociatedRecord(associatedRecord, fieldConfig.populated, selectedAssociatedFields))
                             : fieldValue) as T[Extract<keyof T, string>]; // If the array contains IDs, pass them as is (it can contain ids, because this function also can be called before saving something)
                     } else {
                         // If fieldValue is not an array, log an error
@@ -376,7 +403,7 @@ export class DataAccessor {
                 else if (fieldType === 'association') {
                     if (fieldValue && typeof fieldValue === 'object') {
                         // If the field value is an object
-                        filteredRecord[fieldKey] = this.filterAssociatedRecord(fieldValue, fieldConfig.populated) as T[Extract<keyof T, string>];
+                        filteredRecord[fieldKey] = this.filterAssociatedRecord(fieldValue, fieldConfig.populated, selectedAssociatedFields) as T[Extract<keyof T, string>];
                     } else {
                         // If the field value is an ID or null, pass it as is (it can contain id, because this function also can be called before saving something)
                         filteredRecord[fieldKey] = fieldValue;
@@ -401,16 +428,25 @@ export class DataAccessor {
     /** Filters associated records (simplified process() function) */
     private filterAssociatedRecord<T>(associatedRecord: T, associatedFieldsConfig: {
         [fieldName: string]: Field
-    }): Partial<T> {
-        if (!associatedFieldsConfig) {
+    }, selectedFields?: Set<string>): Partial<T> {
+        if (!associatedFieldsConfig && !selectedFields) {
             return {}
         }
         const filteredAssociatedRecord: Partial<T> = {};
         for (const assocFieldKey in associatedRecord) {
-            const assocFieldConfig = associatedFieldsConfig[assocFieldKey];
+            if (selectedFields && !selectedFields.has(assocFieldKey)) {
+                continue;
+            }
+
+            const assocFieldConfig = associatedFieldsConfig?.[assocFieldKey];
             const assocFieldValue = associatedRecord[assocFieldKey];
 
             if (assocFieldConfig && this.checkFieldAccess(assocFieldKey, assocFieldConfig.config)) {
+                filteredAssociatedRecord[assocFieldKey] = assocFieldValue;
+                continue;
+            }
+
+            if (selectedFields && this.canUseSelectedFieldFallback()) {
                 filteredAssociatedRecord[assocFieldKey] = assocFieldValue;
             }
         }
@@ -419,8 +455,8 @@ export class DataAccessor {
     }
 
     /** Process for an array of records */
-    public processMany<T>(records: T[]): Partial<T>[] {
-        return records.map(record => this.process(record));
+    public processMany<T>(records: T[], criteria?: QueryCriteria): Partial<T>[] {
+        return records.map(record => this.process(record, criteria));
     }
 
     public async sanitizeUserRelationAccess(criteria: QueryCriteria = {}): Promise<QueryCriteria> {

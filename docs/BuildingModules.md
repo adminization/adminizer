@@ -126,7 +126,7 @@ interface AppRuntime {
 }
 ```
 
-Use `runtime.models.get<T>(modelName)` only for models declared through `ctx.modelAccess()`. This keeps internal and app model access explicit.
+Use `runtime.models.get<T>(modelName)` only for models declared through `ctx.modelAccess()`. This keeps internal and app model access explicit. Runtime model access returns a trusted repository and does not apply `DataAccessor` user or field filtering, so user-facing controllers should enforce access through policies and module-level checks.
 
 ```ts
 ctx.modelAccess({ models: ["Navigation", "Category"] });

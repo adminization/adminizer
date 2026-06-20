@@ -1,5 +1,5 @@
 import { Editor, EditorProps } from '@toast-ui/react-editor';
-import { useCallback, useRef, useEffect, useState } from "react";
+import { useCallback, useRef, useEffect, useMemo } from "react";
 import useWindowSize from "@/hooks/use-window-size.ts";
 import { useAppearance } from "@/hooks/use-appearance.tsx";
 
@@ -61,17 +61,29 @@ const docLang = document.documentElement.lang
 
 const lang = supportedLanguages.includes(docLang) ? docLang : 'en'
 
+const defaultEditorOptions: EditorProps = {
+    height: '600px',
+    initialEditType: 'markdown',
+    useCommandShortcut: true,
+    language: lang,
+};
+
 const ToastEditor = ({ initialValue, onChange, options, disabled }: TuiEditorProps) => {
     const editorRef = useRef<Editor>(null);
     const { width } = useWindowSize();
     const { appearance } = useAppearance();
     const theme = appearance === 'dark' ? 'dark' : 'light';
-    const [editorOptions, setEditorOptions] = useState<EditorProps>({
-        height: '600px',
-        initialEditType: 'markdown',
-        useCommandShortcut: true,
-        language: lang,
-    });
+    const isMobileView = width < 1200;
+    const editorOptions = useMemo<EditorProps>(() => ({
+        ...defaultEditorOptions,
+        ...options,
+        previewStyle: isMobileView ? 'tab' : options?.previewStyle || 'vertical',
+        height: options?.height || '600px',
+        initialEditType: options?.initialEditType || 'markdown',
+        useCommandShortcut: options?.useCommandShortcut !== undefined
+            ? options.useCommandShortcut
+            : true,
+    }), [isMobileView, options]);
 
       // ✅ Set the value during the first render
     useEffect(() => {
@@ -94,27 +106,13 @@ const ToastEditor = ({ initialValue, onChange, options, disabled }: TuiEditorPro
             }
         }
     }, [initialValue])
-    
+
     useEffect(() => {
-        
-        const isMobileView = width < 1200;
-        
-        setEditorOptions(prev => ({
-            ...prev,
-            ...options,
-            previewStyle: isMobileView ? 'tab' : options?.previewStyle || 'vertical',
-            height: options?.height || '600px',
-            initialEditType: options?.initialEditType || 'markdown',
-            useCommandShortcut: options?.useCommandShortcut !== undefined
-            ? options.useCommandShortcut
-            : true,
-        }));
-        
         if (editorRef.current) {
             const editorInstance = editorRef.current.getInstance();
             editorInstance.changePreviewStyle(isMobileView ? 'tab' : options?.previewStyle || 'vertical');
         }
-    }, [width, options, theme]);
+    }, [isMobileView, options?.previewStyle]);
     
     const handleEditorChange = useCallback(() => {
         const editorInstance = editorRef.current?.getInstance();

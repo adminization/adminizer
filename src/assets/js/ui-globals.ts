@@ -3,7 +3,7 @@ import {
     AvatarImage,
     AvatarFallback,
 } from '@/components/ui/avatar.tsx';
-import { Badge } from '@/components/ui/badge.tsx';
+import {Badge} from '@/components/ui/badge.tsx';
 import {
     Breadcrumb,
     BreadcrumbList,
@@ -13,8 +13,8 @@ import {
     BreadcrumbSeparator,
     BreadcrumbEllipsis,
 } from '@/components/ui/breadcrumb.tsx';
-import { Button } from '@/components/ui/button.tsx';
-import { Calendar } from '@/components/ui/calendar.tsx';
+import {Button} from '@/components/ui/button.tsx';
+import {Calendar} from '@/components/ui/calendar.tsx';
 import {
     Card,
     CardHeader,
@@ -24,7 +24,7 @@ import {
     CardDescription,
     CardContent,
 } from '@/components/ui/card.tsx';
-import { Checkbox } from '@/components/ui/checkbox.tsx';
+import {Checkbox} from '@/components/ui/checkbox.tsx';
 import {
     Collapsible,
     CollapsibleTrigger,
@@ -100,8 +100,8 @@ import {
     DropdownMenuSubTrigger,
     DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu.tsx';
-import { Input } from '@/components/ui/input.tsx';
-import { Label } from '@/components/ui/label.tsx';
+import {Input} from '@/components/ui/input.tsx';
+import {Label} from '@/components/ui/label.tsx';
 import {
     Menubar,
     MenubarPortal,
@@ -147,7 +147,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select.tsx';
-import { Separator } from '@/components/ui/separator.tsx';
+import {Separator} from '@/components/ui/separator.tsx';
 import {
     Sheet,
     SheetTrigger,
@@ -184,10 +184,10 @@ import {
     SidebarTrigger,
     useSidebar,
 } from '@/components/ui/sidebar.tsx';
-import { Skeleton } from '@/components/ui/skeleton.tsx';
-import { Slider } from '@/components/ui/slider.tsx';
-import { Toaster } from '@/components/ui/sonner.tsx';
-import { Switch } from '@/components/ui/switch.tsx';
+import {Skeleton} from '@/components/ui/skeleton.tsx';
+import {Slider} from '@/components/ui/slider.tsx';
+import {Toaster} from '@/components/ui/sonner.tsx';
+import {Switch} from '@/components/ui/switch.tsx';
 import {
     Tabs,
     TabsList,
@@ -204,7 +204,7 @@ import {
     TableCell,
     TableCaption,
 } from '@/components/ui/table.tsx';
-import { Textarea } from '@/components/ui/textarea.tsx';
+import {Textarea} from '@/components/ui/textarea.tsx';
 import {
     Tooltip,
     TooltipTrigger,
@@ -217,9 +217,10 @@ import MonacoEditor from "@/js-components/monaco";
 import MultiSelect from '@/components/multi-select';
 import * as sonner from 'sonner';
 import axios from '@/lib/axios-compat';
-import { adminApi } from '@/lib/admin-api';
+import {adminApi} from '@/lib/admin-api';
 import DeleteModal from "@/components/modals/del-modal";
 import AddForm from "@/components/add-form";
+import {cn} from "@/lib/utils";
 
 export function registerUIComponents(): void {
 
@@ -235,8 +236,8 @@ export function registerUIComponents(): void {
     //@ts-ignore
     window.axios = axios
 
-    //@ts-ignore
-    window.adminApi = adminApi
+    //@ts-ignores
+    window.cn = cn
 
     //@ts-ignore
     Object.assign(window.UIComponents, {
@@ -427,6 +428,7 @@ export function registerUIComponents(): void {
         MonacoEditor,
         MultiSelect,
         DeleteModal,
-        AddForm
+        AddForm,
+        adminApi
     });
 }

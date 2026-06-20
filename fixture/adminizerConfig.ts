@@ -160,7 +160,9 @@ const models: AdminpanelConfig["models"] = {
                     name: 'toast-ui',
                     config: {
                         hideModeSwitch: true,
-                        previewStyle: 'vertical',
+                        // previewStyle: 'vertical',
+                        initialEditType: 'wysiwyg',
+                        height: '800px'
                     },
                 }
             },

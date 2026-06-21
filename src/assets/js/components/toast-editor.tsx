@@ -101,7 +101,6 @@ const ToastEditor = ({ initialValue, onChange, options, disabled }: TuiEditorPro
             const editorInstance = editorRef.current.getInstance();
             const current = editorInstance.getMarkdown();
             if (current !== initialValue) {
-                console.log('Syncing editor with new value:', initialValue);
                 editorInstance.setMarkdown(initialValue);
             }
         }

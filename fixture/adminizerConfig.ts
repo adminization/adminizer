@@ -78,6 +78,18 @@ const models: AdminpanelConfig["models"] = {
                 required: true,
                 // inlineEditable: false
             },
+            tui: {
+                type: 'tuieditor',
+                options: {
+                    name: 'toast-ui',
+                    config: {
+                        hideModeSwitch: true,
+                        // previewStyle: 'vertical',
+                        initialEditType: 'wysiwyg',
+                        height: '800px'
+                    },
+                }
+            },
             description: {
                 title: 'Textarea',
                 type: 'text',
@@ -152,18 +164,6 @@ const models: AdminpanelConfig["models"] = {
                 customFilter: {
                     handlerId: 'Example.json',
                     label: 'Custom filtering'
-                }
-            },
-            tui: {
-                type: 'tuieditor',
-                options: {
-                    name: 'toast-ui',
-                    config: {
-                        hideModeSwitch: true,
-                        // previewStyle: 'vertical',
-                        initialEditType: 'wysiwyg',
-                        height: '800px'
-                    },
                 }
             },
             code: {

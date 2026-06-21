@@ -207,6 +207,40 @@
     height: auto !important;
 }
 
+.adminizer-toast-editor,
+.adminizer-toast-editor .toastui-editor-defaultUI,
+.adminizer-toast-editor .toastui-editor-main-container {
+    max-width: 100%;
+    min-width: 0;
+}
+
+.adminizer-toast-editor {
+    overflow-x: hidden;
+    width: 100%;
+}
+
+@media (max-width: 1199px) {
+    .adminizer-toast-editor .toastui-editor-defaultUI-toolbar {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .adminizer-toast-editor .toastui-editor-toolbar-group {
+        flex-wrap: wrap;
+    }
+
+    .adminizer-toast-editor .toastui-editor-toolbar-divider {
+        margin-left: 4px;
+        margin-right: 4px;
+    }
+
+    .adminizer-toast-editor .toastui-editor-md-tab-container,
+    .adminizer-toast-editor .toastui-editor-main .toastui-editor-md-tab-style {
+        max-width: 100%;
+        min-width: 0;
+    }
+}
+
 .leaflet-control-attribution.leaflet-control{
     display: none !important;
 }

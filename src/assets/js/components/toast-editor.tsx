@@ -110,8 +110,14 @@ const ToastEditor = ({ initialValue, onChange, options, disabled }: TuiEditorPro
         if (editorRef.current) {
             const editorInstance = editorRef.current.getInstance();
             editorInstance.changePreviewStyle(isMobileView ? 'tab' : options?.previewStyle || 'vertical');
+            const animationFrame = window.requestAnimationFrame(() => {
+                editorInstance.setHeight(editorOptions.height || '600px');
+                editorInstance.changePreviewStyle(isMobileView ? 'tab' : options?.previewStyle || 'vertical');
+            });
+
+            return () => window.cancelAnimationFrame(animationFrame);
         }
-    }, [isMobileView, options?.previewStyle]);
+    }, [editorOptions.height, isMobileView, options?.previewStyle]);
     
     const handleEditorChange = useCallback(() => {
         const editorInstance = editorRef.current?.getInstance();
@@ -123,7 +129,7 @@ const ToastEditor = ({ initialValue, onChange, options, disabled }: TuiEditorPro
     }, [onChange]);
     
     return (
-        <div className={`${disabled ? 'pointer-events-none opacity-50' : ''}`}>
+        <div className={`adminizer-toast-editor min-w-0 max-w-full ${disabled ? 'pointer-events-none opacity-50' : ''}`}>
             <Editor
                 key={`editor-${theme}-${lang}`}
                 ref={editorRef}

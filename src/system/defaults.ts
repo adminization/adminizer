@@ -171,9 +171,7 @@ let adminpanelConfig: AdminpanelConfig = {
     },
 
     aiAssistant: {
-        enabled: false,
-        defaultModel: 'dummy',
-        models: ['dummy']
+        enabled: false
     },
     cors: {
         enabled: false,

@@ -37,7 +37,6 @@ import {v4 as uuid} from "uuid";
 import { AiAssistantHandler } from './ai-assistant/AiAssistantHandler';
 import {NotificationHandler} from './notifications/NotificationHandler';
 import {bindNotifications} from "../system/bindNotifications";
-import {bindAiAssistant} from "../system/bindAiAssistant";
 import {INotification} from "../interfaces/types";
 import {MediaManagerHandler} from "./media-manager/MediaManagerHandler";
 import {bindCors} from "../system/bindCors";
@@ -340,8 +339,6 @@ export class Adminizer {
 
         // Bind notifications
         if (this.config.notifications.enabled) bindNotifications(this);
-
-        if (this.config.aiAssistant?.enabled) bindAiAssistant(this);
 
         if (this.config.history?.enabled) bindHistory(this)
 

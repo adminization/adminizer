@@ -8,11 +8,12 @@ import {
     RunContext,
 } from '@openai/agents';
 import {AbstractAiModelService} from '../../../dist/lib/ai-assistant/AbstractAiModelService';
-import {AiAssistantMessage, ModelResource} from '../../../dist/interfaces/types';
-import {ModelConfig} from '../../../dist/interfaces/adminpanelConfig';
+import type {AiAssistantMessage, ModelResource} from '../../../dist/interfaces/types';
+import type {ModelConfig} from '../../../dist/interfaces/adminpanelConfig';
 import {Adminizer} from '../../../dist/lib/Adminizer';
-import {DataAccessor} from '../../../dist/lib/DataAccessor';
-import {User} from '../../../dist/models/User';
+import type {AppAiAssistantContext} from '../../../dist/lib/app-manager/AdminizerApp';
+import type {DataAccessor} from '../../../dist/lib/DataAccessor';
+import type {User} from '../../../dist/models/User';
 
 interface AgentContext {
     user: User;
@@ -22,8 +23,8 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
     private readonly apiKey?: string;
     private readonly model: string;
 
-    constructor(adminizer: Adminizer) {
-        super(adminizer, {
+    constructor(private readonly context: AppAiAssistantContext) {
+        super({
             id: 'openai-data',
             name: 'OpenAI data explorer',
             description: 'Answers questions with live data retrieved via Adminizer models.',
@@ -137,7 +138,7 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
                     throw new Error(`Model "${input.model}" is not registered in Adminizer.`);
                 }
 
-                const accessor = new DataAccessor(this.adminizer, activeUser, entity, 'list');
+                const accessor = this.context.createDataAccessor(entity, activeUser, 'list');
                 let criteria = {};
                 
                 // Handle filter parameter - can be empty string (default), undefined, or actual filter
@@ -220,7 +221,7 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
                     throw new Error(`Model "${input.model}" is not registered in Adminizer.`);
                 }
 
-                const accessor = new DataAccessor(this.adminizer, activeUser, entity, 'add');
+                const accessor = this.context.createDataAccessor(entity, activeUser, 'add');
                 console.log('🔐 [Tool] Preparing create payload with permission checks...');
                 const sanitizedPayload = await this.prepareCreatePayload(input.payload, accessor);
                 console.log('✅ [Tool] Sanitized payload:', JSON.stringify(sanitizedPayload, null, 2));
@@ -283,7 +284,7 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
                     throw new Error(`Model "${input.model}" is not registered in Adminizer.`);
                 }
 
-                const accessor = new DataAccessor(this.adminizer, activeUser, entity, 'edit');
+                const accessor = this.context.createDataAccessor(entity, activeUser, 'edit');
                 console.log('🔐 [Tool] Preparing update payload with permission checks...');
                 const sanitizedPayload = await this.prepareUpdatePayload(input.payload, accessor);
                 console.log('✅ [Tool] Sanitized payload:', JSON.stringify(sanitizedPayload, null, 2));
@@ -464,19 +465,14 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
     private listReadableModels(user: User): Array<{name: string; config: ModelConfig}> {
         const readable: Array<{name: string; config: ModelConfig}> = [];
 
-        for (const [entityName, rawConfig] of Object.entries(this.adminizer.config.models ?? {})) {
-            const config = this.ensureModelConfig(entityName, rawConfig);
-            const modelInstance = config.model
-                ? this.adminizer.modelHandler.model.get(config.model.toLowerCase())
-                : undefined;
-
-            if (!modelInstance) {
+        for (const resource of this.context.getModelResources()) {
+            if (!resource.model) {
                 continue;
             }
 
-            const token = `read-${modelInstance.modelname}-model`;
-            if (this.adminizer.accessRightsHelper.hasPermission(token, user)) {
-                readable.push({name: entityName, config});
+            const token = `read-${resource.model.modelname}-model`;
+            if (this.context.hasPermission(token, user)) {
+                readable.push({name: resource.name, config: resource.config});
             }
         }
 
@@ -484,51 +480,15 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
     }
 
     private resolveEntity(modelName: string): ModelResource {
-        const normalized = modelName.trim().toLowerCase();
-        const models = this.adminizer.config.models ?? {};
-
-        for (const [entityName, rawConfig] of Object.entries(models)) {
-            const config = this.ensureModelConfig(entityName, rawConfig);
-            const candidateNames = new Set([
-                entityName.toLowerCase(),
-                config.model?.toLowerCase(),
-            ]);
-
-            if (!candidateNames.has(normalized)) {
-                continue;
-            }
-
-            const modelInstance = this.adminizer.modelHandler.model.get(config.model?.toLowerCase());
-            if (!modelInstance) {
-                throw new Error(`Model adapter is not initialized for "${config.model}".`);
-            }
-
-            return {
-                name: entityName,
-                config,
-                model: modelInstance,
-                uri: `${this.adminizer.config.routePrefix}/model/${entityName}`,
-            };
+        const resource = this.context.resolveModelResource(modelName.trim());
+        if (!resource) {
+            throw new Error(`Unknown model "${modelName}".`);
         }
 
-        throw new Error(`Unknown model "${modelName}".`);
-    }
-
-    private ensureModelConfig(entityName: string, config: ModelConfig | boolean): ModelConfig {
-        if (typeof config === 'boolean') {
-            const modelId = entityName.toLowerCase();
-            return {
-                model: modelId,
-                title: entityName,
-                icon: 'description',
-                list: true,
-                add: true,
-                edit: true,
-                remove: true,
-                view: true,
-            } as ModelConfig;
+        if (!resource.model) {
+            throw new Error(`Model adapter is not initialized for "${resource.config.model}".`);
         }
 
-        return config;
+        return resource;
     }
 }

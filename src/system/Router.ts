@@ -29,7 +29,6 @@ import { thumbController } from "../controllers/media-manager/ThumbController";
 import { Adminizer } from "../lib/Adminizer";
 import timezones from "../controllers/timezones";
 import { NotificationController } from "../controllers/notifications/NotificationController";
-import { AiAssistantController } from "../controllers/ai/AiAssistantController";
 import { HistoryController } from "../controllers/history-actions/HistoryController";
 import listUserFilters from "../controllers/listUserFilters";
 import {
@@ -40,7 +39,6 @@ import {
     requirePermission
 } from "../policies/authPolicies";
 import {
-    aiModelToken,
     catalogToken,
     groupFilterVisibilityToken,
     historyToken,
@@ -311,28 +309,6 @@ export default class Router {
             )
         }
 
-
-        if (adminizer.config.aiAssistant?.enabled) {
-            adminizer.app.get(
-                `${adminizer.config.routePrefix}/api/ai-assistant/models`,
-                withPolicies(AiAssistantController.getModels, requireAuthAPI())
-            );
-
-            adminizer.app.get(
-                `${adminizer.config.routePrefix}/api/ai-assistant/history/:modelId`,
-                withPolicies(AiAssistantController.getHistory, requireAuthAPI(), requirePermission(aiModelToken))
-            );
-
-            adminizer.app.post(
-                `${adminizer.config.routePrefix}/api/ai-assistant/query`,
-                withPolicies(AiAssistantController.sendMessage, requireAuthAPI(), requirePermission(aiModelToken))
-            );
-
-            adminizer.app.delete(
-                `${adminizer.config.routePrefix}/api/ai-assistant/history/:modelId`,
-                withPolicies(AiAssistantController.resetHistory, requireAuthAPI(), requirePermission(aiModelToken))
-            );
-        }
 
         /**
          * List of records

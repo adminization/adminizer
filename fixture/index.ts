@@ -9,7 +9,6 @@ import http from 'http';
 import adminpanelConfig from "./adminizerConfig";
 import {AdminpanelConfig} from "../dist/interfaces/adminpanelConfig";
 import {sendNotificationsWithDelay} from "./helpers/notifications";
-// OpenAiDataAgentService is imported dynamically only when AI assistant is enabled
 import cors from 'cors';
 
 // Sequelize imports
@@ -62,6 +61,7 @@ import {installMediaManagerSequelizeModels} from "./apps/media-manager/MediaMana
 import {ReactQuillApp} from "./apps/quill-editor/ReactQuill";
 import {WidgetsApp} from "./apps/widgets/WidgetsApp";
 import {HandsontableTestApp} from "./apps/handsontable-test/HandsontableTestApp";
+import {AiAssistantApp} from "./apps/ai-assistant/AiAssistantApp";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
@@ -232,6 +232,15 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
         // add HandsontableTest -- production JSComponents smoke test
         await adminizer.appManager.enable(new HandsontableTestApp());
 
+        const aiAssistantApp = new AiAssistantApp({
+            defaultModel: adminizer.config.aiAssistant?.defaultModel,
+            models: adminizer.config.aiAssistant?.models ?? ["openai-data", "dummy"],
+        });
+        adminizer.appManager.register(aiAssistantApp);
+        if (adminizer.config.aiAssistant?.enabled) {
+            await adminizer.appManager.enable(aiAssistantApp.name);
+        }
+
         // add ModuleManager -- module manager
         await adminizer.appManager.enable(new ModuleManagerApp());
 
@@ -243,28 +252,6 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
         } else {
             adminizer.customFilterHandler.add(new ExampleJsonCustomFilterHandler(), {force: true});
             adminizer.customFilterHandler.add(new ExampleDatatablePriceRangeFilterHandler(), {force: true});
-        }
-
-        if (adminizer.config.aiAssistant?.enabled) {
-            // Dynamic import to avoid loading OpenAI dependencies when AI assistant is disabled
-            const {OpenAiDataAgentService} = await import("./helpers/ai/OpenAiDataAgentService");
-            const openAiAgent = new OpenAiDataAgentService(adminizer);
-            if (openAiAgent.isEnabled()) {
-                adminizer.aiAssistantHandler!.registerModel(openAiAgent);
-
-                if (adminizer.config.aiAssistant) {
-                    const declaredModels = new Set(adminizer.config.aiAssistant.models ?? []);
-                    declaredModels.add(openAiAgent.id);
-                    adminizer.config.aiAssistant.models = Array.from(declaredModels);
-
-                    if (!adminizer.config.aiAssistant.defaultModel || adminizer.config.aiAssistant.defaultModel === 'dummy') {
-                        adminizer.config.aiAssistant.defaultModel = openAiAgent.id;
-                    }
-                }
-                console.log(`[fixture] OpenAI data agent successfully registered with ID: ${openAiAgent.id}`);
-            } else {
-                Adminizer.log.warn('[fixture] Skipping OpenAI data agent registration because OPENAI_API_KEY is missing.');
-            }
         }
 
         // Register fixture feedback handler (saves to .tmp/feedback/)

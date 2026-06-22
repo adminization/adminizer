@@ -9,6 +9,8 @@ import {
     AppEventHandler,
     AppEventName,
     AppCatalogFactoryResource,
+    AppAiAssistantContext,
+    AppAiAssistantResource,
     AppMediaManagerResource,
     AppModelAccessResource,
     AppModelResource,
@@ -17,10 +19,13 @@ import {
     AppSetupContext,
     AppWidgetResource
 } from "./AdminizerApp";
-import type {AccessRightsToken} from "../../interfaces/types";
+import type {AccessRightsToken, ModelResource} from "../../interfaces/types";
+import type {ModelConfig} from "../../interfaces/adminpanelConfig";
 import type {Control} from "../controls/Control";
 import type {WidgetType} from "../widgets/widgetHandler";
 import type {WidgetInfoContext} from "../widgets/abstractInfo";
+import {AiAssistantHandler} from "../ai-assistant/AiAssistantHandler";
+import {DataAccessor} from "../DataAccessor";
 
 export type AppState = AppRuntimeAppState;
 
@@ -34,6 +39,7 @@ class RuntimeAppSetupContext implements AppSetupContext {
     readonly disposers: AppDisposer[] = [];
     private readonly pendingModelRegistrations: Array<() => Promise<void>> = [];
     private readonly pendingModelAccessRegistrations: Array<() => Promise<void>> = [];
+    private readonly pendingAiAssistantRegistrations: Array<() => Promise<void>> = [];
     private readonly pendingMediaManagerRegistrations: Array<() => Promise<void>> = [];
     private readonly pendingCatalogRegistrations: Array<() => Promise<void>> = [];
     private configLayerIndex = 0;
@@ -153,6 +159,10 @@ class RuntimeAppSetupContext implements AppSetupContext {
         this.pendingMediaManagerRegistrations.push(() => this.registerMediaManager(resource));
     }
 
+    aiAssistant(resource: AppAiAssistantResource): void {
+        this.pendingAiAssistantRegistrations.push(() => this.registerAiAssistant(resource));
+    }
+
     listener(event: AppEventName, handler: AppEventHandler): void {
         const resourceId = `${this.appName}:${event.toString()}:${this.disposers.length + 1}`;
         const listener = (payload: unknown) => handler(payload, this.adminizer.appManager.createRuntime(this.appName));
@@ -175,8 +185,35 @@ class RuntimeAppSetupContext implements AppSetupContext {
     async waitForPendingRegistrations(): Promise<void> {
         await this.runRegistrationPhase(this.pendingModelRegistrations);
         await this.runRegistrationPhase(this.pendingModelAccessRegistrations);
+        await this.runRegistrationPhase(this.pendingAiAssistantRegistrations);
         await this.runRegistrationPhase(this.pendingMediaManagerRegistrations);
         await this.runRegistrationPhase(this.pendingCatalogRegistrations);
+    }
+
+    private async registerAiAssistant(resource: AppAiAssistantResource): Promise<void> {
+        const previousHandler = this.adminizer.aiAssistantHandler;
+        const handler = new AiAssistantHandler(this.adminizer);
+        const context = this.createAiAssistantContext();
+
+        for (const modelFactory of resource.models) {
+            const model = await modelFactory(context);
+            handler.registerModel(model);
+        }
+
+        this.adminizer.aiAssistantHandler = handler;
+        this.adminizer.emitter.emit("app:ai-assistant:registered", {
+            appName: this.appName,
+            models: handler.getModels().map((model) => model.id),
+        });
+
+        this.disposers.push(() => {
+            if (this.adminizer.aiAssistantHandler === handler) {
+                this.adminizer.aiAssistantHandler = previousHandler;
+            }
+            this.adminizer.emitter.emit("app:ai-assistant:unregistered", {
+                appName: this.appName,
+            });
+        });
     }
 
     private async registerMediaManager(resource: AppMediaManagerResource): Promise<void> {
@@ -387,6 +424,66 @@ class RuntimeAppSetupContext implements AppSetupContext {
         }
 
         throw new Error(`Adapter was not provided for app model registration "${this.appName}"`);
+    }
+
+    private createAiAssistantContext(): AppAiAssistantContext {
+        return {
+            runtime: this.adminizer.appManager.createRuntime(this.appName),
+            routePrefix: this.adminizer.config.routePrefix,
+            getModelResources: () => this.getModelResources(),
+            resolveModelResource: (modelName: string) => this.resolveModelResource(modelName),
+            hasPermission: (token, user) => this.adminizer.accessRightsHelper.hasPermission(token, user),
+            createDataAccessor: (modelResource, user, action) =>
+                new DataAccessor(this.adminizer, user, modelResource, action),
+        };
+    }
+
+    private getModelResources(): ModelResource[] {
+        const resources: ModelResource[] = [];
+
+        for (const [configName, configValue] of Object.entries(this.adminizer.config.models ?? {})) {
+            const normalizedConfig = this.normalizeModelConfig(configName, configValue);
+            const model = this.adminizer.modelHandler.model.get(normalizedConfig.model.toLowerCase());
+            if (!model) {
+                continue;
+            }
+
+            resources.push({
+                name: configName,
+                uri: `${this.adminizer.config.routePrefix}/model/${configName}`,
+                config: normalizedConfig,
+                model,
+            });
+        }
+
+        return resources;
+    }
+
+    private resolveModelResource(modelName: string): ModelResource | undefined {
+        const loweredName = modelName.toLowerCase();
+        return this.getModelResources().find((resource) => {
+            const modelId = resource.config.model?.toLowerCase();
+            return resource.name.toLowerCase() === loweredName || modelId === loweredName;
+        });
+    }
+
+    private normalizeModelConfig(name: string, config: ModelConfig | boolean): ModelConfig {
+        const baseConfig: ModelConfig = {
+            model: name,
+            icon: "description",
+            title: name,
+            list: true,
+            add: true,
+            edit: true,
+            remove: true,
+            view: true,
+        } as ModelConfig;
+
+        if (typeof config === "boolean") {
+            return config ? baseConfig : {...baseConfig, list: false, add: false, edit: false, remove: false, view: false};
+        }
+
+        return {...baseConfig, ...config};
     }
 
 }

@@ -1,10 +1,13 @@
-import type {AdminpanelConfig, AdminpanelIcon, ModelConfig} from "../../interfaces/adminpanelConfig";
-import type {AccessRightsToken, INotification} from "../../interfaces/types";
+import type {ActionType, AdminpanelConfig, AdminpanelIcon, ModelConfig} from "../../interfaces/adminpanelConfig";
+import type {AccessRightsToken, INotification, ModelResource} from "../../interfaces/types";
 import type {AbstractCatalog} from "../catalog/AbstractCatalog";
 import type {CatalogTemplateComponentResource} from "../catalog/CatalogTemplateComponentHandler";
 import type {AppModelAccess} from "../model/ModelHandler";
 import type {AbstractMediaManager} from "../media-manager/AbstractMediaManager";
 import type {Config, ControlType} from "../controls/Control";
+import type {User} from "../../models/User";
+import type {DataAccessor} from "../DataAccessor";
+import type {AbstractAiModelService} from "../ai-assistant/AbstractAiModelService";
 
 export type AppDisposer = () => void | Promise<void>;
 export type AppEventName = string | symbol;
@@ -188,6 +191,19 @@ export interface AppMediaManagerResource {
     factory: (runtime: AppRuntime) => AbstractMediaManager | Promise<AbstractMediaManager>;
 }
 
+export interface AppAiAssistantContext {
+    runtime: AppRuntime;
+    routePrefix: string;
+    getModelResources(): ModelResource[];
+    resolveModelResource(modelName: string): ModelResource | undefined;
+    hasPermission(token: string, user: User): boolean;
+    createDataAccessor(modelResource: ModelResource, user: User, action: ActionType): DataAccessor;
+}
+
+export interface AppAiAssistantResource {
+    models: Array<(context: AppAiAssistantContext) => AbstractAiModelService | Promise<AbstractAiModelService>>;
+}
+
 /**
  * Resource registration API provided while an app is being enabled.
  *
@@ -207,6 +223,7 @@ export interface AppSetupContext {
     mediaManager(resource: AppMediaManagerResource): void;
     model(model: AppModelResource): void;
     modelAccess(access: AppModelAccessResource): void;
+    aiAssistant(resource: AppAiAssistantResource): void;
     listener(event: AppEventName, handler: AppEventHandler): void;
 }
 

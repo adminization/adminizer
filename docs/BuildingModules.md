@@ -1,6 +1,6 @@
 # Adminizer App Modules
 
-Adminizer modules are backend-first extensions built around `AbstractAdminizerApp` and `AppManager`. A module can register routes, frontend assets, form controls, config patches, access rights, existing ORM models, model access scopes, media managers, catalogs with template components, and event listeners. This is the current extension mechanism for features such as the fixture module pages, media manager, module manager, navigation catalog, and React-Quill control.
+Adminizer modules are backend-first extensions built around `AbstractAdminizerApp` and `AppManager`. A module can register routes, frontend assets, form controls, config patches, access rights, existing ORM models, model access scopes, AI assistants, media managers, catalogs with template components, and event listeners. This is the current extension mechanism for features such as the fixture module pages, AI assistant, media manager, module manager, navigation catalog, and React-Quill control.
 
 Older standalone React page modules may still exist as frontend patterns, but a full Adminizer module should be installed through `adminizer.appManager`.
 
@@ -94,11 +94,12 @@ await adminizer.appManager.enable(new MyApp());
 | `ctx.accessRight(token)` | Register an access rights token owned by the app. |
 | `ctx.model(model)` | Attach an existing ORM model to the app. The model must be installed before the app is enabled. |
 | `ctx.modelAccess(access)` | Allow the app runtime to access selected models through `runtime.models`. |
+| `ctx.aiAssistant(resource)` | Register an app-owned AI assistant handler with model factories. |
 | `ctx.mediaManager(resource)` | Register an app-owned media manager through a factory that receives `AppRuntime`. |
 | `ctx.catalog(catalog)` | Register a catalog factory and its optional React template components. |
 | `ctx.listener(event, handler)` | Subscribe to Adminizer events. The handler receives `(payload, runtime)`. |
 
-Registration order after `setup()` is intentional: app model bindings first, model access second, media managers third, and catalogs fourth. This lets factories safely use models owned by the same app.
+Registration order after `setup()` is intentional: app model bindings first, model access second, AI assistants third, media managers fourth, and catalogs fifth. This lets factories safely use models owned by the same app.
 
 ## App Runtime
 
@@ -290,6 +291,37 @@ Disabling an app removes its Adminizer model wrapper but does not remove the nat
 TypeORM support remains experimental. Core logs a warning whenever an app is enabled while `system.defaultORM` is `typeorm`. A TypeORM entity required by an app must be included in `DataSource.entities` before `dataSource.initialize()`. TypeORM does not support the Sequelize-style dynamic app model installation used by the fixture.
 
 Apps without their own models can still be enabled normally with TypeORM. An app with a model can also be enabled when its entity was registered before initialization. If the entity is missing, `AppManager` fails during `enable()` with an error explaining this requirement.
+
+## AI Assistant Resources
+
+An app can own the active AI assistant handler and model services:
+
+```ts
+ctx.accessRight({
+  id: "ai-assistant-my-model",
+  name: "My assistant model",
+  description: "Access to My assistant model",
+  department: "AI Assistant",
+});
+
+ctx.aiAssistant({
+  models: [
+    (context) => new MyAiModelService(context),
+  ],
+});
+
+ctx.config({
+  aiAssistant: {
+    enabled: true,
+    defaultModel: "my-model",
+    models: ["my-model"],
+  },
+});
+```
+
+`ctx.aiAssistant()` creates an `AiAssistantHandler` for the app and registers model services returned by its factories. The factory receives an AI context with `runtime`, `routePrefix`, model resource lookup helpers, permission checks, and `createDataAccessor()`. Disabling the app restores the previous handler, removes the app's config layer, and unregisters app-owned access tokens.
+
+Assistant model classes should extend `AbstractAiModelService`, but they should not register access rights themselves. The app owns tokens through `ctx.accessRight()`. Register routes with `ctx.controller()` and the reusable `AiAssistantController` when the app exposes the standard assistant API. The fixture implementation is in `fixture/apps/ai-assistant`.
 
 ## Media Manager Resources
 
@@ -542,10 +574,11 @@ npm run build:apps
 
 ## Fixture Examples
 
-The fixture contains five current app-module examples:
+The fixture contains several current app-module examples:
 
 | App | Files | Demonstrates |
 |---|---|---|
+| `ai-assistant` | `fixture/apps/ai-assistant/*` | App-owned AI assistant handler, model access tokens, standard AI routes, config layer, and runtime enable/disable through `AppManager`. |
 | `notification-sender` | `fixture/apps/notification-sender/*` | Page module, asset registration, scoped model access through `req.runtime.models`, user message notifications, UI/API routes, sidebar config patch. |
 | `module-manager` | `fixture/apps/module-manager/*` | Access right token, permission-protected page/API routes, app lifecycle control through `req.runtime.apps`. |
 | `navigation` | `fixture/apps/navigation/*` | Runtime model, model access, catalog factory, catalog template components, sidebar links, `model:updated` listener. |

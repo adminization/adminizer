@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - next
+      - alpha
 
 permissions:
   id-token: write
@@ -42,8 +43,8 @@ jobs:
           jq -r --arg VER "$VEROUT" '.version = $VER' package.json > /tmp/package.json && mv /tmp/package.json ./package.json
         working-directory: ./dist
 
-      - name: Resolve version (next — prerelease build bump)
-        if: github.ref == 'refs/heads/next'
+      - name: Resolve version (next/alpha — prerelease build bump)
+        if: github.ref == 'refs/heads/next' || github.ref == 'refs/heads/alpha'
         run: |
           set -x
           BRANCH=${GITHUB_REF##*/}
@@ -72,6 +73,13 @@ jobs:
       - name: Publish (next)
         if: github.ref == 'refs/heads/next'
         run: npm publish --provenance --access public --tag next
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        working-directory: ./dist
+
+      - name: Publish (alpha)
+        if: github.ref == 'refs/heads/alpha'
+        run: npm publish --provenance --access public --tag alpha
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: ./dist

@@ -377,6 +377,27 @@ export abstract class AbstractAdapter {
 
     public readonly orm: any;
     public readonly ormType: string;
+    /**
+     * Mapping between canonical Adminizer system model names and host ORM model names.
+     * 
+     * Adminizer requires 7 system models with canonical names:
+     * - `User` - Authentication and user management
+     * - `Group` - Role/group definitions
+     * - `Filter` - Saved search/filter configurations
+     * - `FilterColumn` - Column definitions for filters
+     * - `HistoryActions` - Audit trail for data changes
+     * - `Notification` - Notification definitions
+     * - `UserNotification` - User-specific notification tracking
+     * 
+     * The mapping allows host ORM models to use different names (e.g., `UserAP`, `GroupAP`)
+     * while Adminizer uses canonical names internally. Both string and object formats are supported.
+     * 
+ * @type {SystemModelBindings}
+     * @see {@link SystemModelBindings} - Type definition
+     * @see {@link SystemModelBindingValue} - Value format (string or object)
+     * @see {@link validateSystemModels} - Validation logic in validateSystemModels.ts
+     * @see {@link SYSTEM_MODEL_CONTRACTS} - System model contracts in systemModelContracts.ts
+     */
     public readonly systemModels: SystemModelBindings;
 
     protected constructor(type: string, orm: any, options: AbstractAdapterOptions = {}) {
@@ -396,6 +417,10 @@ export abstract class AbstractAdapter {
 }
 
 export type SystemModelBindingValue = string | {
+    /**
+     * The name of the host ORM model that implements the system model.
+     * When SystemModelBindingValue is a string, it is equivalent to `{ model: string }`.
+     */
     model: string;
 };
 
@@ -403,7 +428,19 @@ export type SystemModelBindings = Record<string, SystemModelBindingValue>;
 
 export interface AbstractAdapterOptions {
     /**
-     * Map of required system models
+     * Optional mapping between canonical Adminizer system model names and host ORM model names.
+     * If not provided, defaults to an empty object and Adminizer assumes host models use canonical names.
+     * 
+     * Keys are canonical system model names (e.g., `User`, `Group`, `Filter`, etc.)
+     * and values are either:
+     * - A string: the host ORM model name
+     * - An object: `{ model: string }` specifying the host ORM model name
+     * 
+     * @type {SystemModelBindings}
+     * @default `{}`
+     * @see {@link SystemModelBindings} - Type definition
+     * @see {@link SystemModelBindingValue} - Value format
+     * @see {@link AbstractAdapter.systemModels} - Runtime property storing the binding map
      */
     systemModels?: SystemModelBindings;
 }

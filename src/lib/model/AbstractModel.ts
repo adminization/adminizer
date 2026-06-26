@@ -402,6 +402,9 @@ export type SystemModelBindingValue = string | {
 export type SystemModelBindings = Record<string, SystemModelBindingValue>;
 
 export interface AbstractAdapterOptions {
+    /**
+     * Map of required system models
+     */
     systemModels?: SystemModelBindings;
 }
 

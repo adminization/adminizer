@@ -72,6 +72,7 @@ process.env.JWT_SECRET = "fixture-jwt-secret"
 
 const ormType = process.env.ORM ?? "sequelize";
 let adminizer: Adminizer;
+
 const fixtureSystemModels = {
     User: "UserAP",
     Group: "GroupAP",
@@ -218,7 +219,7 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
                 navigationAppConfig.model ?? navigationModelName,
                 true
             );
-            await adminizer.appManager.enable(new NavigationApp({
+            adminizer.appManager.register(new NavigationApp({
                 ...navigationAppConfig,
             }));
         }

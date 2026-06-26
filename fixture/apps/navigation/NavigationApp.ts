@@ -58,7 +58,7 @@ export class NavigationApp extends AbstractAdminizerApp<NavigationAppConfig> {
                         updatedAt: {visible: false},
                     },
                     navbar: {
-                        visible: false,
+                        visible: true,
                     },
                     icon: "storage",
                     identifierField: "",

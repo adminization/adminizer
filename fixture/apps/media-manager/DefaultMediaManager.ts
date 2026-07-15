@@ -8,11 +8,11 @@ import {
     MediaManagerWidgetData,
     QueryCriteria,
     SortCriteria,
+    populateVariants
 } from "../../../dist";
 import {ApplicationItem, ImageItem, TextItem, VideoItem} from "./Items";
 import {mediaManagerModelNames} from "./MediaManagerModels";
 import type {MediaManagerAssociationRecord} from "./MediaManagerTypes";
-import {populateVariants} from "../../../dist/lib/media-manager/helpers/MediaManagerHelper";
 
 export class DefaultMediaManager extends AbstractMediaManager {
     readonly itemTypes: File<MediaManagerItem>[] = [];

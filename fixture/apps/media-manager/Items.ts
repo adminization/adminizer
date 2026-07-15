@@ -6,13 +6,13 @@ import {
     QueryCriteria,
     SortCriteria,
     UploaderFile,
+    populateVariants
 } from "../../../dist";
 import sizeOf from "image-size";
 import sharp from "sharp";
 import * as fs from "fs";
 import path from "path";
 import {mediaManagerModelNames} from "./MediaManagerModels";
-import {populateVariants} from "../../../dist/lib/media-manager/helpers/MediaManagerHelper";
 import type {
     MediaManagerAssociationRecord,
     MediaManagerMetaRecord,

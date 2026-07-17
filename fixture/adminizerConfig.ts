@@ -1,6 +1,6 @@
 import { AdminpanelConfig } from "../dist";
 
-export const routePrefix = "/adminizer1";
+export const routePrefix = "/adminizer";
 
 const models: AdminpanelConfig["models"] = {
     Test: {

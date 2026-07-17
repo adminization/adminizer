@@ -7,8 +7,7 @@ import {Label} from "@/components/ui/label";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import type {AddCatalogProps, CatalogTemplateComponentProps} from "@/types";
 import {LoaderCircle, Plus} from "lucide-react";
-
-const adminApi = window.adminApi;
+import axios from "@/lib/axios-compat";
 
 export function NavigationModelLinkTemplate(props: CatalogTemplateComponentProps) {
     if (props.mode === "update") {
@@ -27,7 +26,7 @@ function NavigationModelLinkCreateTemplate({template, itemType, parentId, action
     const handleSelect = async (value: string) => {
         try {
             setIsSubmitting(true);
-            const res = await adminApi.post("", {
+            const res = await axios.post("", {
                 data: {
                     record: value,
                     parentId,
@@ -93,7 +92,7 @@ function NavigationModelLinkEditTemplate({template, selectedItem, messages, acti
 
     useEffect(() => {
         const loadModelForm = async () => {
-            const res = await adminApi.get<any>(`${window.routePrefix}/model/${model}/edit/${item.modelId}?without_layout=true`);
+            const res = await axios.get<any>(`${window.routePrefix}/model/${model}/edit/${item.modelId}?without_layout=true`);
             setAddProps(res.data);
         };
         loadModelForm().catch(console.error);
@@ -105,7 +104,7 @@ function NavigationModelLinkEditTemplate({template, selectedItem, messages, acti
         updatedRecord.visible = visible;
         updatedRecord.treeId = item.id;
 
-        const res = await adminApi.put<any>("", {
+        const res = await axios.put<any>("", {
             type: item.type,
             data: {record: updatedRecord},
             modelId: item.modelId,
@@ -188,7 +187,7 @@ function NavigationGroupLinkTemplate({
 
         try {
             if (mode === "update") {
-                const res = await adminApi.put<any>("", {
+                const res = await axios.put<any>("", {
                     type: data.item?.type,
                     modelId: data.item?.id,
                     data: {
@@ -204,7 +203,7 @@ function NavigationGroupLinkTemplate({
                 return;
             }
 
-            await adminApi.post("", {
+            await axios.post("", {
                 data: {
                     ...formData,
                     targetBlank,

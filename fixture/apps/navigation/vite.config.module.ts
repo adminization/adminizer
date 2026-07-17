@@ -8,7 +8,6 @@ const uiExternals = {
     "react-dom": "ReactDOM",
     "lucide-react": "LucideReact",
     sonner: "sonner",
-    "@/lib/axios-compat": "axios",
     "@/components/add-form": ["JSComponents", "AddForm"],
     "@/components/add-form.tsx": ["JSComponents", "AddForm"],
     "@/components/ui/avatar": "UIComponents",
@@ -40,6 +39,7 @@ const uiExternals = {
     "@/components/ui/table": "UIComponents",
     "@/components/ui/textarea": "UIComponents",
     "@/components/ui/tooltip": "UIComponents",
+    '@/lib/axios-compat': 'axios',
 };
 
 export default defineConfig({

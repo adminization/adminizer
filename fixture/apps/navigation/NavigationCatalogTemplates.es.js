@@ -1,6 +1,6 @@
 var b = { exports: {} }, f = {};
 var C;
-function A() {
+function M() {
   if (C) return f;
   C = 1;
   var n = /* @__PURE__ */ Symbol.for("react.transitional.element"), m = /* @__PURE__ */ Symbol.for("react.fragment");
@@ -22,11 +22,11 @@ function A() {
   return f.Fragment = m, f.jsx = c, f.jsxs = c, f;
 }
 var N;
-function M() {
-  return N || (N = 1, b.exports = A()), b.exports;
+function U() {
+  return N || (N = 1, b.exports = M()), b.exports;
 }
-var e = M();
-const S = window.React.useEffect, p = window.React.useState, U = window.JSComponents.AddForm, y = window.UIComponents.Button, I = window.UIComponents.Checkbox, T = window.UIComponents.Input, v = window.UIComponents.Label, V = window.UIComponents.Select, P = window.UIComponents.SelectContent, $ = window.UIComponents.SelectItem, q = window.UIComponents.SelectTrigger, J = window.UIComponents.SelectValue, R = window.LucideReact.LoaderCircle, z = window.LucideReact.Plus, j = window.adminApi;
+var e = U();
+const S = window.React.useEffect, p = window.React.useState, V = window.JSComponents.AddForm, y = window.UIComponents.Button, I = window.UIComponents.Checkbox, T = window.UIComponents.Input, v = window.UIComponents.Label, P = window.UIComponents.Select, $ = window.UIComponents.SelectContent, q = window.UIComponents.SelectItem, A = window.UIComponents.SelectTrigger, J = window.UIComponents.SelectValue, R = window.LucideReact.LoaderCircle, z = window.LucideReact.Plus, j = window.axios;
 function G(n) {
   return n.mode === "update" ? /* @__PURE__ */ e.jsx(O, { ...n }) : /* @__PURE__ */ e.jsx(D, { ...n });
 }
@@ -54,9 +54,9 @@ function D({ template: n, itemType: m, parentId: c, actions: i }) {
     /* @__PURE__ */ e.jsxs("div", { className: "flex gap-4 flex-col", children: [
       /* @__PURE__ */ e.jsxs("div", { className: `grid gap-4 ${l.items.length ? "" : "opacity-50 pointer-events-none"}`, children: [
         /* @__PURE__ */ e.jsx(v, { children: l.labels.selectTitle }),
-        /* @__PURE__ */ e.jsxs(V, { onValueChange: h, disabled: x, children: [
-          /* @__PURE__ */ e.jsx(q, { className: "w-full max-w-[170px] cursor-pointer", children: /* @__PURE__ */ e.jsx(J, { placeholder: l.labels.selectTitle }) }),
-          /* @__PURE__ */ e.jsx(P, { className: "z-[1003]", children: l.items.map((r) => /* @__PURE__ */ e.jsx($, { value: r.id.toString(), children: r.name }, `${r.id}-${r.name}`)) })
+        /* @__PURE__ */ e.jsxs(P, { onValueChange: h, disabled: x, children: [
+          /* @__PURE__ */ e.jsx(A, { className: "w-full max-w-[170px] cursor-pointer", children: /* @__PURE__ */ e.jsx(J, { placeholder: l.labels.selectTitle }) }),
+          /* @__PURE__ */ e.jsx($, { className: "z-[1003]", children: l.items.map((r) => /* @__PURE__ */ e.jsx(q, { value: r.id.toString(), children: r.name }, `${r.id}-${r.name}`)) })
         ] })
       ] }),
       /* @__PURE__ */ e.jsx(
@@ -97,7 +97,7 @@ function O({ template: n, selectedItem: m, messages: c, actions: i }) {
     i.close(), await i.reload(w.data.data);
   };
   return s ? /* @__PURE__ */ e.jsx(
-    U,
+    V,
     {
       page: s,
       catalog: !0,

@@ -78,7 +78,7 @@ export function InlineEditableCell({
 
         try {
             const response = await adminApi.patch<any>(
-                `/adminizer/model/${modelName}/inline/${recordId}`,
+                `${window.routePrefix}/model/${modelName}/inline/${recordId}`,
                 {
                     field: fieldName,
                     value: editValue

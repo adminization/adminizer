@@ -200,7 +200,7 @@ function UserFiltersList({ title, models, apiEndpoint }: UserFiltersListProps) {
     }, [hasMore, loading, loadFilters]);
 
     const handleFilterClick = (filter: FilterItem) => {
-        window.location.href = `/adminizer/model/${filter.modelName}?filterId=${filter.id}`;
+        window.location.href = `${window.routePrefix}/model/${filter.modelName}?filterId=${filter.id}`;
     };
 
     const handleClearSearch = () => {

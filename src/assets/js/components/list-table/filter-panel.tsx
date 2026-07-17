@@ -276,7 +276,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
 
         try {
             const filterId = filterForEdit?.id || (activeFilterId === TEMPORARY_FILTER_ID ? TEMPORARY_FILTER_ID : undefined);
-            let url = `/adminizer/model/${modelName}/columns`;
+            let url = `${window.routePrefix}/model/${modelName}/columns`;
             if (filterId) {
                 url += `?filterId=${filterId}`;
             }
@@ -484,7 +484,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
                     return;
                 }
 
-                const response = await adminApi.get<{fields: FilterField[]}>(`/adminizer/model/${modelName}/filter-fields`);
+                const response = await adminApi.get<{fields: FilterField[]}>(`${window.routePrefix}/model/${modelName}/filter-fields`);
                 const data = response.data;
                 setAvailableFields(data.fields || []);
             } catch (error) {
@@ -502,7 +502,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
                 return;
             }
             try {
-                const response = await adminApi.get<{groups: {id: number, name: string}[]}>('/adminizer/groups');
+                const response = await adminApi.get<{groups: {id: number, name: string}[]}>(`${window.routePrefix}/groups`);
                 setUserGroups(response.data.groups || []);
             } catch (error) {
                 console.error('Error loading groups:', error);
@@ -555,7 +555,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
         filterDialogRef.current?.open();
 
         try {
-            const response = await adminApi.get<{filters: Filter[]}>(`/adminizer/model/${modelName}/saved-filters`);
+            const response = await adminApi.get<{filters: Filter[]}>(`${window.routePrefix}/model/${modelName}/saved-filters`);
             const savedFilters = response.data?.filters || [];
             const targetFilter = savedFilters.find((filter: any) => String(filter.id) === String(targetFilterId));
 
@@ -587,7 +587,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
         }
 
         try {
-            const response = await adminApi.get<{filter: Filter}>(`/adminizer/model/${modelName}/filter/temporary`);
+            const response = await adminApi.get<{filter: Filter}>(`${window.routePrefix}/model/${modelName}/filter/temporary`);
             const filter = response.data?.filter;
 
             if (!filter) {
@@ -682,18 +682,14 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
     const loadUserApiKey = async () => {
         if (userKey) return; // Already loaded
         try {
-            const response = await adminApi.get<{apiKey: string}>('/adminizer/api/user-key');
+            const response = await adminApi.get<{apiKey: string}>(`${window.routePrefix}/api/user-key`);
             setUserKey(response.data.apiKey);
         } catch (error) {
             console.error('Failed to load user API key:', error);
         }
     };
 
-    const getFeedBaseUrl = () => `${window.location.origin}/adminizer/api/feed`;
-
-    // Edit mode API helpers
-    const getEditJsonFeedUrl = () => `${getFeedBaseUrl()}/${editApiKey || '...'}.json?userKey=${userKey || '...'}`;
-    const getEditXmlFeedUrl = () => `${getFeedBaseUrl()}/${editApiKey || '...'}.xml?userKey=${userKey || '...'}`;
+    const getFeedBaseUrl = () => `${window.routePrefix}/api/feed`;
 
     const copyEditToClipboard = async (text: string, label: string) => {
         try {
@@ -810,7 +806,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
                     }));
             }
 
-            const response = await adminApi.post<{filter: Filter}>(`/adminizer/model/${modelName}/filter`, payload);
+            const response = await adminApi.post<{filter: Filter}>(`${window.routePrefix}/model/${modelName}/filter`, payload);
             const filter = response.data.filter;
 
             // Очищаем временный фильтр после успешного сохранения
@@ -976,7 +972,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
             }
 
             // Отправляем POST запрос на применение временного фильтра
-            const response = await adminApi.post<any>(`/adminizer/model/${modelName}/filter/apply`, payload);
+            const response = await adminApi.post<any>(`${window.routePrefix}/model/${modelName}/filter/apply`, payload);
             const data = response.data;
 
             if (data.success) {
@@ -1014,7 +1010,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
 
             if (error.response?.status === 401) {
                 console.error('Session expired, redirecting to login...');
-                window.location.href = '/adminizer/model/User/login';
+                window.location.href = `${window.routePrefix}/model/User/login`;
                 return;
             }
 
@@ -1066,7 +1062,7 @@ export function FilterPanel({ onApplyFilters }: FilterPanelProps) {
                     }));
             }
 
-            const response = await adminApi.post<{filter: Filter}>(`/adminizer/model/${modelName}/filter`, payload);
+            const response = await adminApi.post<{filter: Filter}>(`${window.routePrefix}/model/${modelName}/filter`, payload);
             const filter = response.data.filter;
 
             // Обновляем состояние

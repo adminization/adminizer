@@ -73,7 +73,7 @@ export function SavedFiltersList({
     const loadFilters = async () => {
         setLoading(true);
         try {
-            const response = await adminApi.get<{filters: SavedFilter[]}>(`/adminizer/model/${modelName}/saved-filters`);
+            const response = await adminApi.get<{filters: SavedFilter[]}>(`${window.routePrefix}/model/${modelName}/saved-filters`);
             setFilters(response.data.filters || []);
         } catch (error: any) {
             console.error('Error loading saved filters:', error);
@@ -81,7 +81,7 @@ export function SavedFiltersList({
             // Если 401 - редирект на логин
             if (error.response?.status === 401) {
                 console.error('Session expired, redirecting to login...');
-                window.location.href = '/adminizer/model/User/login';
+                window.location.href = `${window.routePrefix}/model/User/login`;
                 return;
             }
         } finally {
@@ -95,7 +95,7 @@ export function SavedFiltersList({
 
     const handleDelete = async (filter: SavedFilter) => {
         try {
-            await adminApi.delete(`/adminizer/model/${modelName}/filter/${filter.id}`);
+            await adminApi.delete(`${window.routePrefix}/model/${modelName}/filter/${filter.id}`);
             onDeleteFilter?.(filter.id);
             loadFilters(); // Перезагружаем список
         } catch (error: any) {
@@ -104,7 +104,7 @@ export function SavedFiltersList({
             // Если 401 - редирект на логин
             if (error.response?.status === 401) {
                 console.error('Session expired, redirecting to login...');
-                window.location.href = '/adminizer/model/User/login';
+                window.location.href = `${window.routePrefix}/model/User/login`;
                 return;
             }
 
@@ -119,7 +119,7 @@ export function SavedFiltersList({
     const handleEdit = async (filter: SavedFilter) => {
         try {
             // Fetch fresh filter payload to avoid editing stale conditions from local list cache.
-            const response = await adminApi.get<{filters: SavedFilter[]}>(`/adminizer/model/${modelName}/saved-filters`);
+            const response = await adminApi.get<{filters: SavedFilter[]}>(`${window.routePrefix}/model/${modelName}/saved-filters`);
             const savedFilters = response.data?.filters || [];
             const freshFilter = savedFilters.find((f: SavedFilter) => String(f.id) === String(filter.id));
             onEditFilter?.(freshFilter || filter);

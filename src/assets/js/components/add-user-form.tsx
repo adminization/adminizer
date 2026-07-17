@@ -108,7 +108,7 @@ export default function AddUserForm() {
 
     const handleRegenerateApiKey = async () => {
         try {
-            const response = await adminApi.post<any>('/adminizer/api/user-key/regenerate');
+            const response = await adminApi.post<any>(`${window.routePrefix}/api/user-key/regenerate`);
             setCurrentApiKey(response.data.apiKey);
             toast.success('User API key regenerated');
         } catch (error) {

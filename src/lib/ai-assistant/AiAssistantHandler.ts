@@ -6,17 +6,51 @@ import {User} from '../../models/User';
 
 export class AiAssistantHandler {
     private readonly models = new Map<string, AbstractAiModelService>();
+    private readonly owners = new Map<string, string>();
     private readonly history = new Map<string, AiAssistantMessage[]>();
 
     constructor(private readonly adminizer: Adminizer) {}
 
-    registerModel(service: AbstractAiModelService): void {
+    /**
+     * @param owner App name when the model belongs to an app. Models without an
+     * owner belong to the host application and are never removed automatically.
+     */
+    registerModel(service: AbstractAiModelService, owner?: string): void {
         if (this.models.has(service.id)) {
             Adminizer.log.warn(
                 `AI assistant model with id "${service.id}" is already registered. Overwriting.`,
             );
         }
         this.models.set(service.id, service);
+
+        if (owner) {
+            this.owners.set(service.id, owner);
+        } else {
+            this.owners.delete(service.id);
+        }
+    }
+
+    /**
+     * @param owner When passed, the model is kept if it is owned by someone
+     * else, so a disabled app never removes another owner's model.
+     */
+    unregisterModel(id: string, owner?: string): void {
+        if (!this.models.has(id)) {
+            return;
+        }
+
+        if (owner && this.owners.get(id) !== owner) {
+            return;
+        }
+
+        this.models.delete(id);
+        this.owners.delete(id);
+
+        for (const key of this.history.keys()) {
+            if (key.endsWith(`:${id}`)) {
+                this.history.delete(key);
+            }
+        }
     }
 
     getModel(id: string): AbstractAiModelService | undefined {

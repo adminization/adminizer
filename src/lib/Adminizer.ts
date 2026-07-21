@@ -142,7 +142,7 @@ export class Adminizer {
     router!: Router
     notificationHandler!: NotificationHandler;
     historyHandler!: HistoryHandler;
-    aiAssistantHandler?: AiAssistantHandler;
+    private _aiAssistantHandler?: AiAssistantHandler;
     modelHandler: ModelHandler
     widgetHandler: WidgetHandler
     customFilterHandler!: CustomFilterHandler
@@ -184,6 +184,25 @@ export class Adminizer {
         this.assetHandler = new AssetHandler(this);
         this.configLayerHandler = new ConfigLayerHandler(this);
         this.appManager = new AppManager(this);
+    }
+
+    /**
+     * Shared AI assistant model registry.
+     *
+     * Created lazily on first access, so host code can register models
+     * directly (`adminizer.aiAssistantHandler.registerModel(service)`) without
+     * declaring an app. Apps register their models in the same handler through
+     * `ctx.aiAssistant()` and own only their entries.
+     * `config.aiAssistant.enabled` stays a gate for controllers and the UI, not
+     * for the registry itself.
+     */
+    get aiAssistantHandler(): AiAssistantHandler {
+        this._aiAssistantHandler ??= new AiAssistantHandler(this);
+        return this._aiAssistantHandler;
+    }
+
+    set aiAssistantHandler(handler: AiAssistantHandler | undefined) {
+        this._aiAssistantHandler = handler;
     }
 
     getMiddleware() {

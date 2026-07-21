@@ -24,7 +24,6 @@ import type {ModelConfig} from "../../interfaces/adminpanelConfig";
 import type {Control} from "../controls/Control";
 import type {WidgetType} from "../widgets/widgetHandler";
 import type {WidgetInfoContext} from "../widgets/abstractInfo";
-import {AiAssistantHandler} from "../ai-assistant/AiAssistantHandler";
 import {DataAccessor} from "../DataAccessor";
 
 export type AppState = AppRuntimeAppState;
@@ -191,27 +190,31 @@ class RuntimeAppSetupContext implements AppSetupContext {
     }
 
     private async registerAiAssistant(resource: AppAiAssistantResource): Promise<void> {
-        const previousHandler = this.adminizer.aiAssistantHandler;
-        const handler = new AiAssistantHandler(this.adminizer);
+        // Models go into the shared handler instead of replacing it, so models
+        // registered directly by the host application keep working and several
+        // apps can contribute models at the same time.
+        const handler = this.adminizer.aiAssistantHandler;
         const context = this.createAiAssistantContext();
+        const modelIds: string[] = [];
 
         for (const modelFactory of resource.models) {
             const model = await modelFactory(context);
-            handler.registerModel(model);
+            handler.registerModel(model, this.appName);
+            modelIds.push(model.id);
         }
 
-        this.adminizer.aiAssistantHandler = handler;
         this.adminizer.emitter.emit("app:ai-assistant:registered", {
             appName: this.appName,
-            models: handler.getModels().map((model) => model.id),
+            models: modelIds,
         });
 
         this.disposers.push(() => {
-            if (this.adminizer.aiAssistantHandler === handler) {
-                this.adminizer.aiAssistantHandler = previousHandler;
+            for (const modelId of modelIds) {
+                this.adminizer.aiAssistantHandler.unregisterModel(modelId, this.appName);
             }
             this.adminizer.emitter.emit("app:ai-assistant:unregistered", {
                 appName: this.appName,
+                models: modelIds,
             });
         });
     }

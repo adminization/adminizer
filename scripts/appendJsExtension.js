@@ -9,7 +9,7 @@ files.forEach(file => {
 
   if (stat.isDirectory()) {
     appendJsExtension(filePath);  // Recursively process directories
-  } else if (file.endsWith('.js')) {
+  } else if (file.endsWith('.js') || file.endsWith('.d.ts')) {
     let content = fs.readFileSync(filePath, 'utf8');
     
     // Regular expression to match import and export from paths, but exclude ones that already have a .js or other extensions

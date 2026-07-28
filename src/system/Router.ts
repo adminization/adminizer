@@ -30,6 +30,7 @@ import { Adminizer } from "../lib/Adminizer";
 import timezones from "../controllers/timezones";
 import { NotificationController } from "../controllers/notifications/NotificationController";
 import { HistoryController } from "../controllers/history-actions/HistoryController";
+import { AiAssistantController } from "../controllers/ai/AiAssistantController";
 import listUserFilters from "../controllers/listUserFilters";
 import {
     requireAnyPermission,
@@ -39,6 +40,7 @@ import {
     requirePermission
 } from "../policies/authPolicies";
 import {
+    aiModelToken,
     catalogToken,
     groupFilterVisibilityToken,
     historyToken,
@@ -417,6 +419,26 @@ export default class Router {
         adminizer.app.post(
             `${adminizer.config.routePrefix}/api/user-key/regenerate`,
             withPolicies(regenerateUserApiKey, requireAuthEnabled(), requireAuthAPI())
+        );
+
+        /**
+         * AI assistant — consumed by src/assets/js/contexts/AiAssistantContext.tsx
+         */
+        adminizer.app.get(
+            `${adminizer.config.routePrefix}/api/ai-assistant/models`,
+            withPolicies(AiAssistantController.getModels, requireAuthAPI())
+        );
+        adminizer.app.get(
+            `${adminizer.config.routePrefix}/api/ai-assistant/history/:modelId`,
+            withPolicies(AiAssistantController.getHistory, requireAuthAPI(), requirePermission(aiModelToken))
+        );
+        adminizer.app.post(
+            `${adminizer.config.routePrefix}/api/ai-assistant/query`,
+            withPolicies(AiAssistantController.sendMessage, requireAuthAPI(), requirePermission(aiModelToken))
+        );
+        adminizer.app.delete(
+            `${adminizer.config.routePrefix}/api/ai-assistant/history/:modelId`,
+            withPolicies(AiAssistantController.resetHistory, requireAuthAPI(), requirePermission(aiModelToken))
         );
 
 

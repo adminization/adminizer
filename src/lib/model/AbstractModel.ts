@@ -7,7 +7,12 @@ import { InternalModelCreateData, InternalModelRepository, InternalModelUpdateDa
 import { INTERNAL_MODEL_ACCESS_TOKEN } from "./internalModelAccessToken";
 
 export interface Attribute {
-    type: 'association' | 'association-many' | 'number' | 'json' | 'string' | 'boolean' | 'ref';
+    /**
+     * `date` covers every temporal column (date, time, timestamp). It is deliberately
+     * separate from `string`: dates must not take part in LIKE search, and the UI
+     * renders them with date controls.
+     */
+    type: 'association' | 'association-many' | 'number' | 'json' | 'string' | 'boolean' | 'date' | 'ref';
     required?: boolean;
     unique?: boolean;
     defaultsTo?: any;

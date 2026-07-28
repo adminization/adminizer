@@ -146,6 +146,16 @@ export class ConfigHelper {
 	 */
 	public static normalizeConfig(config: AdminpanelConfig): AdminpanelConfig {
 		const defaultConfig = getDefaultConfig();
+		const defaultPrefix = defaultConfig.routePrefix;
+		const routePrefix = config.routePrefix ?? defaultPrefix;
+
+		// Built-in navbar links are written against the default prefix, so retarget
+		// them whenever the app overrides routePrefix (otherwise they 404).
+		const builtinLinks = (defaultConfig.navbar?.additionalLinks || []).map((item) =>
+			typeof item.link === 'string' && item.link.startsWith(`${defaultPrefix}/`)
+				? { ...item, link: routePrefix + item.link.slice(defaultPrefix.length) }
+				: item
+		);
 
 		const mergedConfig = {
 			...defaultConfig,
@@ -158,7 +168,7 @@ export class ConfigHelper {
 				...defaultConfig.navbar,
 				...config.navbar,
 				additionalLinks: [
-					...(defaultConfig.navbar?.additionalLinks || []),
+					...builtinLinks,
 					...(config.navbar?.additionalLinks || [])
 				]
 			}

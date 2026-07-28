@@ -86,8 +86,8 @@ export const SYSTEM_MODEL_CONTRACTS: readonly SystemModelContract[] = [
             color: {type: "string"},
             version: {type: "number"},
             columns: {relation: {kind: "many", target: "FilterColumn"}},
-            createdAt: {type: "string"},
-            updatedAt: {type: "string"},
+            createdAt: {type: "date"},
+            updatedAt: {type: "date"},
         },
     },
     {
@@ -112,8 +112,8 @@ export const SYSTEM_MODEL_CONTRACTS: readonly SystemModelContract[] = [
             diff: {type: "json"},
             user: {relation: {kind: "one", target: "User"}},
             isCurrent: {type: "boolean"},
-            createdAt: {type: "string"},
-            updatedAt: {type: "string"},
+            createdAt: {type: "date"},
+            updatedAt: {type: "date"},
             preview: {type: "boolean"},
         },
     },
@@ -127,8 +127,8 @@ export const SYSTEM_MODEL_CONTRACTS: readonly SystemModelContract[] = [
             notificationClass: {type: "string"},
             channel: {type: "string"},
             metadata: {type: "json"},
-            createdAt: {type: "string"},
-            updatedAt: {type: "string"},
+            createdAt: {type: "date"},
+            updatedAt: {type: "date"},
         },
     },
     {
@@ -161,7 +161,12 @@ export function validateSystemModelContract(
             continue;
         }
 
-        if (expected.type && actual.type !== expected.type) {
+        // Before `date` existed, temporal columns were reported as `string`.
+        // Keep accepting that from third-party adapters that have not been updated.
+        const typeMatches = expected.type === actual.type
+            || (expected.type === "date" && actual.type === "string");
+
+        if (expected.type && !typeMatches) {
             errors.push(`attribute "${attributeName}" must have type "${expected.type}", received "${actual.type}"`);
         }
         if (expected.required === true && actual.required !== true) {

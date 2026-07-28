@@ -49,7 +49,9 @@ function resolveType(type: any): Attribute["type"] {
     if (sqlType.includes("bool") || sqlType === "tinyint(1)") return "boolean";
     if (sqlType.includes("int") || sqlType.includes("float") || sqlType.includes("decimal")) return "number";
     if (sqlType.includes("json")) return "json";
-    if (sqlType.includes("date")) return "string";
+    // Sequelize renders temporal types per dialect: sqlite gives DATETIME/DATE,
+    // postgres TIMESTAMP WITH TIME ZONE, mysql DATETIME/TIMESTAMP. Match all of them.
+    if (sqlType.includes("date") || sqlType.includes("time")) return "date";
     return "ref";
 }
 
@@ -136,6 +138,7 @@ type AbstractFieldType =
     | "number"
     | "boolean"
     | "json"
+    | "date"
     | "ref"
     | "association"
     | "association-many";

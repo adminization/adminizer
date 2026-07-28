@@ -48,7 +48,7 @@ function resolveAdminizerTypeFromColumn(column: any): Attribute["type"] {
         return "number";
     }
     if (type.includes("json")) return "json";
-    if (type.includes("date") || type.includes("time")) return "string";
+    if (type.includes("date") || type.includes("time")) return "date";
     if (type.includes("char") || type.includes("text") || type.includes("uuid") || type.includes("string")) {
         return "string";
     }

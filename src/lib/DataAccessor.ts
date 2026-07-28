@@ -200,7 +200,11 @@ export class DataAccessor {
             // Set required and type attributes
             fldConfig.required = Boolean(fldConfig.required ?? modelField.required);
             // Default type for field. Could be fetched from config file or model if not defined in config file.
-            fldConfig.type = ((fldConfig.type || modelField.type).toLowerCase() as FieldsTypes);
+            // The model layer has a single temporal type (`date`), the UI distinguishes
+            // date/datetime/time. Default to `datetime` so the time part survives editing;
+            // a date-only column can be narrowed with `type: "date"` in the model config.
+            const modelFieldType = modelField.type === "date" ? "datetime" : modelField.type;
+            fldConfig.type = ((fldConfig.type || modelFieldType).toLowerCase() as FieldsTypes);
 
             // Normalize final configuration (fldConfig is always an object here, normalize never returns undefined)
             fldConfig = this.adminizer.configHelper.normalizeFieldConfig(this.adminizer, fldConfig, key, modelField)!;

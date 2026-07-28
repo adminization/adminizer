@@ -1,37 +1,28 @@
-import {
+import type {
     ModelStatic,
     IncludeOptions,
+    Op,
+    HasMany,
     BelongsTo,
     BelongsToMany,
-    HasOne
-} from "sequelize";
-import type {
+    HasOne,
     Sequelize as SequelizeType,
-    Op as OpType,
-    HasMany as HasManyType,
 } from "sequelize";
-let Sequelize: typeof SequelizeType;
-let Op: typeof OpType;
-let HasMany: typeof HasManyType;
 import {AbstractAdapter, AbstractAdapterOptions, AbstractModel, Attribute} from "../AbstractModel";
-import {CriteriaPopulate, CriteriaSelect, QueryCriteria} from "../../../interfaces/queryCriteria";
+import { CriteriaPopulate, CriteriaSelect, QueryCriteria } from "../../../interfaces/queryCriteria";
 
-try {
-    const sequelize = require('sequelize');
-    Sequelize = sequelize.Sequelize;
-    Op = sequelize.Op;
-    HasMany = sequelize.HasMany;
-} catch (error) {
-    const stub = new Proxy({} as any, {
-        get: () => () => {
-            throw new Error('Sequelize is not installed. Run: npm install sequelize');
-        }
-    });
-    Sequelize = stub as typeof SequelizeType;
-    Op = stub as typeof OpType;
-    HasMany = stub as typeof HasManyType;
+let _Sequelize: typeof SequelizeType | null = null;
+let _Op: typeof Op | null = null;
+let _HasMany: typeof HasMany | null = null;
+
+async function ensureSequelize(): Promise<typeof SequelizeType> {
+    if (_Sequelize) return _Sequelize;
+    const sequelize = await import('sequelize');
+    _Sequelize = sequelize.Sequelize;
+    _Op = sequelize.Op;
+    _HasMany = sequelize.HasMany;
+    return _Sequelize;
 }
-
 
 function resolveType(type: any): Attribute["type"] {
     const sqlType = typeof type.toString === "function"
@@ -98,7 +89,7 @@ export function mapSequelizeToAdminizerAttributes(model: ModelStatic<any>): Reco
                 break;
             }
             case "HasMany": {
-                const a = assoc as HasManyType;
+                const a = assoc as HasMany;
                 result[alias] = {
                     type: "association-many",
                     collection: a.target.name,
@@ -157,6 +148,14 @@ function capitalize(str: string) {
 
 export class SequelizeModel<T> extends AbstractModel<T> {
     private model: ModelStatic<any>;
+    private _init = false;
+
+    private async _ensure(): Promise<void> {
+        if (!this._init) {
+            await ensureSequelize();
+            this._init = true;
+        }
+    }
 
     constructor(modelName: string, model: ModelStatic<any>) {
         super(
@@ -173,9 +172,9 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         const attribute = this.model.rawAttributes?.[targetKey];
         const columnName = typeof attribute?.field === "string" ? attribute.field : targetKey;
 
-        return Sequelize.where(
-            Sequelize.cast(Sequelize.col(`${this.model.name}.${columnName}`), "TEXT"),
-            {[Op.like as any]: pattern}
+        return _Sequelize.where(
+            _Sequelize.cast(_Sequelize.col(`${this.model.name}.${columnName}`), "TEXT"),
+            {[_Op.like as any]: pattern}
         );
     }
 
@@ -218,27 +217,27 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
             // Special handling for null values (IS NULL condition)
             if (value === null) {
-                result[targetKey] = {[Op.is]: null};
+                result[targetKey] = {[_Op.is]: null};
                 continue;
             }
 
             // 🔹 Handle Sequelize Op operators (already in Sequelize format)
-            if (key === (Op.and as any) || key === 'and') {
-                result[Op.and as any] = Array.isArray(value)
+            if (key === (_Op.and as any) || key === 'and') {
+                result[_Op.and as any] = Array.isArray(value)
                     ? value.map((item: any) => this._convertCriteriaToSequelize(item))
                     : [];
                 continue;
             }
 
-            if (key === (Op.or as any) || key === 'or') {
-                result[Op.or as any] = Array.isArray(value)
+            if (key === (_Op.or as any) || key === 'or') {
+                result[_Op.or as any] = Array.isArray(value)
                     ? value.map((item: any) => this._convertCriteriaToSequelize(item))
                     : [];
                 continue;
             }
 
-            if (key === (Op.not as any) || key === 'not' || key === '$not') {
-                result[Op.not as any] = this._convertCriteriaToSequelize(value);
+            if (key === (_Op.not as any) || key === 'not' || key === '$not') {
+                result[_Op.not as any] = this._convertCriteriaToSequelize(value);
                 continue;
             }
 
@@ -249,7 +248,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
             if (Array.isArray(value)) {
                 // ✅ Array processing - use the IN operator
-                result[targetKey] = {[Op.in]: value};
+                result[targetKey] = {[_Op.in]: value};
             } else if (typeof value === "object" && !Array.isArray(value)) {
                 // Check if value already contains Sequelize Op operators
                 // Need to check both string keys and Symbol keys
@@ -260,10 +259,10 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                 // Helper function to check if a symbol/op is a Sequelize operator
                 const isSequelizeOp = (op: string | symbol): boolean => {
                     // Check direct Symbol equality first
-                    if (op === (Op.gt as any) || op === (Op.gte as any) || op === (Op.lt as any) || op === (Op.lte as any) ||
-                        op === (Op.eq as any) || op === (Op.ne as any) || op === (Op.in as any) || op === (Op.notIn as any) ||
-                        op === (Op.like as any) || op === (Op.iLike as any) || op === (Op.between as any) ||
-                        op === (Op.startsWith as any) || op === (Op.endsWith as any) || op === (Op.is as any) || op === (Op.not as any)) {
+                    if (op === (_Op.gt as any) || op === (_Op.gte as any) || op === (_Op.lt as any) || op === (_Op.lte as any) ||
+                        op === (_Op.eq as any) || op === (_Op.ne as any) || op === (_Op.in as any) || op === (_Op.notIn as any) ||
+                        op === (_Op.like as any) || op === (_Op.iLike as any) || op === (_Op.between as any) ||
+                        op === (_Op.startsWith as any) || op === (_Op.endsWith as any) || op === (_Op.is as any) || op === (_Op.not as any)) {
                         return true;
                     }
 
@@ -299,22 +298,22 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
                     switch (op) {
                         case "eq":
-                            result[targetKey] = {[Op.eq as any]: val};
+                            result[targetKey] = {[_Op.eq as any]: val};
                             break;
                         case "ne":
-                            result[targetKey] = {[Op.ne as any]: val};
+                            result[targetKey] = {[_Op.ne as any]: val};
                             break;
                         case "gt":
-                            result[targetKey] = {[Op.gt as any]: val};
+                            result[targetKey] = {[_Op.gt as any]: val};
                             break;
                         case "gte":
-                            result[targetKey] = {[Op.gte as any]: val};
+                            result[targetKey] = {[_Op.gte as any]: val};
                             break;
                         case "lt":
-                            result[targetKey] = {[Op.lt as any]: val};
+                            result[targetKey] = {[_Op.lt as any]: val};
                             break;
                         case "lte":
-                            result[targetKey] = {[Op.lte as any]: val};
+                            result[targetKey] = {[_Op.lte as any]: val};
                             break;
                         case "contains":
                             // Check if field is a date/datetime type
@@ -338,82 +337,82 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                                     // Don't add anything to result - field will be excluded from WHERE
                                 } else {
                                     // Valid date - use exact match
-                                    result[targetKey] = {[Op.eq as any]: dateValue};
+                                    result[targetKey] = {[_Op.eq as any]: dateValue};
                                 }
                             } else {
                                 // For time fields and non-date fields - use Op.like with wildcards
-                                result[targetKey] = {[Op.like as any]: `%${val}%`};
+                                result[targetKey] = {[_Op.like as any]: `%${val}%`};
                             }
                             break;
                         case "startsWith":
-                            result[targetKey] = {[Op.startsWith as any]: val};
+                            result[targetKey] = {[_Op.startsWith as any]: val};
                             break;
                         case "endsWith":
-                            result[targetKey] = {[Op.endsWith as any]: val};
+                            result[targetKey] = {[_Op.endsWith as any]: val};
                             break;
                         case ">":
-                            result[targetKey] = {[Op.gt as any]: val};
+                            result[targetKey] = {[_Op.gt as any]: val};
                             break;
                         case ">=":
-                            result[targetKey] = {[Op.gte as any]: val};
+                            result[targetKey] = {[_Op.gte as any]: val};
                             break;
                         case "<":
-                            result[targetKey] = {[Op.lt as any]: val};
+                            result[targetKey] = {[_Op.lt as any]: val};
                             break;
                         case "<=":
-                            result[targetKey] = {[Op.lte as any]: val};
+                            result[targetKey] = {[_Op.lte as any]: val};
                             break;
                         case "!=":
-                            result[targetKey] = {[Op.ne as any]: val};
+                            result[targetKey] = {[_Op.ne as any]: val};
                             break;
                         case "in":
-                            result[targetKey] = {[Op.in as any]: val};
+                            result[targetKey] = {[_Op.in as any]: val};
                             break;
                         case "notIn":
-                            result[targetKey] = {[Op.notIn as any]: val};
+                            result[targetKey] = {[_Op.notIn as any]: val};
                             break;
                         case "nin":
-                            result[targetKey] = {[Op.notIn as any]: val};
+                            result[targetKey] = {[_Op.notIn as any]: val};
                             break;
                         case "between":
-                            result[targetKey] = {[Op.between as any]: val};
+                            result[targetKey] = {[_Op.between as any]: val};
                             break;
                         case "isNull":
                             if (val) {
-                                result[targetKey] = {[Op.is as any]: null};
+                                result[targetKey] = {[_Op.is as any]: null};
                             }
                             break;
                         case "isNotNull":
                             if (val) {
-                                result[targetKey] = {[Op.not as any]: null};
+                                result[targetKey] = {[_Op.not as any]: null};
                             }
                             break;
                         case "regex":
-                            result[targetKey] = {[Op.regexp as any]: val};
+                            result[targetKey] = {[_Op.regexp as any]: val};
                             break;
                         case "jsonContains": {
                             const values = Array.isArray(val) ? val : [val];
                             const clauses = values.map((item) => this._buildJsonContainsCondition(targetKey as string, item));
-                            result[Op.and as any] = [
-                                ...(result[Op.and as any] ?? []),
+                            result[_Op.and as any] = [
+                                ...(result[_Op.and as any] ?? []),
                                 ...clauses
                             ];
                             break;
                         }
                         case "$is":
-                            result[targetKey] = {[Op.is as any]: val};
+                            result[targetKey] = {[_Op.is as any]: val};
                             break;
                         case "$not":
-                            result[targetKey] = {[Op.not as any]: val};
+                            result[targetKey] = {[_Op.not as any]: val};
                             break;
                         case "$ne":
-                            result[targetKey] = {[Op.ne as any]: val};
+                            result[targetKey] = {[_Op.ne as any]: val};
                             break;
                         case "not":
-                            result[targetKey] = {[Op.not as any]: val};
+                            result[targetKey] = {[_Op.not as any]: val};
                             break;
                         default:
-                            result[targetKey] = {[Op.eq as any]: val};
+                            result[targetKey] = {[_Op.eq as any]: val};
                     }
                 }
             } else {
@@ -519,6 +518,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
     // --- CREATE ---
 
     protected async _create(data: Record<string, any>): Promise<T> {
+        await this._ensure();
         // console.clear()
 
         const assocNames = Object.keys(this.model.associations);
@@ -600,6 +600,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
     // --- FIND ONE ---
     protected async _findOne(criteria: QueryCriteria): Promise<T | null> {
+        await this._ensure();
         // console.debug(">> _findOne: input criteria:", criteria);
 
         const {where, attributes} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
@@ -632,6 +633,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
     protected async _find(
         criteria: QueryCriteria = {},
     ): Promise<T[]> {
+        await this._ensure();
         const assocNames = Object.keys(this.model.associations);
         // console.debug(">> _find: input criteria:", criteria, "options:", options);
 
@@ -699,6 +701,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         where: any,
         options: { limit?: number; offset?: number; order?: any; populate?: boolean } = {}
     ): Promise<T[]> {
+        await this._ensure();
         const assocNames = Object.keys(this.model.associations);
         const includes = options.populate !== false
             ? assocNames.map(a => ({association: a}))
@@ -719,6 +722,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
      * Public method for count with raw SQL where clauses
      */
     async countWithRawWhere(where: any): Promise<number> {
+        await this._ensure();
         const assocNames = Object.keys(this.model.associations);
         const include = assocNames.map((association) => ({association}));
 
@@ -732,6 +736,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
     // --- UPDATE ONE ---
     protected async _updateOne(criteria: QueryCriteria, data: Partial<T>): Promise<T | null> {
+        await this._ensure();
         const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
 
         const record = await this.model.findOne({where});
@@ -766,6 +771,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
     // --- UPDATE MANY ---
     protected async _update(criteria: QueryCriteria, data: Partial<T>): Promise<T[]> {
+        await this._ensure();
         const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
 
         const assocNames = Object.keys(this.model.associations);
@@ -806,6 +812,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
     // --- DESTROY ONE ---
     protected async _destroyOne(criteria: QueryCriteria): Promise<T | null> {
+        await this._ensure();
         const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
         const record = await this.model.findOne({where});
 
@@ -848,6 +855,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
     // --- DESTROY MANY ---
     protected async _destroy(criteria: QueryCriteria): Promise<T[]> {
+        await this._ensure();
         const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
 
         const records = await this.model.findAll({where});
@@ -980,7 +988,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
         const association = this.model.associations[alias] as any;
         const isUsedInWhere = usedRelationAliases.has(alias);
-        const isHasMany = association instanceof HasMany || association?.associationType === 'HasMany';
+        const isHasMany = association instanceof _HasMany || association?.associationType === 'HasMany';
 
         // When filtering by relation path ($alias.field$), extra joined hasMany associations
         // can duplicate base rows and break page size. Load such associations separately.
@@ -1054,11 +1062,14 @@ export class SequelizeAdapter extends AbstractAdapter {
     public Model = SequelizeModel;
 
     constructor(sequelize: SequelizeType, options: AbstractAdapterOptions = {}) {
+        ensureSequelize();
         super("sequelize", sequelize, options);
+        // Note: ensureSequelize is fire-and-forget during construction
+        // Methods also call this._ensure() to guarantee initialization
         this.sequelize = sequelize;
     }
 
-    get models(): Record<string, any> {
+    get models(): Record<string, any> {``
         return this.sequelize.models;
     }
 

@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import "reflect-metadata";
 
-import {Adminizer} from "../dist";
+import {Adminizer, SequelizeAdapter, TypeOrmAdapter} from "../dist";
 import http from 'http';
 import adminpanelConfig from "./adminizerConfig";
 import {AdminpanelConfig} from "../dist/interfaces/adminpanelConfig";
@@ -21,9 +21,7 @@ import {Test as TestSequelize} from "./models/sequelize/Test";
 import {Category as CategorySequelize} from "./models/sequelize/Category";
 import {TestCatalog as TestCatalogSequelize} from "./models/sequelize/TestCatalog";
 import {registerSequelizeSystemModels} from "./models/sequelize/systemModels";
-import {SequelizeAdapter} from "../dist/lib/model/adapter/sequelize";
 import {DataSource} from "typeorm";
-import {TypeOrmAdapter} from "../dist/lib/model/adapter/typeorm";
 import {seedDatabase, seedTypeOrmDatabase} from "./helpers/seedDatabase";
 import {ExampleTypeOrm} from "./models/typeorm/Example";
 import {JsonSchemaTypeOrm} from "./models/typeorm/JsonSchema";

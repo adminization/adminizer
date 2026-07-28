@@ -1,16 +1,37 @@
 import {
-    Sequelize,
     ModelStatic,
     IncludeOptions,
-    Op,
-    HasMany,
     BelongsTo,
     BelongsToMany,
     HasOne
 } from "sequelize";
+import type {
+    Sequelize as SequelizeType,
+    Op as OpType,
+    HasMany as HasManyType,
+} from "sequelize";
+let Sequelize: typeof SequelizeType;
+let Op: typeof OpType;
+let HasMany: typeof HasManyType;
 import {AbstractAdapter, AbstractAdapterOptions, AbstractModel, Attribute} from "../AbstractModel";
-import { CriteriaPopulate, CriteriaSelect, QueryCriteria } from "../../../interfaces/queryCriteria";
-import {v4 as uuid} from "uuid";
+import {CriteriaPopulate, CriteriaSelect, QueryCriteria} from "../../../interfaces/queryCriteria";
+
+try {
+    const sequelize = require('sequelize');
+    Sequelize = sequelize.Sequelize;
+    Op = sequelize.Op;
+    HasMany = sequelize.HasMany;
+} catch (error) {
+    const stub = new Proxy({} as any, {
+        get: () => () => {
+            throw new Error('Sequelize is not installed. Run: npm install sequelize');
+        }
+    });
+    Sequelize = stub as typeof SequelizeType;
+    Op = stub as typeof OpType;
+    HasMany = stub as typeof HasManyType;
+}
+
 
 function resolveType(type: any): Attribute["type"] {
     const sqlType = typeof type.toString === "function"
@@ -75,7 +96,7 @@ export function mapSequelizeToAdminizerAttributes(model: ModelStatic<any>): Reco
                 break;
             }
             case "HasMany": {
-                const a = assoc as HasMany;
+                const a = assoc as HasManyType;
                 result[alias] = {
                     type: "association-many",
                     collection: a.target.name,
@@ -175,11 +196,11 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 
             // 🧠 Replace the key with `via` if this is an association (MUST happen before null/other checks)
             let targetKey: string | typeof key = key;
-            
+
             // Only process string keys for association replacement
             if (typeof key === 'string') {
                 const attr = this.attributes?.[key];
-                
+
                 // Check if this is an association attribute (either from attributes or model.associations)
                 if (attr?.type === "association" && attr.via) {
                     targetKey = attr.via;
@@ -231,8 +252,8 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                 // Need to check both string keys and Symbol keys
                 const valueKeys = Object.keys(value);
                 const valueSymbols = Object.getOwnPropertySymbols(value);
-                
-            
+
+
                 // Helper function to check if a symbol/op is a Sequelize operator
                 const isSequelizeOp = (op: string | symbol): boolean => {
                     // Check direct Symbol equality first
@@ -242,22 +263,22 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                         op === (Op.startsWith as any) || op === (Op.endsWith as any) || op === (Op.is as any) || op === (Op.not as any)) {
                         return true;
                     }
-                    
+
                     // Fallback: check by Symbol description (handles different Symbol instances)
                     if (typeof op === 'symbol') {
                         const desc = op.description || op.toString();
                         return desc.includes('gt') || desc.includes('gte') || desc.includes('lt') || desc.includes('lte') ||
-                               desc.includes('eq') || desc.includes('ne') || desc.includes('in') || desc.includes('notIn') ||
-                               desc.includes('like') || desc.includes('iLike') || desc.includes('between') ||
-                               desc.includes('startsWith') || desc.includes('endsWith') || desc.includes('is') || desc.includes('not');
+                            desc.includes('eq') || desc.includes('ne') || desc.includes('in') || desc.includes('notIn') ||
+                            desc.includes('like') || desc.includes('iLike') || desc.includes('between') ||
+                            desc.includes('startsWith') || desc.includes('endsWith') || desc.includes('is') || desc.includes('not');
                     }
-                    
+
                     // Check string operators used by Adminizer's adapter-neutral criteria format
                     return op === '$gt' || op === '$gte' || op === '$lt' || op === '$lte' ||
-                           op === '$eq' || op === '$ne' || op === '$in' || op === '$notIn' ||
-                           op === '$like' || op === '$iLike' || op === '$between' ||
-                           op === '$startsWith' || op === '$endsWith' || op === '$is' || op === '$not' ||
-                           op === 'not';
+                        op === '$eq' || op === '$ne' || op === '$in' || op === '$notIn' ||
+                        op === '$like' || op === '$iLike' || op === '$between' ||
+                        op === '$startsWith' || op === '$endsWith' || op === '$is' || op === '$not' ||
+                        op === 'not';
                 };
 
                 const hasSequelizeOp = [...valueKeys, ...valueSymbols].some(isSequelizeOp);
@@ -265,7 +286,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                 // If already Sequelize format, pass through
                 if (hasSequelizeOp) {
                     result[targetKey] = value;
-                   
+
                     continue;
                 }
 
@@ -301,10 +322,10 @@ export class SequelizeModel<T> extends AbstractModel<T> {
                                 ? typeName.name.toLowerCase()
                                 : String(typeName).toLowerCase();
                             const isDateType = typeStr.includes('date') || typeStr.includes('time');
-                            
+
                             // TIME type should use LIKE (it's stored as 'HH:MM' string)
                             const isTimeType = typeStr === 'time';
-                            
+
                             if (isDateType && !isTimeType) {
                                 // For date fields (not time), check if value is a valid date
                                 const dateValue = new Date(String(val));
@@ -696,7 +717,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
      */
     async countWithRawWhere(where: any): Promise<number> {
         const assocNames = Object.keys(this.model.associations);
-        const include = assocNames.map((association) => ({ association }));
+        const include = assocNames.map((association) => ({association}));
 
         return await this.model.count({
             where,
@@ -870,7 +891,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
     protected async _count(criteria: QueryCriteria = {}): Promise<number> {
         const {where} = this._convertAdminizerCriteriaToSequelizeOptions(criteria);
         const assocNames = Object.keys(this.model.associations);
-        const include = assocNames.map((association) => ({ association }));
+        const include = assocNames.map((association) => ({association}));
 
         const result = await this.model.count({
             where,
@@ -948,7 +969,7 @@ export class SequelizeModel<T> extends AbstractModel<T> {
         usedRelationAliases: Set<string>,
         hasRelationPathCondition: boolean
     ): IncludeOptions {
-        const include: IncludeOptions = { association: alias };
+        const include: IncludeOptions = {association: alias};
 
         if (!hasRelationPathCondition) {
             return include;
@@ -1026,10 +1047,10 @@ export class SequelizeModel<T> extends AbstractModel<T> {
 }
 
 export class SequelizeAdapter extends AbstractAdapter {
-    public sequelize: Sequelize;
+    public sequelize: SequelizeType;
     public Model = SequelizeModel;
 
-    constructor(sequelize: Sequelize, options: AbstractAdapterOptions = {}) {
+    constructor(sequelize: SequelizeType, options: AbstractAdapterOptions = {}) {
         super("sequelize", sequelize, options);
         this.sequelize = sequelize;
     }

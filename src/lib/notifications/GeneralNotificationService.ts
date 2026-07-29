@@ -10,8 +10,10 @@ export class GeneralNotificationService extends AbstractNotificationService {
     public readonly iconColor: string = '#5987de';
 
     async dispatchNotification(notification: Omit<INotification, 'id' | 'createdAt' | 'notificationClass' | 'icon'>): Promise<boolean> {
+        const { userId, ...notificationData } = notification;
+
         const fullNotification: Omit<INotification, 'id' | 'createdAt' | 'icon'> = {
-            ...notification,
+            ...notificationData,
             notificationClass: this.notificationClass
         };
 
@@ -19,9 +21,9 @@ export class GeneralNotificationService extends AbstractNotificationService {
         try {
             notificationDB = await this.notificationModel().create(fullNotification);
 
-            if (notification.userId) {
+            if (userId) {
                 // For specific user
-                await this.createUserNotification(notificationDB.id, notification.userId);
+                await this.createUserNotification(notificationDB.id, userId);
             } else {
                 // For all users
                 const users = await this.userModel().find({});
@@ -49,7 +51,7 @@ export class GeneralNotificationService extends AbstractNotificationService {
                     },
                 } as INotification,
                 notificationClass: this.notificationClass,
-                userId: notification.userId ?? null
+                userId: userId ?? null
             };
             this.broadcast(event);
             Adminizer.log.info(`[General] Notification dispatched: ${fullNotification.title}`);

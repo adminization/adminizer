@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { adminApi } from '@/lib/admin-api';
-import AppLayout from '@/layouts/app-layout';
+import {withAppLayout} from '@/layouts/with-app-layout';
 import {
     Table,
     TableBody,
@@ -348,12 +348,11 @@ function UserFiltersList({ title, models, apiEndpoint }: UserFiltersListProps) {
     );
 }
 
-export default function UserFiltersListPage({ title, models, apiEndpoint }: UserFiltersListProps) {
+function UserFiltersListPage({ title, models, apiEndpoint }: UserFiltersListProps) {
     return (
-        <AppLayout breadcrumbs={breadcrumbs} className="overflow-auto h-[calc(100svh-16px)]">
-            <UserFiltersList title={title} models={models} apiEndpoint={apiEndpoint} />
-        </AppLayout>
+        <UserFiltersList title={title} models={models} apiEndpoint={apiEndpoint} />
     );
 }
 
+export default withAppLayout(UserFiltersListPage, {breadcrumbs, className: 'overflow-auto h-[calc(100svh-16px)]'});
 

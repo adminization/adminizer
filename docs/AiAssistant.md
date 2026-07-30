@@ -91,9 +91,6 @@ The fixture app registers these endpoints under `config.routePrefix`:
 | Method | Route | Purpose |
 |---|---|---|
 | `GET` | `/api/ai-assistant/models` | List models available to the current user. |
-| `GET` | `/api/ai-assistant/history/:modelId` | Fetch conversation history. |
-| `POST` | `/api/ai-assistant/query` | Send a prompt to a model. |
-| `DELETE` | `/api/ai-assistant/history/:modelId` | Reset conversation history. |
 
 Each model has an access token with the pattern `ai-assistant-<modelId>`. The fixture app declares these tokens through `ctx.accessRight()`.
 

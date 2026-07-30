@@ -21,6 +21,7 @@ export class AiAssistantHandler {
                 `AI assistant model with id "${service.id}" is already registered. Overwriting.`,
             );
         }
+        service.attachAdminizer(this.adminizer);
         this.models.set(service.id, service);
 
         if (owner) {
@@ -67,6 +68,10 @@ export class AiAssistantHandler {
 
     resetHistory(userId: number, modelId: string): void {
         this.history.delete(this.getSessionKey(userId, modelId));
+    }
+
+    replaceHistory(userId: number, modelId: string, history: AiAssistantMessage[]): void {
+        this.history.set(this.getSessionKey(userId, modelId), history);
     }
 
     async sendMessage(

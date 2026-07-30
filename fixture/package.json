@@ -1,0 +1,11 @@
+{
+  "name": "adminizer-fixture",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ai-sdk/openai": "^3.0.30",
+    "@openharness/core": "^0.7.0",
+    "ai": "^6.0.97",
+    "zod": "^4.1.12"
+  }
+}

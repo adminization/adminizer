@@ -318,6 +318,41 @@
     background-color: hsl(var(--muted-foreground) / 0.5);
 }
 
+/* Independent content and assistant scroll regions use panel colors instead
+ * of the browser's light scrollbar in dark mode. */
+[data-scroll-region="content"],
+[data-slot="aui_thread-viewport"],
+[data-ai-assistant-history] {
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted-foreground) var(--background);
+}
+
+[data-scroll-region="content"]::-webkit-scrollbar,
+[data-slot="aui_thread-viewport"]::-webkit-scrollbar,
+[data-ai-assistant-history]::-webkit-scrollbar {
+    width: 0.625rem;
+}
+
+[data-scroll-region="content"]::-webkit-scrollbar-track,
+[data-slot="aui_thread-viewport"]::-webkit-scrollbar-track,
+[data-ai-assistant-history]::-webkit-scrollbar-track {
+    background: var(--background);
+}
+
+[data-scroll-region="content"]::-webkit-scrollbar-thumb,
+[data-slot="aui_thread-viewport"]::-webkit-scrollbar-thumb,
+[data-ai-assistant-history]::-webkit-scrollbar-thumb {
+    background-color: var(--muted-foreground);
+    border: 0.125rem solid var(--background);
+    border-radius: 9999px;
+}
+
+[data-scroll-region="content"]::-webkit-scrollbar-thumb:hover,
+[data-slot="aui_thread-viewport"]::-webkit-scrollbar-thumb:hover,
+[data-ai-assistant-history]::-webkit-scrollbar-thumb:hover {
+    background-color: var(--foreground);
+}
+
 .widget-flexible--flex {
     animation: tilt-shaking 0.3s ease-in-out;
 }

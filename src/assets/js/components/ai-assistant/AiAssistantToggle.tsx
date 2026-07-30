@@ -10,7 +10,6 @@ export function AiAssistantToggle() {
         isOpen,
         toggleChat,
         models,
-        sending,
         loading,
     } = useAiAssistant();
 
@@ -33,7 +32,7 @@ export function AiAssistantToggle() {
                         aria-controls="ai-assistant-panel"
                         disabled={!hasModels && loading}
                     >
-                        {sending ? <LoaderCircle className="size-4 animate-spin"/> : <Sparkles className="size-4"/>}
+                        {loading && !hasModels ? <LoaderCircle className="size-4 animate-spin"/> : <Sparkles className="size-4"/>}
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="z-[1002]">

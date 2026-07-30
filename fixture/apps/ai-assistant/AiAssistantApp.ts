@@ -9,6 +9,7 @@ import {AbstractAiModelService} from "../../../dist/lib/ai-assistant/AbstractAiM
 import {DummyAiModelService} from "./DummyAiModelService";
 import {OpenAiDataAgentService} from "./OpenAiDataAgentService";
 import {OpenAiModelService} from "./OpenAiModelService";
+import {OpenHarnessDataAgentService} from "./OpenHarnessDataAgentService";
 
 interface AiAssistantAppConfig {
     route: string;
@@ -44,6 +45,13 @@ const modelDefinitions: Record<string, AiAssistantModelDefinition> = {
         enabled: () => Boolean(process.env.OPENAI_API_KEY ?? process.env.ADMINIZER_OPENAI_KEY),
         factory: (context) => new OpenAiDataAgentService(context),
     },
+    openharness: {
+        id: "openharness",
+        name: "OpenHarness data explorer",
+        description: "Streams answers and queries fixture data through the OpenHarness agent runtime.",
+        enabled: () => Boolean(process.env.OPENHARNESS_API_KEY || process.env.PROJECT_NAME),
+        factory: () => new OpenHarnessDataAgentService(),
+    },
 };
 
 export class AiAssistantApp extends AbstractAdminizerApp<AiAssistantAppConfig> {
@@ -56,7 +64,7 @@ export class AiAssistantApp extends AbstractAdminizerApp<AiAssistantAppConfig> {
         this.config = {
             route: "/api/ai-assistant",
             defaultModel: "openai-data",
-            models: ["openai-data", "dummy"],
+            models: ["openharness", "openai-data", "dummy"],
             ...config,
         };
     }
@@ -95,29 +103,6 @@ export class AiAssistantApp extends AbstractAdminizerApp<AiAssistantAppConfig> {
             policies: [{type: "auth", mode: "api"}],
         });
 
-        ctx.controller({
-            id: "history",
-            method: "get",
-            route: `${this.config.route}/history/:modelId`,
-            middleware: AiAssistantController.getHistory,
-            policies: [{type: "auth", mode: "api"}],
-        });
-
-        ctx.controller({
-            id: "query",
-            method: "post",
-            route: `${this.config.route}/query`,
-            middleware: AiAssistantController.sendMessage,
-            policies: [{type: "auth", mode: "api"}],
-        });
-
-        ctx.controller({
-            id: "reset-history",
-            method: "delete",
-            route: `${this.config.route}/history/:modelId`,
-            middleware: AiAssistantController.resetHistory,
-            policies: [{type: "auth", mode: "api"}],
-        });
     }
 
     private getEnabledModelDefinitions(): AiAssistantModelDefinition[] {

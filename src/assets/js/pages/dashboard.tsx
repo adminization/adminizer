@@ -1,13 +1,13 @@
-import AppLayout from '@/layouts/app-layout';
+import {withAppLayout} from '@/layouts/with-app-layout';
 import {type BreadcrumbItem} from '@/types';
 import WidgetLayout from "@/components/widgets/widgets-layout.tsx";
 
 const breadcrumbs: BreadcrumbItem[] = [];
 
-export default function Dashboard() {
+function Dashboard() {
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <WidgetLayout />
-        </AppLayout>
+        <WidgetLayout />
     );
 }
+
+export default withAppLayout(Dashboard, {breadcrumbs});

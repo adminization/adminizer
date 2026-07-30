@@ -1,13 +1,13 @@
 import {type BreadcrumbItem} from "@/types";
-import AppLayout from "@/layouts/app-layout.tsx";
+import {withAppLayout} from "@/layouts/with-app-layout";
 import AddUserForm from "@/components/add-user-form.tsx";
 
 const breadcrumbs: BreadcrumbItem[] = [];
 
-export default function AddUser() {
+function AddUser() {
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <AddUserForm />
-        </AppLayout>
+        <AddUserForm />
     )
 }
+
+export default withAppLayout(AddUser, {breadcrumbs});

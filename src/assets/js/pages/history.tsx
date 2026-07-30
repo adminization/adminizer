@@ -1,15 +1,13 @@
 import ViewAll from "@/components/history/all/ViewAll";
-import AppLayout from "@/layouts/app-layout.tsx";
+import {withAppLayout} from "@/layouts/with-app-layout";
 import type {BreadcrumbItem} from "@/types";
 
 const breadcrumbs: BreadcrumbItem[] = [];
 
 const HistoryList = () => {
     return(
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <ViewAll/>
-        </AppLayout>
+        <ViewAll/>
     )
 }
 
-export default HistoryList;
+export default withAppLayout(HistoryList, {breadcrumbs});

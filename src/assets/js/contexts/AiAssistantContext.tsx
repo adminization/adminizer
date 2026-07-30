@@ -3,20 +3,18 @@ import {usePage} from '@inertiajs/react';
 import {SharedData} from '@/types';
 import {adminApi} from '@/lib/admin-api';
 
-export interface AiAssistantMessageDto {
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp: string;
-    modelId: string;
-}
-
 export interface AiAssistantModelDto {
     id: string;
     name: string;
     description?: string;
 }
 
+/**
+ * Panel-level state only: which assistant is selected and whether the panel is
+ * open. The conversation itself lives in the agent bundle and, behind it, in
+ * the per-user server session (see AiAgentController), so nothing about
+ * messages is kept here.
+ */
 interface AiAssistantContextValue {
     isEnabled: boolean;
     isOpen: boolean;
@@ -26,12 +24,8 @@ interface AiAssistantContextValue {
     models: AiAssistantModelDto[];
     activeModel?: string;
     setActiveModel: (modelId: string) => void;
-    messages: AiAssistantMessageDto[];
     loading: boolean;
-    sending: boolean;
     error?: string | null;
-    sendMessage: (message: string) => Promise<void>;
-    refreshHistory: () => Promise<void>;
 }
 
 interface AiAssistantPersistedState {
@@ -39,10 +33,28 @@ interface AiAssistantPersistedState {
     activeModel?: string;
 }
 
+const ASSISTANT_STATE_STORAGE_KEY = 'adminizer.aiAssistant.state';
+
 const getPersistedState = (): AiAssistantPersistedState | undefined => {
     if (typeof window === 'undefined') {
         return undefined;
     }
+
+    try {
+        const storedState = window.localStorage.getItem(ASSISTANT_STATE_STORAGE_KEY);
+        if (storedState) {
+            const state = JSON.parse(storedState) as Partial<AiAssistantPersistedState>;
+            if (typeof state.isOpen === 'boolean') {
+                return {
+                    isOpen: state.isOpen,
+                    activeModel: typeof state.activeModel === 'string' ? state.activeModel : undefined,
+                };
+            }
+        }
+    } catch {
+        // Storage can be unavailable in private browsing mode.
+    }
+
     return window.__adminizerAiAssistantState__ ?? undefined;
 };
 
@@ -51,6 +63,12 @@ const setPersistedState = (state: AiAssistantPersistedState) => {
         return;
     }
     window.__adminizerAiAssistantState__ = state;
+
+    try {
+        window.localStorage.setItem(ASSISTANT_STATE_STORAGE_KEY, JSON.stringify(state));
+    } catch {
+        // Storage can be unavailable in private browsing mode.
+    }
 };
 
 const AiAssistantContext = createContext<AiAssistantContextValue | undefined>(undefined);
@@ -64,9 +82,7 @@ export const AiAssistantProvider: React.FC<{children: React.ReactNode}> = ({chil
     const [activeModel, setActiveModelState] = useState<string | undefined>(() =>
         persisted?.activeModel ?? aiAssistantConfig?.defaultModel ?? undefined,
     );
-    const [messages, setMessages] = useState<AiAssistantMessageDto[]>([]);
     const [loading, setLoading] = useState(false);
-    const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const isEnabled = aiAssistantConfig?.enabled ?? false;
@@ -78,7 +94,7 @@ export const AiAssistantProvider: React.FC<{children: React.ReactNode}> = ({chil
             const {data} = await adminApi.getJson<AiAssistantModelDto[]>(`${window.routePrefix}/api/ai-assistant/models`);
             setModels(data);
             setActiveModelState((current) => {
-                if (current) {
+                if (current && data.some((model) => model.id === current)) {
                     return current;
                 }
                 const defaultCandidate = aiAssistantConfig?.defaultModel && data.some((model) => model.id === aiAssistantConfig.defaultModel)
@@ -94,32 +110,12 @@ export const AiAssistantProvider: React.FC<{children: React.ReactNode}> = ({chil
         }
     }, [aiAssistantConfig?.defaultModel, isEnabled]);
 
-    const fetchHistory = useCallback(async (modelId: string) => {
-        if (!isEnabled || !modelId) return;
-        try {
-            setLoading(true);
-            const {data} = await adminApi.getJson<{history: AiAssistantMessageDto[]}>(`${window.routePrefix}/api/ai-assistant/history/${modelId}`);
-            setMessages(data.history ?? []);
-        } catch (err) {
-            console.error('Failed to load AI assistant history', err);
-            setError('Unable to load AI assistant history');
-        } finally {
-            setLoading(false);
-        }
-    }, [isEnabled]);
-
     useEffect(() => {
         if (!isEnabled) {
-            setMessages([]);
             return;
         }
         void fetchModels();
     }, [fetchModels, isEnabled]);
-
-    useEffect(() => {
-        if (!isEnabled || !activeModel) return;
-        void fetchHistory(activeModel);
-    }, [activeModel, fetchHistory, isEnabled]);
 
     const setActiveModel = useCallback((modelId: string) => {
         setActiveModelState(modelId);
@@ -128,44 +124,6 @@ export const AiAssistantProvider: React.FC<{children: React.ReactNode}> = ({chil
     const openChat = useCallback(() => setIsOpen(true), []);
     const closeChat = useCallback(() => setIsOpen(false), []);
     const toggleChat = useCallback(() => setIsOpen((prev) => !prev), []);
-
-    const sendMessage = useCallback(async (message: string) => {
-        if (!isEnabled || !activeModel) return;
-        const trimmed = message.trim();
-        if (!trimmed) return;
-
-        const optimisticMessage: AiAssistantMessageDto = {
-            id: `tmp-${Date.now()}`,
-            role: 'user',
-            content: trimmed,
-            timestamp: new Date().toISOString(),
-            modelId: activeModel,
-        };
-
-        setMessages((prev) => [...prev, optimisticMessage]);
-        setSending(true);
-        setError(null);
-
-        try {
-            const {data} = await adminApi.postJson<{history: AiAssistantMessageDto[]; modelId: string}>(
-                `${window.routePrefix}/api/ai-assistant/query`,
-                {modelId: activeModel, message: trimmed},
-            );
-            setMessages(data.history ?? []);
-        } catch (err) {
-            console.error('Failed to send AI assistant message', err);
-            setError('Unable to reach AI assistant');
-            await fetchHistory(activeModel);
-        } finally {
-            setSending(false);
-        }
-    }, [activeModel, fetchHistory, isEnabled]);
-
-    const refreshHistory = useCallback(async () => {
-        if (activeModel) {
-            await fetchHistory(activeModel);
-        }
-    }, [activeModel, fetchHistory]);
 
     useEffect(() => {
         if (!isEnabled) {
@@ -189,12 +147,8 @@ export const AiAssistantProvider: React.FC<{children: React.ReactNode}> = ({chil
         models,
         activeModel,
         setActiveModel,
-        messages,
         loading,
-        sending,
         error,
-        sendMessage,
-        refreshHistory,
     }), [
         activeModel,
         closeChat,
@@ -202,12 +156,8 @@ export const AiAssistantProvider: React.FC<{children: React.ReactNode}> = ({chil
         isEnabled,
         isOpen,
         loading,
-        messages,
         models,
         openChat,
-        refreshHistory,
-        sendMessage,
-        sending,
         setActiveModel,
         toggleChat,
     ]);

@@ -31,6 +31,7 @@ import timezones from "../controllers/timezones";
 import { NotificationController } from "../controllers/notifications/NotificationController";
 import { HistoryController } from "../controllers/history-actions/HistoryController";
 import { AiAssistantController } from "../controllers/ai/AiAssistantController";
+import { AiAgentController } from "../controllers/ai/AiAgentController";
 import listUserFilters from "../controllers/listUserFilters";
 import {
     requireAnyPermission,
@@ -428,17 +429,55 @@ export default class Router {
             `${adminizer.config.routePrefix}/api/ai-assistant/models`,
             withPolicies(AiAssistantController.getModels, requireAuthAPI())
         );
+        /**
+         * Streaming agent transport — consumed by the assistant panel bundle
+         * (src/assets/js/ai-assistant). Model services that implement only
+         * `generateReply` are served through the same routes.
+         */
+        const agentRoute = `${adminizer.config.routePrefix}/api/ai-assistant/agent/:modelId`;
         adminizer.app.get(
-            `${adminizer.config.routePrefix}/api/ai-assistant/history/:modelId`,
-            withPolicies(AiAssistantController.getHistory, requireAuthAPI(), requirePermission(aiModelToken))
+            `${agentRoute}/status`,
+            withPolicies(AiAgentController.getStatus, requireAuthAPI(), requirePermission(aiModelToken))
+        );
+        adminizer.app.get(
+            `${agentRoute}/limits`,
+            withPolicies(AiAgentController.getLimits, requireAuthAPI(), requirePermission(aiModelToken))
+        );
+        adminizer.app.get(
+            `${agentRoute}/meta`,
+            withPolicies(AiAgentController.getMeta, requireAuthAPI(), requirePermission(aiModelToken))
         );
         adminizer.app.post(
-            `${adminizer.config.routePrefix}/api/ai-assistant/query`,
-            withPolicies(AiAssistantController.sendMessage, requireAuthAPI(), requirePermission(aiModelToken))
+            `${agentRoute}/model`,
+            withPolicies(AiAgentController.setModel, requireAuthAPI(), requirePermission(aiModelToken))
+        );
+        adminizer.app.get(
+            `${agentRoute}/history`,
+            withPolicies(AiAgentController.getHistory, requireAuthAPI(), requirePermission(aiModelToken))
+        );
+        adminizer.app.get(
+            `${agentRoute}/conversations`,
+            withPolicies(AiAgentController.listConversations, requireAuthAPI(), requirePermission(aiModelToken))
+        );
+        adminizer.app.post(
+            `${agentRoute}/conversations`,
+            withPolicies(AiAgentController.createConversation, requireAuthAPI(), requirePermission(aiModelToken))
+        );
+        adminizer.app.post(
+            `${agentRoute}/conversations/:conversationId/select`,
+            withPolicies(AiAgentController.selectConversation, requireAuthAPI(), requirePermission(aiModelToken))
         );
         adminizer.app.delete(
-            `${adminizer.config.routePrefix}/api/ai-assistant/history/:modelId`,
-            withPolicies(AiAssistantController.resetHistory, requireAuthAPI(), requirePermission(aiModelToken))
+            `${agentRoute}/conversations/:conversationId`,
+            withPolicies(AiAgentController.deleteConversation, requireAuthAPI(), requirePermission(aiModelToken))
+        );
+        adminizer.app.post(
+            `${agentRoute}/runs`,
+            withPolicies(AiAgentController.startRun, requireAuthAPI(), requirePermission(aiModelToken))
+        );
+        adminizer.app.get(
+            `${agentRoute}/runs/:runId/stream`,
+            withPolicies(AiAgentController.streamRun, requireAuthAPI(), requirePermission(aiModelToken))
         );
 
 

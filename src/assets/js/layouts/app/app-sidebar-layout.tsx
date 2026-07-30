@@ -5,6 +5,7 @@ import {AppSidebarHeader} from '@/components/app-sidebar-header';
 import {type BreadcrumbItem} from '@/types';
 import {memo, type PropsWithChildren} from 'react';
 import {Head, usePage} from "@inertiajs/react";
+import {cn} from '@/lib/utils';
 
 const AppSidebarLayout = memo(({children, breadcrumbs = [], className}: PropsWithChildren<{
     breadcrumbs?: BreadcrumbItem[],
@@ -15,10 +16,13 @@ const AppSidebarLayout = memo(({children, breadcrumbs = [], className}: PropsWit
         <AppShell variant="sidebar">
             <Head title={page.props.title as string}/>
             <AppSidebar/>
-            <SidebarInset className={className}>
+            <SidebarInset className="overflow-hidden">
                 <AppSidebarHeader breadcrumbs={breadcrumbs}/>
-                <div className="relative flex min-h-0 flex-1 overflow-auto">
-                    <div className="flex h-full min-h-0 w-full flex-col">
+                <div
+                    data-scroll-region="content"
+                    className={cn('relative flex min-h-0 flex-1 overflow-y-auto overscroll-contain', className)}
+                >
+                    <div className="flex min-h-full w-full flex-col">
                         {children}
                     </div>
                 </div>

@@ -1,16 +1,36 @@
-import {FormEvent, useEffect, useRef, useState} from 'react';
-import {Sparkles, LoaderCircle, X} from 'lucide-react';
+import {type ComponentType, type PointerEvent, type ReactNode, useEffect, useState} from 'react';
+import {LoaderCircle, X} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
-import {Textarea} from '@/components/ui/textarea';
 import {useAiAssistant} from '@/contexts/AiAssistantContext';
 import clsx from 'clsx';
 
 interface AiAssistantPanelProps {
     width?: string;
+    isResizing?: boolean;
+    onResizeStart?: (event: PointerEvent<HTMLDivElement>) => void;
 }
 
-export function AiAssistantPanel({width = 'min(25vw, 420px)'}: AiAssistantPanelProps) {
+interface AgentProps {
+    routePrefix?: string;
+    modelId?: string;
+    title?: string;
+    layout?: 'panel' | 'page';
+    headerActions?: ReactNode;
+}
+
+/**
+ * The chat UI itself lives in its own ES module bundle (assistant-ui + the
+ * markdown stack, see vite.config.ai-assistant.ts), so it is fetched the first
+ * time the panel is opened instead of weighing down the main bundle. In dev the
+ * vite dev server serves the sources directly.
+ */
+const agentBundleUrl = (): string =>
+    import.meta.env.DEV
+        ? '/src/assets/js/ai-assistant/agent/index.tsx'
+        : `${window.routePrefix ?? ''}/assets/ai-assistant/agent.es.js`;
+
+export function AiAssistantPanel({width = 'min(25vw, 420px)', isResizing = false, onResizeStart}: AiAssistantPanelProps) {
     const {
         isEnabled,
         isOpen,
@@ -18,53 +38,70 @@ export function AiAssistantPanel({width = 'min(25vw, 420px)'}: AiAssistantPanelP
         models,
         activeModel,
         setActiveModel,
-        messages,
         loading,
-        sending,
         error,
-        sendMessage,
     } = useAiAssistant();
-    const [input, setInput] = useState('');
-    const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const [Agent, setAgent] = useState<ComponentType<AgentProps> | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
+
+    // Load on first open and keep it mounted afterwards: closing the panel
+    // should not throw away the thread.
     useEffect(() => {
-        if (!isOpen) {
-            setInput('');
-        }
-    }, [isOpen]);
-
-    useEffect(() => {
-        if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({behavior: 'smooth'});
-        }
-    }, [messages]);
-
-    const hasModels = models.length > 0;
-
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const trimmed = input.trim();
-        if (!trimmed) {
+        if (!isOpen || Agent || loadError) {
             return;
         }
-        await sendMessage(trimmed);
-        setInput('');
-    };
 
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-            event.preventDefault();
-            const trimmed = input.trim();
-            if (trimmed && !sending) {
-                void sendMessage(trimmed);
-                setInput('');
-            }
-        }
-    };
+        let cancelled = false;
+        import(/* @vite-ignore */ agentBundleUrl())
+            .then((module) => {
+                if (!cancelled) {
+                    setAgent(() => module.default as ComponentType<AgentProps>);
+                }
+            })
+            .catch((err) => {
+                console.error('Failed to load the AI assistant UI', err);
+                if (!cancelled) {
+                    setLoadError('Unable to load the AI assistant UI');
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [Agent, isOpen, loadError]);
 
     if (!isEnabled) {
         return null;
     }
+
+    const activeMeta = models.find((model) => model.id === activeModel);
+    const closeButton = (
+        <Button variant="ghost" size="icon" onClick={closeChat} aria-label="Close AI assistant">
+            <X className="size-4"/>
+        </Button>
+    );
+
+    // Several registered assistants are rare, so the switch only shows up then.
+    const headerActions = (
+        <>
+            {models.length > 1 && (
+                <Select value={activeModel} onValueChange={setActiveModel}>
+                    <SelectTrigger className="h-8 w-36 text-xs" aria-label="Select assistant">
+                        <SelectValue placeholder="Assistant"/>
+                    </SelectTrigger>
+                    <SelectContent className="z-[70]">
+                        {models.map((model) => (
+                            <SelectItem key={model.id} value={model.id}>
+                                {model.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            )}
+            {closeButton}
+        </>
+    );
 
     return (
         <aside
@@ -74,110 +111,44 @@ export function AiAssistantPanel({width = 'min(25vw, 420px)'}: AiAssistantPanelP
             className={clsx(
                 'bg-card text-card-foreground fixed bottom-0 right-0 top-0 z-[60] flex h-full flex-col border-l shadow-xl transition-all duration-300 ease-in-out',
                 'md:w-auto w-full',
-                isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
+                isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none',
+                isResizing && 'transition-none'
             )}
             style={{width: 'var(--ai-assistant-panel-actual-width, ' + width + ')'}}
         >
-            <div className="flex items-center justify-between border-b px-4 py-3">
-                <div className="flex items-center gap-2">
-                    <Sparkles className="size-5 text-primary"/>
-                    <div className="flex flex-col">
+            <div
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize AI assistant panel"
+                className="absolute -left-2 top-0 z-10 hidden h-full w-4 cursor-col-resize touch-none md:block"
+                onPointerDown={onResizeStart}
+            />
+            {activeModel && Agent && !loadError ? (
+                <Agent
+                    key={activeModel}
+                    routePrefix={window.routePrefix ?? ''}
+                    modelId={activeModel}
+                    title={activeMeta?.name}
+                    layout="panel"
+                    headerActions={headerActions}
+                />
+            ) : (
+                <>
+                    <div className="flex items-center justify-between border-b px-3 py-2">
                         <span className="font-semibold leading-tight">AI assistant</span>
-                        <span className="text-xs text-muted-foreground">Chat with your selected model.</span>
+                        {closeButton}
                     </div>
-                </div>
-                <Button variant="ghost" size="icon" onClick={closeChat} aria-label="Close AI assistant">
-                    <X className="size-4"/>
-                </Button>
-            </div>
-
-            <div className="flex flex-1 flex-col gap-4 overflow-hidden px-4 py-4">
-                {!hasModels && !loading && (
-                    <div className="flex flex-1 items-center justify-center rounded-md border border-dashed p-6 text-sm text-muted-foreground">
-                        No AI models are available for your account.
+                    <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
+                        {loadError || error ? (
+                            <span className="text-destructive">{loadError ?? error}</span>
+                        ) : !loading && models.length === 0 ? (
+                            <span>No AI models are available for your account.</span>
+                        ) : (
+                            <LoaderCircle className="size-8 animate-spin"/>
+                        )}
                     </div>
-                )}
-
-                {hasModels && (
-                    <>
-                        <Select value={activeModel} onValueChange={setActiveModel}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select a model"/>
-                            </SelectTrigger>
-                            <SelectContent className="z-[70]">
-                                {models.map((model) => (
-                                    <SelectItem key={model.id} value={model.id}>
-                                        <div className="flex flex-col text-left">
-                                            <span className="font-medium">{model.name}</span>
-                                            {model.description && (
-                                                <span className="text-xs text-muted-foreground">{model.description}</span>
-                                            )}
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-md border bg-background p-4">
-                            <div className="flex-1 space-y-3 overflow-y-auto pr-2" data-ai-assistant-messages>
-                                {loading && (
-                                    <div className="flex justify-center py-6 text-sm text-muted-foreground">
-                                        Loading conversation...
-                                    </div>
-                                )}
-                                {!loading && messages.length === 0 && (
-                                    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                                        Start a conversation to see responses here.
-                                    </div>
-                                )}
-                                {messages.map((message) => (
-                                    <div
-                                        key={message.id}
-                                        className={clsx(
-                                            'flex flex-col gap-1 rounded-md border p-3 text-sm shadow-xs',
-                                            message.role === 'assistant'
-                                                ? 'border-primary/30 bg-primary/5'
-                                                : 'border-border bg-background'
-                                        )}
-                                    >
-                                        <span className="font-semibold">
-                                            {message.role === 'assistant' ? 'Assistant' : 'You'}
-                                        </span>
-                                        <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                                        <span className="text-xs text-muted-foreground">
-                                            {new Date(message.timestamp).toLocaleTimeString()}
-                                        </span>
-                                    </div>
-                                ))}
-                                <div ref={messagesEndRef}/>
-                            </div>
-                            <form className="space-y-2" onSubmit={handleSubmit}>
-                                <Textarea
-                                    placeholder={hasModels ? 'Type your question... (Ctrl+Enter to send)' : 'No models available'}
-                                    value={input}
-                                    onChange={(event) => setInput(event.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    disabled={!hasModels || sending}
-                                    rows={3}
-                                />
-                                <div className="flex items-center justify-between gap-3">
-                                    {error && <span className="text-xs text-destructive">{error}</span>}
-                                    <Button type="submit" disabled={!hasModels || sending || !input.trim()}>
-                                        {sending ? (
-                                            <span className="flex items-center gap-2">
-                                                <LoaderCircle className="size-4 animate-spin"/>
-                                                Sending…
-                                            </span>
-                                        ) : (
-                                            'Send'
-                                        )}
-                                    </Button>
-                                </div>
-                            </form>
-                        </div>
-                    </>
-                )}
-            </div>
+                </>
+            )}
         </aside>
     );
 }

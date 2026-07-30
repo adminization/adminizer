@@ -232,7 +232,7 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
         const aiAssistantApp = new AiAssistantApp({
             defaultModel: adminizer.config.aiAssistant?.defaultModel,
-            models: adminizer.config.aiAssistant?.models ?? ["openai-data", "dummy"],
+            models: adminizer.config.aiAssistant?.models ?? ["openharness", "openai-data", "dummy"],
         });
         adminizer.appManager.register(aiAssistantApp);
         if (adminizer.config.aiAssistant?.enabled) {
@@ -321,7 +321,7 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
     // Custom route
     mainApp.get('/nav', async (req, res) => {
         try {
-            const navigationModel = adminizer.modelHandler.model.get(navigationModelName) as any;
+            const navigationModel = getNavigationModel();
             const header = navigationModel
                 ? await navigationModel.findOne({where: {label: 'header'}})
                 : null;
@@ -365,13 +365,20 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
 
 async function getNavigationSection(section: string): Promise<NavTreeNode[]> {
-    const navigationModel = adminizer.modelHandler.model.get(navigationModelName) as any;
+    const navigationModel = getNavigationModel();
     if (!navigationModel) {
         return [];
     }
 
     const navigationRecord = await navigationModel.findOne({where: {label: section}});
     return navigationRecord?.tree ?? [];
+}
+
+function getNavigationModel() {
+    const navigationModels = adminizer.modelHandler.createAppAccess("navigation");
+    return navigationModels.has(navigationModelName)
+        ? navigationModels.get<any>(navigationModelName)
+        : undefined;
 }
 
 async function seedNavigation(adminizer: Adminizer) {

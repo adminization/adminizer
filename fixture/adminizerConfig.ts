@@ -522,10 +522,9 @@ const config: AdminpanelConfig = {
         path: 'api/*'
     },
     aiAssistant: {
-        // enabled: (process.env.ENABLE_AI_ASSISTANT ?? "true") === 'true',
-        enabled: false,
-        defaultModel: 'openai-data',
-        models: ['openai-data', 'dummy'],
+        enabled: (process.env.ENABLE_AI_ASSISTANT ?? 'true') === 'true',
+        defaultModel: 'openharness',
+        models: ['openharness', 'openai-data', 'dummy'],
     },
     routePrefix: routePrefix,
     // routePrefix: "/admin",

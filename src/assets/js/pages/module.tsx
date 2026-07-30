@@ -1,7 +1,7 @@
 import {usePage} from "@inertiajs/react";
 import {type BreadcrumbItem, SharedData} from "@/types";
 import React, {FC, useState, useEffect} from "react";
-import AppLayout from "@/layouts/app-layout.tsx";
+import {withAppLayout} from "@/layouts/with-app-layout";
 import {LoaderCircle} from "lucide-react";
 
 export interface ComponentType {
@@ -18,7 +18,7 @@ const getModuleImportUrl = (moduleComponent: string): string => {
     return `${moduleComponent}${separator}t=${Date.now()}`;
 };
 
-export default function Module() {
+function Module() {
     const page = usePage<SharedData>();
     const [Component, setComponent] = useState<React.ReactElement | null>(null);
 
@@ -56,12 +56,12 @@ export default function Module() {
     }, []);
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <div className="m-2 md:m-5">
-                {Component || (
-                    <LoaderCircle className="size-10 animate-spin text-neutral-500 mx-auto mt-[15%]"/>
-                )}
-            </div>
-        </AppLayout>
+        <div className="m-2 md:m-5">
+            {Component || (
+                <LoaderCircle className="size-10 animate-spin text-neutral-500 mx-auto mt-[15%]"/>
+            )}
+        </div>
     );
 }
+
+export default withAppLayout(Module, {breadcrumbs});

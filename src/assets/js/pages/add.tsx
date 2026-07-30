@@ -1,5 +1,5 @@
 import {type BreadcrumbItem, Field} from "@/types";
-import AppLayout from "@/layouts/app-layout.tsx";
+import {withAppLayout} from "@/layouts/with-app-layout";
 import AddForm from "@/components/add-form.tsx";
 import {usePage} from "@inertiajs/react";
 import {useEffect} from "react";
@@ -35,7 +35,7 @@ export interface AddProps {
 }
 const breadcrumbs: BreadcrumbItem[] = [];
 
-export default function Add() {
+function Add() {
     const page = usePage<AddProps>();
 
     useEffect(() => {
@@ -51,9 +51,11 @@ export default function Add() {
     }, [page.props.flash]);
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs} className="overflow-auto h-[calc(100svh-16px)]">
+        <>
             <Toaster position="top-center" richColors closeButton/>
             <AddForm page={page} catalog={false}/>
-        </AppLayout>
+        </>
     )
 }
+
+export default withAppLayout(Add, {breadcrumbs, className: 'overflow-auto h-[calc(100svh-16px)]'});

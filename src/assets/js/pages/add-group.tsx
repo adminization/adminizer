@@ -1,13 +1,13 @@
 import {type BreadcrumbItem} from "@/types";
-import AppLayout from "@/layouts/app-layout.tsx";
+import {withAppLayout} from "@/layouts/with-app-layout";
 import AddGroupForm from "@/components/add-group-form.tsx";
 
 const breadcrumbs: BreadcrumbItem[] = [];
 
-export default function AddGroup() {
+function AddGroup() {
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <AddGroupForm />
-        </AppLayout>
+        <AddGroupForm />
     )
 }
+
+export default withAppLayout(AddGroup, {breadcrumbs});

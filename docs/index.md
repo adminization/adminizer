@@ -33,6 +33,9 @@
 * [Notifications](Notifications.md)
 * [History Actions](HistoryActions.md)
 * [AI Assistant](AiAssistant.md)
+  * [Building Agents](AiAssistant/BuildingAgents.md)
+  * [Agent Skills](AiAssistant/AgentSkills.md)
+  * [Admin Links & UI Methods](AiAssistant/AdminLinksAndUiMethods.md)
 * [Feedback](Feedback.md)
 
 ## 5. Frontend Integration

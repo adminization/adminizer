@@ -47,10 +47,34 @@ export type AgentUiHints = {
   setupSetting?: string | null;
   /** Where to fill it in; rendered as a button on the connection loader. */
   setupUrl?: string | null;
+  /** Agent-defined pages for states before it is ready. */
+  connectionScreens?: Partial<Record<ConnectionState | 'default', ConnectionScreen>> | null;
+};
+
+type ConnectionState = 'registering' | 'waiting_retry' | 'setup_required' | 'error';
+
+export type ConnectionScreen = {
+  title?: string | null;
+  description?: string | null;
+  icon?: 'spinner' | 'bot' | 'error' | null;
+  action?: {label: string; href: string} | null;
+  details?: Array<{
+    field: string;
+    label?: string | null;
+    format?: 'text' | 'local-time';
+    tone?: 'muted' | 'error';
+  }> | null;
 };
 
 export type AgentUiSchema = AgentUiHints & {
   commands: AgentChatCommand[];
+  uiMethods?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    inputSchema: Record<string, unknown>;
+    action: string;
+  }>;
   panels: {
     history: boolean;
     models: boolean;
@@ -59,7 +83,7 @@ export type AgentUiSchema = AgentUiHints & {
 };
 
 export type ConnectionStatus = {
-  state: 'ready' | 'registering' | 'waiting_retry' | 'setup_required' | 'error';
+  state: 'ready' | ConnectionState;
   provider?: string;
   baseUrl?: string;
   source?: string | null;
@@ -69,6 +93,7 @@ export type ConnectionStatus = {
   /** Admin UI language for the bundled i18n dictionaries. */
   locale?: string | null;
   schema?: AgentUiSchema;
+  [key: string]: unknown;
 };
 
 export type ConversationSummary = {
@@ -455,6 +480,10 @@ export function createAgentAdapter({ onUsage, onRunEnd }: AdapterCallbacks): Cha
               if (part) { part.result = event.error ?? 'Tool call failed'; part.isError = true; yield snapshot(); }
               break;
             }
+            case 'ui.method': {
+              executeUiMethod(event);
+              break;
+            }
             case 'step.done':
             case 'turn.done': {
               if (event.usage) onUsage?.(event.usage);
@@ -473,6 +502,74 @@ export function createAgentAdapter({ onUsage, onRunEnd }: AdapterCallbacks): Cha
       }
     },
   };
+}
+
+/**
+ * Normalizes a link for this admin panel. Agents (and the LLM text they write)
+ * routinely guess an origin — dropping the dev port — or omit the route prefix,
+ * so only the path is trusted: an admin path is always resolved against the
+ * current origin, and a missing prefix is added back.
+ *
+ * Returns `internal: false` for anything that belongs to another site, which is
+ * then left exactly as written.
+ */
+export function resolveAdminHref(value: string): { href: string; internal: boolean } {
+  const raw = (value ?? '').trim();
+  const prefix = (window.routePrefix || '').replace(/\/+$/, '');
+  const inPanel = (path: string) => Boolean(prefix) && (path === prefix || path.startsWith(`${prefix}/`));
+  if (!raw) return { href: raw, internal: false };
+
+  // mailto:, tel:, data: and in-page anchors are none of our business.
+  if (raw.startsWith('#') || (/^[a-z][a-z0-9+.-]*:/i.test(raw) && !/^https?:/i.test(raw))) {
+    return { href: raw, internal: false };
+  }
+
+  let path = raw;
+  if (/^https?:\/\//i.test(raw) || raw.startsWith('//')) {
+    let url: URL;
+    try {
+      url = new URL(raw.startsWith('//') ? `${window.location.protocol}${raw}` : raw);
+    } catch {
+      return { href: raw, internal: false };
+    }
+    // The port is compared away on purpose: a guessed `http://localhost/...`
+    // still means this panel, and keeping the origin would open a new window on
+    // a server that is not listening there.
+    const currentHost = (window.location.hostname || window.location.host || '').replace(/:\d+$/, '');
+    if (url.hostname !== currentHost && !inPanel(url.pathname)) {
+      return { href: raw, internal: false };
+    }
+    path = `${url.pathname}${url.search}${url.hash}`;
+  }
+
+  if (!path.startsWith('/')) path = `/${path}`;
+  if (prefix && !inPanel(path.split(/[?#]/)[0])) path = `${prefix}${path}`;
+  return { href: path, internal: true };
+}
+
+/**
+ * Opens an admin path through the router of the page. The panel bundle cannot
+ * import Inertia itself (its react-dom is a window shim), so it uses the
+ * instance the main bundle publishes and falls back to a full page load.
+ */
+export function visitAdminHref(href: string): void {
+  const router = window.InertiajsReact?.router;
+  if (router) router.visit(href);
+  else window.location.assign(href);
+}
+
+/** Executes only the two built-in browser methods. App-defined actions are
+ * deliberately ignored here until their frontend bundle registers an executor. */
+function executeUiMethod(event: AgentEvent): void {
+  const input = event.input && typeof event.input === 'object' ? event.input : {};
+  if (event.action === 'navigate') {
+    const target = resolveAdminHref(typeof input.href === 'string' ? input.href : '');
+    if (target.internal) visitAdminHref(target.href);
+    return;
+  }
+  if (event.action === 'search-admin-links') {
+    window.dispatchEvent(new CustomEvent('adminizer:ai-search-admin-links', {detail: input}));
+  }
 }
 
 const TEXT_ACCEPT = [

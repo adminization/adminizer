@@ -110,7 +110,10 @@ export class AiAgentController {
         if (!service) return;
 
         const locale = AiAgentController.resolveLocale(req);
-        const schema = service.getUiSchema();
+        const schema = {
+            ...service.getUiSchema(locale),
+            uiMethods: req.adminizer.aiAssistantUiMethodHandler.getAvailable(req.user),
+        };
 
         if (typeof service.getConnectionStatus !== 'function') {
             res.json({state: 'ready', locale, schema});

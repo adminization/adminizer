@@ -1,6 +1,7 @@
 import {Adminizer} from "../lib/Adminizer";
 import { HrefConfig } from "../interfaces/adminpanelConfig";
 import { MenuItem } from "./menuHelper";
+import { listAccessibleMenuItems } from "./navigationAccessHelper";
 
 export class InertiaMenuHelper {
     private adminizer: Adminizer;
@@ -10,32 +11,8 @@ export class InertiaMenuHelper {
     }
 
     public getMenuItems(req: ReqType) {
-        const menu: MenuItem[] = []
-        for (const menuItem of this.adminizer.menuHelper.getMenuItems(req.user)) {
-            const filteredActions = this.filterAccessibleItems(menuItem.actions ?? [], req);
-            const menuItemTokens = filteredActions.map(item => {
-                return item.accessRightsToken
-            }).filter(item => {
-                return item
-            })
-            if (menuItem.accessRightsToken) menuItemTokens.push(menuItem.accessRightsToken)
-            if (this.adminizer.accessRightsHelper.enoughPermissions(menuItemTokens, req.user)) {
-                menu.push(this.translateMenuItem(req, {
-                    ...menuItem,
-                    actions: filteredActions
-                }))
-            }
-        }
-        return menu
-    }
-
-    private filterAccessibleItems(items: HrefConfig[], req: ReqType): HrefConfig[] {
-        return items
-            .filter((item) => !item.accessRightsToken || this.adminizer.accessRightsHelper.hasPermission(item.accessRightsToken, req.user))
-            .map((item) => ({
-                ...item,
-                subItems: item.subItems ? this.filterAccessibleItems(item.subItems, req) : item.subItems
-            }));
+        return listAccessibleMenuItems(this.adminizer, req.user)
+            .map((menuItem) => this.translateMenuItem(req, menuItem))
     }
 
     private translateMenuItem(req: ReqType, menuItem: MenuItem): MenuItem {

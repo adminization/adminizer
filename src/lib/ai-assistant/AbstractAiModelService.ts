@@ -14,6 +14,9 @@ import {
 import {User} from '../../models/User';
 import type {Adminizer} from '../Adminizer';
 import {AbstractAiConversationHistoryService, InMemoryAiConversationHistoryService} from './AbstractAiConversationHistoryService';
+import type {AiAssistantAdminLink, AiAssistantNavigationTarget} from './AiAssistantUiMethodHandler';
+import type {AiAssistantAgentSkillDescriptor, AiAssistantSkillUser} from './AiAssistantAgentSkillHandler';
+import {toJsonSafe} from './jsonSafe';
 
 export interface AiAgentChatCommand {
     /** Command name without the leading slash, e.g. `summarize`. */
@@ -125,9 +128,9 @@ export abstract class AbstractAiModelService {
     }
 
     /** One declarative contract for the shared agent UI. */
-    public getUiSchema(): AiAgentUiSchema {
+    public getUiSchema(locale?: string): AiAgentUiSchema {
         return {
-            ...(this.getUiHints?.() ?? {}),
+            ...(this.getUiHints?.(locale) ?? {}),
             commands: this.getChatCommands(),
             panels: {
                 history: true,
@@ -135,6 +138,79 @@ export abstract class AbstractAiModelService {
                 limits: typeof this.getLimits === 'function',
             },
         };
+    }
+
+    /**
+     * Browser capabilities available to a particular user.  Tool-capable
+     * services can turn these descriptors into their provider's tool format.
+     */
+    protected getUiMethods(user: User) {
+        return this.adminizer.aiAssistantUiMethodHandler.getAvailable(user);
+    }
+
+    /**
+     * Server-side implementation of the built-in `search-admin-links` skill.
+     * An OpenHarness/AI SDK adapter can return this value directly from its
+     * tool's `execute` callback.
+     */
+    protected searchAdminLinks(user: User, query?: string): AiAssistantAdminLink[] {
+        return this.adminizer.aiAssistantUiMethodHandler.searchAdminLinks(user, query);
+    }
+
+    /**
+     * Built-in and app-contributed server skills this user may call. Data
+     * skills are already scoped to that user's model permissions, so an agent
+     * exposing them can be offered to non-administrator accounts.
+     */
+    protected getAgentSkills(user: User): AiAssistantAgentSkillDescriptor[] {
+        return this.adminizer.aiAssistantAgentSkillHandler.getAvailable(user);
+    }
+
+    /**
+     * Executes an app-owned server skill after its permission check. The result
+     * is normalized to plain JSON: it becomes a tool result inside the agent's
+     * message history, which every later turn re-validates.
+     */
+    protected async executeAgentSkill(id: string, input: Record<string, unknown>, user: User): Promise<unknown> {
+        const result = await this.adminizer.aiAssistantAgentSkillHandler.execute(id, input, user);
+        return toJsonSafe(result) ?? null;
+    }
+
+    /** Identity of the user an agent turn is running for. */
+    protected describeUser(user: User): AiAssistantSkillUser {
+        return this.adminizer.aiAssistantAgentSkillHandler.describeUser(user);
+    }
+
+    /**
+     * Opens an admin page for the user: either a concrete `href` or a link
+     * template plus `params` (a record page, a catalog item…). The target is
+     * validated against that user's permissions and the resolved URL is
+     * returned, so it can be reported back as the tool result.
+     */
+    protected openAdminLink(
+        target: AiAssistantNavigationTarget,
+        user: User,
+        publish: AiAgentPublish,
+    ): string {
+        const href = this.adminizer.aiAssistantUiMethodHandler.resolveNavigation(user, target);
+        this.publishUiMethod('navigate', {href}, user, publish);
+        return href;
+    }
+
+    /**
+     * Ask the shared panel to execute a registered browser method.  The
+     * registry and permission check stay server-side, so an LLM cannot invoke
+     * an arbitrary client event.
+     */
+    protected publishUiMethod(
+        id: string,
+        input: Record<string, unknown>,
+        user: User,
+        publish: AiAgentPublish,
+    ): void {
+        const method = this.getUiMethods(user).find((candidate) => candidate.id === id);
+        if (!method) throw new Error(`AI assistant UI method "${id}" is not available`);
+        publish({type: 'ui.method', method: method.id, action: method.action, input});
     }
 
     /**
@@ -226,7 +302,8 @@ export abstract class AbstractAiModelService {
 
     /**
      * Panel copy for this service: title, welcome hint, composer placeholder,
-     * starter prompts and the setup hint of the connection loader.
+     * starter prompts and connection screens. The locale is resolved from the
+     * current admin user before this method is called.
      */
-    public getUiHints?(): AiAgentUiHints;
+    public getUiHints?(locale?: string): AiAgentUiHints;
 }

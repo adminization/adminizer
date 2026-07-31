@@ -8,6 +8,9 @@ import type {Config, ControlType} from "../controls/Control";
 import type {User} from "../../models/User";
 import type {DataAccessor} from "../DataAccessor";
 import type {AbstractAiModelService} from "../ai-assistant/AbstractAiModelService";
+import type {AiAssistantUiMethod} from '../ai-assistant/AiAssistantUiMethodHandler';
+import type {AdminLink, AdminLinkTemplate} from '../admin-links/AdminLinkHandler';
+import type {AiAssistantAgentSkill} from '../ai-assistant/AiAssistantAgentSkillHandler';
 
 export type AppDisposer = () => void | Promise<void>;
 export type AppEventName = string | symbol;
@@ -198,11 +201,29 @@ export interface AppAiAssistantContext {
     resolveModelResource(modelName: string): ModelResource | undefined;
     hasPermission(token: string, user: User): boolean;
     createDataAccessor(modelResource: ModelResource, user: User, action: ActionType): DataAccessor;
+    /** UI tools available to this user, including methods registered by apps. */
+    getUiMethods(user: User): AiAssistantUiMethod[];
 }
 
 export interface AppAiAssistantResource {
     models: Array<(context: AppAiAssistantContext) => AbstractAiModelService | Promise<AbstractAiModelService>>;
 }
+
+export interface AppAiAssistantUiMethodResource extends AiAssistantUiMethod {
+    id: string;
+}
+
+export interface AppAiAssistantAgentSkillResource extends AiAssistantAgentSkill {}
+
+/** Skills contributed by an app. UI methods are browser skills; agent skills run on the server. */
+export interface AppSkills {
+    uiMethod(method: AppAiAssistantUiMethodResource): void;
+    agent(skill: AppAiAssistantAgentSkillResource): void;
+}
+
+export interface AppAdminLinkResource extends AdminLink {}
+
+export interface AppAdminLinkTemplateResource extends AdminLinkTemplate {}
 
 /**
  * Resource registration API provided while an app is being enabled.
@@ -224,6 +245,11 @@ export interface AppSetupContext {
     model(model: AppModelResource): void;
     modelAccess(access: AppModelAccessResource): void;
     aiAssistant(resource: AppAiAssistantResource): void;
+    skills: AppSkills;
+    /** Register a standalone server page in the admin navigation and agent search. */
+    adminLink(link: AppAdminLinkResource): void;
+    /** Register a parametrized page (e.g. `/admin/orders/:id/invoice`) the assistant may open. */
+    adminLinkTemplate(template: AppAdminLinkTemplateResource): void;
     listener(event: AppEventName, handler: AppEventHandler): void;
 }
 

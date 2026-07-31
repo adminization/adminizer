@@ -1,159 +1,158 @@
-# AI Assistant Integration
+# AI Assistant
 
-The AI assistant feature provides the shared chat UI and backend contracts for assistant models. The core package keeps the infrastructure, while concrete assistant models are enabled through an Adminizer app.
+Adminizer ships the infrastructure for an in-panel AI assistant: a shared chat
+panel, a streaming agent transport, a permission-aware skill registry and a
+navigation registry the agent can search and open. Concrete agents (the classes
+that talk to an LLM) are **not** part of the core — they are contributed by an
+Adminizer app.
 
-In the fixture, the implementation lives in `fixture/apps/ai-assistant` and can be enabled or disabled through `AppManager`.
+| Guide | Contents |
+|---|---|
+| [Building Agents](AiAssistant/BuildingAgents.md) | Write an agent service, stream a run, sessions, models, connection screens, prompts. |
+| [Agent Skills](AiAssistant/AgentSkills.md) | Built-in server skills, adding your own, permissions, JSON-safe tool results. |
+| [Admin Links & UI Methods](AiAssistant/AdminLinksAndUiMethods.md) | Let the agent search the navigation and open admin pages in the user's browser. |
 
-## Core Responsibilities
+## Architecture
 
-The core keeps reusable AI infrastructure:
+```text
+browser: assistant panel  ──SSE──►  AiAgentController  ──►  AbstractAiModelService (your agent)
+      ▲                                                            │
+      │ ui.method frames                                           │ skills / links
+      └────────────────────────────────────────────────  AiAssistantAgentSkillHandler
+                                                          AiAssistantUiMethodHandler
+                                                          AdminLinkHandler
+```
 
-* `AiAssistantHandler` stores registered model services and in-memory conversation history per user and model.
-* `AbstractAiModelService` defines assistant model metadata and the `generateReply()` contract.
-* `AiAssistantController` exposes reusable REST handlers for listing models, reading history, sending prompts, and resetting history.
-* The frontend `AiAssistantProvider`, toggle, viewport, and panel read shared config and render the chat UI.
-* `AppSetupContext.aiAssistant()` lets an app attach an `AiAssistantHandler` and model services under `AppManager` lifecycle control.
+Core pieces:
 
-The core does not auto-bind assistant routes or built-in models. There is no `bindAiAssistant` bootstrap step. Apps register routes, access rights, config patches, and models explicitly.
+| Piece | Responsibility |
+|---|---|
+| `AiAssistantHandler` | Registry of model services plus legacy in-memory chat history. |
+| `AbstractAiModelService` | Base class of an agent: metadata, `generateReply()`, optional agent members, and the protected helpers that reach the registries below. |
+| `AiAgentController` | Streaming transport: status, meta, model switching, conversations, runs. |
+| `AiAssistantAgentSkillHandler` | Server-side tools (“skills”). Built-in data skills plus app-contributed ones. |
+| `AiAssistantUiMethodHandler` | Browser-side capabilities the agent may trigger (`navigate`, `search-admin-links`). |
+| `AdminLinkHandler` | Standalone admin pages and parametrized page templates (`/model/Test/edit/:id`). |
+| Assistant panel (`src/assets/js/ai-assistant`) | Renders the thread, tool calls, model picker, connection screens, and executes `ui.method` frames. |
+
+All four handlers are created in `Adminizer`'s constructor and are always
+available as `adminizer.aiAssistantAgentSkillHandler`,
+`adminizer.aiAssistantUiMethodHandler` and `adminizer.adminLinkHandler`.
+`adminizer.aiAssistantHandler` is created lazily on first access, so a host
+application may also register a model service directly with
+`adminizer.aiAssistantHandler.registerModel(service)`.
+
+The core does not auto-bind any model. There is no `bindAiAssistant` bootstrap
+step: an app registers routes, access rights, config patches and models
+explicitly.
 
 ## Configuration
 
-The `AdminpanelConfig` accepts an optional `aiAssistant` section:
+`AdminpanelConfig` accepts an optional `aiAssistant` section:
 
 ```ts
 aiAssistant?: {
-    enabled: boolean;
-    defaultModel?: string;
-    models?: string[];
+    enabled: boolean;      // toggles the shared frontend assistant UI
+    defaultModel?: string; // model id preselected on the client
+    models?: string[];     // model ids exposed by the enabled app
 }
 ```
 
-* `enabled` toggles the shared frontend assistant UI.
-* `defaultModel` is the preferred model identifier preselected on the client.
-* `models` is the list of model identifiers exposed by the enabled app.
+The core default is `{enabled: false}`. Model defaults are app-owned — the core
+assumes no `dummy` model.
 
-The default core config is:
+In the fixture (`fixture/adminizerConfig.ts`) the assistant is disabled by
+default; setting `enabled: true` starts the fixture with the app enabled.
+Otherwise the app is still registered and can be enabled at runtime through the
+module manager.
 
-```ts
-aiAssistant: {
-    enabled: false,
-}
-```
+## Access rights
 
-Model defaults are app-owned. The core does not assume a `dummy` model.
+Every model service is guarded by the token `ai-assistant-<modelId>`. The app
+that owns the service declares the token through `ctx.accessRight()`; the router
+enforces it on every agent route.
 
-## Fixture App
-
-The fixture app is `fixture/apps/ai-assistant/AiAssistantApp.ts`.
-
-It registers:
-
-* model access tokens through `ctx.accessRight()`;
-* the handler and model services through `ctx.aiAssistant()`;
-* the `aiAssistant` config layer through `ctx.config()`;
-* REST endpoints through `ctx.controller()`.
-
-The app is registered in `fixture/index.ts` so `module-manager` can enable or disable it at runtime:
-
-```ts
-const aiAssistantApp = new AiAssistantApp({
-    defaultModel: adminizer.config.aiAssistant?.defaultModel,
-    models: adminizer.config.aiAssistant?.models ?? ["openai-data", "dummy"],
-});
-
-adminizer.appManager.register(aiAssistantApp);
-
-if (adminizer.config.aiAssistant?.enabled) {
-    await adminizer.appManager.enable(aiAssistantApp.name);
-}
-```
-
-When the app is disabled, `AppManager` removes its routes, config layer, access tokens, and assistant handler.
-
-## Fixture Configuration
-
-In `fixture/adminizerConfig.ts`, the assistant is disabled by default:
-
-```ts
-aiAssistant: {
-    enabled: false,
-    defaultModel: "openai-data",
-    models: ["openai-data", "dummy"],
-}
-```
-
-Set `enabled: true` locally to start the fixture with the assistant app enabled. If it remains `false`, the app is still registered and can be enabled through the module manager.
+Skills and links carry their own optional `accessRightsToken`, and the built-in
+data skills additionally re-check `read-<model>-model` / `update-<model>-model`
+on every call. See [Agent Skills](AiAssistant/AgentSkills.md#permissions).
 
 ## Routes
 
-The fixture app registers these endpoints under `config.routePrefix`:
+Registered by the core router under `config.routePrefix`:
 
 | Method | Route | Purpose |
 |---|---|---|
-| `GET` | `/api/ai-assistant/models` | List models available to the current user. |
+| `GET` | `/api/ai-assistant/agent/:modelId/status` | Connection state plus the UI schema (hints, commands, panels, `uiMethods`). |
+| `GET` | `/api/ai-assistant/agent/:modelId/meta` | Session meta: current model, context usage, turns, model choices. |
+| `GET` | `/api/ai-assistant/agent/:modelId/limits` | Provider budget / rate limits, when exposed. |
+| `POST` | `/api/ai-assistant/agent/:modelId/model` | Switch the LLM inside the service. |
+| `GET` | `/api/ai-assistant/agent/:modelId/history` | Messages of the active conversation. |
+| `GET`/`POST` | `/api/ai-assistant/agent/:modelId/conversations` | List / create conversations. |
+| `POST` | `/api/ai-assistant/agent/:modelId/conversations/:id/select` | Switch the active conversation. |
+| `DELETE` | `/api/ai-assistant/agent/:modelId/conversations/:id` | Delete a conversation. |
+| `POST` | `/api/ai-assistant/agent/:modelId/runs` | Start a run (prompt and/or attachments). |
+| `GET` | `/api/ai-assistant/agent/:modelId/runs/:runId/stream` | SSE stream of the run. |
 
-Each model has an access token with the pattern `ai-assistant-<modelId>`. The fixture app declares these tokens through `ctx.accessRight()`.
+`GET /api/ai-assistant/models` (list of models available to the current user) is
+registered by the app, not the core router — see `AiAssistantController`.
 
-## Available Fixture Models
+## Registering an assistant from an app
 
-### Dummy Model (`dummy`)
+```ts
+setup(ctx: AppSetupContext): void {
+    ctx.accessRight({
+        id: "ai-assistant-openharness",
+        name: "OpenHarness data explorer",
+        description: "Access to the OpenHarness agent",
+        department: "AI Assistant",
+    });
 
-A local development model with no external dependencies. It is useful for checking the UI and lifecycle behavior.
+    ctx.aiAssistant({
+        models: [(context) => new OpenHarnessDataAgentService(context)],
+    });
 
-### Simple OpenAI Agent (`openai`)
+    ctx.config({
+        aiAssistant: {enabled: true, models: ["openharness"], defaultModel: "openharness"},
+    });
 
-A JSON-based command executor that expects structured instructions:
-
-```json
-{
-  "action": "create",
-  "modelResource": "Example",
-  "data": {
-    "title": "Hello from the agent"
-  }
+    ctx.controller({
+        id: "models",
+        method: "get",
+        route: "/api/ai-assistant/models",
+        middleware: AiAssistantController.getModels,
+        policies: [{type: "auth", mode: "api"}],
+    });
 }
 ```
 
-This model uses `DataAccessor` for permission checks, but it expects manually formatted JSON and is mostly useful for scripted experiments.
+Disabling the app removes its routes, config layer, access tokens, assistant
+handler, skills, UI methods and admin links.
 
-### OpenAI Data Agent (`openai-data`)
+The reference implementation is `fixture/apps/ai-assistant/AiAssistantApp.ts`,
+registered in `fixture/index.ts`.
 
-A conversational fixture model powered by OpenAI's Agents API. It can:
+## Fixture agents
 
-* answer questions in natural language;
-* query Adminizer models through tools;
-* create and update records through `DataAccessor`;
-* respect user permissions and field-level restrictions;
-* keep conversation context.
+| Id | Class | Notes |
+|---|---|---|
+| `dummy` | `DummyAiModelService` | No external dependencies; useful for checking the UI and lifecycle. |
+| `openai` | `OpenAiModelService` | JSON command executor; scripted experiments only. |
+| `openai-data` | `OpenAiDataAgentService` | Conversational agent on the OpenAI Agents API. Needs `OPENAI_API_KEY` (or `ADMINIZER_OPENAI_KEY`). |
+| `openharness` | `OpenHarnessDataAgentService` | Streaming agent on `@openharness/core` + AI SDK. Full reference for skills, links, prompts and connection screens. Needs `OPENHARNESS_API_KEY` or `PROJECT_NAME`. |
 
-The implementation is in `fixture/apps/ai-assistant/OpenAiDataAgentService.ts`.
+A model whose `enabled()` check fails is skipped with a warning, and the app
+falls back to `dummy`.
 
-To enable it locally, set:
+## Frontend behaviour
 
-```bash
-export OPENAI_API_KEY="sk-..."
-export OPENAI_AGENT_MODEL="gpt-5-nano"
-```
-
-`ADMINIZER_OPENAI_KEY` can be used as an alternative API key variable. If no key is available, the fixture app skips `openai-data` and falls back to another configured model.
-
-## Adding A Model
-
-To add a model to the fixture app:
-
-1. Create a class in `fixture/apps/ai-assistant` that extends `AbstractAiModelService`.
-2. Implement `generateReply(prompt, history, user)`.
-3. Add a model definition to `AiAssistantApp.ts`.
-4. Register its access token through the app's `ctx.accessRight()` flow.
-5. Add the model id to `aiAssistant.models` when it should be enabled.
-
-Model services should not register access rights directly. The app owns tokens and lifecycle resources through `AppManager`.
-
-## Frontend Behavior
-
-* `AiAssistantProvider` fetches models/history, sends prompts, and exposes chat state through `useAiAssistant`.
-* `AiAssistantToggle` renders the header button and is hidden when the shared `aiAssistant.enabled` config is false.
-* `AiAssistantViewport` shifts the root app container on desktop and switches to a full-screen assistant on mobile.
-* `AiAssistantPanel` renders model selection, history, and the compose form.
-
-Conversation history is rendered client-side while the server keeps the authoritative in-memory copy in `AiAssistantHandler`.
+* The panel bundle (`src/assets/js/ai-assistant/agent`) renders the thread, tool
+  calls, reasoning, attachments, the model picker and the connection screens.
+* Everything the panel renders comes from the declarative UI schema returned by
+  `getUiSchema(locale)` — the panel has no per-agent code.
+* `ui.method` frames published by the agent are executed in the browser; only
+  the built-in `navigate` and `search-admin-links` actions have executors, and
+  `navigate` goes through the Inertia router published by the main bundle.
+* Links written by the LLM in plain text are normalized with
+  `resolveAdminHref()`: a guessed origin is dropped and a missing route prefix
+  is restored, so a model that writes `http://localhost/model/Test` still opens
+  the right admin page.

@@ -11,6 +11,11 @@ import {
     AppCatalogFactoryResource,
     AppAiAssistantContext,
     AppAiAssistantResource,
+    AppAiAssistantUiMethodResource,
+    AppAiAssistantAgentSkillResource,
+    AppSkills,
+    AppAdminLinkResource,
+    AppAdminLinkTemplateResource,
     AppMediaManagerResource,
     AppModelAccessResource,
     AppModelResource,
@@ -25,6 +30,7 @@ import type {Control} from "../controls/Control";
 import type {WidgetType} from "../widgets/widgetHandler";
 import type {WidgetInfoContext} from "../widgets/abstractInfo";
 import {DataAccessor} from "../DataAccessor";
+import {listModelResources, resolveModelResource} from "../../helpers/modelResourceHelper";
 
 export type AppState = AppRuntimeAppState;
 
@@ -39,6 +45,8 @@ class RuntimeAppSetupContext implements AppSetupContext {
     private readonly pendingModelRegistrations: Array<() => Promise<void>> = [];
     private readonly pendingModelAccessRegistrations: Array<() => Promise<void>> = [];
     private readonly pendingAiAssistantRegistrations: Array<() => Promise<void>> = [];
+    private readonly pendingAiAssistantUiMethodRegistrations: Array<() => Promise<void>> = [];
+    private readonly pendingAiAssistantAgentSkillRegistrations: Array<() => Promise<void>> = [];
     private readonly pendingMediaManagerRegistrations: Array<() => Promise<void>> = [];
     private readonly pendingCatalogRegistrations: Array<() => Promise<void>> = [];
     private configLayerIndex = 0;
@@ -47,7 +55,14 @@ class RuntimeAppSetupContext implements AppSetupContext {
     constructor(
         private adminizer: Adminizer,
         private appName: string
-    ) {}
+    ) {
+        this.skills = {
+            uiMethod: (method) => this.registerAiAssistantUiMethod(method),
+            agent: (skill) => this.registerAiAssistantAgentSkill(skill),
+        };
+    }
+
+    readonly skills: AppSkills;
 
     asset(asset: AppAsset): string {
         const resourceId = `${this.appName}:${asset.id}`;
@@ -162,6 +177,36 @@ class RuntimeAppSetupContext implements AppSetupContext {
         this.pendingAiAssistantRegistrations.push(() => this.registerAiAssistant(resource));
     }
 
+    private registerAiAssistantUiMethod(method: AppAiAssistantUiMethodResource): void {
+        this.pendingAiAssistantUiMethodRegistrations.push(async () => {
+            this.adminizer.aiAssistantUiMethodHandler.register(method, this.appName);
+            this.disposers.push(() => this.adminizer.aiAssistantUiMethodHandler.unregister(method.id, this.appName));
+        });
+    }
+
+    private registerAiAssistantAgentSkill(skill: AppAiAssistantAgentSkillResource): void {
+        this.pendingAiAssistantAgentSkillRegistrations.push(async () => {
+            this.adminizer.aiAssistantAgentSkillHandler.add(skill, this.appName);
+            this.disposers.push(() => {
+                this.adminizer.aiAssistantAgentSkillHandler.remove(skill.id, this.appName);
+            });
+        });
+    }
+
+    adminLink(link: AppAdminLinkResource): void {
+        const resourceId = this.adminizer.adminLinkHandler.add(link, this.appName);
+        this.disposers.push(() => {
+            this.adminizer.adminLinkHandler.remove(resourceId, this.appName);
+        });
+    }
+
+    adminLinkTemplate(template: AppAdminLinkTemplateResource): void {
+        const resourceId = this.adminizer.adminLinkHandler.addTemplate(template, this.appName);
+        this.disposers.push(() => {
+            this.adminizer.adminLinkHandler.removeTemplate(resourceId, this.appName);
+        });
+    }
+
     listener(event: AppEventName, handler: AppEventHandler): void {
         const resourceId = `${this.appName}:${event.toString()}:${this.disposers.length + 1}`;
         const listener = (payload: unknown) => handler(payload, this.adminizer.appManager.createRuntime(this.appName));
@@ -185,6 +230,8 @@ class RuntimeAppSetupContext implements AppSetupContext {
         await this.runRegistrationPhase(this.pendingModelRegistrations);
         await this.runRegistrationPhase(this.pendingModelAccessRegistrations);
         await this.runRegistrationPhase(this.pendingAiAssistantRegistrations);
+        await this.runRegistrationPhase(this.pendingAiAssistantUiMethodRegistrations);
+        await this.runRegistrationPhase(this.pendingAiAssistantAgentSkillRegistrations);
         await this.runRegistrationPhase(this.pendingMediaManagerRegistrations);
         await this.runRegistrationPhase(this.pendingCatalogRegistrations);
     }
@@ -433,60 +480,13 @@ class RuntimeAppSetupContext implements AppSetupContext {
         return {
             runtime: this.adminizer.appManager.createRuntime(this.appName),
             routePrefix: this.adminizer.config.routePrefix,
-            getModelResources: () => this.getModelResources(),
-            resolveModelResource: (modelName: string) => this.resolveModelResource(modelName),
+            getModelResources: () => listModelResources(this.adminizer),
+            resolveModelResource: (modelName: string) => resolveModelResource(this.adminizer, modelName),
             hasPermission: (token, user) => this.adminizer.accessRightsHelper.hasPermission(token, user),
             createDataAccessor: (modelResource, user, action) =>
                 new DataAccessor(this.adminizer, user, modelResource, action),
+            getUiMethods: (user) => this.adminizer.aiAssistantUiMethodHandler.getAvailable(user),
         };
-    }
-
-    private getModelResources(): ModelResource[] {
-        const resources: ModelResource[] = [];
-
-        for (const [configName, configValue] of Object.entries(this.adminizer.config.models ?? {})) {
-            const normalizedConfig = this.normalizeModelConfig(configName, configValue);
-            const model = this.adminizer.modelHandler.model.get(normalizedConfig.model.toLowerCase());
-            if (!model) {
-                continue;
-            }
-
-            resources.push({
-                name: configName,
-                uri: `${this.adminizer.config.routePrefix}/model/${configName}`,
-                config: normalizedConfig,
-                model,
-            });
-        }
-
-        return resources;
-    }
-
-    private resolveModelResource(modelName: string): ModelResource | undefined {
-        const loweredName = modelName.toLowerCase();
-        return this.getModelResources().find((resource) => {
-            const modelId = resource.config.model?.toLowerCase();
-            return resource.name.toLowerCase() === loweredName || modelId === loweredName;
-        });
-    }
-
-    private normalizeModelConfig(name: string, config: ModelConfig | boolean): ModelConfig {
-        const baseConfig: ModelConfig = {
-            model: name,
-            icon: "description",
-            title: name,
-            list: true,
-            add: true,
-            edit: true,
-            remove: true,
-            view: true,
-        } as ModelConfig;
-
-        if (typeof config === "boolean") {
-            return config ? baseConfig : {...baseConfig, list: false, add: false, edit: false, remove: false, view: false};
-        }
-
-        return {...baseConfig, ...config};
     }
 
 }

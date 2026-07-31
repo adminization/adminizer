@@ -63,8 +63,16 @@ import {AiAssistantApp} from "./apps/ai-assistant/AiAssistantApp";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
-// Clean temp folder
-if (!process.env.NO_SEED_DATA || process.env.CLEAN_TMP) await cleanTempFolder();
+const TMP_DIR = path.join(process.cwd(), ".tmp");
+const SEQUELIZE_DB_PATH = path.join(TMP_DIR, "adminizer_fixture.sqlite");
+const TYPEORM_DB_PATH = path.join(TMP_DIR, "adminizer_fixture_typeorm.sqlite");
+
+// CLEAN_TMP wipes the whole .tmp folder, seeding only drops the database files
+if (process.env.CLEAN_TMP) {
+    await cleanTempFolder();
+} else if (!process.env.NO_SEED_DATA) {
+    await cleanDatabaseFiles();
+}
 process.env.JWT_SECRET = "fixture-jwt-secret"
 
 
@@ -81,8 +89,7 @@ const fixtureSystemModels = {
 };
 
 if (ormType === "sequelize") {
-    const tmpDir = path.join(process.cwd(), ".tmp");
-    const dbPath = path.join(tmpDir, "adminizer_fixture.sqlite");
+    const dbPath = SEQUELIZE_DB_PATH;
     const orm = new Sequelize({
         dialect: "sqlite",
         storage: dbPath,
@@ -115,8 +122,7 @@ if (ormType === "sequelize") {
     // Enable debug logging
     Adminizer.logger.level = 'debug';
 } else if (ormType === "typeorm") {
-    const tmpDir = path.join(process.cwd(), ".tmp");
-    const dbPath = path.join(tmpDir, "adminizer_fixture_typeorm.sqlite");
+    const dbPath = TYPEORM_DB_PATH;
     const dataSource = new DataSource({
         type: "sqlite",
         database: dbPath,
@@ -158,18 +164,37 @@ if (ormType === "sequelize") {
 
 
 async function cleanTempFolder() {
-    const tmpPath = path.join(process.cwd(), '.tmp');
     try {
-        const stats = await fs.stat(tmpPath);
+        const stats = await fs.stat(TMP_DIR);
         if (stats.isDirectory()) {
-            await fs.rm(tmpPath, {recursive: true});
-            console.log(`Temporary folder ${tmpPath} cleaned successfully`);
+            await fs.rm(TMP_DIR, {recursive: true});
+            console.log(`Temporary folder ${TMP_DIR} cleaned successfully`);
         }
     } catch (err) {
         if (err.code !== 'ENOENT') {
             console.error(`Error cleaning temporary folder: ${err.message}`);
         }
     }
+    await fs.mkdir(TMP_DIR, {recursive: true});
+}
+
+/**
+ * Drops only the fixture database files, keeping the rest of .tmp
+ * (media manager uploads, feedback, openharness state, ...) intact.
+ */
+async function cleanDatabaseFiles() {
+    await fs.mkdir(TMP_DIR, {recursive: true});
+    for (const dbPath of [SEQUELIZE_DB_PATH, TYPEORM_DB_PATH]) {
+        // sqlite may keep sidecar files alongside the database
+        for (const file of [dbPath, `${dbPath}-journal`, `${dbPath}-wal`, `${dbPath}-shm`]) {
+            try {
+                await fs.rm(file, {force: true});
+            } catch (err) {
+                console.error(`Error removing database file ${file}: ${err.message}`);
+            }
+        }
+    }
+    console.log(`Fixture databases removed from ${TMP_DIR}`);
 }
 
 /**

@@ -29,6 +29,7 @@ import {
   Loader2Icon,
   RefreshCwIcon,
   RotateCcwIcon,
+  TriangleAlertIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +54,7 @@ import {
   fetchMeta,
   fetchStatus,
   historyToThreadMessages,
+  resolveAdminHref,
   setApiBase,
   setModel,
   selectConversation,
@@ -375,45 +377,56 @@ const statusHeadline = (status: ConnectionStatus | null): string => {
 };
 
 /**
- * Shown while the service reports anything but `ready`. Services that need an
- * operator to fill something in send `ui.setupSetting` (and optionally
- * `ui.setupUrl`), which turns into a named hint and a link.
+ * Shown while the service reports anything but `ready`. Services can fully
+ * describe each screen through `ui.connectionScreens`; the fallback keeps
+ * existing services working until they opt in.
  */
 const ConnectionLoader: FC<{
   status: ConnectionStatus | null;
   error: string | null;
   ui: AgentUiHints;
 }> = ({ status, error, ui }) => {
-  const nextAttempt = formatLocalTime(status?.nextAttemptAt ?? null);
-  const setupRequired = status?.state === 'setup_required';
-  const setting = ui.setupSetting ?? null;
+  const state = status?.state === 'ready' ? 'registering' : status?.state ?? 'registering';
+  const screen = ui.connectionScreens?.[state] ?? ui.connectionScreens?.default;
+  const legacySetupRequired = status?.state === 'setup_required' && !screen;
+  const details = (screen?.details ?? []).flatMap((detail) => {
+    const rawValue = status?.[detail.field];
+    if (rawValue === null || rawValue === undefined || rawValue === '') return [];
+    const value = detail.format === 'local-time'
+      ? formatLocalTime(String(rawValue))
+      : String(rawValue);
+    return value ? [{...detail, value}] : [];
+  });
+  const title = screen?.title ?? statusHeadline(status);
+  const description = screen?.description ?? (legacySetupRequired
+    ? (ui.setupSetting
+      ? t('Set the {setting} setting to finish the server setup — the assistant needs it to register.', {setting: ui.setupSetting})
+      : t('The server has to finish setting the assistant up before it can connect.'))
+    : t('The assistant is connecting to its LLM provider. This can take a while — the panel keeps retrying automatically.'));
+  const action = screen?.action ?? (legacySetupRequired && ui.setupSetting && ui.setupUrl
+    ? {label: ui.setupSetting, href: ui.setupUrl}
+    : null);
+  const Icon = screen?.icon === 'bot' || legacySetupRequired
+    ? BotIcon
+    : screen?.icon === 'error'
+      ? TriangleAlertIcon
+      : Loader2Icon;
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-      {setupRequired
-        ? <BotIcon className="text-muted-foreground size-8" />
-        : <Loader2Icon className="text-muted-foreground size-8 animate-spin" />}
-      <p className="text-sm font-medium">{statusHeadline(status)}</p>
-      <p className="text-muted-foreground max-w-md text-xs text-balance">
-        {setupRequired
-          ? (setting
-            ? t('Set the {setting} setting to finish the server setup — the assistant needs it to register.', { setting })
-            : t('The server has to finish setting the assistant up before it can connect.'))
-          : t('The assistant is connecting to its LLM provider. This can take a while — the panel keeps retrying automatically.')}
-      </p>
-      {setupRequired && setting && ui.setupUrl && (
+      <Icon className={cn('text-muted-foreground size-8', (screen?.icon ?? (legacySetupRequired ? 'bot' : 'spinner')) === 'spinner' && 'animate-spin')} />
+      <p className="text-sm font-medium">{title}</p>
+      {description && <p className="text-muted-foreground max-w-md text-xs text-balance">{description}</p>}
+      {action && (
         <Button asChild variant="outline" size="sm">
-          <a href={ui.setupUrl}>{setting}</a>
+          <a href={resolveAdminHref(action.href).href}>{action.label}</a>
         </Button>
       )}
-      {nextAttempt && !setupRequired && (
-        <p className="text-muted-foreground text-xs">
-          {t('Next attempt at')}{' '}
-          <span className="text-foreground font-medium tabular-nums">{nextAttempt}</span>
+      {details.map((detail, index) => (
+        <p key={`${detail.field}-${index}`} className={cn('max-w-md text-xs', detail.tone === 'error' ? 'text-destructive' : 'text-muted-foreground')}>
+          {detail.label && <>{detail.label} </>}
+          <span className={cn(detail.format === 'local-time' && 'text-foreground font-medium tabular-nums')}>{detail.value}</span>
         </p>
-      )}
-      {status?.state === 'error' && status.lastError && (
-        <p className="text-destructive max-w-md text-xs">{status.lastError}</p>
-      )}
+      ))}
       {error && <p className="text-destructive max-w-md text-xs">{error}</p>}
     </div>
   );

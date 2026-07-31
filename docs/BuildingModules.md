@@ -95,11 +95,15 @@ await adminizer.appManager.enable(new MyApp());
 | `ctx.model(model)` | Attach an existing ORM model to the app. The model must be installed before the app is enabled. |
 | `ctx.modelAccess(access)` | Allow the app runtime to access selected models through `runtime.models`. |
 | `ctx.aiAssistant(resource)` | Register an app-owned AI assistant handler with model factories. |
+| `ctx.skills.agent(skill)` | Register a server-side AI assistant skill (a tool every compatible agent may call). See [Agent Skills](AiAssistant/AgentSkills.md). |
+| `ctx.skills.uiMethod(method)` | Register a browser capability an agent may trigger through a `ui.method` frame. See [Admin Links & UI Methods](AiAssistant/AdminLinksAndUiMethods.md). |
+| `ctx.adminLink(link)` | Register a standalone admin page in the navigation and in agent link search. |
+| `ctx.adminLinkTemplate(template)` | Register a parametrized page (e.g. `/admin/orders/:id/invoice`) the assistant may open. |
 | `ctx.mediaManager(resource)` | Register an app-owned media manager through a factory that receives `AppRuntime`. |
 | `ctx.catalog(catalog)` | Register a catalog factory and its optional React template components. |
 | `ctx.listener(event, handler)` | Subscribe to Adminizer events. The handler receives `(payload, runtime)`. |
 
-Registration order after `setup()` is intentional: app model bindings first, model access second, AI assistants third, media managers fourth, and catalogs fifth. This lets factories safely use models owned by the same app.
+Registration order after `setup()` is intentional: app model bindings first, model access second, AI assistants third, assistant UI methods and agent skills fourth, media managers fifth, and catalogs sixth. This lets factories safely use models owned by the same app.
 
 ## App Runtime
 
@@ -319,9 +323,11 @@ ctx.config({
 });
 ```
 
-`ctx.aiAssistant()` creates an `AiAssistantHandler` for the app and registers model services returned by its factories. The factory receives an AI context with `runtime`, `routePrefix`, model resource lookup helpers, permission checks, and `createDataAccessor()`. Disabling the app restores the previous handler, removes the app's config layer, and unregisters app-owned access tokens.
+`ctx.aiAssistant()` creates an `AiAssistantHandler` for the app and registers model services returned by its factories. The factory receives an AI context with `runtime`, `routePrefix`, model resource lookup helpers, permission checks, `createDataAccessor()`, and `getUiMethods(user)`. Disabling the app restores the previous handler, removes the app's config layer, and unregisters app-owned access tokens.
 
 Assistant model classes should extend `AbstractAiModelService`, but they should not register access rights themselves. The app owns tokens through `ctx.accessRight()`. Register routes with `ctx.controller()` and the reusable `AiAssistantController` when the app exposes the standard assistant API. The fixture implementation is in `fixture/apps/ai-assistant`.
+
+An app can also contribute capabilities to agents it does not own: server-side tools through `ctx.skills.agent()`, browser capabilities through `ctx.skills.uiMethod()`, and navigable pages through `ctx.adminLink()` / `ctx.adminLinkTemplate()`. All four are removed when the app is disabled. See [AI Assistant](AiAssistant.md) for the full contracts.
 
 ## Media Manager Resources
 

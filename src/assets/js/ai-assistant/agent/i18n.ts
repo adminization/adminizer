@@ -39,8 +39,6 @@ const ru: Dictionary = {
   'Registration attempt failed': 'Попытка регистрации не удалась',
   'Server setup required': 'Требуется завершить настройку сервера',
   'Connecting the assistant…': 'Подключение ассистента…',
-  'The assistant registers itself with the LLM gateway. The broker issues at most one key per hour, so this can take a while — the page keeps retrying automatically.':
-    'Ассистент регистрируется на LLM-шлюзе. Брокер выдаёт не более одного ключа в час, поэтому это может занять время — страница повторяет попытки автоматически.',
   'Set the {setting} setting to finish the server setup — the assistant needs it to register.':
     'Заполните настройку {setting}, чтобы завершить настройку сервера — она нужна ассистенту для регистрации.',
   'Next attempt at': 'Следующая попытка в',
@@ -98,8 +96,6 @@ const de: Dictionary = {
   'Registration attempt failed': 'Registrierungsversuch fehlgeschlagen',
   'Server setup required': 'Server-Einrichtung erforderlich',
   'Connecting the assistant…': 'Assistent wird verbunden…',
-  'The assistant registers itself with the LLM gateway. The broker issues at most one key per hour, so this can take a while — the page keeps retrying automatically.':
-    'Der Assistent registriert sich am LLM-Gateway. Der Broker vergibt höchstens einen Schlüssel pro Stunde, das kann dauern — die Seite versucht es automatisch weiter.',
   'Set the {setting} setting to finish the server setup — the assistant needs it to register.':
     'Setzen Sie die Einstellung {setting}, um die Server-Einrichtung abzuschließen — der Assistent benötigt sie zur Registrierung.',
   'Next attempt at': 'Nächster Versuch um',
@@ -157,8 +153,6 @@ const es: Dictionary = {
   'Registration attempt failed': 'El intento de registro falló',
   'Server setup required': 'Se requiere completar la configuración del servidor',
   'Connecting the assistant…': 'Conectando el asistente…',
-  'The assistant registers itself with the LLM gateway. The broker issues at most one key per hour, so this can take a while — the page keeps retrying automatically.':
-    'El asistente se registra en la pasarela LLM. El bróker emite como máximo una clave por hora, así que puede tardar — la página reintenta automáticamente.',
   'Set the {setting} setting to finish the server setup — the assistant needs it to register.':
     'Defina el ajuste {setting} para completar la configuración del servidor — el asistente lo necesita para registrarse.',
   'Next attempt at': 'Próximo intento a las',
@@ -216,8 +210,6 @@ const fr: Dictionary = {
   'Registration attempt failed': 'La tentative d’enregistrement a échoué',
   'Server setup required': 'Configuration du serveur requise',
   'Connecting the assistant…': 'Connexion de l’assistant…',
-  'The assistant registers itself with the LLM gateway. The broker issues at most one key per hour, so this can take a while — the page keeps retrying automatically.':
-    'L’assistant s’enregistre auprès de la passerelle LLM. Le broker ne délivre qu’une clé par heure au maximum, cela peut prendre du temps — la page réessaie automatiquement.',
   'Set the {setting} setting to finish the server setup — the assistant needs it to register.':
     'Renseignez le paramètre {setting} pour terminer la configuration du serveur — l’assistant en a besoin pour s’enregistrer.',
   'Next attempt at': 'Prochaine tentative à',
@@ -275,8 +267,6 @@ const ja: Dictionary = {
   'Registration attempt failed': '登録に失敗しました',
   'Server setup required': 'サーバーのセットアップが必要です',
   'Connecting the assistant…': 'アシスタントに接続中…',
-  'The assistant registers itself with the LLM gateway. The broker issues at most one key per hour, so this can take a while — the page keeps retrying automatically.':
-    'アシスタントは LLM ゲートウェイに自動登録します。ブローカーは1時間に最大1つのキーしか発行しないため時間がかかることがあります — ページは自動的に再試行します。',
   'Set the {setting} setting to finish the server setup — the assistant needs it to register.':
     'サーバーのセットアップを完了するには {setting} 設定を入力してください — アシスタントの登録に必要です。',
   'Next attempt at': '次回の試行:',
@@ -334,8 +324,6 @@ const ko: Dictionary = {
   'Registration attempt failed': '등록 시도 실패',
   'Server setup required': '서버 설정을 완료해야 합니다',
   'Connecting the assistant…': '어시스턴트 연결 중…',
-  'The assistant registers itself with the LLM gateway. The broker issues at most one key per hour, so this can take a while — the page keeps retrying automatically.':
-    '어시스턴트가 LLM 게이트웨이에 자동 등록합니다. 브로커는 시간당 최대 1개의 키만 발급하므로 시간이 걸릴 수 있으며, 페이지가 자동으로 재시도합니다.',
   'Set the {setting} setting to finish the server setup — the assistant needs it to register.':
     '서버 설정을 완료하려면 {setting} 설정을 입력하세요 — 어시스턴트 등록에 필요합니다.',
   'Next attempt at': '다음 시도:',
@@ -393,8 +381,6 @@ const th: Dictionary = {
   'Registration attempt failed': 'การลงทะเบียนล้มเหลว',
   'Server setup required': 'ต้องตั้งค่าเซิร์ฟเวอร์ให้เสร็จก่อน',
   'Connecting the assistant…': 'กำลังเชื่อมต่อผู้ช่วย…',
-  'The assistant registers itself with the LLM gateway. The broker issues at most one key per hour, so this can take a while — the page keeps retrying automatically.':
-    'ผู้ช่วยจะลงทะเบียนกับเกตเวย์ LLM โดยอัตโนมัติ โบรกเกอร์ออกคีย์ได้สูงสุดหนึ่งคีย์ต่อชั่วโมง จึงอาจใช้เวลาสักครู่ — หน้านี้จะลองใหม่ให้เอง',
   'Set the {setting} setting to finish the server setup — the assistant needs it to register.':
     'กรุณาตั้งค่า {setting} เพื่อทำการตั้งค่าเซิร์ฟเวอร์ให้เสร็จ — ผู้ช่วยต้องใช้ในการลงทะเบียน',
   'Next attempt at': 'ลองใหม่เวลา',
@@ -452,8 +438,6 @@ const vn: Dictionary = {
   'Registration attempt failed': 'Đăng ký thất bại',
   'Server setup required': 'Cần hoàn tất cài đặt máy chủ',
   'Connecting the assistant…': 'Đang kết nối trợ lý…',
-  'The assistant registers itself with the LLM gateway. The broker issues at most one key per hour, so this can take a while — the page keeps retrying automatically.':
-    'Trợ lý tự đăng ký với cổng LLM. Broker chỉ cấp tối đa một khóa mỗi giờ nên có thể mất thời gian — trang sẽ tự động thử lại.',
   'Set the {setting} setting to finish the server setup — the assistant needs it to register.':
     'Hãy đặt cấu hình {setting} để hoàn tất cài đặt máy chủ — trợ lý cần nó để đăng ký.',
   'Next attempt at': 'Lần thử tiếp theo lúc',
@@ -511,8 +495,6 @@ const zh: Dictionary = {
   'Registration attempt failed': '注册尝试失败',
   'Server setup required': '需要先完成服务器设置',
   'Connecting the assistant…': '正在连接助手…',
-  'The assistant registers itself with the LLM gateway. The broker issues at most one key per hour, so this can take a while — the page keeps retrying automatically.':
-    '助手会自动向 LLM 网关注册。代理每小时最多签发一个密钥，因此可能需要等待——页面会自动重试。',
   'Set the {setting} setting to finish the server setup — the assistant needs it to register.':
     '请填写 {setting} 设置以完成服务器设置——助手注册时需要它。',
   'Next attempt at': '下次尝试时间',

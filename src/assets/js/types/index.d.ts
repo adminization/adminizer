@@ -104,6 +104,8 @@ declare global {
     interface Window {
         routePrefix: string;
         bindPublic: boolean;
+        /** Set by the main bundle; the assistant panel navigates through it. */
+        InertiajsReact?: typeof import('@inertiajs/react');
         adminApi: typeof import('@/lib/admin-api').adminApi;
         __adminizerAiAssistantState__?: {
             isOpen: boolean;

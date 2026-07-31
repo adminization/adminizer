@@ -148,6 +148,28 @@ export interface AiAgentConnectionStatus {
     [key: string]: unknown;
 }
 
+/** States for which an agent can describe its connection screen. */
+export type AiAgentConnectionState = Exclude<AiAgentConnectionStatus['state'], 'ready'>;
+
+/**
+ * Declarative connection screen supplied by an agent service. The shared panel
+ * owns rendering, while the agent owns its copy, CTA and which status details
+ * are useful to expose.
+ */
+export interface AiAgentConnectionScreen {
+    title?: string;
+    description?: string;
+    icon?: 'spinner' | 'bot' | 'error';
+    action?: {label: string; href: string};
+    /** Status values the agent wants to render on this screen. */
+    details?: Array<{
+        field: string;
+        label?: string;
+        format?: 'text' | 'local-time';
+        tone?: 'muted' | 'error';
+    }>;
+}
+
 /** Normalized budget / rate limits of the provider key, when it exposes them. */
 export interface AiAgentLimits {
     provider: string;
@@ -170,9 +192,8 @@ export interface AiAgentLimits {
 }
 
 /**
- * Copy the panel shows instead of its neutral defaults. Strings go through the
- * panel's own dictionary first, so English source strings it already knows are
- * still translated.
+ * Copy the panel shows instead of its neutral defaults. `getUiHints(locale)`
+ * receives the admin user's locale, so agents can return localized copy.
  */
 export interface AiAgentUiHints {
     title?: string;
@@ -183,12 +204,28 @@ export interface AiAgentUiHints {
     setupSetting?: string;
     /** Where to fill it in; rendered as a button on the connection loader. */
     setupUrl?: string;
+    /**
+     * Per-state pages rendered while this agent is not ready. `default` is
+     * used for any state without its own screen.
+     */
+    connectionScreens?: Partial<Record<AiAgentConnectionState | 'default', AiAgentConnectionScreen>>;
     [key: string]: unknown;
+}
+
+/** A browser-side capability which an agent may call through `ui.method`. */
+export interface AiAgentUiMethod {
+    id: string;
+    title: string;
+    description: string;
+    inputSchema: Record<string, unknown>;
+    action: string;
+    accessRightsToken?: string;
 }
 
 /** Declarative UI contract consumed by the shared assistant panel. */
 export interface AiAgentUiSchema extends AiAgentUiHints {
     commands: Array<{id: string; description?: string}>;
+    uiMethods?: AiAgentUiMethod[];
     panels: {
         history: boolean;
         models: boolean;

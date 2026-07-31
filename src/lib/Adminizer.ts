@@ -51,6 +51,9 @@ import { ControllerHandler } from "./app-manager/ControllerHandler";
 import { AssetHandler } from "./app-manager/AssetHandler";
 import { ConfigLayerHandler } from "./app-manager/ConfigLayerHandler";
 import { AccessRightsHandler } from "./access-rights/AccessRightsHandler";
+import { AiAssistantUiMethodHandler } from './ai-assistant/AiAssistantUiMethodHandler';
+import { AdminLinkHandler } from './admin-links/AdminLinkHandler';
+import { AiAssistantAgentSkillHandler } from './ai-assistant/AiAssistantAgentSkillHandler';
 
 const logFilePath = "logs/app.log";
 
@@ -143,6 +146,9 @@ export class Adminizer {
     notificationHandler!: NotificationHandler;
     historyHandler!: HistoryHandler;
     private _aiAssistantHandler?: AiAssistantHandler;
+    aiAssistantUiMethodHandler: AiAssistantUiMethodHandler;
+    adminLinkHandler: AdminLinkHandler;
+    aiAssistantAgentSkillHandler: AiAssistantAgentSkillHandler;
     modelHandler: ModelHandler
     widgetHandler: WidgetHandler
     customFilterHandler!: CustomFilterHandler
@@ -179,6 +185,9 @@ export class Adminizer {
         this.catalogTemplateComponentHandler = new CatalogTemplateComponentHandler();
         this.mediaManagerHandler = new MediaManagerHandler();
         this.feedbackHandler = new FeedbackHandler(this);
+        this.aiAssistantUiMethodHandler = new AiAssistantUiMethodHandler(this);
+        this.adminLinkHandler = new AdminLinkHandler(this);
+        this.aiAssistantAgentSkillHandler = new AiAssistantAgentSkillHandler(this);
 
         this.controllerHandler = new ControllerHandler(this);
         this.assetHandler = new AssetHandler(this);

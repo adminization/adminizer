@@ -11,6 +11,7 @@ import { type FC, memo, useState } from 'react';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 
 import { TooltipIconButton } from './tooltip-icon-button';
+import { resolveAdminHref, visitAdminHref } from './runtime';
 import { cn } from './utils';
 
 const MarkdownTextImpl = () => {
@@ -96,9 +97,36 @@ const defaultComponents = memoizeMarkdownComponents({
   p: ({ className, ...props }) => (
     <p className={cn('aui-md-p my-3 leading-relaxed first:mt-0 last:mb-0', className)} {...props} />
   ),
-  a: ({ className, ...props }) => (
-    <a className={cn('aui-md-a text-primary hover:text-primary/80 underline underline-offset-2', className)} {...props} />
-  ),
+  a: function MarkdownLink({ className, href, target, rel, onClick, children, ...props }) {
+    // A link written by the agent carries at most a path: it is resolved
+    // against this origin and route prefix, then opened through Inertia.
+    const resolved = resolveAdminHref(href ?? '');
+    // An autolinked URL prints its own href, so a guessed origin would still be
+    // visible in the text: show the path that is actually opened.
+    const label = resolved.internal && typeof children === 'string' && children.trim() === (href ?? '').trim()
+      ? resolved.href
+      : children;
+    return (
+      <a
+        className={cn('aui-md-a text-primary hover:text-primary/80 underline underline-offset-2', className)}
+        href={resolved.href}
+        target={resolved.internal ? undefined : target ?? '_blank'}
+        rel={resolved.internal ? rel : rel ?? 'noreferrer'}
+        onClick={(event) => {
+          onClick?.(event);
+          const plainClick = event.button === 0
+            && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+          if (resolved.internal && plainClick && !event.defaultPrevented) {
+            event.preventDefault();
+            visitAdminHref(resolved.href);
+          }
+        }}
+        {...props}
+      >
+        {label}
+      </a>
+    );
+  },
   blockquote: ({ className, ...props }) => (
     <blockquote className={cn('aui-md-blockquote border-muted-foreground/30 text-muted-foreground my-3 border-s-2 ps-4', className)} {...props} />
   ),

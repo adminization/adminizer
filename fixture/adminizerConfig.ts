@@ -46,7 +46,7 @@ const models: AdminpanelConfig["models"] = {
         },
         icon: 'receipt'
     },
-    Example: {
+    full: {
         title: 'All controls',
         model: 'example',
         displayName: 'description',

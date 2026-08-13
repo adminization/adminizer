@@ -145,9 +145,9 @@ export abstract class AbstractHistoryAdapter {
      * @returns Array of model names (in lowercase) the user can access.
      */
     public getModels(user: User): string[] {
-        const models = this.adminizer.modelHandler.all
-            .filter(model => !this.excludedModels.has(model.modelname))
-            .map(model => model.modelname.toLowerCase());
+        const models = Array.from(this.adminizer.modelHandler.model.entries())
+            .filter(([, model]) => !this.excludedModels.has(model.modelname))
+            .map(([resourceName]) => resourceName);
 
         const accessModels: string[] = [];
         for (const model of models) {
@@ -392,7 +392,8 @@ export abstract class AbstractHistoryAdapter {
      * @protected
      */
     protected findModelResource(history: HistoryActions): ModelResource {
-        const modelResourceName = history.modelName;
+        const modelResourceName = this.adminizer.modelHandler.getResourceRecord(history.modelName)?.name
+            ?? history.modelName;
 
         const modelResourceUri = `${this.adminizer.config.routePrefix}/model/${modelResourceName}`;
         const models = this.adminizer.config.models;
@@ -403,7 +404,7 @@ export abstract class AbstractHistoryAdapter {
         const modelResource: ModelResource = {
             name: modelResourceName,
             uri: modelResourceUri,
-            model: this.adminizer.modelHandler.model.get(history.modelName),
+            model: this.adminizer.modelHandler.getResource(modelResourceName),
             config: models[foundKey]
         };
         return modelResource;
@@ -438,8 +439,12 @@ export abstract class AbstractHistoryAdapter {
                 return;
             }
 
-            let Model = this.adminizer.modelHandler.model.get(modelName);
-            if (!Model) {
+			const resourceName = this.adminizer.modelHandler.resolveAssociationResource(
+				modelName,
+				fields[key].model.resourceName
+			);
+            let Model = resourceName ? this.adminizer.modelHandler.getResource(resourceName) : undefined;
+            if (!Model || !resourceName) {
                 return;
             }
 
@@ -449,8 +454,8 @@ export abstract class AbstractHistoryAdapter {
                 Adminizer.log.warn("Warning: executing malicious job trying to add a huge amount of records in field config," +
                     " please rewrite this part of code in the nearest future");
                 let modelResource: ModelResource = {
-                    name: modelName, config: this.adminizer.config.models[modelName] as ModelConfig,
-                    model: Model, uri: `${this.adminizer.config.routePrefix}/model/${modelName}`
+                    name: resourceName, config: this.adminizer.config.models[resourceName] as ModelConfig,
+                    model: Model, uri: `${this.adminizer.config.routePrefix}/model/${resourceName}`
                 };
                 let dataAccessor = new DataAccessor(this.adminizer, user, modelResource, "view");
                 list = await Model.find({}, dataAccessor);

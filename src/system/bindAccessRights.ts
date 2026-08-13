@@ -5,11 +5,9 @@ import { GROUP_FILTER_VISIBILITY_TOKEN } from "../policies/permissionResolvers";
 export default async function bindAccessRights(adminizer: Adminizer) {
     if (adminizer.config.models) {
         let models = adminizer.config.models;
-        for (let key of Object.keys(models)) {
-            
-            const model = models[key];
+        for (const [resourceName, model] of Object.entries(models)) {
             if (typeof model !== "boolean") {
-                adminizer.accessRightsHelper.registerModelTokens(model.model);
+                adminizer.accessRightsHelper.registerModelTokens(resourceName);
             }
         }
     }

@@ -17,9 +17,26 @@ export interface AppModelAccessRecord {
 export interface ModelRecord {
 	id: string;
 	name: string;
+	hostModelName: string;
+	primaryHostModel: boolean;
 	model: AbstractModel<any>;
 	ownerApp?: string;
 	enabled: boolean;
+}
+
+export interface ModelRegistrationOptions {
+	/** Physical ORM model name. It is intentionally independent from the Adminizer resource name. */
+	hostModelName?: string;
+	/**
+	 * Selects this resource as the association target when multiple resources use the same host model.
+	 * Exactly one resource must be primary for every shared host model.
+	 */
+	primary?: boolean;
+	/**
+	 * @deprecated Register and use the canonical Adminizer resource name instead.
+	 * Kept only for compatibility with existing integrations. Host model names must not be used as aliases.
+	 */
+	aliases?: string[];
 }
 
 export class AppModelAccess {
@@ -60,21 +77,36 @@ export class AppModelAccess {
 export class ModelHandler {
 	private models: Map<string, ModelRecord> = new Map();
 	private modelAliases: Map<string, string> = new Map();
+	private hostModelResources: Map<string, Set<string>> = new Map();
 	private internalAccess?: InternalModelAccessFactory;
 	private appAccessRecords = new Map<string, AppModelAccessRecord>();
 
-	add<T>(modelName: string, modelInstance: AbstractModel<T>, aliases: string[] = []): void {
+	add<T>(resourceName: string, modelInstance: AbstractModel<T>, options?: ModelRegistrationOptions): void;
+	/** @deprecated Pass `{ aliases }` in ModelRegistrationOptions, or preferably use the canonical resource name. */
+	add<T>(resourceName: string, modelInstance: AbstractModel<T>, aliases?: string[]): void;
+	add<T>(
+		resourceName: string,
+		modelInstance: AbstractModel<T>,
+		options: ModelRegistrationOptions | string[] = {}
+	): void {
+		const resourceId = normalizeName(resourceName);
+		if (this.models.has(resourceId)) {
+			throw new Error(`Model resource "${resourceName}" is already registered`);
+		}
 
-
-		const modelname = modelName.toLowerCase()
-		this.models.set(modelname, {
-			id: modelname,
-			name: modelName,
+		const normalizedOptions = Array.isArray(options) ? {aliases: options} : options;
+		const hostModelName = normalizedOptions.hostModelName ?? resourceName;
+		this.registerHostModel(resourceName, hostModelName, true);
+		this.models.set(resourceId, {
+			id: resourceId,
+			name: resourceName,
+			hostModelName,
+			primaryHostModel: normalizedOptions.primary === true,
 			model: modelInstance,
 			enabled: true,
 		});
-		this.registerAliases(modelName, aliases);
-		Adminizer.log.debug(`Model with name [${modelname}] was registered`)
+		this.registerAliases(resourceName, normalizedOptions.aliases ?? []);
+		Adminizer.log.debug(`Model resource [${resourceName}] was registered for host model [${hostModelName}]`)
 	}
 
 	register<T>(appName: string, modelName: string, modelInstance: AbstractModel<T>): string {
@@ -86,10 +118,13 @@ export class ModelHandler {
 		this.models.set(normalizedModelName, {
 			id: normalizedModelName,
 			name: modelName,
+			hostModelName: modelName,
+			primaryHostModel: true,
 			model: modelInstance,
 			ownerApp: appName,
 			enabled: true,
 		});
+		this.registerHostModel(modelName, modelName, false);
 		Adminizer.log.debug(`Model with name [${normalizedModelName}] was registered by app [${appName}]`)
 
 		return normalizedModelName;
@@ -102,6 +137,7 @@ export class ModelHandler {
 		}
 
 		this.models.delete(normalizeName(id));
+		this.unregisterHostModel(record.hostModelName, record.name);
 	}
 
 	disable(id: string): void {
@@ -164,7 +200,10 @@ export class ModelHandler {
 
 	// TODO: 'hot reload' need add method for delete model & unbind
 
-	/** Improved model getter with case-insensitive lookup and configured alias support. */
+	/**
+	 * Improved model getter with case-insensitive lookup and configured alias support.
+	 * @deprecated New code should use getResource() and getByHostModel() explicitly.
+	 */
 	get model() {
 
 		return {
@@ -176,6 +215,76 @@ export class ModelHandler {
 			keys: () => this.enabledModelKeys(),
 			values: () => this.enabledModelValues(),
 		};
+	}
+
+	/**
+	 * Returns a model by its Adminizer resource name or an explicit deprecated compatibility alias.
+	 * New code must use canonical resource names.
+	 */
+	getResource(resourceName: string): AbstractModel<any> | undefined {
+		return this.model.get(resourceName);
+	}
+
+	getResourceRecord(resourceName: string): ModelRecord | undefined {
+		const record = this.models.get(this.resolveName(resourceName));
+		return record?.enabled ? record : undefined;
+	}
+
+	/**
+	 * Resolves a physical ORM model name to its Adminizer resource.
+	 * This lookup is deliberately separate from getResource(): a host model may have the
+	 * same name as a system resource while being exposed under a project resource alias.
+	 */
+	resolveResourceByHostModel(hostModelName: string): string | undefined {
+		const resourceIds = this.hostModelResources.get(normalizeName(hostModelName));
+		const records = Array.from(resourceIds ?? [])
+			.map((resourceId) => this.models.get(resourceId))
+			.filter((record): record is ModelRecord => Boolean(record?.enabled));
+
+		if (records.length === 1) {
+			return records[0].name;
+		}
+
+		const primaryRecords = records.filter((record) => record.primaryHostModel);
+		if (primaryRecords.length === 1) {
+			return primaryRecords[0].name;
+		}
+
+		if (records.length > 1) {
+			throw new Error(this.getSharedHostModelError(hostModelName, records));
+		}
+
+		return undefined;
+	}
+
+	getByHostModel(hostModelName: string): AbstractModel<any> | undefined {
+		const resourceName = this.resolveResourceByHostModel(hostModelName);
+		return resourceName ? this.getResource(resourceName) : undefined;
+	}
+
+	/**
+	 * Resolves an ORM association target. Adapter-provided host model names take precedence;
+	 * system-model relations may pass their explicit canonical resource name instead.
+	 */
+	resolveAssociationResource(targetName: string, resourceName?: string): string | undefined {
+		if (resourceName) {
+			return this.getResourceRecord(resourceName)?.name;
+		}
+
+		return this.resolveResourceByHostModel(targetName)
+			?? this.getResourceRecord(targetName)?.name;
+	}
+
+	/** Validates that every host ORM model used by multiple resources has one primary resource. */
+	validateHostModelMappings(): void {
+		for (const [normalizedHostModelName, resourceIds] of this.hostModelResources) {
+			const records = Array.from(resourceIds)
+				.map((resourceId) => this.models.get(resourceId))
+				.filter((record): record is ModelRecord => Boolean(record?.enabled));
+			if (records.length > 1 && records.filter((record) => record.primaryHostModel).length !== 1) {
+				throw new Error(this.getSharedHostModelError(records[0]?.hostModelName ?? normalizedHostModelName, records));
+			}
+		}
 	}
 
 	resolveModelName(modelName: string): string {
@@ -240,6 +349,38 @@ export class ModelHandler {
 
 			this.modelAliases.set(normalizedAlias, normalizedModelName);
 		}
+	}
+
+	private registerHostModel(resourceName: string, hostModelName: string, allowMultipleResources: boolean): void {
+		const normalizedHostModelName = normalizeName(hostModelName);
+		const resourceId = normalizeName(resourceName);
+		const resourceIds = this.hostModelResources.get(normalizedHostModelName) ?? new Set<string>();
+		if (!allowMultipleResources && resourceIds.size && !resourceIds.has(resourceId)) {
+			const existingResourceId = resourceIds.values().next().value as string;
+			const existingResource = this.models.get(existingResourceId)?.name ?? existingResourceId;
+			throw new Error(
+				`Host model "${hostModelName}" is already registered for Adminizer resource "${existingResource}"`
+			);
+		}
+
+		resourceIds.add(resourceId);
+		this.hostModelResources.set(normalizedHostModelName, resourceIds);
+	}
+
+	private unregisterHostModel(hostModelName: string, resourceName: string): void {
+		const normalizedHostModelName = normalizeName(hostModelName);
+		const resourceIds = this.hostModelResources.get(normalizedHostModelName);
+		resourceIds?.delete(normalizeName(resourceName));
+		if (!resourceIds?.size) {
+			this.hostModelResources.delete(normalizedHostModelName);
+		}
+	}
+
+	private getSharedHostModelError(hostModelName: string, records: ModelRecord[]): string {
+		return (
+			`Host model "${hostModelName}" is mapped to multiple Adminizer resources: ` +
+			`${records.map((record) => record.name).join(", ")}. Configure exactly one with primary: true.`
+		);
 	}
 
 	private resolveName(modelName: string): string {

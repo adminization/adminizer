@@ -47,7 +47,11 @@ function createAdminizer(permitted: string[]) {
             hasPermission: (token: string) => has(token),
             enoughPermissions: (tokens: string[]) => !tokens.length || tokens.some(has),
         },
-        modelHandler: {model: {get: (name: string) => (name === "test" ? model : undefined)}},
+        modelHandler: {
+            getResource: (name: string) => (name === "Test" ? model : undefined),
+            getResourceRecord: (name: string) => (name === "Test" ? {name: "Test"} : undefined),
+            resolveResourceByHostModel: () => undefined,
+        },
         appManager: {createRuntime: () => ({})},
         catalogHandler: {getAll: () => []},
         menuHelper: {

@@ -366,9 +366,14 @@ export interface ModelConfig {
     adapter?: string
     title: string
     /**
-     * Model name
+     * Physical host ORM model name.
      * */
     model: string
+    /**
+     * Required only when two or more Adminizer resources use the same host model.
+     * The primary resource is selected for associations that reference the host model.
+     */
+    primary?: boolean
     /**
      * Optional display name for history. Should be a attribute of the model, or a function.
      */

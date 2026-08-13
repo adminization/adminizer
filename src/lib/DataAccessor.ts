@@ -11,6 +11,7 @@ import {
 import {Field, Fields} from "../helpers/fieldsHelper";
 import {ControllerHelper} from "../helpers/controllerHelper";
 import {Adminizer} from "./Adminizer";
+import {AbstractModel} from "./model/AbstractModel";
 import { Group } from "../models/Group";
 import { User } from "../models/User";
 import { isObject } from "../helpers/JsUtils";
@@ -72,34 +73,33 @@ export class DataAccessor {
 
     }
 
-    private getModelConfig(modelName: string): ModelConfig | undefined {
-        const resolvedModelName = this.adminizer.modelHandler.resolveModelName(modelName);
-        const entry = Object.entries(this.adminizer.config.models)
-            .find(([key, config]) => {
-                if (key.toLowerCase() === resolvedModelName.toLowerCase()) {
-                    return true;
-                }
-
-                if (!isObject(config)) {
-                    return false;
-                }
-
-                return config.model?.toLowerCase() === resolvedModelName.toLowerCase();
-            });
-        const config = entry ? entry[1] : undefined;
+    private getModelConfig(resourceName: string): ModelConfig | undefined {
+        const config = this.adminizer.config.models?.[resourceName];
         return isObject(config) ? config as ModelConfig : undefined;
     }
 
-    private accessRelationModel<T = any>(modelName: string) {
-        return this.adminizer.modelHandler.internal("data-accessor").get<T>(modelName);
+    private accessRelationModel<T = any>(modelName: string, resourceName?: string) {
+        const resolvedResourceName = this.resolveRelationTarget(modelName, resourceName);
+        if (!resolvedResourceName) {
+            throw new Error(`Relation model "${modelName}" was not found`);
+        }
+
+        return this.adminizer.modelHandler.internal("data-accessor").get<T>(resolvedResourceName);
     }
 
-    private resolveRelationTarget(modelName?: string): string | undefined {
+    private resolveRelationTarget(modelName?: string, resourceName?: string): string | undefined {
         if (!modelName) {
             return undefined;
         }
 
-        return this.adminizer.modelHandler.resolveModelName(modelName).toLowerCase();
+        return this.adminizer.modelHandler.resolveAssociationResource(modelName, resourceName);
+    }
+
+    private getRelationModel<T = any>(modelName: string, resourceName?: string) {
+        const resolvedResourceName = this.resolveRelationTarget(modelName, resourceName);
+        return resolvedResourceName
+            ? this.adminizer.modelHandler.getResource(resolvedResourceName) as AbstractModel<T> | undefined
+            : undefined;
     }
 
     /**
@@ -121,9 +121,9 @@ export class DataAccessor {
         const fieldsConfig = this.modelResource.config?.fields || {};
         const modelAttributes = this.modelResource.model.attributes;
 
-        const tokenId = `${this.actionVerb}-${this.modelResource.model.modelname}-${MODEL_TOKEN_SUFFIX}`;
+        const tokenId = `${this.actionVerb}-${this.modelResource.name}-${MODEL_TOKEN_SUFFIX}`;
         if (!this.adminizer.accessRightsHelper.hasPermission(tokenId, this.user)) {
-            Adminizer.log.debug(`getFieldsConfig > No access rights to ${this.actionVerb} model: ${this.modelResource.model.modelname}`);
+            Adminizer.log.debug(`getFieldsConfig > No access rights to ${this.actionVerb} model: ${this.modelResource.name}`);
             return undefined;
         }
 
@@ -173,16 +173,16 @@ export class DataAccessor {
             let populatedModelFieldsConfig = {};
             if (modelField.type === "association" || modelField.type === "association-many") {
                 const modelName = modelField.model || modelField.collection;
-                const resolvedModelName = modelName ? this.adminizer.modelHandler.resolveModelName(modelName) : undefined;
+                const resolvedModelName = this.resolveRelationTarget(modelName, modelField.resourceName);
 
                 if (modelName && resolvedModelName) {
                     const tokenId = `read-${resolvedModelName}-${MODEL_TOKEN_SUFFIX}`;
                     if (!this.adminizer.accessRightsHelper.hasPermission(tokenId, this.user)) {
-                        Adminizer.log.silly(`No access rights to model: ${this.modelResource.model.modelname}`);
+                        Adminizer.log.silly(`No access rights to model: ${this.modelResource.name}`);
                         return undefined;
                     }
 
-                    const model = this.adminizer.modelHandler.model.get(modelName);
+                    const model = this.adminizer.modelHandler.getResource(resolvedModelName);
                     if (model) {
                         populatedModelFieldsConfig = this.getAssociatedFieldsConfig(resolvedModelName);
                         const modelCfg = this.getModelConfig(resolvedModelName);
@@ -242,18 +242,17 @@ export class DataAccessor {
         return orderedFields;
     }
 
-    private getAssociatedFieldsConfig(modelName: string): { [fieldName: string]: Field } | undefined {
-        const resolvedModelName = this.adminizer.modelHandler.resolveModelName(modelName);
-        const model = this.adminizer.modelHandler.model.get(resolvedModelName);
-        const modelConfig = this.getModelConfig(resolvedModelName);
+    private getAssociatedFieldsConfig(resourceName: string): { [fieldName: string]: Field } | undefined {
+        const model = this.adminizer.modelHandler.getResource(resourceName);
+        const modelConfig = this.getModelConfig(resourceName);
         if (!model || !modelConfig) {
             return undefined;
         }
 
         // Check if user has access to the associated model
-        const tokenId = `read-${resolvedModelName}-${MODEL_TOKEN_SUFFIX}`;
+        const tokenId = `read-${resourceName}-${MODEL_TOKEN_SUFFIX}`;
         if (!this.adminizer.accessRightsHelper.hasPermission(tokenId, this.user)) {
-            Adminizer.log.debug(`getAssociatedFieldsConfig > No access rights to ${this.actionVerb} model: ${resolvedModelName}`);
+            Adminizer.log.debug(`getAssociatedFieldsConfig > No access rights to ${this.actionVerb} model: ${resourceName}`);
             return undefined;
         }
 
@@ -467,7 +466,7 @@ export class DataAccessor {
         let sanitizedCriteria: CriteriaWhere = {};
 
         // Retrieve model configuration from adminpanel config
-        const modelName = this.modelResource.model.modelname;
+        const modelName = this.modelResource.name;
         const modelConfig = this.modelResource.config;
 
         // Check if the model has `userAccessRelation` configured
@@ -484,19 +483,19 @@ export class DataAccessor {
                 // Check if the relation points to `User` or `Group` in the model's attributes
                 const modelAttributes = this.modelResource.model.attributes;
                 const relation = modelAttributes[accessField];
-                const relationModel = this.resolveRelationTarget(relation?.model);
-                const relationCollection = this.resolveRelationTarget(relation?.collection);
+                const relationModel = this.resolveRelationTarget(relation?.model, relation?.resourceName);
+                const relationCollection = this.resolveRelationTarget(relation?.collection, relation?.resourceName);
 
-                if (!relation || !['user', 'group'].includes(relationModel ?? relationCollection ?? "")) {
+                if (!relation || !['User', 'Group'].includes(relationModel ?? relationCollection ?? "")) {
                     throw new Error(`Invalid userAccessRelation configuration for model ${modelName}`);
                 }
 
                 // Determine if the current user matches the access criteria
                 if (relationModel) {
-                    if (relationModel === 'user') {
+                    if (relationModel === 'User') {
                         // Filter by the user's ID if related to User as a model
                         sanitizedCriteria = {...sanitizedCriteria, [accessField]: this.user.id};
-                    } else if (relationModel === 'group') {
+                    } else if (relationModel === 'Group') {
                         // Filter by user's group membership if related to Group as a model
                         const userGroups = this.user.groups?.map((group: Group) => group.id);
                         sanitizedCriteria = {...sanitizedCriteria, [accessField]: {in: userGroups}};
@@ -506,10 +505,10 @@ export class DataAccessor {
                 /** Warning: collection relation access is not supported and needs adapter-level processing */
                 if (relationCollection) {
                     Adminizer.log.warn(`Collection relation is not supported and was not tested. You may have an error here: ${JSON.stringify(relation, null, 2)}`)
-                    if (relationCollection === 'user') {
+                    if (relationCollection === 'User') {
                         // Ensure user's ID is part of the associated collection to User
                         sanitizedCriteria = {...sanitizedCriteria, [accessField]: {contains: this.user.id}};
-                    } else if (relationCollection === 'group') {
+                    } else if (relationCollection === 'Group') {
                         // Ensure user's groups intersect with the collection to Group
                         const userGroups = this.user.groups?.map((group: Group) => group.id);
                         sanitizedCriteria = {...sanitizedCriteria, [accessField]: {intersects: userGroups}};
@@ -528,7 +527,7 @@ export class DataAccessor {
                 }
 
                 // Retrieve the intermediate model
-                const intermediateModel = this.adminizer.modelHandler.model.get(intermediateRelation.model.toLowerCase());
+                const intermediateModel = this.getRelationModel(intermediateRelation.model, intermediateRelation.resourceName);
                 if (!intermediateModel) {
                     throw new Error(`Intermediate model "${intermediateRelation.model}" not found`);
                 }
@@ -536,7 +535,7 @@ export class DataAccessor {
                 // Validate the `via` field in the intermediate model
                 const intermediateAttributes = intermediateModel.attributes;
                 const viaRelation = intermediateAttributes[via];
-                if (!viaRelation || this.resolveRelationTarget(viaRelation.model) !== 'user') {
+                if (!viaRelation || this.resolveRelationTarget(viaRelation.model, viaRelation.resourceName) !== 'User') {
                     throw new Error(
                         `Unsupported or invalid via field "${via}" in intermediate model "${intermediateRelation.model}". ` +
                         `Currently, only relations to "User" are supported`
@@ -544,7 +543,10 @@ export class DataAccessor {
                 }
 
                 // Fetch all intermediate records associated with the user
-                const intermediateRecords = await this.accessRelationModel(intermediateRelation.model).find({where: {[via]: this.user.id}});
+                const intermediateRecords = await this.accessRelationModel(
+                    intermediateRelation.model,
+                    intermediateRelation.resourceName
+                ).find({where: {[via]: this.user.id}});
                 const intermediateIds = (intermediateRecords || []).map((r) => r.id);
                 // Filter main model by all matching intermediate record IDs
                 sanitizedCriteria = {...sanitizedCriteria, [field]: {in: intermediateIds}};
@@ -574,13 +576,13 @@ export class DataAccessor {
                 // Check if the relation points to `User` or `Group` in the model's attributes
                 const modelAttributes = this.modelResource.model.attributes;
                 const relation = modelAttributes[accessField];
-                const relationModel = this.resolveRelationTarget(relation?.model);
-                if (relation && ['user', 'group'].includes(relationModel ?? "")) {
-                    if (relationModel === 'user') {
+                const relationModel = this.resolveRelationTarget(relation?.model, relation?.resourceName);
+                if (relation && ['User', 'Group'].includes(relationModel ?? "")) {
+                    if (relationModel === 'User') {
                         if (!this.user.isAdministrator) {
                             updatedRecord[accessField as keyof T] = this.user.id as T[keyof T];
                         }
-                    } else if (relationModel === 'group') {
+                    } else if (relationModel === 'Group') {
                         const userGroups = this.user.groups as Group[] || [];
                         if (userGroups.length === 1) {
                             updatedRecord[accessField as keyof T] = userGroups[0].id as T[keyof T];
@@ -602,10 +604,10 @@ export class DataAccessor {
                     const modelAttributes = this.modelResource.model.attributes;
                     const intermediateRelation = modelAttributes[field];
                     if (!intermediateRelation || !intermediateRelation.model) {
-                        throw new Error(`Invalid intermediate relation configuration for field "${field}" in model ${this.modelResource.model.modelname}`);
+                        throw new Error(`Invalid intermediate relation configuration for field "${field}" in model ${this.modelResource.name}`);
                     }
 
-                    const intermediateModel = this.adminizer.modelHandler.model.get(intermediateRelation.model.toLowerCase());
+                    const intermediateModel = this.getRelationModel(intermediateRelation.model, intermediateRelation.resourceName);
                     if (!intermediateModel) {
                         throw new Error(`Intermediate model "${intermediateRelation.model}" not found`);
                     }
@@ -613,7 +615,7 @@ export class DataAccessor {
                     // Validate the `via` field in the intermediate model
                     const intermediateAttributes = intermediateModel.attributes;
                     const viaRelation = intermediateAttributes[via];
-                    if (!viaRelation || this.resolveRelationTarget(viaRelation.model) !== 'user') {
+                    if (!viaRelation || this.resolveRelationTarget(viaRelation.model, viaRelation.resourceName) !== 'User') {
                         throw new Error(
                             `Unsupported or invalid via field "${via}" in intermediate model "${intermediateRelation.model}". ` +
                             `Currently, only relations to "User" are supported`
@@ -624,7 +626,10 @@ export class DataAccessor {
                     const chosenId = typeof updatedRecord[field as keyof T] === 'object'
                         ? (updatedRecord[field as keyof T] as Record<string, unknown>)[intermediatePk]
                         : updatedRecord[field as keyof T];
-                    const record = await this.accessRelationModel(intermediateRelation.model).findOne({where: {[intermediatePk]: chosenId, [via]: this.user.id}});
+                    const record = await this.accessRelationModel(
+                        intermediateRelation.model,
+                        intermediateRelation.resourceName
+                    ).findOne({where: {[intermediatePk]: chosenId, [via]: this.user.id}});
                     if (!record) {
                         throw new Error(`Access denied: "${field}" does not belong to the current user`);
                     }

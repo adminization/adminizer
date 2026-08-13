@@ -31,10 +31,9 @@ export class FilterService {
             return null;
         }
 
-        // Find config (case-insensitive)
-        const foundKey = Object.keys(models).find(
-            key => key.toLowerCase() === modelName.toLowerCase()
-        );
+        const foundKey = Object.prototype.hasOwnProperty.call(models, modelName)
+            ? modelName
+            : Object.keys(models).find(key => key.toLowerCase() === modelName.toLowerCase());
 
         if (!foundKey) {
             return null;
@@ -46,7 +45,7 @@ export class FilterService {
         }
 
         // Get AbstractModel
-        const model = this.adminizer.modelHandler.model.get(config.model);
+        const model = this.adminizer.modelHandler.getResource(foundKey);
         if (!model) {
             return null;
         }

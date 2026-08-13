@@ -51,11 +51,17 @@ function getDataAccessorInternalModels(
             continue;
         }
 
-        const model = modelHandler.model.get(modelConfig.model ?? modelName);
-        const intermediateModelName = model?.attributes?.[userAccessRelation.field]?.model;
-        if (intermediateModelName) {
-            models.push(modelHandler.resolveModelName(intermediateModelName));
-        }
+		const model = modelHandler.getResource(modelName);
+		const intermediateModelName = model?.attributes?.[userAccessRelation.field]?.model;
+		if (intermediateModelName) {
+			const resourceName = modelHandler.resolveAssociationResource(
+				intermediateModelName,
+				model?.attributes?.[userAccessRelation.field]?.resourceName
+			);
+			if (resourceName) {
+				models.push(resourceName);
+			}
+		}
     }
 
     return Array.from(new Set(models));

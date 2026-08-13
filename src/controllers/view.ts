@@ -38,7 +38,7 @@ export default async function view(req: ReqType, res: ResType) {
         return res.status(500).send({error: 'Internal Server Error'});
     }
 
-    switch (modelResource.config.model) {
+    switch (modelResource.name) {
 
         case 'User':
             let groups: Group[];

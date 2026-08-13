@@ -14,15 +14,12 @@ export function validateSystemModels(adminizer: Adminizer) {
 
 	const systemAdapter = getAdapter(adminizer, defaultOrmAdapter);
 	const bindings = buildSystemModelBindings(systemAdapter);
-	const systemModels = new Set<string>();
+	const systemResourceNames = new Set<string>(SYSTEM_MODEL_CONTRACTS.map((contract) => contract.name));
 
 	for (const contract of SYSTEM_MODEL_CONTRACTS) {
 		const binding = bindings.get(contract.name.toLowerCase()) ?? {
 			model: contract.name,
 		};
-		systemModels.add(contract.name.toLowerCase());
-		systemModels.add(binding.model.toLowerCase());
-
 		const registeredModel = systemAdapter.getModel(binding.model);
 		if (!registeredModel) {
 			throw new Error(
@@ -36,7 +33,11 @@ export function validateSystemModels(adminizer: Adminizer) {
 			resolveRelationTarget: (target) => resolveSystemRelationTarget(target, bindings),
 		});
 		normalizeSystemModelRelations(model, bindings);
-		adminizer.modelHandler.add(contract.name, model, [binding.model]);
+		adminizer.modelHandler.add(contract.name, model, {
+			hostModelName: binding.model,
+			// @deprecated Compatibility lookup for modules that still request UserAP/GroupAP.
+			aliases: [binding.model],
+		});
 	}
 
 	const modelsFromConfig = Object.entries(adminizer.config.models ?? {});
@@ -46,7 +47,10 @@ export function validateSystemModels(adminizer: Adminizer) {
 		const modelName = modelConfig && typeof modelConfig !== "boolean"
 			? modelConfig.model
 			: configName;
-		if (systemModels.has(modelName.toLowerCase())) {
+		// System resources are already registered above. Do not compare host model names
+		// here: a project resource may intentionally map its own Adminizer name to a
+		// host model named "User" or "Group".
+		if (systemResourceNames.has(configName)) {
 			continue;
 		}
 
@@ -59,8 +63,13 @@ export function validateSystemModels(adminizer: Adminizer) {
 			throw new Error(`Bind models > Model not found: ${modelName}`);
 		}
 
-		adminizer.modelHandler.add(modelName, new ormAdapter.Model(modelName, registeredModel));
+		adminizer.modelHandler.add(configName, new ormAdapter.Model(modelName, registeredModel), {
+			hostModelName: modelName,
+			primary: modelConfig && typeof modelConfig !== "boolean" && modelConfig.primary === true,
+		});
 	}
+
+	adminizer.modelHandler.validateHostModelMappings();
 
 	Adminizer.log.info("Models loaded")
 }
@@ -108,6 +117,13 @@ function resolveSystemRelationTarget(
 	target: string,
 	bindings: Map<string, {model: string}>
 ): string {
+	return getSystemRelationResource(target, bindings) ?? target;
+}
+
+function getSystemRelationResource(
+	target: string,
+	bindings: Map<string, {model: string}>
+): string | undefined {
 	const normalizedTarget = target.toLowerCase();
 
 	for (const contract of SYSTEM_MODEL_CONTRACTS) {
@@ -120,7 +136,7 @@ function resolveSystemRelationTarget(
 		}
 	}
 
-	return target;
+	return undefined;
 }
 
 function normalizeSystemModelRelations(
@@ -129,10 +145,18 @@ function normalizeSystemModelRelations(
 ): void {
 	for (const attribute of Object.values(model.attributes)) {
 		if (attribute.model) {
-			attribute.model = resolveSystemRelationTarget(attribute.model, bindings);
+			const resourceName = getSystemRelationResource(attribute.model, bindings);
+			if (resourceName) {
+				attribute.resourceName = resourceName;
+				attribute.model = resourceName;
+			}
 		}
 		if (attribute.collection) {
-			attribute.collection = resolveSystemRelationTarget(attribute.collection, bindings);
+			const resourceName = getSystemRelationResource(attribute.collection, bindings);
+			if (resourceName) {
+				attribute.resourceName = resourceName;
+				attribute.collection = resourceName;
+			}
 		}
 	}
 }

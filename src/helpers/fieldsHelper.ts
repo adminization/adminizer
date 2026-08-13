@@ -58,9 +58,12 @@ export class FieldsHelper {
 				return;
 			}
 
-			const resolvedModelName = req.adminizer.modelHandler.resolveModelName(modelName);
-			let Model = req.adminizer.modelHandler.model.get(resolvedModelName);
-			if (!Model) {
+			const resolvedModelName = req.adminizer.modelHandler.resolveAssociationResource(
+				modelName,
+				fields[key].model.resourceName
+			);
+			let Model = resolvedModelName ? req.adminizer.modelHandler.getResource(resolvedModelName) : undefined;
+			if (!Model || !resolvedModelName) {
 				return;
 			}
 

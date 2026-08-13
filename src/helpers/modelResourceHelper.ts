@@ -28,7 +28,7 @@ export function listModelResources(adminizer: Adminizer): ModelResource[] {
 
     for (const [configName, configValue] of Object.entries(adminizer.config.models ?? {})) {
         const config = normalizeModelConfig(configName, configValue);
-        const model = adminizer.modelHandler.model.get(config.model.toLowerCase());
+        const model = adminizer.modelHandler.getResource(configName);
         if (!model) continue;
 
         resources.push({
@@ -42,9 +42,13 @@ export function listModelResources(adminizer: Adminizer): ModelResource[] {
     return resources;
 }
 
-/** Resolves a resource by its config key or by the underlying model name. */
+/** Resolves a resource by its Adminizer name, then by a uniquely registered host model name. */
 export function resolveModelResource(adminizer: Adminizer, modelName: string): ModelResource | undefined {
-    const loweredName = modelName.trim().toLowerCase();
-    return listModelResources(adminizer).find((resource) =>
-        resource.name.toLowerCase() === loweredName || resource.config?.model?.toLowerCase() === loweredName);
+    const requestedName = modelName.trim();
+    const resourceName = adminizer.modelHandler.getResourceRecord(requestedName)?.name
+        ?? adminizer.modelHandler.resolveResourceByHostModel(requestedName);
+
+    return resourceName
+        ? listModelResources(adminizer).find((resource) => resource.name === resourceName)
+        : undefined;
 }

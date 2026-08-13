@@ -147,6 +147,21 @@ const user = await adminizer.modelHandler
   .findOne({ where: { login: "admin" } });
 ```
 
+When the project maps a physical ORM model to a different Adminizer resource name, pass the Adminizer resource name to `internal(...).get()` and `getResource()`, not the host model name:
+
+```ts
+// Customer is an Adminizer resource mapped to the host ORM model User.
+const customers = await adminizer.modelHandler
+  .internal("my-module")
+  .get("Customer")
+  .find({});
+
+// Preferred when no scoped internal repository is required.
+const customerModel = adminizer.modelHandler.getResource("Customer");
+```
+
+`modelHandler.model.get("UserAP")` is a deprecated compatibility lookup for older system integrations. New code should use canonical resource names with `getResource()` or `internal(...).get()`.
+
 This path is intended for trusted Adminizer subsystems that must bypass `DataAccessor` user filtering. It replaces direct calls to protected adapter methods such as:
 
 ```ts

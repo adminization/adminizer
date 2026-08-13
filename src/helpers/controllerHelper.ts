@@ -1,5 +1,5 @@
 import {ModelResource} from "../interfaces/types";
-import {ActionType, CreateUpdateConfig, ModelConfig} from "../interfaces/adminpanelConfig";
+import {ActionType, AdminpanelConfig, CreateUpdateConfig, ModelConfig} from "../interfaces/adminpanelConfig";
 import {AbstractModel} from "../lib/model/AbstractModel";
 import {Adminizer} from "../lib/Adminizer";
 
@@ -99,25 +99,34 @@ export class ControllerHelper {
      * @param {Request} req
      * @returns {?string}
      */
-        public static findModelResourceName(req: ReqType): string {
-            if (req.params.modelResourceName) {
-                return req.params.modelResourceName;
-            }
-
-            if (req.params.model) {
-                return req.params.model;
-            }
-
-            const urlParts = req.originalUrl.split('/');
-            const modelResourceName = urlParts[3];
-
+    public static findModelResourceName(req: ReqType): string {
             const models = req.adminizer.config.models;
-            if (!models || !Object.keys(models).some(key => key.toLowerCase() === modelResourceName.toLowerCase())) {
-                throw new Error(`Model "${modelResourceName}" not found`);
-            }
+            const requestedName = req.params.modelResourceName
+                ?? req.params.model
+                ?? req.originalUrl.split('/')[3];
 
-            return Object.keys(models).find(key => key.toLowerCase() === modelResourceName.toLowerCase());
+            return this.resolveConfiguredResourceName(models, requestedName);
         }
+
+    private static resolveConfiguredResourceName(models: AdminpanelConfig["models"] | undefined, requestedName: string): string {
+        if (!models || !requestedName) {
+            throw new Error(`Model "${requestedName}" not found`);
+        }
+
+        if (Object.prototype.hasOwnProperty.call(models, requestedName)) {
+            return requestedName;
+        }
+
+        const candidates = Object.keys(models).filter((key) => key.toLowerCase() === requestedName.toLowerCase());
+        if (candidates.length === 1) {
+            return candidates[0];
+        }
+        if (candidates.length > 1) {
+            throw new Error(`Model resource "${requestedName}" is ambiguous: ${candidates.join(", ")}`);
+        }
+
+        throw new Error(`Model "${requestedName}" not found`);
+    }
 
     /**
      * Searches for config from admin panel
@@ -133,16 +142,13 @@ export class ControllerHelper {
                 return null;
             }
 
-            const foundKey = Object.keys(models).find(
-                key => key.toLowerCase() === modelResourceName.toLowerCase()
-            );
-
-            if (!foundKey) {
-                Adminizer.log.error(`No such route exists: ${modelResourceName}`);
+            try {
+                const foundKey = this.resolveConfiguredResourceName(models, modelResourceName);
+                return this._normalizeModelConfig(foundKey, models[foundKey]);
+            } catch (error) {
+                Adminizer.log.error(error);
                 return null;
             }
-
-            return this._normalizeModelConfig(foundKey, models[foundKey]);
         }
     /**
      * Will get action config from configuration file depending to given action
@@ -221,7 +227,7 @@ export class ControllerHelper {
         modelResource.config = this.findModelConfig(req, modelResourceName);
         // Find and add the model itself to the ModelResource
         if (this._isValidModelConfig(modelResource.config)) {
-            modelResource.model = req.adminizer.modelHandler.model.get(modelResource.config.model);
+            modelResource.model = req.adminizer.modelHandler.getResource(modelResourceName);
         }
 
         // Return the completed ModelResource object

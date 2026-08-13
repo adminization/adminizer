@@ -111,7 +111,7 @@ And have a required property `model`.
 module.exports.adminpanel = {
     models: {
 
-        users: { // key. No matter what you will write here. just follow JS rules for objects
+        users: { // canonical Adminizer resource name; it controls URL and permissions
             title: 'Users', // If not defined will be taken from key. Here will be `users`
             model: 'User', // !!! required !!!
         }

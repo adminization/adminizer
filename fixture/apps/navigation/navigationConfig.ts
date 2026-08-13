@@ -11,8 +11,9 @@ export const navigationAppConfig: NavigationAppConfig = {
         },
         {
             title: "Example",
-            model: "Example",
-            urlPath: `${routePrefix}/model/Example/\${data.record.id}`,
+            // `Full` is the Adminizer resource name; its physical ORM model is `example`.
+            model: "Full",
+            urlPath: `${routePrefix}/model/Full/\${data.record.id}`,
         },
     ],
     sections: ["header", "footer"],

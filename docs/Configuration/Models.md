@@ -32,7 +32,90 @@ const adapter = new SequelizeAdapter(sequelize, {
 });
 ```
 
-Adminizer will use `User`, `Group`, and the other canonical names internally, while validating and querying the mapped host ORM models. The same binding also works as a runtime alias, so app code with access to that model can resolve either the canonical name or the mapped host name.
+Adminizer will use `User`, `Group`, and the other canonical names internally, while validating and querying the mapped host ORM models.
+
+## Resource Names and Host Models
+
+The key in `config.models` is the canonical **Adminizer resource name**. It controls the CRUD URL, model configuration, permission tokens, and `DataAccessor` behavior. The `model` property is only the physical ORM host model name.
+
+This lets a project use host models whose names would otherwise conflict with Adminizer system resources:
+
+```ts
+const config = {
+  models: {
+    Customer: {
+      model: "User", // project Waterline/ORM model
+      title: "Customers",
+    },
+    CatalogGroup: {
+      model: "Group", // project Waterline/ORM model
+      title: "Catalog groups",
+    },
+    city: false, // registered for associations but hidden from the CRUD menu
+  },
+};
+```
+
+Together with the system binding above, the resulting mapping is:
+
+| Adminizer resource | Host model | Example URL | Permission token |
+| --- | --- | --- | --- |
+| `User` | `UserAP` | `/model/User` | `read-user-model` |
+| `Group` | `GroupAP` | `/model/Group` | `read-group-model` |
+| `Customer` | `User` | `/model/Customer` | `read-customer-model` |
+| `CatalogGroup` | `Group` | `/model/CatalogGroup` | `read-cataloggroup-model` |
+
+Use the resource name in Adminizer code:
+
+```ts
+const systemUsers = adminizer.modelHandler.getResource("User");
+const customers = adminizer.modelHandler.getResource("Customer");
+```
+
+Use `getByHostModel()` only when adapter metadata supplies a physical ORM model name, such as an association target:
+
+```ts
+const customerModel = adminizer.modelHandler.getByHostModel("User");
+```
+
+Resource names remain case-insensitive for compatibility, so do not register resource names that differ only by letter case.
+
+### Multiple Adminizer Resources for One Host Model
+
+You can expose the same host ORM model through multiple Adminizer resources when they need different fields, filters, URLs, or permissions. Mark exactly one resource as `primary: true`:
+
+```ts
+models: {
+  Customer: {
+    model: "User",
+    primary: true,
+    title: "Customers",
+  },
+  Customer2: {
+    model: "User",
+    title: "Customer audit view",
+    fields: {
+      email: {visible: false},
+    },
+  },
+}
+```
+
+Both resources have independent CRUD URLs and permission tokens. The primary resource is used only when an association identifies its target by the host model name (`User` in this example). Startup fails if a shared host model has no primary resource or more than one primary resource.
+
+### Deprecated Host-name Lookup
+
+For existing integrations, a mapped system host name such as `UserAP` or `GroupAP` still resolves through `modelHandler.model.get()`. This is a deprecated compatibility alias:
+
+```ts
+// Deprecated: compatibility only.
+adminizer.modelHandler.model.get("UserAP");
+
+// Preferred canonical API.
+adminizer.modelHandler.getResource("User");
+```
+
+Do not use host model names as aliases for project resources. In the example above, `modelHandler.model.get("User")` refers to the canonical system resource; use `getResource("Customer")` for the project model.
 
 If your host ORM models already use canonical names, no mapping is required:
 

@@ -121,7 +121,7 @@ export default function inertiaAddHelper(req: ReqType, modelResource: ModelResou
         const controlContext = `${modelResource.name}.${key}`
 
         //@ts-ignore TODO: fix field type
-        if (modelResource.config.model && req.adminizer.configHelper.isId(field, modelResource.config.model)) {
+        if (req.adminizer.configHelper.isId(field, modelResource.name)) {
             disabled = true
         }
 

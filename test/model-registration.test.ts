@@ -11,6 +11,7 @@ import {
     SYSTEM_MODEL_CONTRACTS,
     validateSystemModelContract,
 } from "../src/system/systemModelContracts";
+import {validateSystemModels} from "../src/system/validateSystemModels";
 import {registerSequelizeSystemModels} from "../fixture/models/sequelize/systemModels";
 import {typeOrmSystemModels} from "../fixture/models/typeorm/systemModels";
 import {
@@ -65,6 +66,43 @@ describe("model registration ownership", () => {
                 }
             );
         }
+    });
+
+    it("registers project aliases for host User and Group without replacing system resources", () => {
+        const orm = createSequelize();
+        registerSequelizeSystemModels(orm);
+        const projectUser = orm.define("User", {
+            id: {type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true},
+            email: DataTypes.STRING,
+        });
+        const projectGroup = orm.define("Group", {
+            id: {type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true},
+            name: DataTypes.STRING,
+        });
+        const adapter = new SequelizeAdapter(orm, {systemModels: fixtureSystemModelBindings});
+        const adminizer = new Adminizer([adapter]);
+        adminizer.config = {
+            system: {defaultORM: "sequelize"},
+            models: {
+                Customer: {model: "User", title: "Customers", primary: true},
+                Customer2: {model: "User", title: "Customers (alternate view)"},
+                CatalogGroup: {model: "Group", title: "Catalog groups"},
+            },
+        } as any;
+
+        validateSystemModels(adminizer);
+
+        expect(adminizer.modelHandler.getResource("User")?.modelname).toBe("User");
+        expect(adminizer.modelHandler.getResource("Customer")?.modelname).toBe("User");
+        expect(adminizer.modelHandler.getResource("Customer2")?.modelname).toBe("User");
+        expect(adminizer.modelHandler.getResource("Group")?.modelname).toBe("Group");
+        expect(adminizer.modelHandler.getResource("CatalogGroup")?.modelname).toBe("Group");
+        expect(adminizer.modelHandler.getResourceRecord("User")?.hostModelName).toBe("UserAP");
+        expect(adminizer.modelHandler.getResourceRecord("Customer")?.hostModelName).toBe("User");
+        expect(adminizer.modelHandler.getByHostModel("UserAP")).toBe(adminizer.modelHandler.getResource("User"));
+        expect(adminizer.modelHandler.getByHostModel("User")).toBe(adminizer.modelHandler.getResource("Customer"));
+        expect(projectUser).toBeDefined();
+        expect(projectGroup).toBeDefined();
     });
 
     it("maps Sequelize hasOne associations when the foreign key belongs to the target model", () => {

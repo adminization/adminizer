@@ -43,23 +43,17 @@ export class ConfigHelper {
 			throw new Error("Model name is not defined")
 		}
 
-		let config = this.adminizer.config;
-		let modelConfig: ModelConfig;
-		Object.keys(config.models).forEach((modelResourceName) => {
-			const model = config.models[modelResourceName];
-			if (typeof model !== "boolean") {
-				if (model.model === modelName.toLowerCase()) {
-					if (typeof config.models[modelResourceName] !== "boolean") {
-						modelConfig = config.models[modelResourceName] as ModelConfig
-					}
-				}
-			}
-		})
+		const resourceName = this.adminizer.modelHandler.getResourceRecord(modelName)?.name
+			?? this.adminizer.modelHandler.resolveResourceByHostModel(modelName);
+		const modelConfig = resourceName && typeof this.adminizer.config.models[resourceName] !== "boolean"
+			? this.adminizer.config.models[resourceName] as ModelConfig
+			: undefined;
+		const model = resourceName ? this.adminizer.modelHandler.getResource(resourceName) : undefined;
 
 		if (modelConfig && modelConfig.identifierField) {
 			return modelConfig.identifierField;
-		} else if (this.adminizer.modelHandler.model.get(modelName.toLowerCase()).primaryKey) {
-			return this.adminizer.modelHandler.model.get(modelName.toLowerCase()).primaryKey
+		} else if (model?.primaryKey) {
+			return model.primaryKey
 		} else {
 			throw new Error("ConfigHelper > Identifier field was not found")
 		}
@@ -108,14 +102,18 @@ export class ConfigHelper {
 			try {
 				const associatedModelName =
 					config.type === "association"
-						? modelField.model?.toLowerCase()
-						: modelField.collection?.toLowerCase();
+						? modelField.model
+						: modelField.collection;
 
 				if (!associatedModelName) {
 					throw new Error(`No model/collection defined for association field: ${key}`);
 				}
 
-				const associatedModel = adminizer.modelHandler.model.get(associatedModelName);
+				const resourceName = adminizer.modelHandler.resolveAssociationResource(
+					associatedModelName,
+					modelField.resourceName
+				);
+				const associatedModel = resourceName ? adminizer.modelHandler.getResource(resourceName) : undefined;
 				if (!associatedModel) {
 					throw new Error(`Can not add relations to unloaded models; Config: ${JSON.stringify(config, null, 2)}`)
 				}

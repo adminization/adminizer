@@ -19,6 +19,8 @@ export interface Attribute {
     columnName?: string;
     model?: string;
     collection?: string;
+    /** Canonical Adminizer resource target for a system-model association. */
+    resourceName?: string;
     via?: string;
     allowNull?: boolean;
     /**

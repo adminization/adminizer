@@ -9,7 +9,7 @@ export class NotificationController {
 
         if (req.method.toUpperCase() === 'POST') {
             const {s, notificationClass} = req.body;
-            const hasPermission = req.adminizer.accessRightsHelper.hasPermission(
+            const hasPermission = await req.adminizer.accessRightsHelper.hasPermission(
                 `notification-${notificationClass}`,
                 req.user
             );
@@ -55,7 +55,7 @@ export class NotificationController {
         let activeServices = []
 
         for (const service of services) {
-            const hasPermission = req.adminizer.accessRightsHelper.hasPermission(
+            const hasPermission = await req.adminizer.accessRightsHelper.hasPermission(
                 `notification-${service.notificationClass}`,
                 req.user
             );
@@ -90,13 +90,13 @@ export class NotificationController {
         const clientId = `user-${req.user?.id}-${Date.now()}`;
 
         // Function for sending events to the client
-        const sendEvent = (event: any) => {
+        const sendEvent = async (event: any) => {
             // Filtering notifications by user rights
             if (event.type === 'notification') {
                 const notificationClass = event.notificationClass;
 
                 // UNIFIED rights check via AccessRightsHelper
-                const hasPermission = req.adminizer.accessRightsHelper.hasPermission(
+                const hasPermission = await req.adminizer.accessRightsHelper.hasPermission(
                     `notification-${notificationClass}`,
                     req.user
                 );
@@ -119,12 +119,13 @@ export class NotificationController {
         // We connect the client to all services
         const services = req.adminizer.notificationHandler.getAllServices();
 
-        const allowedServices = services.filter(service =>
-            req.adminizer.accessRightsHelper.hasPermission(
+        const allowedServices = (await Promise.all(services.map(async (service) => ({
+            service,
+            allowed: await req.adminizer.accessRightsHelper.hasPermission(
                 `notification-${service.notificationClass}`,
-                req.user
-            )
-        );
+                req.user,
+            ),
+        })))).filter(({allowed}) => allowed).map(({service}) => service);
 
         allowedServices.forEach(service => {
             service.addClient(clientId, sendEvent, req.user);
@@ -139,7 +140,7 @@ export class NotificationController {
             // }
         });
 
-        sendEvent({
+        await sendEvent({
             type: 'connected',
             data: {
                 message: 'Connected to unified notification stream',
@@ -188,7 +189,7 @@ export class NotificationController {
             const {limit = 20, skip = 0, unreadOnly = false} = req.query;
 
             // Checking access rights
-            const hasPermission = req.adminizer.accessRightsHelper.hasPermission(
+            const hasPermission = await req.adminizer.accessRightsHelper.hasPermission(
                 `notification-${notificationClass}`,
                 req.user
             );
@@ -227,12 +228,13 @@ export class NotificationController {
         try {
             // Filtering services by access rights
             const services = req.adminizer.notificationHandler.getAllServices();
-            const allowedServices = services.filter(service =>
-                req.adminizer.accessRightsHelper.hasPermission(
+            const allowedServices = (await Promise.all(services.map(async (service) => ({
+                service,
+                allowed: await req.adminizer.accessRightsHelper.hasPermission(
                     `notification-${service.notificationClass}`,
-                    req.user
-                )
-            );
+                    req.user,
+                ),
+            })))).filter(({allowed}) => allowed).map(({service}) => service);
 
             const allNotifications: INotification[] = [];
 

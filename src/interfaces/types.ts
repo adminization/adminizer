@@ -5,6 +5,7 @@ import {Flash} from '../lib/inertia/flash';
 import {Adminizer} from "../lib/Adminizer";
 import multer from "multer";
 import {I18n} from "../lib/I18n";
+import type {User} from "../models/User";
 
 export interface ModelResource {
     name: string
@@ -18,7 +19,28 @@ export interface AccessRightsToken {
     description: string
     department: string
     id: string
+    getOptions?: (user: User) => Promise<PermissionOption[]>
+    check?: (user: User, context?: PermissionContext) => Promise<boolean>
 }
+
+export interface PermissionOption {
+    id: string
+    name: string
+    description?: string
+}
+
+export interface PermissionContext {
+    rights?: string[]
+    [key: string]: unknown
+}
+
+/** Serialized as a JSON string in Group.tokens for a contextual token. */
+export interface GroupPermissionGrant {
+    tokenId: string
+    rights: string[]
+}
+
+export type PermissionGrant = string | GroupPermissionGrant
 
 export interface PropsField {
     label: string;

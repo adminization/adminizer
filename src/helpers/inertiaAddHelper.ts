@@ -71,7 +71,7 @@ interface FieldProps extends Record<string | number | symbol, unknown> {
     model: string
 }
 
-export default function inertiaAddHelper(req: ReqType, modelResource: ModelResource, fields: Fields, record?: Record<string, string | boolean | number | string[]>, view: boolean = false) {
+export default async function inertiaAddHelper(req: ReqType, modelResource: ModelResource, fields: Fields, record?: Record<string, string | boolean | number | string[]>, view: boolean = false) {
     const actionType = 'add';
     let props: FieldProps = {
         edit: !!record,
@@ -93,7 +93,7 @@ export default function inertiaAddHelper(req: ReqType, modelResource: ModelResou
         postLink: record ? `${modelResource.uri}/edit/${record.id}` : `${modelResource.uri}/add`,
         model: modelResource.name.toLocaleLowerCase()
     }
-    props.actions = inertiaActionsHelper(actionType, modelResource, req)
+    props.actions = await inertiaActionsHelper(actionType, modelResource, req)
 
     const config = req.adminizer.configHelper.getConfig();
     for (const key of Object.keys(fields)) {
@@ -183,7 +183,7 @@ export default function inertiaAddHelper(req: ReqType, modelResource: ModelResou
                 ? req.adminizer.modelHandler.resolveModelName(rawRelatedModel)
                 : undefined
             if (relatedModel && req.user) {
-                canCreateRelated = req.adminizer.accessRightsHelper.hasPermission(`create-${relatedModel}-model`, req.user)
+                canCreateRelated = await req.adminizer.accessRightsHelper.hasPermission(`create-${relatedModel}-model`, req.user)
             } else if (relatedModel && !req.adminizer.config.auth?.enable) {
                 canCreateRelated = true
             }

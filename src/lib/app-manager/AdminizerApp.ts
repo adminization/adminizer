@@ -1,5 +1,5 @@
 import type {ActionType, AdminpanelConfig, AdminpanelIcon, ModelConfig} from "../../interfaces/adminpanelConfig";
-import type {AccessRightsToken, INotification, ModelResource} from "../../interfaces/types";
+import type {AccessRightsToken, INotification, ModelResource, PermissionContext} from "../../interfaces/types";
 import type {AbstractCatalog} from "../catalog/AbstractCatalog";
 import type {CatalogTemplateComponentResource} from "../catalog/CatalogTemplateComponentHandler";
 import type {AppModelAccess} from "../model/ModelHandler";
@@ -145,8 +145,14 @@ export type AppWidgetResource =
 export interface AppRuntime {
     models: AppModelAccess;
     config: AppRuntimeConfig;
+    accessRights: AppRuntimeAccessRights;
     notifications: AppRuntimeNotifications;
     apps: AppRuntimeApps;
+}
+
+export interface AppRuntimeAccessRights {
+    hasPermission(token: string, user: User, context?: PermissionContext): Promise<boolean>;
+    getPermissionRights(token: string, user: User): string[] | null;
 }
 
 export interface AppRuntimeConfig {
@@ -199,7 +205,7 @@ export interface AppAiAssistantContext {
     routePrefix: string;
     getModelResources(): ModelResource[];
     resolveModelResource(modelName: string): ModelResource | undefined;
-    hasPermission(token: string, user: User): boolean;
+    hasPermission(token: string, user: User): boolean | Promise<boolean>;
     createDataAccessor(modelResource: ModelResource, user: User, action: ActionType): DataAccessor;
     /** UI tools available to this user, including methods registered by apps. */
     getUiMethods(user: User): AiAssistantUiMethod[];

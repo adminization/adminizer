@@ -37,7 +37,7 @@ export async function widgetFilterInfoController(req: ReqType, res: ResType) {
         return res.status(404).send({ error: req.i18n.__("Not found") });
     }
 
-    if (!req.adminizer.accessRightsHelper.hasPermission(`read-${filter.modelName}-model`, user)) {
+    if (!await req.adminizer.accessRightsHelper.hasPermission(`read-${filter.modelName}-model`, user)) {
         return res.sendStatus(403);
     }
 

@@ -11,6 +11,7 @@ import { getSavedFilters, saveFilter, deleteFilter, applyTemporaryFilter, getTem
 import { getAllUserFilters } from "../controllers/filter-fields/getAllUserFilters";
 import { getModelColumns, updateFilterColumns } from "../controllers/filter-fields/columns";
 import { getAllGroups } from "../controllers/filter-fields/groups";
+import { getPermissionOptions } from "../controllers/access-rights/permissionOptions";
 import { ckEditorUpload } from "../controllers/ckeditorUpload";
 import _exportData from "../controllers/exportData";
 import _feed from "../controllers/feed";
@@ -316,6 +317,11 @@ export default class Router {
         /**
          * List of records
          */
+        adminizer.app.get(
+            `${adminizer.config.routePrefix}/access-rights/permission-options`,
+            withPolicies(getPermissionOptions, requireAuthAPI())
+        );
+
         adminizer.app.all(
             resourceRoute(),
             withPolicies(_list, requireAuthUI(), requirePermission(modelReadToken, { mode: "ui" }))

@@ -14,9 +14,9 @@ const DEFAULT_RECORDS = 10;
 
 type ModelPermissions = {
     resource: ModelResource;
-    canRead: boolean;
-    canUpdate: boolean;
-    canCreate: boolean;
+    canRead: boolean | Promise<boolean>;
+    canUpdate: boolean | Promise<boolean>;
+    canCreate: boolean | Promise<boolean>;
 };
 
 /** What the current user may do with every configured model resource. */

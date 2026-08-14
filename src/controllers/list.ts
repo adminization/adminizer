@@ -21,7 +21,7 @@ export default async function list(req: ReqType, res: ResType) {
 
     let dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "list");
     let fields = dataAccessor.getFieldsConfig();
-    const header = inertiaListHelper(modelResource, req, fields);
+    const header = await inertiaListHelper(modelResource, req, fields);
     const i18nPage = getUiTranslations(req, FILTER_UI_TRANSLATION_KEYS);
 
     // Parse pagination

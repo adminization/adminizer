@@ -109,7 +109,7 @@ export class AiAssistantAgentSkillHandler {
         };
     }
 
-    private isPermitted(skill: RegisteredSkill, user: User): boolean {
+    private isPermitted(skill: RegisteredSkill, user: User): boolean | Promise<boolean> {
         return !skill.accessRightsToken || this.adminizer.accessRightsHelper.hasPermission(skill.accessRightsToken, user);
     }
 

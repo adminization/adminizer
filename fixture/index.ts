@@ -60,6 +60,7 @@ import {ReactQuillApp} from "./apps/quill-editor/ReactQuill";
 import {WidgetsApp} from "./apps/widgets/WidgetsApp";
 import {HandsontableTestApp} from "./apps/handsontable-test/HandsontableTestApp";
 import {AiAssistantApp} from "./apps/ai-assistant/AiAssistantApp";
+import {RecordScopeTestApp} from "./apps/record-scope-test/RecordScopeTestApp";
 
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
@@ -254,6 +255,8 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
         // add HandsontableTest -- production JSComponents smoke test
         await adminizer.appManager.enable(new HandsontableTestApp());
+
+        await adminizer.appManager.enable(new RecordScopeTestApp());
 
         const aiAssistantApp = new AiAssistantApp({
             defaultModel: adminizer.config.aiAssistant?.defaultModel,

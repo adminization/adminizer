@@ -1,5 +1,5 @@
 import {ControllerHelper} from "../helpers/controllerHelper";
-import {AccessRightsToken} from "../interfaces/types";
+import {AccessRightsToken, PermissionGrant} from "../interfaces/types";
 import {Adminizer} from "../lib/Adminizer";
 import {inertiaGroupHelper} from "../helpers/inertiaGroupHelper";
 import { User } from "../models/User";
@@ -47,7 +47,7 @@ export default async function editGroup(req: ReqType, res: ResType) {
         let allTokens = req.adminizer.accessRightsHelper.getTokens();
 
         let usersInThisGroup = [];
-        let tokensOfThisGroup = [];
+        let tokensOfThisGroup: PermissionGrant[] = [];
         for (let key in req.body) {
             if (key.startsWith("user-checkbox-") && req.body[key] === true) {
                 for (let user of users) {
@@ -57,13 +57,24 @@ export default async function editGroup(req: ReqType, res: ResType) {
                 }
             }
 
-            if (key.startsWith("token-checkbox-") && req.body[key] === true) {
-                for (let token of allTokens) {
-                    if (token.id == key.slice(15)) {
-                        tokensOfThisGroup.push(token.id)
-                    }
-                }
+        }
+
+        for (const token of allTokens) {
+            if (req.body[`token-checkbox-${token.id}`] !== true) continue;
+
+            if (!token.getOptions) {
+                tokensOfThisGroup.push(token.id);
+                continue;
             }
+
+            const submittedRights = req.body[`token-record-rights-${token.id}`];
+            const rights = Array.isArray(submittedRights)
+                ? Array.from(new Set(submittedRights.map(String)))
+                : [];
+            tokensOfThisGroup.push({
+                tokenId: token.id,
+                rights,
+            });
         }
 
         let updatedGroup: Group

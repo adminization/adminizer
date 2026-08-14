@@ -30,7 +30,7 @@ interface listProps extends Record<string | number | symbol, unknown> {
     pageSizeOptions: number[]
 }
 
-export function inertiaListHelper(modelResource: ModelResource, req: ReqType, fields: Fields, activeFilterName?: string) {
+export async function inertiaListHelper(modelResource: ModelResource, req: ReqType, fields: Fields, activeFilterName?: string) {
     const actionType = 'list';
 
     // Check if filters are enabled for this model
@@ -65,25 +65,24 @@ export function inertiaListHelper(modelResource: ModelResource, req: ReqType, fi
         pageSizeOptions: [5, 20, 50],
     } as listProps
 
-    if (modelResource.config.add && req.adminizer.accessRightsHelper.hasPermission(`create-${modelResource.name}-model`, req.user, `CRUD create on model "${modelResource.name}"`)) {
+    if (modelResource.config.add && await req.adminizer.accessRightsHelper.hasPermission(`create-${modelResource.name}-model`, req.user)) {
         props.crudActions.createTitle = req.i18n.__('create')
     }
-    if (modelResource.config.edit && req.adminizer.accessRightsHelper.hasPermission(`update-${modelResource.name}-model`, req.user, `CRUD update on model "${modelResource.name}"`)) {
+    if (modelResource.config.edit && await req.adminizer.accessRightsHelper.hasPermission(`update-${modelResource.name}-model`, req.user)) {
         props.crudActions.editTitle = req.i18n.__('Edit')
     }
-    if (modelResource.config.view && req.adminizer.accessRightsHelper.hasPermission(`read-${modelResource.name}-model`, req.user, `CRUD read on model "${modelResource.name}"`)) {
+    if (modelResource.config.view && await req.adminizer.accessRightsHelper.hasPermission(`read-${modelResource.name}-model`, req.user)) {
         props.crudActions.viewsTitle = req.i18n.__('View')
     }
-    if (modelResource.config.remove && req.adminizer.accessRightsHelper.hasPermission(`delete-${modelResource.name}-model`, req.user, `CRUD delete on model "${modelResource.name}"`)) {
+    if (modelResource.config.remove && await req.adminizer.accessRightsHelper.hasPermission(`delete-${modelResource.name}-model`, req.user)) {
         props.crudActions.deleteTitle = req.i18n.__('Delete')
     }
 
-    props.actions = inertiaActionsHelper(actionType, modelResource, req)
+    props.actions = await inertiaActionsHelper(actionType, modelResource, req)
 
     if (req.adminizer.menuHelper.hasInlineActions(modelResource.config, 'list')) {
         for (const inlineAction of req.adminizer.menuHelper.getInlineActions(modelResource.config, 'list')) {
-            const context = `inline action "${inlineAction.title}" (${inlineAction.id}) on model "${modelResource.name}"`;
-            if (req.adminizer.accessRightsHelper.hasPermission(inlineAction.accessRightsToken, req.user, context)) {
+            if (await req.adminizer.accessRightsHelper.hasPermission(inlineAction.accessRightsToken, req.user)) {
                 props.inlineActions.push({
                     icon: inlineAction.icon,
                     id: inlineAction.id,

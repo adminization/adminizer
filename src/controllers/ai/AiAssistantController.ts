@@ -12,11 +12,10 @@ export class AiAssistantController {
             return res.json([]);
         }
 
-        const models = handler
-            .getModels()
-            .filter((model) =>
-                req.adminizer.accessRightsHelper.hasPermission(`ai-assistant-${model.id}`, req.user),
-            );
+        const models = (await Promise.all(handler.getModels().map(async (model) => ({
+            model,
+            allowed: await req.adminizer.accessRightsHelper.hasPermission(`ai-assistant-${model.id}`, req.user),
+        })))).filter(({allowed}) => allowed).map(({model}) => model);
 
         return res.json(models);
     }

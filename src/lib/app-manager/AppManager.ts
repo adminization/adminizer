@@ -619,6 +619,12 @@ export class AppManager {
                     return modelKey ? models[modelKey] : undefined;
                 },
             },
+            accessRights: {
+                hasPermission: async (token, user, context) =>
+                    await this.adminizer.accessRightsHelper.hasPermission(token, user, context),
+                getPermissionRights: (token, user) =>
+                    this.adminizer.accessRightsHelper.getPermissionRights(token, user),
+            },
             notifications: {
                 send: (notification) => this.adminizer.sendNotification(notification),
             },

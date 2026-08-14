@@ -165,7 +165,7 @@ export default async function edit(req: ReqType, res: ResType) {
             })
         }
     }
-    const props = inertiaAddHelper(req, modelResource, fields, record)
+    const props = await inertiaAddHelper(req, modelResource, fields, record)
     if (req.query?.without_layout) {
         return res.json({
             props: props

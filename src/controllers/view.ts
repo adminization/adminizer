@@ -96,7 +96,7 @@ export default async function view(req: ReqType, res: ResType) {
                     })
                 }
             }
-            const props = inertiaAddHelper(req, modelResource, fields, record, true)
+    const props = await inertiaAddHelper(req, modelResource, fields, record, true)
             return req.Inertia.render({
                 component: 'add',
                 props: props

@@ -1,8 +1,25 @@
 import {User} from "../models/User";
-import {AccessRightsToken} from "../interfaces/types";
+import {AccessRightsToken, GroupPermissionGrant, PermissionContext} from "../interfaces/types";
 import {Adminizer} from "../lib/Adminizer";
 import {Group} from "../models/Group";
-import {bool} from "sharp";
+
+export function parseGroupPermissionGrant(value: unknown): GroupPermissionGrant | null {
+    if (
+        !value ||
+        typeof value !== "object" ||
+        typeof (value as Partial<GroupPermissionGrant>).tokenId !== "string" ||
+        !Array.isArray((value as Partial<GroupPermissionGrant>).rights) ||
+        !(value as Partial<GroupPermissionGrant>).rights!.every((right) => typeof right === "string" || typeof right === "number")
+    ) {
+        return null;
+    }
+
+    const parsed = value as Partial<GroupPermissionGrant>;
+    return {
+        tokenId: parsed.tokenId!.toLowerCase(),
+        rights: Array.from(new Set(parsed.rights!.map(String))),
+    };
+}
 
 export class AccessRightsHelper {
 
@@ -17,6 +34,12 @@ export class AccessRightsHelper {
         accessRightsToken.id = accessRightsToken.id.toLowerCase()
         if (!accessRightsToken.id || !accessRightsToken.name || !accessRightsToken.description || !accessRightsToken.department) {
             throw new Error("Adminpanel > Can not register token: Missed one or more required parameters");
+        }
+        if (accessRightsToken.getOptions && typeof accessRightsToken.getOptions !== "function") {
+            throw new Error("Adminpanel > Can not register token: getOptions must be a function");
+        }
+        if (accessRightsToken.check && typeof accessRightsToken.check !== "function") {
+            throw new Error("Adminpanel > Can not register token: check must be a function");
         }
 
         for (let i = 0; i < this._tokens.length; i++) {
@@ -42,6 +65,11 @@ export class AccessRightsHelper {
     public hasToken(tokenId: string): boolean {
         const normalizedTokenId = tokenId.toLowerCase();
         return this._tokens.some((token) => token.id === normalizedTokenId);
+    }
+
+    public getToken(tokenId: string): AccessRightsToken | undefined {
+        const normalizedTokenId = tokenId.toLowerCase();
+        return this._tokens.find((token) => token.id === normalizedTokenId);
     }
 
     public registerTokens(accessRightsTokens: AccessRightsToken[]): void {
@@ -82,37 +110,93 @@ export class AccessRightsHelper {
             return true;
         }
 
-        return tokens.some((token) => this.hasPermission(token, user));
+        return tokens.some((token) => Boolean(this.hasPermission(token, user)));
     }
 
-    public hasPermission(tokenId: string | undefined, user: User, context?: string): boolean {
-        if (!this.adminizer.config.auth.enable) {
+    public hasPermission(
+        tokenId: string | undefined,
+        user: User,
+        context?: PermissionContext,
+    ): boolean | Promise<boolean> {
+        const token = this.getRegisteredToken(tokenId);
+        if (!token) {
+            return false;
+        }
+        if (!this.hasAssignedPermission(token.id, user)) {
+            return false;
+        }
+
+        if (!token.check) {
             return true;
+        }
+
+        return this.runTokenCheck(token, user, context ?? {});
+    }
+
+    /** Returns trusted option IDs granted by all groups for a contextual token. */
+    public getPermissionRights(tokenId: string | undefined, user: User): string[] | null {
+        if (!this.adminizer.config.auth.enable) {
+            return null;
         }
 
         if (user.isAdministrator) {
-            return true;
+            return null;
         }
 
-        if (!tokenId) {
-            Adminizer.log.warn(
-                `AccessRightsHelper > hasPermission: missing accessRightsToken${context ? ` [${context}]` : ''}`
-            )
-            return false
-        }
-
-        tokenId = tokenId.toLowerCase()
-        const tokenIsValid = this._tokens.some((token) => token.id === tokenId);
-
-        if (!tokenIsValid) {
-            Adminizer.log.error("Adminpanel > Token is not valid", tokenId, user.login);
-            return false;
+        const token = this.getRegisteredToken(tokenId);
+        if (!token) {
+            return [];
         }
         if (!user.groups) {
-            Adminizer.log.error('User has no groups')
-            return false
+            Adminizer.log.error('User has no groups');
+            return [];
         }
-        return user.groups.some((group: Group) => group.tokens?.includes(tokenId));
+
+        const rights = user.groups.flatMap((group: Group) => group.tokens ?? [])
+            .map(parseGroupPermissionGrant)
+            .filter((grant): grant is GroupPermissionGrant =>
+                grant?.tokenId === token.id
+            )
+            .flatMap((grant) => grant.rights);
+
+        return Array.from(new Set(rights));
+    }
+
+    private getRegisteredToken(tokenId: string | undefined): AccessRightsToken | undefined {
+        if (!tokenId) {
+            Adminizer.log.warn("AccessRightsHelper > hasPermission: missing accessRightsToken");
+            return undefined;
+        }
+
+        const token = this.getToken(tokenId);
+        if (!token) {
+            Adminizer.log.error("Adminpanel > Token is not valid", tokenId);
+        }
+        return token;
+    }
+
+    private hasAssignedPermission(tokenId: string, user: User): boolean {
+        if (!this.adminizer.config.auth.enable || user.isAdministrator) {
+            return true;
+        }
+        if (!user.groups) {
+            Adminizer.log.error("User has no groups");
+            return false;
+        }
+
+        return user.groups.some((group: Group) => group.tokens?.some((groupToken) =>
+            groupToken === tokenId || parseGroupPermissionGrant(groupToken)?.tokenId === tokenId
+        ));
+    }
+
+    private async runTokenCheck(token: AccessRightsToken, user: User, context: PermissionContext): Promise<boolean> {
+        try {
+            const rights = this.getPermissionRights(token.id, user) ?? [];
+            return await token.check!(user, {...context, rights});
+        } catch (error) {
+            Adminizer.log.error("AccessRightsHelper > token check failed", token.id, error);
+            return false;
+        }
     }
 }
 

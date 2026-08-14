@@ -7,14 +7,14 @@ import { HISTORY_UI_TRANSLATION_KEYS } from "../../lib/ui-i18n/uiTranslationKeys
 export class HistoryController {
 
     static async index(req: ReqType, res: ResType): Promise<any> {
-        if (!HistoryController.checkHistoryPermission(req, res)) return
+        if (!await HistoryController.checkHistoryPermission(req, res)) return
         const adapter = HistoryController.getAdapter(req);
 
         if (req.method.toUpperCase() === 'GET') {
             const rawModels = adapter.getModels(req.user);
             let users: User[] = []
 
-            const accessToUsersHistory = req.adminizer.accessRightsHelper.enoughPermissions([
+            const accessToUsersHistory = await req.adminizer.accessRightsHelper.enoughPermissions([
                 `users-history-${adapter.id}`
             ], req.user);
 
@@ -82,7 +82,7 @@ export class HistoryController {
 
 
     static async getAllModelHistory(req: ReqType, res: ResType): Promise<any> {
-        if (!HistoryController.checkHistoryPermission(req, res)) return
+        if (!await HistoryController.checkHistoryPermission(req, res)) return
 
         const { modelId, modelName } = req.body;
 
@@ -105,7 +105,7 @@ export class HistoryController {
     }
 
     static async getModelFieldsHistory(req: ReqType, res: ResType): Promise<any> {
-        if (!HistoryController.checkHistoryPermission(req, res)) return
+        if (!await HistoryController.checkHistoryPermission(req, res)) return
 
         const { historyId } = req.body;
 
@@ -132,13 +132,13 @@ export class HistoryController {
         return req.adminizer.historyHandler.get(adapter);
     }
 
-    private static checkHistoryPermission(req: ReqType, res: ResType): boolean {
+    private static async checkHistoryPermission(req: ReqType, res: ResType): Promise<boolean> {
         if (!req.adminizer?.historyHandler) {
             res.status(401).json({ error: 'History system not initialized' });
             return false
         }
 
-        const hasPermission = req.adminizer.accessRightsHelper.hasPermission(
+        const hasPermission = await req.adminizer.accessRightsHelper.hasPermission(
             `history-${req.adminizer.config.history?.adapter ?? 'default'}`,
             req.user
         );

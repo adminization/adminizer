@@ -120,7 +120,7 @@ export default async function add(req: ReqType, res: ResType) {
             data = reqData;
         }
     }
-    const props = inertiaAddHelper(req, modelResource, fields)
+    const props = await inertiaAddHelper(req, modelResource, fields)
 
     if (req.query?.without_layout) {
         return res.json({

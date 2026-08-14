@@ -33,7 +33,7 @@ function resolveToken(token: PermissionResolver, req: ReqType): string | undefin
 }
 
 export function requireAuthEnabled(): MiddlewareType {
-    return (req, res, next) => {
+    return async (req, res, next) => {
         if (!req.adminizer.config.auth.enable) {
             return res.status(403).json({ error: "Auth is disabled" });
         }
@@ -42,7 +42,7 @@ export function requireAuthEnabled(): MiddlewareType {
 }
 
 export function requireAuthUI(): MiddlewareType {
-    return (req, res, next) => {
+    return async (req, res, next) => {
         if (req.adminizer.config.auth.enable && !req.user) {
             unauthorized(req, res, "ui");
             return;
@@ -89,7 +89,7 @@ export function requirePermission(
 ): MiddlewareType {
     const mode = options.mode || "api";
 
-    return (req, res, next) => {
+    return async (req, res, next) => {
         if (!req.adminizer.config.auth.enable) {
             return next();
         }
@@ -101,7 +101,7 @@ export function requirePermission(
 
         const tokenId = resolveToken(token, req);      
           
-        const hasPermission = req.adminizer.accessRightsHelper.hasPermission(tokenId, req.user);
+        const hasPermission = await req.adminizer.accessRightsHelper.hasPermission(tokenId, req.user);
         
         if (!hasPermission) {
             forbidden(req, res, mode);
@@ -118,7 +118,7 @@ export function requireAnyPermission(
 ): MiddlewareType {
     const mode = options.mode || "api";
 
-    return (req, res, next) => {
+    return async (req, res, next) => {
         if (!req.adminizer.config.auth.enable) {
             return next();
         }
@@ -132,7 +132,7 @@ export function requireAnyPermission(
             .map((token) => resolveToken(token, req))
             .filter((token): token is string => Boolean(token));
 
-        const hasPermission = req.adminizer.accessRightsHelper.enoughPermissions(tokenIds, req.user);
+        const hasPermission = await req.adminizer.accessRightsHelper.enoughPermissions(tokenIds, req.user);
         if (!hasPermission) {
             forbidden(req, res, mode);
             return;

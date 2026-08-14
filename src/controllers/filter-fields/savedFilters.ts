@@ -155,7 +155,7 @@ export async function saveFilter(req: ReqType, res: ResType) {
     // Determine visibility and groupIds
     const isAdmin = req.user?.isAdministrator === true;
     const canManageGroupVisibility =
-        isAdmin || req.adminizer.accessRightsHelper.hasPermission(GROUP_FILTER_VISIBILITY_TOKEN, req.user);
+        isAdmin || await req.adminizer.accessRightsHelper.hasPermission(GROUP_FILTER_VISIBILITY_TOKEN, req.user);
     let effectiveVisibility: 'private' | 'public' | 'groups' = 'private';
     let effectiveGroupIds: number[] | undefined;
 

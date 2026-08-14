@@ -29,7 +29,7 @@ export class GeneralNotificationService extends AbstractNotificationService {
                 const users = await this.userModel().find({});
                 for (const user of users) {
                     try {
-                        if (this.adminizer.accessRightsHelper.hasPermission(`notification-${this.notificationClass}`, user)) {
+                        if (await this.adminizer.accessRightsHelper.hasPermission(`notification-${this.notificationClass}`, user)) {
                             await this.createUserNotification(notificationDB.id, user.id);
                         } else {
                             Adminizer.log.warn(`[${this.notificationClass}] User ${user.id} doesn't have permission to receive this notification`)

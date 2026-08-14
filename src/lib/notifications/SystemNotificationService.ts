@@ -27,7 +27,7 @@ export class SystemNotificationService extends AbstractNotificationService {
             const users = await this.userModel().find({}) as User[];
             for (const user of users) {
                 try {
-                    if (this.adminizer.accessRightsHelper.hasPermission(`notification-${this.notificationClass}`, user)) {
+                    if (await this.adminizer.accessRightsHelper.hasPermission(`notification-${this.notificationClass}`, user)) {
                         await this.createUserNotification(notificationDB.id, user.id);
                     }
                 } catch (error) {

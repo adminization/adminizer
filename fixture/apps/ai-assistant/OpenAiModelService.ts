@@ -61,7 +61,7 @@ export class OpenAiModelService extends AbstractAiModelService {
             return `Model "${instruction.modelResource}" is not available in this project.`;
         }
 
-        if (!this.userHasPermission(modelResource, user, "add")) {
+        if (!await this.userHasPermission(modelResource, user, "add")) {
             return `User "${user.login}" does not have permission to create ${modelResource.name} records.`;
         }
 
@@ -134,9 +134,9 @@ export class OpenAiModelService extends AbstractAiModelService {
         ].join("\n");
     }
 
-    private userHasPermission(modelResource: ModelResource, user: User, action: ActionType): boolean {
+    private async userHasPermission(modelResource: ModelResource, user: User, action: ActionType): Promise<boolean> {
         const token = this.getPermissionToken(modelResource, action);
-        return this.context.hasPermission(token, user);
+        return await this.context.hasPermission(token, user);
     }
 
     private getPermissionToken(modelResource: ModelResource, action: ActionType): string {

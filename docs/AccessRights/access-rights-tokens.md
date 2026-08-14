@@ -62,6 +62,118 @@ await adminizer.modelHandler
   .update({ where: { name: 'managers' } }, { tokens: ['reports-export'] });
 ```
 
+## Contextual Tokens
+
+A contextual token assigns a group both a token and selected option IDs. The
+token supplies the selectable options itself and can check access with those
+trusted IDs.
+
+### App modules: `ctx.accessRight()`
+
+Register the token from `setup(ctx)`. The app owns the registration and it is
+removed automatically when the app is disabled.
+
+```ts
+ctx.accessRight({
+  id: "reports-export",
+  name: "Export reports",
+  description: "Permission to export reports for selected warehouses",
+  department: "Reports",
+  getOptions: async (user) => warehousesService.getOptions(user),
+  check: async (user, context) => warehousesService.canAccess(
+    user,
+    context?.rights ?? [],
+    context?.warehouseId,
+  ),
+});
+```
+
+`getOptions(user)` runs whenever the Groups UI loads the selector, so newly
+created business entities are available without restarting Adminizer. Each
+option has a stable `id`, a display `name`, and optional `description`.
+
+An app controller invokes the single access-check API with its own context:
+
+```ts
+const allowed = await req.runtime.accessRights.hasPermission(
+  "reports-export",
+  req.user,
+  {warehouseId: report.warehouseId},
+);
+
+if (!allowed) return res.status(403).send("Forbidden");
+```
+
+### Host application and legacy controllers: `accessRightsHelper`
+
+Register a token once during application startup, after `adminizer.init()`.
+Do not register it inside a request controller.
+
+```ts
+adminizer.accessRightsHelper.registerToken({
+  id: "reports-export",
+  name: "Export reports",
+  description: "Permission to export reports for selected warehouses",
+  department: "Reports",
+  getOptions: async (user) => warehousesService.getOptions(user),
+  check: async (user, context) => warehousesService.canAccess(
+    user,
+    context?.rights ?? [],
+    context?.warehouseId,
+  ),
+});
+```
+
+In an existing host controller, `req.adminizer` remains available temporarily:
+
+```ts
+const allowed = await req.adminizer.accessRightsHelper.hasPermission(
+  "reports-export",
+  req.user,
+  {warehouseId: report.warehouseId},
+);
+```
+
+For list, export, update, or delete filtering, retrieve rights from groups and
+apply them to the database query before pagination. `null` means unrestricted
+access (administrator or disabled authentication), while an empty array means
+no granted options.
+
+```ts
+const rights = req.adminizer.accessRightsHelper.getPermissionRights(
+  "reports-export",
+  req.user,
+);
+
+if (rights !== null) {
+  query.where.warehouseId = rights;
+}
+```
+
+The helper overwrites `context.rights` before calling `check`, so rights sent by
+an HTTP client can never grant access. If `getOptions` or `check` throws, the
+request is denied.
+
+### Storage and Groups UI
+
+Ordinary tokens remain strings:
+
+```json
+["reports-export"]
+```
+
+For a token with `getOptions`, enabling its checkbox reveals a multiple-choice
+selector. Its selected IDs are stored as an object in `Group.tokens`:
+
+```json
+[
+  "reports-export",
+  {"tokenId":"warehouse-access","rights":["stock1","stock2"]}
+]
+```
+
+Only ordinary legacy string tokens are supported alongside contextual grants.
+
 
 ## Users and Groups
 In Model `Users` admin or someone who has access can create user profiles and give them specific access rights by adding them to `Groups`.

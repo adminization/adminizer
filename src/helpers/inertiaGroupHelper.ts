@@ -1,6 +1,7 @@
 import { Group } from "../models/Group";
 import { User } from "../models/User";
 import {AccessRightsToken, ModelResource, PropsField} from "../interfaces/types";
+import {parseGroupPermissionGrant} from "./accessRightsHelper";
 
 
 
@@ -89,8 +90,17 @@ export function inertiaGroupHelper(
                     label: token.name,
                     tooltip: token.description,
                     name: `token-checkbox-${token.id}`,
-                    value: group ? (group.tokens && group.tokens?.includes(token.id)) : false,
-                    type: 'checkbox'
+                    value: group ? Boolean(group.tokens?.some((value) =>
+                        value === token.id || parseGroupPermissionGrant(value)?.tokenId === token.id
+                    )) : false,
+                    type: 'checkbox',
+                    options: token.getOptions ? {
+                        permissionOptions: {
+                            rights: group?.tokens
+                                ?.map(parseGroupPermissionGrant)
+                                .find((value) => value?.tokenId === token.id)?.rights ?? [],
+                        },
+                    } : undefined,
                 })
             }
             props.groupedTokens.push({

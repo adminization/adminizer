@@ -319,7 +319,11 @@ export default class Router {
          */
         adminizer.app.get(
             `${adminizer.config.routePrefix}/access-rights/permission-options`,
-            withPolicies(getPermissionOptions, requireAuthAPI())
+            withPolicies(
+                getPermissionOptions,
+                requireAuthAPI(),
+                requireAnyPermission(["create-Group-model", "update-Group-model"])
+            )
         );
 
         adminizer.app.all(

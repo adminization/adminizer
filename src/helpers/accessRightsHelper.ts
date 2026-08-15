@@ -118,6 +118,10 @@ export class AccessRightsHelper {
         user: User,
         context?: PermissionContext,
     ): boolean | Promise<boolean> {
+        if (!this.adminizer.config.auth.enable || user.isAdministrator) {
+            return true;
+        }
+
         const token = this.getRegisteredToken(tokenId);
         if (!token) {
             return false;

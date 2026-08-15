@@ -80,4 +80,10 @@ describe("contextual access rights", () => {
         expect(await helper.hasPermission("user-only-token", user)).toBe(true);
         expect(checked).toBe(true);
     });
+
+    it("allows administrators before validating a token", () => {
+        const helper = createHelper();
+
+        expect(helper.hasPermission("missing-token", {isAdministrator: true} as any)).toBe(true);
+    });
 });

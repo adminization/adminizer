@@ -192,7 +192,11 @@ export class WidgetHandler {
         const result: WidgetConfig[] = [];
 
         for (const modelName of modelNames) {
-            if (!this.adminizer.accessRightsHelper.hasPermission(`read-${modelName}-model`, user)) {
+            const readToken = `read-${modelName}-model`;
+            if (!this.adminizer.accessRightsHelper.hasToken(readToken)) {
+                continue;
+            }
+            if (!this.adminizer.accessRightsHelper.hasPermission(readToken, user)) {
                 continue;
             }
 

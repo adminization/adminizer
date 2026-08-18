@@ -6,6 +6,7 @@ import { Loader2, User, Lock, Eye, EyeOff } from "lucide-react";
 import { SharedData } from "@/types";
 import { Button } from "@/components/ui/button.tsx";
 import { FormEventHandler, useEffect, useState } from "react";
+import { ensureSubtleCrypto } from '@/lib/insecure-context-crypto.ts';
 import Puzzle from 'crypto-puzzle';
 import { Toaster } from "@/components/ui/sonner.tsx";
 import { toast } from "sonner";
@@ -86,6 +87,7 @@ export default function Login() {
                 await sleep(100)
 
                 // Start solving
+                await ensureSubtleCrypto()
                 const puzzle = new Uint8Array(page.props.captchaTask)
 
                 const solution = await Puzzle.solve(puzzle);

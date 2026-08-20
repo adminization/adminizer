@@ -71,7 +71,7 @@
 		"zod": "^4.1.11"
 	},
 	"devDependencies": {
-		"@assistant-ui/react": "^0.14.27",
+		"@assistant-ui/react": "^0.15.15",
 		"@assistant-ui/react-markdown": "^0.14.6",
 		"@babel/plugin-proposal-decorators": "^7.27.1",
 		"@ckeditor/ckeditor5-react": "^9.5.0",

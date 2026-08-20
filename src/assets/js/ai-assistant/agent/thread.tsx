@@ -34,7 +34,7 @@ import {
   MessagePrimitive,
   ThreadPrimitive,
   useAuiState,
-  useComposerRuntime,
+  useAui,
 } from '@assistant-ui/react';
 import {
   ArrowDownIcon,
@@ -188,7 +188,9 @@ const ThreadSuggestions: FC<{ prompts: string[] }> = ({ prompts }) => {
 
 /** The picker only inserts raw command text; execution stays in the agent. */
 const Composer: FC<{ placeholder?: string; commands?: AgentChatCommand[] }> = ({placeholder, commands = []}) => {
-  const composerRuntime = useComposerRuntime();
+  // assistant-ui 0.15 replaced the legacy per-scope runtime hooks with one
+  // client: the composer is reached as `aui.composer`.
+  const aui = useAui();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const composerText = useAuiState((state) => state.composer.text);
   const [commandPickerOpen, setCommandPickerOpen] = useState(false);
@@ -206,13 +208,13 @@ const Composer: FC<{ placeholder?: string; commands?: AgentChatCommand[] }> = ({
     && !commandPickerDismissed
     && (commandPickerOpen || composerText.trimStart().startsWith('/'));
   const showCommands = () => {
-    composerRuntime.setText('/');
+    aui.composer.setText('/');
     setCommandPickerOpen(true);
     setCommandPickerDismissed(false);
     setTimeout(() => inputRef.current?.focus(), 0);
   };
   const selectCommand = (command: AgentChatCommand) => {
-    composerRuntime.setText(`/${command.id} `);
+    aui.composer.setText(`/${command.id} `);
     setCommandPickerOpen(false);
     setCommandPickerDismissed(true);
     setTimeout(() => inputRef.current?.focus(), 0);

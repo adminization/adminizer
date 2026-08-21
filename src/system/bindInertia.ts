@@ -37,6 +37,17 @@ export function bindInertia(adminizer: Adminizer) {
         return `${adminizer.config.routePrefix}/${customFavicon.replace(/^\/+/, "")}`;
     };
 
+    // Entry files are built with stable names (app.js, agent.es.js, controls),
+    // so a version query string is what invalidates browser caches on release.
+    const assetVersion = (() => {
+        try {
+            const pkg = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, '../../package.json'), 'utf-8'));
+            return typeof pkg.version === 'string' ? pkg.version : '';
+        } catch {
+            return '';
+        }
+    })();
+
     const viteRender = () => {
         if (process.env.ADMINIZER_ENV === 'dev') {
             return `
@@ -83,7 +94,7 @@ export function bindInertia(adminizer: Adminizer) {
 
             // JS resource
             if (entry.file) {
-                const href = `${adminizer.config.routePrefix}/assets/${entry.file}`;
+                const href = `${adminizer.config.routePrefix}/assets/${entry.file}?v=${assetVersion}`;
                 preloadLinks.push(`<link rel="modulepreload" href="${href}" as="script">`);
                 scripts.push(`<script type="module" src="${href}"></script>`);
             }
@@ -92,12 +103,14 @@ export function bindInertia(adminizer: Adminizer) {
             const routePrefixScript = `<script>window.routePrefix = "${adminizer.config.routePrefix}";</script>`;
 
             const bindPublic = `<script>window.bindPublic = ${adminizer.config.bind?.public}</script>`;
+            const versionScript = `<script>window.adminizerVersion = "${assetVersion}";</script>`;
             return `
                 ${preloadLinks.join('\n')}
                 ${stylesheets.join('\n')}
                 ${scripts.join('\n')}
                 ${routePrefixScript}
                 ${bindPublic}
+                ${versionScript}
         `;
         }
     };

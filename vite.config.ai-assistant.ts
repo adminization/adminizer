@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import {viteExternalsPlugin} from "vite-plugin-externals";
+import packageJson from "./package.json";
 
 /**
  * The assistant panel ships as its own ES module bundle, loaded on demand when
@@ -18,6 +19,7 @@ export default defineConfig({
     define: {
         "process.env": {},
         "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV || "production"),
+        "__APP_VERSION__": JSON.stringify(packageJson.version),
     },
     plugins: [
         react(),

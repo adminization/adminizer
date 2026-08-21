@@ -113,6 +113,12 @@ declare global {
     interface Window {
         routePrefix: string;
         bindPublic: boolean;
+        /**
+         * Adminizer package version, written into the page by bindInertia. Use
+         * this — not a build-time constant — to cache-bust stable-named assets:
+         * the release pipeline bumps the version after vite has already built.
+         */
+        adminizerVersion?: string;
         /** Set by the main bundle; the assistant panel navigates through it. */
         InertiajsReact?: typeof import('@inertiajs/react');
         adminApi: typeof import('@/lib/admin-api').adminApi;

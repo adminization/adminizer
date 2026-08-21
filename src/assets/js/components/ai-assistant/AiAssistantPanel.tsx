@@ -25,14 +25,15 @@ interface AgentProps {
  * time the panel is opened instead of weighing down the main bundle. In dev the
  * vite dev server serves the sources directly.
  */
-declare const __APP_VERSION__: string;
-
 const agentBundleUrl = (): string =>
     import.meta.env.DEV
         ? '/src/assets/js/ai-assistant/agent/index.tsx'
         // The entry name is intentionally stable (hard-coded import sites, no
         // manifest), so the version query is the only cache-busting it gets.
-        : `${window.routePrefix ?? ''}/assets/ai-assistant/agent.es.js?v=${__APP_VERSION__}`;
+        // It has to be the *runtime* version bindInertia puts on the page: the
+        // release pipeline bumps the version only after vite has already run,
+        // so a build-time constant would be the same string in every release.
+        : `${window.routePrefix ?? ''}/assets/ai-assistant/agent.es.js?v=${window.adminizerVersion ?? ''}`;
 
 export function AiAssistantPanel({width = 'min(25vw, 420px)', isResizing = false, onResizeStart}: AiAssistantPanelProps) {
     const {

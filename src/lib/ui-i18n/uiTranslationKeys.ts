@@ -59,7 +59,21 @@ export const COMMON_UI_TRANSLATION_KEYS = [
     "Date",
     "Watch",
     "Current",
-    "There is no history"
+    "There is no history",
+    "Documentation",
+    "Page documentation",
+    "Knowledge base",
+    "Schema",
+    "Back to contents",
+    "Open in knowledge base",
+    "Send to assistant",
+    "Failed to load documentation",
+    "Loading...",
+    "Nothing found",
+    "Field",
+    "Type",
+    "Required",
+    "Language"
 ] as const;
 
 export const FILTER_UI_TRANSLATION_KEYS = [
@@ -271,4 +285,32 @@ export const USER_FILTERS_UI_TRANSLATION_KEYS = [
     "Reset",
     "found",
     "User Filters"
+] as const;
+
+export const DOCS_UI_TRANSLATION_KEYS = [
+    "Documentation",
+    "Knowledge base",
+    "Contents",
+    "Search documentation",
+    "Search",
+    "Keywords",
+    "Clear",
+    "Nothing found",
+    "There is no documentation yet",
+    "Select a document to read",
+    "Loading...",
+    "Language",
+    "Send to assistant",
+    "Schema",
+    "Related models",
+    "Failed to load documentation",
+    "Field",
+    "Type",
+    "Required",
+    "No fields to display",
+    "Previous",
+    "Next",
+    "Found",
+    "In this document",
+    "Document not found"
 ] as const;

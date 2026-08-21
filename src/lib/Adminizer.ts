@@ -54,6 +54,8 @@ import { AccessRightsHandler } from "./access-rights/AccessRightsHandler";
 import { AiAssistantUiMethodHandler } from './ai-assistant/AiAssistantUiMethodHandler';
 import { AdminLinkHandler } from './admin-links/AdminLinkHandler';
 import { AiAssistantAgentSkillHandler } from './ai-assistant/AiAssistantAgentSkillHandler';
+import { DocumentationHandler } from './docs/DocumentationHandler';
+import bindDocs from '../system/bindDocs';
 
 const logFilePath = "logs/app.log";
 
@@ -149,6 +151,7 @@ export class Adminizer {
     aiAssistantUiMethodHandler: AiAssistantUiMethodHandler;
     adminLinkHandler: AdminLinkHandler;
     aiAssistantAgentSkillHandler: AiAssistantAgentSkillHandler;
+    documentationHandler: DocumentationHandler;
     modelHandler: ModelHandler
     widgetHandler: WidgetHandler
     customFilterHandler!: CustomFilterHandler
@@ -188,6 +191,7 @@ export class Adminizer {
         this.aiAssistantUiMethodHandler = new AiAssistantUiMethodHandler(this);
         this.adminLinkHandler = new AdminLinkHandler(this);
         this.aiAssistantAgentSkillHandler = new AiAssistantAgentSkillHandler(this);
+        this.documentationHandler = new DocumentationHandler(this, () => bindDocs(this));
 
         this.controllerHandler = new ControllerHandler(this);
         this.assetHandler = new AssetHandler(this);
@@ -372,6 +376,12 @@ export class Adminizer {
 
         this.router = new Router(this)
         await this.router.bind(); // must be after binding policies and req/res functions
+
+        // Documentation (knowledge base) wires itself on register(); this call
+        // covers a service registered before the config was read. It runs after
+        // the router so those routes sit behind the same middleware stack a
+        // service registered after init() gets.
+        this.documentationHandler.activate();
 
         /**
          * Adminizer loaded

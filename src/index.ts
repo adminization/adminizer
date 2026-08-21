@@ -27,6 +27,9 @@ export * from "./lib/media-manager/AbstractMediaManager";
 export * from "./lib/controls/Control";
 export * from "./lib/controls/ControlsHandler";
 export * from "./lib/Adminizer";
+export * from "./lib/docs/AbstractDocumentation";
+export * from "./lib/docs/DocumentationHandler";
+export * from "./lib/docs/FileDocumentation";
 export * from "./lib/I18n";
 export * from "./models/Group"
 export * from "./models/User"

@@ -104,6 +104,7 @@ export default class Router {
         const noCachePrefixes = [
             '/api',
             '/notifications/api',
+            '/docs/api',
             '/history',
             '/widgets-get-all',
             '/widgets-get-all-db',

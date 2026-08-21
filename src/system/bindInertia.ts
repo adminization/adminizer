@@ -142,7 +142,7 @@ export function bindInertia(adminizer: Adminizer) {
     );
 
 
-    adminizer.app.use((req: ReqType, _, next) => {
+    adminizer.app.use(async (req: ReqType, _, next) => {
         checkAuth(req, adminizer)
         const defaultLocale = typeof req.adminizer.config.translation !== "boolean"
             ? req.adminizer.config.translation.defaultLocale
@@ -154,6 +154,16 @@ export function bindInertia(adminizer: Adminizer) {
             lang: locale,
         })
         const menuHelper = new InertiaMenuHelper(adminizer)
+
+        // Contextual documentation of this page: metadata only, and null when
+        // the subsystem is off or the user may not read documentation.
+        // A broken implementation must never take the panel down with it.
+        let docs = null;
+        try {
+            docs = req.user ? await adminizer.documentationHandler.forContextMeta(req.user, req.path) : null;
+        } catch (error) {
+            Adminizer.log.error(`bindInertia > documentation context failed: ${error}`);
+        }
 
         req.Inertia.shareProps({
             auth: {
@@ -190,6 +200,7 @@ export function bindInertia(adminizer: Adminizer) {
                 if (typeof v === 'string') return { text: v, link: null, hint: null };
                 return { text: v.text ?? null, link: v.link ?? null, hint: v.hint ?? null };
             })(),
+            docs,
             showFeedback: req.adminizer.feedbackHandler?.isRegistered() ?? false,
             feedbackTriggerLabel: req.adminizer.feedbackHandler?.getTriggerLabel() ?? null,
             feedbackPlaceholder: req.adminizer.feedbackHandler?.getPlaceholder() ?? null,

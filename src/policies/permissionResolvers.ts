@@ -56,6 +56,10 @@ export function aiModelToken(req: ReqType): string | undefined {
     return modelId ? `ai-assistant-${modelId}` : undefined;
 }
 
+export function documentationToken(req: ReqType): string {
+    return req.adminizer.documentationHandler.baseToken;
+}
+
 export function historyToken(req: ReqType): string {
     return `history-${req.adminizer.config.history?.adapter ?? "default"}`;
 }

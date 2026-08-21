@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import "reflect-metadata";
 
-import {Adminizer, SequelizeAdapter, TypeOrmAdapter} from "../dist";
+import {Adminizer, FileDocumentation, SequelizeAdapter, TypeOrmAdapter} from "../dist";
 import http from 'http';
 import adminpanelConfig from "./adminizerConfig";
 import {AdminpanelConfig} from "../dist/interfaces/adminpanelConfig";
@@ -279,6 +279,21 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
             adminizer.customFilterHandler.add(new ExampleJsonCustomFilterHandler(), {force: true});
             adminizer.customFilterHandler.add(new ExampleDatatablePriceRangeFilterHandler(), {force: true});
         }
+
+        // Register the demo knowledge base: the file-based reference
+        // implementation over fixture/documentation/
+        adminizer.documentationHandler.register(new FileDocumentation({
+            dir: path.resolve(import.meta.dirname, 'documentation'),
+            watch: true,
+        }));
+        // A document author references existing tokens; this custom one backs
+        // the `accessRightsToken` of fixture/documentation/secret-operations.md
+        adminizer.accessRightsHelper.registerToken({
+            id: 'read-secret-operations-doc',
+            name: 'Secret operations doc',
+            description: 'Access to the "Secret operations" demo document',
+            department: 'documentation',
+        });
 
         // Register fixture feedback handler (saves to .tmp/feedback/)
         const feedbackHandler = new FileFeedbackHandler();

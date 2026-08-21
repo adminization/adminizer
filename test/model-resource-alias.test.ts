@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest";
-import {ControllerHelper} from "../src/helpers/ControllerHelper";
+import {ControllerHelper} from "../src/helpers/controllerHelper";
 import {DataAccessor} from "../src/lib/DataAccessor";
 import {ModelHandler} from "../src/lib/model/ModelHandler";
 import bindAccessRights from "../src/system/bindAccessRights";

@@ -5,6 +5,7 @@ import { NavUser } from "@/components/nav-user.tsx";
 import ThemeSwitcher from '@/components/theme-switcher';
 import { NotificationCenter } from "@/components/notifications/NotificationCenter.tsx";
 import { AiAssistantToggle } from '@/components/ai-assistant/AiAssistantToggle';
+import { DocsInfoButton } from '@/components/docs/DocsDrawer';
 import { useNotifications } from "@/contexts/NotificationContext.tsx";
 import { LoaderCircle, History } from "lucide-react";
 import { Link, usePage } from "@inertiajs/react";
@@ -23,6 +24,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                 </div>
                 <div className="flex gap-4 items-center">
                     <AiAssistantToggle />
+                    <DocsInfoButton />
                     {page.props.history && <Link href={`${window.routePrefix}/history/view-all`}>
                         <Button
                             variant="ghost"

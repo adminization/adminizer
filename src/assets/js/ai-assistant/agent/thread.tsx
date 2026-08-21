@@ -49,6 +49,8 @@ import {useEffect, useRef, useState, type FC, type ReactNode} from 'react';
 import { t } from './i18n';
 import type { AgentChatCommand } from './runtime';
 import {CommandPicker} from './command-picker';
+import {ATTACH_DOC_EVENT, takeAttachedDoc, type AttachedDoc} from '@/lib/docs-assistant';
+import {createDocAttachment, docAttachmentId} from './docs-attachment';
 
 // Neutral defaults: a model service that knows its domain sends its own
 // prompts through the `/status` UI hints (see AgentUiHints.suggestions).
@@ -201,6 +203,36 @@ const Composer: FC<{ placeholder?: string; commands?: AgentChatCommand[] }> = ({
       setCommandPickerDismissed(false);
     }
   }, [composerText]);
+  // A document sent from the documentation viewer arrives as a composer
+  // attachment, so it reads like an attached file and can be taken back off
+  // with the same X. Its reference is what the agent gets — the article itself
+  // it reads with `read_documentation`, against the reader's own rights.
+  useEffect(() => {
+    const attach = (doc?: AttachedDoc) => {
+      if (!doc) return;
+      // Handing the same article over twice leaves one chip.
+      const attached = aui.composer.getState().attachments;
+      if (attached.some((attachment) => attachment.id === docAttachmentId(doc.id))) return;
+      // The only rejection an attachment adapter has for this is "not
+      // accepted", and the agent's accepts everything — there is nothing to
+      // report to the user, and an unhandled rejection helps no one.
+      void aui.composer.addAttachment(createDocAttachment(doc)).catch(() => {});
+      setTimeout(() => inputRef.current?.focus(), 0);
+    };
+    const onAttach = (event: Event) => {
+      // The sender parks the reference on the window for a panel that has not
+      // loaded yet. This composer has it from the event, so consume the parked
+      // copy too — otherwise it is re-inserted the next time one mounts.
+      takeAttachedDoc();
+      attach((event as CustomEvent<AttachedDoc>).detail);
+    };
+    window.addEventListener(ATTACH_DOC_EVENT, onAttach);
+    // The panel is loaded on demand: a document attached while it was still
+    // loading waits on the window until the composer exists.
+    attach(takeAttachedDoc());
+    return () => window.removeEventListener(ATTACH_DOC_EVENT, onAttach);
+  }, [aui]);
+
   const commandQuery = composerText.trimStart().startsWith('/')
     ? composerText.trimStart().slice(1).toLowerCase()
     : '';

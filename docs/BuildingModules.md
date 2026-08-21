@@ -585,6 +585,104 @@ npm run build:apps
 
 `build:apps` also runs `build:catalog-modules`, which builds the legacy virtual catalog React templates and actions from `fixture/virtual-catalog`.
 
+## Styling App Modules
+
+Adminizer's stylesheet is compiled from Adminizer's own sources. An app module is **not** part of
+that content scan, so Tailwind never generates a class only your module uses. Standard utilities the
+panel already uses (`flex`, `rounded`, `p-2`, `text-sm`, `bg-muted`, `text-destructive`, `size-6`)
+are present and work. Anything else silently does nothing — most often:
+
+- arbitrary values: `text-[11px]`, `min-w-[220px]`, `size-[18px]`;
+- utilities the panel happens not to use: `w-16`, `max-w-40`, `border-amber-300`.
+
+Nothing errors; the element simply renders unstyled, which is easy to miss in review. Check a class
+against the shipped stylesheet before relying on it:
+
+```bash
+grep -c -- "\.w-16" node_modules/adminizer/assets/app-*.css   # 0 = not generated
+```
+
+Three ways to style a module, in order of cost:
+
+1. **Stay inside the panel's utilities.** Best default: the module looks native and ships no CSS.
+2. **Inline styles for one-off geometry.** `style={{ width: "4rem" }}` always applies and needs no
+   build step — the right tool for a handful of sizes.
+3. **Ship the module's own stylesheet** when it has real styling of its own (a canvas, a chart, a
+   vendored widget). Adminizer supports this directly: pass `moduleComponentCSS` next to
+   `moduleComponent` and the module page injects a `<link>` for it, once per path.
+
+### Shipping a module stylesheet
+
+Author a CSS entry that pulls **utilities only**. Importing `tailwindcss` wholesale would also bring
+Preflight and reset the panel around your module:
+
+```css
+/* MyAppPage.css */
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Tell Tailwind what to scan — the module's own sources, nothing else. */
+@source "./**/*.tsx";
+
+/* Map the theme to the panel's CSS variables, so tokens follow light/dark with the panel
+   instead of resolving to Tailwind's default palette. Adminizer defines these on :root. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius: var(--radius);
+}
+```
+
+Import it from the entry component and let Vite emit it beside the bundle:
+
+```tsx
+// MyAppPage.tsx
+import "./MyAppPage.css";
+```
+
+```ts
+// vite.config.ts — alongside the module build shown above
+import tailwindcss from "@tailwindcss/vite";
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  build: {
+    cssCodeSplit: true, // emits MyAppPage.css next to MyAppPage.es.js
+    lib: { entry: "MyAppPage", formats: ["es"], fileName: (f) => `MyAppPage.${f}.js` },
+  },
+});
+```
+
+Register the stylesheet as an asset and pass its URL with the page:
+
+```ts
+const moduleComponentCSS = ctx.asset({
+  id: "component-css",
+  filePath: path.resolve(import.meta.dirname, "MyAppPage.css"),
+});
+
+req.Inertia.render({
+  component: "module",
+  props: { moduleComponent, moduleComponentCSS, data },
+});
+```
+
+Two limits worth knowing:
+
+- `moduleComponentCSS` applies to the **page** module. A component the page imports dynamically at
+  runtime (a nested micro-frontend, a per-record form) is not covered — such a bundle must inject
+  its own stylesheet, or inline it.
+- Duplicate utility definitions are harmless: your file and the panel's declare the same class with
+  the same value, and later wins with an identical result. Divergence only appears through theme
+  tokens, which is exactly what the `@theme inline` mapping above prevents.
+
 ## Fixture Examples
 
 The fixture contains several current app-module examples:
@@ -615,3 +713,5 @@ Custom form controls are app-owned resources registered through `ctx.control()`.
 - App-specific models are declared with `ctx.model()` and allowed with `ctx.modelAccess()` before catalogs use them.
 - Catalog templates are registered in `ctx.catalog({ templates: [...] })` instead of hard-coded paths in catalog data.
 - Module UI uses `window.UIComponents`, `window.JSComponents`, `window.adminApi`, and global React/Lucide exports instead of bundling duplicates.
+- Module markup uses only utilities the panel's stylesheet already contains; anything else is an
+  inline style or ships in the module's own `moduleComponentCSS` file. See Styling App Modules.

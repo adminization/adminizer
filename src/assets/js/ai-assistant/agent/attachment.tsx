@@ -4,6 +4,7 @@ import { type PropsWithChildren, useEffect, useState, type FC } from 'react';
 import {
   XIcon,
   PlusIcon,
+  BookOpen,
   FileText,
   Loader2Icon,
   AlertCircleIcon,
@@ -35,6 +36,8 @@ import {
 import { TooltipIconButton } from './tooltip-icon-button';
 import { t } from './i18n';
 import { cn } from './utils';
+import { docIdOfAttachment, isDocAttachment } from './docs-attachment';
+import { openDocViewer } from '@/lib/docs-assistant';
 
 const useFileSrc = (file: File | undefined) => {
   const [src, setSrc] = useState<string | undefined>(undefined);
@@ -131,7 +134,60 @@ const AttachmentThumb: FC = () => {
   );
 };
 
+/**
+ * A knowledge base article attached to the message. It carries no file, so it
+ * gets a chip of its own instead of a thumbnail tile: the label opens the
+ * article in the reader, and while the attachment is still in the composer the
+ * X takes it back out of the context.
+ */
+const DocAttachmentUI: FC = () => {
+  const aui = useAui();
+  const isComposer = aui.attachment.source !== 'message';
+  const { id, name } = useAuiState(
+    useShallow((s) => ({ id: s.attachment.id, name: s.attachment.name })),
+  );
+
+  return (
+    <AttachmentPrimitive.Root
+      className={cn(
+        'aui-doc-attachment-root bg-muted/60 flex h-8 max-w-56 shrink-0 items-center gap-1 rounded-full border ps-2.5',
+        isComposer ? 'pe-1' : 'pe-2.5',
+      )}
+    >
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={() => openDocViewer(docIdOfAttachment(id))}
+            className="aui-doc-attachment-open flex min-w-0 cursor-pointer items-center gap-1.5 text-xs transition-opacity hover:opacity-75"
+          >
+            <BookOpen className="aui-doc-attachment-icon text-muted-foreground size-3.5 shrink-0" aria-hidden="true" />
+            <span className="aui-doc-attachment-name truncate">{name}</span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top">{t('Open in knowledge base')}</TooltipContent>
+      </Tooltip>
+      {isComposer && (
+        <AttachmentPrimitive.Remove asChild>
+          <TooltipIconButton
+            tooltip={t('Remove from context')}
+            side="top"
+            className="aui-doc-attachment-remove text-muted-foreground hover:[&_svg]:text-destructive size-5 rounded-full"
+          >
+            <XIcon className="aui-attachment-remove-icon size-3" />
+          </TooltipIconButton>
+        </AttachmentPrimitive.Remove>
+      )}
+    </AttachmentPrimitive.Root>
+  );
+};
+
 const AttachmentUI: FC = () => {
+  const isDoc = useAuiState((s) => isDocAttachment(s.attachment));
+  return isDoc ? <DocAttachmentUI /> : <FileAttachmentUI />;
+};
+
+const FileAttachmentUI: FC = () => {
   const aui = useAui();
   const isComposer = aui.attachment.source !== 'message';
 
@@ -241,9 +297,11 @@ export const UserMessageAttachments: FC = () => {
   );
 };
 
+// Attached documents are chips, not thumbnails: a row of them wraps instead of
+// scrolling out of reach, so every remove button stays clickable.
 export const ComposerAttachments: FC = () => {
   return (
-    <div className="aui-composer-attachments flex w-full flex-row items-center gap-2 overflow-x-auto empty:hidden">
+    <div className="aui-composer-attachments flex w-full flex-row flex-wrap items-center gap-2 overflow-x-auto empty:hidden">
       <ComposerPrimitive.Attachments>
         {() => <AttachmentUI />}
       </ComposerPrimitive.Attachments>

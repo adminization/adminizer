@@ -283,6 +283,14 @@ export interface AdminpanelConfig {
         defaultModel?: string
         models?: string[]
     }
+    /**
+     * Knowledge base (built-in documentation). The implementation is
+     * registered separately: `adminizer.documentationHandler.register(service)`.
+     */
+    documentation?: {
+        /** Master switch of the subsystem; nothing is brought up unless `true` */
+        enabled?: boolean
+    }
     cors?: {
         enabled: boolean;
         origin: string[] | string;

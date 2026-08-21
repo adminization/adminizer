@@ -53,6 +53,15 @@ export interface SharedData {
         enabled: boolean;
         defaultModel: string | null;
     };
+    /**
+     * Documentation of the page being rendered: `null` when the subsystem is
+     * off or the user may not read documentation, otherwise the table of
+     * contents behind the "i" button.
+     */
+    docs?: {
+        count: number;
+        items: Array<{id: string; title: string; section?: string}>;
+    } | null;
     [key: string]: unknown;
 }
 
@@ -110,6 +119,11 @@ declare global {
         __adminizerAiAssistantState__?: {
             isOpen: boolean;
             activeModel?: string;
+        };
+        /** Document handed to the assistant while its panel was still loading. */
+        __adminizerAttachDoc__?: {
+            id: string;
+            title: string;
         };
     }
 }

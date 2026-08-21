@@ -3,6 +3,11 @@
 All components are available at runtime via `window.UIComponents` and `window.JSComponents`.  
 Icons are available via `window.LucideReact`.
 
+> Styling note: a module's markup can only use Tailwind classes that Adminizer's own stylesheet
+> already contains — the panel's content scan does not cover app modules, so arbitrary values such
+> as `text-[11px]` render as nothing. Use an inline style, or ship a module stylesheet through
+> `moduleComponentCSS`. See “Styling App Modules” in BuildingModules.md.
+
 ## Runtime access
 
 ```js

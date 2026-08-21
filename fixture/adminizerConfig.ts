@@ -526,6 +526,10 @@ const config: AdminpanelConfig = {
         defaultModel: 'openharness',
         models: ['openharness', 'openai-data', 'dummy'],
     },
+    // Demo knowledge base; the implementation is registered in fixture/index.ts
+    documentation: {
+        enabled: true,
+    },
     routePrefix: routePrefix,
     // routePrefix: "/admin",
     auth: {

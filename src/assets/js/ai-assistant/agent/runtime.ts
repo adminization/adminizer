@@ -4,6 +4,7 @@ import type {
   CompleteAttachment,
   PendingAttachment,
 } from '@assistant-ui/react';
+import { docAttachmentReferences } from './docs-attachment';
 
 export type TokenUsage = {
   inputTokens?: number;
@@ -415,9 +416,17 @@ export function createAgentAdapter({ onUsage, onRunEnd }: AdapterCallbacks): Cha
         .map((part) => part.text)
         .join('\n\n');
 
+      // Attached documents carry no file: their reference is the text part of
+      // the attachment, and it leads the message so the agent knows what to
+      // read before it reads the question.
+      const attachments = last.attachments ?? [];
+      const message = [...docAttachmentReferences(attachments), text]
+        .filter((part) => part.trim() !== '')
+        .join('\n\n');
+
       const form = new FormData();
-      form.append('message', text);
-      for (const attachment of last.attachments ?? []) {
+      form.append('message', message);
+      for (const attachment of attachments) {
         const file = (attachment as { file?: File }).file;
         if (file) form.append('files', file, attachment.name);
       }

@@ -32,6 +32,8 @@
 * [Feed Export](FeedExport.md)
 * [Notifications](Notifications.md)
 * [History Actions](HistoryActions.md)
+* [Knowledge Base](KnowledgeBase.md)
+  * [Writing Articles](KnowledgeBase/WritingArticles.md)
 * [AI Assistant](AiAssistant.md)
   * [Building Agents](AiAssistant/BuildingAgents.md)
   * [Agent Skills](AiAssistant/AgentSkills.md)

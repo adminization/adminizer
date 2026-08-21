@@ -28,7 +28,13 @@ export default defineConfig({
                 app: path.resolve(import.meta.dirname, 'src/assets/js/app.tsx'),
             },
             output: {
-                entryFileNames: '[name].js',
+                // Content-hashed: the HTML gets this name out of manifest.json,
+                // and rollup rewrites the back-references from split chunks
+                // (with-app-layout imports './app.js') to the same file. A query
+                // string cannot be used here for cache busting — the chunks would
+                // still import the bare name, and the browser would instantiate
+                // the entry twice, giving the page two copies of React.
+                entryFileNames: '[name]-[hash].js',
                 assetFileNames: '[name]-[hash][extname]',
             },
         },

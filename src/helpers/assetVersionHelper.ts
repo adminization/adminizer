@@ -4,20 +4,32 @@ import path from "node:path";
 let cachedVersion: string | null = null;
 
 /**
- * Adminizer package version. Built entry assets keep stable file names
- * (app.js, agent.es.js, controls/*.es.js and controls/*.css), so this version
- * is appended as a query string to invalidate browser caches on release.
+ * Adminizer package version. Some built entries keep stable file names because
+ * they are imported by a hard-coded path and so cannot be looked up in the
+ * manifest (agent.es.js, controls/*.es.js and controls/*.css); for those this
+ * version is appended as a query string to invalidate browser caches on release.
+ *
+ * Only ever put this on a *self-contained* bundle. An entry whose split chunks
+ * import it back by name (app.js) must be content-hashed instead — a query
+ * string there makes the browser instantiate the module twice.
  */
 export function getAssetVersion(): string {
     if (cachedVersion !== null) {
         return cachedVersion;
     }
     let version = "";
-    try {
-        const pkg = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "../../package.json"), "utf-8"));
-        version = typeof pkg.version === "string" ? pkg.version : "";
-    } catch {
-        // Missing or unreadable package.json: fall back to an empty version.
+    // Compiled sources sit one level below the package root in the published
+    // package (helpers/) and two below it in the repo (dist/helpers/).
+    for (const candidate of ["../package.json", "../../package.json"]) {
+        try {
+            const pkg = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, candidate), "utf-8"));
+            if (pkg?.name === "adminizer" && typeof pkg.version === "string") {
+                version = pkg.version;
+                break;
+            }
+        } catch {
+            // Missing or unreadable package.json: try the next candidate.
+        }
     }
     cachedVersion = version;
     return version;

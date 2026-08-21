@@ -5,6 +5,7 @@ import {Adminizer} from "../src/lib/Adminizer";
 import {AbstractAdminizerApp, AppSetupContext} from "../src/lib/app-manager/AdminizerApp";
 import {SequelizeAdapter} from "../src/lib/model/adapter/sequelize";
 import {getControlsOptions} from "../src/helpers/inertiaAddHelper";
+import {withAssetVersion} from "../src/helpers/assetVersionHelper";
 import type {Control} from "../src/lib/controls/Control";
 
 describe("control registration", () => {
@@ -80,8 +81,10 @@ describe("control registration", () => {
             expect(first).toEqual({
                 name: "ckeditor",
                 config: {toolbar: "default"},
-                path: "/controls/ckeditor.js",
-                cssPath: "/controls/ckeditor.css",
+                // Control entry names are stable, so the paths handed to the page
+                // carry the adminizer version as a cache-busting query.
+                path: withAssetVersion("/controls/ckeditor.js"),
+                cssPath: withAssetVersion("/controls/ckeditor.css"),
             });
             expect(second).toEqual(first);
             expect(warn).toHaveBeenCalledTimes(1);

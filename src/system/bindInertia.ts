@@ -38,8 +38,9 @@ export function bindInertia(adminizer: Adminizer) {
         return `${adminizer.config.routePrefix}/${customFavicon.replace(/^\/+/, "")}`;
     };
 
-    // Entry files are built with stable names (app.js, agent.es.js, controls),
-    // so a version query string is what invalidates browser caches on release.
+    // The main bundle is content-hashed and needs no query string; the version
+    // is published to the page for the entries that are *not* hashed, because
+    // they are imported by a hard-coded path (agent.es.js, controls/*).
     const assetVersion = getAssetVersion();
 
     const viteRender = () => {
@@ -88,7 +89,10 @@ export function bindInertia(adminizer: Adminizer) {
 
             // JS resource
             if (entry.file) {
-                const href = `${adminizer.config.routePrefix}/assets/${entry.file}?v=${assetVersion}`;
+                // Never append a query here: split chunks import the entry by its
+                // bare name, so `app.js?v=x` and `app.js` become two modules and
+                // the page ends up with two Reacts. The name is hashed instead.
+                const href = `${adminizer.config.routePrefix}/assets/${entry.file}`;
                 preloadLinks.push(`<link rel="modulepreload" href="${href}" as="script">`);
                 scripts.push(`<script type="module" src="${href}"></script>`);
             }

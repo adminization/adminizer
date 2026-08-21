@@ -5,6 +5,7 @@ import path from "node:path";
 import { Adminizer } from "../lib/Adminizer";
 import { InertiaMenuHelper } from "../helpers/inertiaMenuHelper";
 import { getUiTranslations } from "../lib/ui-i18n/getUiTranslations";
+import { getAssetVersion } from "../helpers/assetVersionHelper";
 import { COMMON_UI_TRANSLATION_KEYS } from "../lib/ui-i18n/uiTranslationKeys";
 
 export function bindInertia(adminizer: Adminizer) {
@@ -39,14 +40,7 @@ export function bindInertia(adminizer: Adminizer) {
 
     // Entry files are built with stable names (app.js, agent.es.js, controls),
     // so a version query string is what invalidates browser caches on release.
-    const assetVersion = (() => {
-        try {
-            const pkg = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, '../../package.json'), 'utf-8'));
-            return typeof pkg.version === 'string' ? pkg.version : '';
-        } catch {
-            return '';
-        }
-    })();
+    const assetVersion = getAssetVersion();
 
     const viteRender = () => {
         if (process.env.ADMINIZER_ENV === 'dev') {

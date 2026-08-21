@@ -10,6 +10,7 @@ import {
 import { Control, ControlType } from "../lib/controls/Control";
 import { ModelAnyField } from "../lib/model/AbstractModel";
 import { isObject } from "./JsUtils";
+import { withAssetVersion } from "./assetVersionHelper";
 import { MediaManagerHandler } from "../lib/media-manager/MediaManagerHandler";
 import {Adminizer} from "../lib/Adminizer";
 
@@ -275,8 +276,8 @@ export function getControlsOptions(
             ...(control?.getConfig() || {}), // Base config of the editor
             ...(shouldUseFieldConfig ? fieldOptions?.config || {} : {}),
         },
-        path: control.getJsPath(),
-        cssPath: control.getCssPath(),
+        path: withAssetVersion(control.getJsPath()),
+        cssPath: withAssetVersion(control.getCssPath()),
     };
 
     // If items are provided, use them instead of the CKEditor defaults.

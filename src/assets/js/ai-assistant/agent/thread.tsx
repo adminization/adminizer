@@ -171,19 +171,27 @@ const ThreadWelcome: FC<{ hint?: string; compact?: boolean }> = ({ hint, compact
   );
 };
 
+// A prompt is a whole phrase and is never truncated, so on a narrow thread
+// (a phone in the fullscreen webview, the side panel) wrapping gives every
+// prompt a line of its own and pushes the composer up the screen. There the
+// row scrolls sideways instead; the centered wrap comes back once the thread
+// is wide enough for prompts to share a line. The query is on the container,
+// not the viewport: the side panel is narrow on a wide screen.
 const ThreadSuggestions: FC<{ prompts: string[] }> = ({ prompts }) => {
   return (
-    <div className="aui-thread-welcome-suggestions flex w-full flex-wrap items-center justify-center gap-2 px-4">
-      {prompts.map((prompt) => (
-        <ThreadPrimitive.Suggestion key={prompt} prompt={prompt} send asChild>
-          <Button
-            variant="ghost"
-            className="aui-thread-welcome-suggestion text-foreground hover:bg-muted border-border/60 h-auto gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-normal whitespace-nowrap transition-colors"
-          >
-            {prompt}
-          </Button>
-        </ThreadPrimitive.Suggestion>
-      ))}
+    <div className="@container/suggestions -mx-4">
+      <div className="aui-thread-welcome-suggestions flex items-center gap-2 overflow-x-auto px-4 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] @2xl/suggestions:flex-wrap @2xl/suggestions:justify-center @2xl/suggestions:overflow-x-visible @2xl/suggestions:px-8 @2xl/suggestions:pb-0 [&::-webkit-scrollbar]:hidden">
+        {prompts.map((prompt) => (
+          <ThreadPrimitive.Suggestion key={prompt} prompt={prompt} send asChild>
+            <Button
+              variant="ghost"
+              className="aui-thread-welcome-suggestion text-foreground hover:bg-muted border-border/60 h-auto shrink-0 gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-normal whitespace-nowrap transition-colors"
+            >
+              {prompt}
+            </Button>
+          </ThreadPrimitive.Suggestion>
+        ))}
+      </div>
     </div>
   );
 };

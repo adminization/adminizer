@@ -721,7 +721,7 @@ export default function AiAssistantAgent({
     >
       <header
         className={cn(
-          'border-border/60 flex flex-wrap items-center gap-x-3 gap-y-2 border-b',
+          '@container/header border-border/60 flex flex-wrap items-center gap-x-3 gap-y-2 border-b',
           compact ? 'px-3 py-2' : 'px-4 py-2.5 gap-x-4',
         )}
       >
@@ -761,10 +761,15 @@ export default function AiAssistantAgent({
               size="sm"
               onClick={handleNewChat}
               disabled={resetting || switchingModel}
+              aria-label={t('New chat')}
+              title={t('New chat')}
               className="gap-1.5"
             >
               <RotateCcwIcon className={cn('size-3.5', resetting && 'animate-spin')} />
-              {compact ? null : t('New chat')}
+              {/* Icon-only where the header has no room for a label: always in
+                  the side panel, and on a narrow page (the phone webview) —
+                  otherwise the button pushes the header onto a second row. */}
+              {compact ? null : <span className="hidden @md/header:inline">{t('New chat')}</span>}
             </Button>
           )}
           {headerActions}

@@ -169,6 +169,14 @@ export function bindInertia(adminizer: Adminizer) {
         // Contextual documentation of this page: metadata only, and null when
         // the subsystem is off or the user may not read documentation.
         // A broken implementation must never take the panel down with it.
+        const menu = req.user ? await menuHelper.getMenuItems(req) : null;
+        const historyAccess = req.user && req.adminizer.config.history.enabled
+            ? await req.adminizer.accessRightsHelper.hasPermission(
+                `history-${req.adminizer.config.history?.adapter ?? 'default'}`,
+                req.user,
+            )
+            : false;
+
         let docs = null;
         try {
             docs = req.user ? await adminizer.documentationHandler.forContextMeta(req.user, req.path) : null;
@@ -185,7 +193,7 @@ export function bindInertia(adminizer: Adminizer) {
                 locale,
                 common: commonMessages,
             },
-            menu: req.user ? menuHelper.getMenuItems(req) : null,
+            menu,
             title: menuHelper.getBrandTitle(),
             brand: menuHelper.getBrandTitle(),
             logout: menuHelper.getLogoutUrl(),
@@ -220,14 +228,7 @@ export function bindInertia(adminizer: Adminizer) {
                 enabled: req.adminizer.config.aiAssistant?.enabled ?? false,
                 defaultModel: req.adminizer.config.aiAssistant?.defaultModel ?? null,
             },
-            history: req.user
-                ?
-                (req.adminizer.config.history.enabled ? req.adminizer.accessRightsHelper.hasPermission(
-                    `history-${req.adminizer.config.history?.adapter ?? 'default'}`,
-                    req.user
-                ) : false)
-                :
-                false
+            history: historyAccess
         });
 
         next();

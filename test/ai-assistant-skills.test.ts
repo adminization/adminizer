@@ -36,7 +36,8 @@ function createAdminizer(permitted: string[]) {
         updateOne: async (_criteria: any, values: any) => ({...records[0], ...values}),
     };
 
-    const has = (token?: string) => Boolean(token) && permitted.includes(token!);
+    // Case-insensitive like the real AccessRightsHelper, which lowercases token ids
+    const has = (token?: string) => Boolean(token) && permitted.some((p) => p.toLowerCase() === token!.toLowerCase());
     const adminizer: any = {
         config: {
             routePrefix: "/admin",
@@ -44,8 +45,10 @@ function createAdminizer(permitted: string[]) {
             models: {Test: {model: "Test", title: "Test"}, Secret: {model: "Secret", title: "Secret"}},
         },
         accessRightsHelper: {
-            hasPermission: (token: string) => has(token),
-            enoughPermissions: (tokens: string[]) => !tokens.length || tokens.some(has),
+            hasPermission: async (token: string) => has(token),
+            hasStaticPermission: (token: string) => has(token),
+            enoughPermissions: async (tokens: string[]) => !tokens.length || tokens.some(has),
+            enoughStaticPermissions: (tokens: string[]) => !tokens.length || tokens.some(has),
         },
         modelHandler: {
             getResource: (name: string) => (name === "Test" ? model : undefined),
@@ -90,9 +93,9 @@ describe("built-in agent skills", () => {
         });
     });
 
-    it("advertises the current user in the schema of skills that need it", () => {
+    it("advertises the current user in the schema of skills that need it", async () => {
         const handler = new AiAssistantAgentSkillHandler(createAdminizer(["read-Test-model"]));
-        const skill = handler.getAvailable(operator).find((entry) => entry.id === "read_model_records")!;
+        const skill = (await handler.getAvailable(operator)).find((entry) => entry.id === "read_model_records")!;
         const properties = skill.inputSchema.properties as Record<string, any>;
 
         expect(properties[CURRENT_USER_PARAM].enum).toEqual(["operator"]);
@@ -101,7 +104,7 @@ describe("built-in agent skills", () => {
         expect(skill.description).toContain("Readable models: Test");
     });
 
-    it("hides skills the user has no access right for", () => {
+    it("hides skills the user has no access right for", async () => {
         const adminizer = createAdminizer([]);
         const handler = new AiAssistantAgentSkillHandler(adminizer);
         handler.add({
@@ -112,8 +115,8 @@ describe("built-in agent skills", () => {
             execute: () => ({ok: true}),
         }, "billing");
 
-        expect(handler.getAvailable(operator).map((skill) => skill.id)).not.toContain("billing_report");
-        return expect(handler.execute("billing_report", {}, operator)).rejects.toThrow(/is not available/);
+        expect((await handler.getAvailable(operator)).map((skill) => skill.id)).not.toContain("billing_report");
+        await expect(handler.execute("billing_report", {}, operator)).rejects.toThrow(/is not available/);
     });
 
     it("passes the authenticated user to a skill and overrides a forged one", async () => {
@@ -181,9 +184,9 @@ describe("built-in agent skills", () => {
         expect(empty.templates).toEqual([]);
     });
 
-    it("lists models with the operations the user actually has", () => {
+    it("lists models with the operations the user actually has", async () => {
         const handler = new AiAssistantAgentSkillHandler(createAdminizer(["read-Test-model"]));
-        const listed = handler.getAvailable(operator).find((skill) => skill.id === "list_data_models");
+        const listed = (await handler.getAvailable(operator)).find((skill) => skill.id === "list_data_models");
         expect(listed).toBeTruthy();
 
         return handler.execute("list_data_models", {}, operator).then((result: any) => {

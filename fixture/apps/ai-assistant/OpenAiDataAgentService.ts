@@ -58,7 +58,7 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
             console.log('📝 [Agent Debug] User prompt:', prompt);
             console.log('📚 [Agent Debug] History length:', history.length);
             
-            const agent = this.createAgent(user);
+            const agent = await this.createAgent(user);
             const conversation = this.toAgentInput(history);
             
             console.log('🚀 [Agent Debug] Running agent with maxTurns: 6');
@@ -81,8 +81,8 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
         }
     }
 
-    private createAgent(user: User): Agent<AgentContext> {
-        const accessibleModels = this.listReadableModels(user);
+    private async createAgent(user: User): Promise<Agent<AgentContext>> {
+        const accessibleModels = await this.listReadableModels(user);
         const modelSummary = accessibleModels.length > 0
             ? accessibleModels.map(({name, config}) => `• ${name} (model key: ${config.model})`).join('\n')
             : 'No models are currently accessible.';
@@ -462,7 +462,7 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
         });
     }
 
-    private listReadableModels(user: User): Array<{name: string; config: ModelConfig}> {
+    private async listReadableModels(user: User): Promise<Array<{name: string; config: ModelConfig}>> {
         const readable: Array<{name: string; config: ModelConfig}> = [];
 
         for (const resource of this.context.getModelResources()) {
@@ -471,7 +471,7 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
             }
 
             const token = `read-${resource.model.modelname}-model`;
-            if (this.context.hasPermission(token, user)) {
+            if (await this.context.hasPermission(token, user)) {
                 readable.push({name: resource.name, config: resource.config});
             }
         }

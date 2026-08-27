@@ -63,4 +63,29 @@ export default [
             "@typescript-eslint/no-explicit-any": "warn",
         },
     },
+    {
+        // Type-aware rules for the backend sources. `hasPermission` and the rest
+        // of the access-rights API are asynchronous, and a forgotten `await`
+        // turns into a truthy pending promise that silently grants access —
+        // `no-misused-promises` is what makes that a build error instead.
+        files: ["src/**/*.ts"],
+        ignores: ["src/assets/**", "src/ui/**"],
+
+        languageOptions: {
+            parser: tsParser,
+            parserOptions: {
+                project: ["./src/tsconfig.json"],
+                tsconfigRootDir: __dirname,
+            },
+        },
+
+        rules: {
+            "@typescript-eslint/no-misused-promises": ["error", {
+                checksConditionals: true,
+                checksVoidReturn: false,
+                checksSpreads: true,
+            }],
+            "@typescript-eslint/await-thenable": "warn",
+        },
+    },
 ];

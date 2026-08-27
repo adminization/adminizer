@@ -81,9 +81,10 @@ describe("contextual access rights", () => {
         expect(checked).toBe(true);
     });
 
-    it("allows administrators before validating a token", () => {
+    it("allows administrators before validating a token", async () => {
         const helper = createHelper();
 
-        expect(helper.hasPermission("missing-token", {isAdministrator: true} as any)).toBe(true);
+        expect(await helper.hasPermission("missing-token", {isAdministrator: true} as any)).toBe(true);
+        expect(helper.hasStaticPermission("missing-token", {isAdministrator: true} as any)).toBe(true);
     });
 });

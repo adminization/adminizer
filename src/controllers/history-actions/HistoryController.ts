@@ -11,7 +11,7 @@ export class HistoryController {
         const adapter = HistoryController.getAdapter(req);
 
         if (req.method.toUpperCase() === 'GET') {
-            const rawModels = adapter.getModels(req.user);
+            const rawModels = await adapter.getModels(req.user);
             let users: User[] = []
 
             const accessToUsersHistory = await req.adminizer.accessRightsHelper.enoughPermissions([

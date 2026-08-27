@@ -37,7 +37,10 @@ export interface AiAssistantAgentSkill {
      * Per-user refinement of what the agent is told about this skill, e.g. an
      * enum of the models this particular user may read.
      */
-    describe?(user: User, adminizer: Adminizer): {description?: string; inputSchema?: Record<string, unknown>} | undefined;
+    describe?(user: User, adminizer: Adminizer):
+        | {description?: string; inputSchema?: Record<string, unknown>}
+        | Promise<{description?: string; inputSchema?: Record<string, unknown>} | undefined>
+        | undefined;
     execute(input: Record<string, unknown>, context: AiAssistantAgentSkillContext): unknown | Promise<unknown>;
 }
 
@@ -72,15 +75,17 @@ export class AiAssistantAgentSkillHandler {
     }
 
     /** Skills this user may call, described with their permissions applied. */
-    getAvailable(user: User): AiAssistantAgentSkillDescriptor[] {
-        return [...this.skills.values()]
-            .filter((skill) => this.isPermitted(skill, user))
-            .map((skill) => this.describe(skill, user));
+    async getAvailable(user: User): Promise<AiAssistantAgentSkillDescriptor[]> {
+        const available: AiAssistantAgentSkillDescriptor[] = [];
+        for (const skill of this.skills.values()) {
+            if (await this.isPermitted(skill, user)) available.push(await this.describe(skill, user));
+        }
+        return available;
     }
 
     async execute(id: string, input: Record<string, unknown>, user: User): Promise<unknown> {
         const skill = this.skills.get(id.trim().toLowerCase());
-        if (!skill || !this.isPermitted(skill, user)) {
+        if (!skill || !await this.isPermitted(skill, user)) {
             throw new Error(`AI assistant skill "${id}" is not available`);
         }
         const userIdentity = this.describeUser(user);
@@ -109,12 +114,12 @@ export class AiAssistantAgentSkillHandler {
         };
     }
 
-    private isPermitted(skill: RegisteredSkill, user: User): boolean | Promise<boolean> {
+    private async isPermitted(skill: RegisteredSkill, user: User): Promise<boolean> {
         return !skill.accessRightsToken || this.adminizer.accessRightsHelper.hasPermission(skill.accessRightsToken, user);
     }
 
-    private describe(skill: RegisteredSkill, user: User): AiAssistantAgentSkillDescriptor {
-        const refinement = skill.describe?.(user, this.adminizer) ?? {};
+    private async describe(skill: RegisteredSkill, user: User): Promise<AiAssistantAgentSkillDescriptor> {
+        const refinement = await skill.describe?.(user, this.adminizer) ?? {};
         const {execute: _execute, describe: _describe, owner: _owner, ...rest} = skill;
         const inputSchema = {...(refinement.inputSchema ?? skill.inputSchema)};
 

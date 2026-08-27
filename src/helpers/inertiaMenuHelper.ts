@@ -10,8 +10,8 @@ export class InertiaMenuHelper {
         this.adminizer = adminizer
     }
 
-    public getMenuItems(req: ReqType) {
-        return listAccessibleMenuItems(this.adminizer, req.user)
+    public async getMenuItems(req: ReqType): Promise<MenuItem[]> {
+        return (await listAccessibleMenuItems(this.adminizer, req.user))
             .map((menuItem) => this.translateMenuItem(req, menuItem))
     }
 

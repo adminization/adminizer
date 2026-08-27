@@ -14,7 +14,7 @@ import {
 import {User} from '../../models/User';
 import type {Adminizer} from '../Adminizer';
 import {AbstractAiConversationHistoryService, InMemoryAiConversationHistoryService} from './AbstractAiConversationHistoryService';
-import type {AiAssistantAdminLink, AiAssistantNavigationTarget} from './AiAssistantUiMethodHandler';
+import type {AiAssistantAdminLink, AiAssistantNavigationTarget, AiAssistantUiMethod} from './AiAssistantUiMethodHandler';
 import type {AiAssistantAgentSkillDescriptor, AiAssistantSkillUser} from './AiAssistantAgentSkillHandler';
 import {toJsonSafe} from './jsonSafe';
 
@@ -144,7 +144,7 @@ export abstract class AbstractAiModelService {
      * Browser capabilities available to a particular user.  Tool-capable
      * services can turn these descriptors into their provider's tool format.
      */
-    protected getUiMethods(user: User) {
+    protected getUiMethods(user: User): Promise<AiAssistantUiMethod[]> {
         return this.adminizer.aiAssistantUiMethodHandler.getAvailable(user);
     }
 
@@ -153,7 +153,7 @@ export abstract class AbstractAiModelService {
      * An OpenHarness/AI SDK adapter can return this value directly from its
      * tool's `execute` callback.
      */
-    protected searchAdminLinks(user: User, query?: string): AiAssistantAdminLink[] {
+    protected searchAdminLinks(user: User, query?: string): Promise<AiAssistantAdminLink[]> {
         return this.adminizer.aiAssistantUiMethodHandler.searchAdminLinks(user, query);
     }
 
@@ -162,7 +162,7 @@ export abstract class AbstractAiModelService {
      * skills are already scoped to that user's model permissions, so an agent
      * exposing them can be offered to non-administrator accounts.
      */
-    protected getAgentSkills(user: User): AiAssistantAgentSkillDescriptor[] {
+    protected getAgentSkills(user: User): Promise<AiAssistantAgentSkillDescriptor[]> {
         return this.adminizer.aiAssistantAgentSkillHandler.getAvailable(user);
     }
 
@@ -187,13 +187,13 @@ export abstract class AbstractAiModelService {
      * validated against that user's permissions and the resolved URL is
      * returned, so it can be reported back as the tool result.
      */
-    protected openAdminLink(
+    protected async openAdminLink(
         target: AiAssistantNavigationTarget,
         user: User,
         publish: AiAgentPublish,
-    ): string {
-        const href = this.adminizer.aiAssistantUiMethodHandler.resolveNavigation(user, target);
-        this.publishUiMethod('navigate', {href}, user, publish);
+    ): Promise<string> {
+        const href = await this.adminizer.aiAssistantUiMethodHandler.resolveNavigation(user, target);
+        await this.publishUiMethod('navigate', {href}, user, publish);
         return href;
     }
 
@@ -202,13 +202,13 @@ export abstract class AbstractAiModelService {
      * registry and permission check stay server-side, so an LLM cannot invoke
      * an arbitrary client event.
      */
-    protected publishUiMethod(
+    protected async publishUiMethod(
         id: string,
         input: Record<string, unknown>,
         user: User,
         publish: AiAgentPublish,
-    ): void {
-        const method = this.getUiMethods(user).find((candidate) => candidate.id === id);
+    ): Promise<void> {
+        const method = (await this.getUiMethods(user)).find((candidate) => candidate.id === id);
         if (!method) throw new Error(`AI assistant UI method "${id}" is not available`);
         publish({type: 'ui.method', method: method.id, action: method.action, input});
     }

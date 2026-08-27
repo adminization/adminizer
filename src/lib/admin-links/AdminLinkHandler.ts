@@ -76,17 +76,21 @@ export class AdminLinkHandler {
         return this.links.delete(id);
     }
 
-    list(user: User, type?: string): ResolvedAdminLink[] {
+    async list(user: User, type?: string): Promise<ResolvedAdminLink[]> {
         const wanted = type ? this.slug(type) : null;
-        return [...this.links.values()].filter((link) =>
-            (!wanted || this.slug(link.type) === wanted)
-            && (!link.accessRightsToken || this.adminizer.accessRightsHelper.hasPermission(link.accessRightsToken, user)),
-        );
+        const accessible: ResolvedAdminLink[] = [];
+        for (const link of this.links.values()) {
+            if (wanted && this.slug(link.type) !== wanted) continue;
+            if (link.accessRightsToken && !await this.adminizer.accessRightsHelper.hasPermission(link.accessRightsToken, user)) continue;
+            accessible.push(link);
+        }
+        return accessible;
     }
 
-    resolve(user: User, type: string, name: string): ResolvedAdminLink | undefined {
+    async resolve(user: User, type: string, name: string): Promise<ResolvedAdminLink | undefined> {
         const wanted = this.slug(name);
-        return this.list(user, type).find((link) => this.slug(link.name) === wanted || this.slug(link.title) === wanted);
+        return (await this.list(user, type))
+            .find((link) => this.slug(link.name) === wanted || this.slug(link.title) === wanted);
     }
 
     addTemplate(template: AdminLinkTemplate, owner = 'host'): string {
@@ -116,17 +120,17 @@ export class AdminLinkHandler {
      * items, templates registered by apps and any navigation link that carries
      * placeholders of its own.
      */
-    listTemplates(user: User): ResolvedAdminLinkTemplate[] {
+    async listTemplates(user: User): Promise<ResolvedAdminLinkTemplate[]> {
         const templates: ResolvedAdminLinkTemplate[] = [];
-        const push = (template: ResolvedAdminLinkTemplate): void => {
+        const push = async (template: ResolvedAdminLinkTemplate): Promise<void> => {
             if (DESTRUCTIVE_PATH.test(template.template)) return;
-            if (template.accessRightsToken && !this.adminizer.accessRightsHelper.hasPermission(template.accessRightsToken, user)) return;
+            if (template.accessRightsToken && !await this.adminizer.accessRightsHelper.hasPermission(template.accessRightsToken, user)) return;
             if (templates.some((existing) => existing.template === template.template || existing.id === template.id)) return;
             templates.push(template);
         };
 
-        for (const template of this.builtinTemplates(user)) push(template);
-        for (const template of this.templates.values()) push(template);
+        for (const template of this.builtinTemplates(user)) await push(template);
+        for (const template of this.templates.values()) await push(template);
         return templates;
     }
 
@@ -134,9 +138,9 @@ export class AdminLinkHandler {
      * Turns a template id (or its title) plus placeholder values into a real
      * admin URL, rejecting templates this user may not open.
      */
-    resolveTemplate(user: User, id: string, params: Record<string, unknown> = {}): string {
+    async resolveTemplate(user: User, id: string, params: Record<string, unknown> = {}): Promise<string> {
         const wanted = this.slug(id);
-        const available = this.listTemplates(user);
+        const available = await this.listTemplates(user);
         const template = available.find((candidate) => this.slug(candidate.id) === wanted)
             ?? available.find((candidate) => this.slug(candidate.title) === wanted || this.slug(candidate.template) === wanted);
         if (!template) throw new Error(`Admin link template "${id}" is not available`);

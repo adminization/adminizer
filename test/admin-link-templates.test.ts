@@ -20,8 +20,10 @@ function createAdminizer(permitted: string[], menuItems: any[] = []) {
             },
         },
         accessRightsHelper: {
-            hasPermission: (token: string) => permitted.includes(token),
-            enoughPermissions: (tokens: string[]) => !tokens.length || tokens.some((token) => permitted.includes(token)),
+            hasPermission: async (token: string) => permitted.includes(token),
+            hasStaticPermission: (token: string) => permitted.includes(token),
+            enoughPermissions: async (tokens: string[]) => !tokens.length || tokens.some((token) => permitted.includes(token)),
+            enoughStaticPermissions: (tokens: string[]) => !tokens.length || tokens.some((token) => permitted.includes(token)),
         },
         catalogHandler: {
             getAll: () => [{slug: "pages", name: "Pages"}],
@@ -39,9 +41,9 @@ function createAdminizer(permitted: string[], menuItems: any[] = []) {
 }
 
 describe("admin link templates", () => {
-    it("offers a record page only for models the user may edit", () => {
+    it("offers a record page only for models the user may edit", async () => {
         const {adminLinkHandler} = createAdminizer(["update-Test-model", "catalog-pages"]);
-        const ids = adminLinkHandler.listTemplates(operator).map((template) => template.id);
+        const ids = (await adminLinkHandler.listTemplates(operator)).map((template) => template.id);
 
         expect(ids).toContain("model-Test-edit");
         expect(ids).toContain("catalog-pages-item");
@@ -49,18 +51,18 @@ describe("admin link templates", () => {
         expect(ids).not.toContain("model-Test-add");
     });
 
-    it("resolves a template into a concrete url and encodes the values", () => {
+    it("resolves a template into a concrete url and encodes the values", async () => {
         const {adminLinkHandler} = createAdminizer(["update-Test-model"]);
 
-        expect(adminLinkHandler.resolveTemplate(operator, "model-Test-edit", {id: "a b/c"}))
+        expect(await adminLinkHandler.resolveTemplate(operator, "model-Test-edit", {id: "a b/c"}))
             .toBe("/admin/model/Test/edit/a%20b%2Fc");
-        expect(() => adminLinkHandler.resolveTemplate(operator, "model-Test-edit", {}))
-            .toThrow(/requires the "id" parameter/);
-        expect(() => adminLinkHandler.resolveTemplate(operator, "model-Secret-edit", {id: "1"}))
-            .toThrow(/is not available/);
+        await expect(adminLinkHandler.resolveTemplate(operator, "model-Test-edit", {}))
+            .rejects.toThrow(/requires the "id" parameter/);
+        await expect(adminLinkHandler.resolveTemplate(operator, "model-Secret-edit", {id: "1"}))
+            .rejects.toThrow(/is not available/);
     });
 
-    it("turns a navigation link with placeholders into a template", () => {
+    it("turns a navigation link with placeholders into a template", async () => {
         const {adminLinkHandler} = createAdminizer(["reports-token"], [{
             id: "report",
             title: "Report",
@@ -69,13 +71,13 @@ describe("admin link templates", () => {
             actions: null,
         }]);
 
-        const template = adminLinkHandler.listTemplates(operator).find((entry) => entry.id === "link-report");
+        const template = (await adminLinkHandler.listTemplates(operator)).find((entry) => entry.id === "link-report");
         expect(template?.params).toEqual([{name: "period", description: undefined}]);
-        expect(adminLinkHandler.resolveTemplate(operator, "link-report", {period: "2026-07"}))
+        expect(await adminLinkHandler.resolveTemplate(operator, "link-report", {period: "2026-07"}))
             .toBe("/admin/reports/2026-07");
     });
 
-    it("registers app templates and removes them by owner", () => {
+    it("registers app templates and removes them by owner", async () => {
         const {adminLinkHandler} = createAdminizer([]);
         adminLinkHandler.addTemplate({
             id: "orders-invoice",
@@ -83,13 +85,13 @@ describe("admin link templates", () => {
             template: "/admin/orders/:id/invoice",
         }, "billing");
 
-        expect(adminLinkHandler.resolveTemplate(operator, "orders-invoice", {id: "7"}))
+        expect(await adminLinkHandler.resolveTemplate(operator, "orders-invoice", {id: "7"}))
             .toBe("/admin/orders/7/invoice");
         expect(adminLinkHandler.removeTemplate("orders-invoice", "other-app")).toBe(false);
         expect(adminLinkHandler.removeTemplate("orders-invoice", "billing")).toBe(true);
     });
 
-    it("never exposes or opens a record removal page", () => {
+    it("never exposes or opens a record removal page", async () => {
         const {adminLinkHandler, uiMethodHandler} = createAdminizer(["delete-Test-model", "update-Test-model"]);
         adminLinkHandler.addTemplate({
             id: "test-remove",
@@ -97,14 +99,14 @@ describe("admin link templates", () => {
             template: "/admin/model/Test/remove/:id",
         });
 
-        expect(adminLinkHandler.listTemplates(operator).map((entry) => entry.id)).not.toContain("test-remove");
-        expect(() => uiMethodHandler.resolveNavigation(operator, {href: "/admin/model/Test/remove/1"}))
-            .toThrow(/cannot be opened/);
+        expect((await adminLinkHandler.listTemplates(operator)).map((entry) => entry.id)).not.toContain("test-remove");
+        await expect(uiMethodHandler.resolveNavigation(operator, {href: "/admin/model/Test/remove/1"}))
+            .rejects.toThrow(/cannot be opened/);
     });
 });
 
 describe("assistant navigation", () => {
-    it("searches links and templates the user can reach", () => {
+    it("searches links and templates the user can reach", async () => {
         const {uiMethodHandler} = createAdminizer(["update-Test-model", "read-Test-model"], [{
             id: "Test",
             title: "Test",
@@ -113,7 +115,7 @@ describe("assistant navigation", () => {
             actions: null,
         }]);
 
-        const found = uiMethodHandler.searchAdminLinks(operator, "test");
+        const found = await uiMethodHandler.searchAdminLinks(operator, "test");
         expect(found.find((entry) => entry.link === "/admin/model/Test")).toBeTruthy();
 
         const template = found.find((entry) => entry.id === "model-Test-edit");
@@ -121,18 +123,18 @@ describe("assistant navigation", () => {
         expect(template?.link).toBeUndefined();
     });
 
-    it("accepts a template with params and rejects foreign or unresolved urls", () => {
+    it("accepts a template with params and rejects foreign or unresolved urls", async () => {
         const {uiMethodHandler} = createAdminizer(["update-Test-model"]);
 
-        expect(uiMethodHandler.resolveNavigation(operator, {template: "model-Test-edit", params: {id: "42"}}))
+        expect(await uiMethodHandler.resolveNavigation(operator, {template: "model-Test-edit", params: {id: "42"}}))
             .toBe("/admin/model/Test/edit/42");
-        expect(uiMethodHandler.resolveNavigation(operator, {href: "/admin/model/Test"}))
+        expect(await uiMethodHandler.resolveNavigation(operator, {href: "/admin/model/Test"}))
             .toBe("/admin/model/Test");
-        expect(() => uiMethodHandler.resolveNavigation(operator, {href: "https://example.com"}))
-            .toThrow(/Adminizer-relative/);
-        expect(() => uiMethodHandler.resolveNavigation(operator, {href: "/admin/model/Test/edit/:id"}))
-            .toThrow(/is a template/);
-        expect(() => uiMethodHandler.resolveNavigation(operator, {}))
-            .toThrow(/href or template/);
+        await expect(uiMethodHandler.resolveNavigation(operator, {href: "https://example.com"}))
+            .rejects.toThrow(/Adminizer-relative/);
+        await expect(uiMethodHandler.resolveNavigation(operator, {href: "/admin/model/Test/edit/:id"}))
+            .rejects.toThrow(/is a template/);
+        await expect(uiMethodHandler.resolveNavigation(operator, {}))
+            .rejects.toThrow(/href or template/);
     });
 });

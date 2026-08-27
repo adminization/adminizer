@@ -321,7 +321,7 @@ export class OpenHarnessDataAgentService extends AbstractAiModelService {
             description: 'Search admin pages visible to the current user. Returns concrete links and link'
                 + ' templates: a template has params and is opened by passing its id plus values.',
             inputSchema: z.object({query: z.string().min(1)}),
-            execute: async ({query}: {query: string}) => ({links: this.searchAdminLinks(user, query)}),
+            execute: async ({query}: {query: string}) => ({links: await this.searchAdminLinks(user, query)}),
         });
 
         let session: any;
@@ -337,14 +337,14 @@ export class OpenHarnessDataAgentService extends AbstractAiModelService {
                 if (!session?.__openharnessPublish) {
                     throw new Error('Navigation is available only during an active assistant response.');
                 }
-                return {opened: this.openAdminLink(input, user, session.__openharnessPublish)};
+                return {opened: await this.openAdminLink(input, user, session.__openharnessPublish)};
             },
         });
 
         // Adminizer skills are provider-neutral (JSON Schema + an execute
         // callback), so their schema is handed to the model as-is. Built-in
         // data skills are already scoped to this user's permissions.
-        const skills = this.getAgentSkills(user);
+        const skills = await this.getAgentSkills(user);
         const skillTools = Object.fromEntries(skills.map((skill) => [skill.id, tool({
             description: skill.description,
             inputSchema: jsonSchema(skill.inputSchema),

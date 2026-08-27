@@ -93,10 +93,16 @@ export class AiAssistantUiMethodHandler {
         this.owners.delete(normalized);
     }
 
-    getAvailable(user: User): AiAssistantUiMethod[] {
-        return [...this.methods.values()]
-            .filter((method) => !method.accessRightsToken || this.adminizer.accessRightsHelper.hasPermission(method.accessRightsToken, user))
-            .map((method) => ({...method, inputSchema: {...method.inputSchema}}));
+    async getAvailable(user: User): Promise<AiAssistantUiMethod[]> {
+        const available: AiAssistantUiMethod[] = [];
+        for (const method of this.methods.values()) {
+            if (method.accessRightsToken
+                && !await this.adminizer.accessRightsHelper.hasPermission(method.accessRightsToken, user)) {
+                continue;
+            }
+            available.push({...method, inputSchema: {...method.inputSchema}});
+        }
+        return available;
     }
 
     /**
@@ -107,7 +113,7 @@ export class AiAssistantUiMethodHandler {
      * Parametrized pages are returned as templates, so a record page is
      * reachable even though its URL only exists once the id is known.
      */
-    searchAdminLinks(user: User, query = ''): AiAssistantAdminLink[] {
+    async searchAdminLinks(user: User, query = ''): Promise<AiAssistantAdminLink[]> {
         const needle = this.slug(query);
         const result: AiAssistantAdminLink[] = [];
         const matches = (...values: Array<string | undefined>): boolean =>
@@ -125,9 +131,9 @@ export class AiAssistantUiMethodHandler {
         };
 
         // Exactly the menu the sidebar renders for this user, sub-items included.
-        for (const item of listAccessibleMenuItems(this.adminizer, user)) add(item, item.section);
+        for (const item of await listAccessibleMenuItems(this.adminizer, user)) add(item, item.section);
 
-        for (const template of this.adminizer.adminLinkHandler.listTemplates(user)) {
+        for (const template of await this.adminizer.adminLinkHandler.listTemplates(user)) {
             if (!matches(template.title, template.id, template.section, template.description, template.template)) continue;
             result.push({
                 id: template.id,
@@ -148,7 +154,7 @@ export class AiAssistantUiMethodHandler {
      * Templates are resolved against this user's own permissions, so the LLM
      * can only reach pages that user could reach by clicking.
      */
-    resolveNavigation(user: User, target: AiAssistantNavigationTarget): string {
+    async resolveNavigation(user: User, target: AiAssistantNavigationTarget): Promise<string> {
         const template = target.template?.trim();
         if (template) {
             return this.adminizer.adminLinkHandler.resolveTemplate(user, template, target.params ?? {});

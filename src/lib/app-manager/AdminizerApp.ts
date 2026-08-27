@@ -205,10 +205,10 @@ export interface AppAiAssistantContext {
     routePrefix: string;
     getModelResources(): ModelResource[];
     resolveModelResource(modelName: string): ModelResource | undefined;
-    hasPermission(token: string, user: User): boolean | Promise<boolean>;
+    hasPermission(token: string, user: User): Promise<boolean>;
     createDataAccessor(modelResource: ModelResource, user: User, action: ActionType): DataAccessor;
     /** UI tools available to this user, including methods registered by apps. */
-    getUiMethods(user: User): AiAssistantUiMethod[];
+    getUiMethods(user: User): Promise<AiAssistantUiMethod[]>;
 }
 
 export interface AppAiAssistantResource {

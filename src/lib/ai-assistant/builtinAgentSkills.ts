@@ -14,22 +14,25 @@ const DEFAULT_RECORDS = 10;
 
 type ModelPermissions = {
     resource: ModelResource;
-    canRead: boolean | Promise<boolean>;
-    canUpdate: boolean | Promise<boolean>;
-    canCreate: boolean | Promise<boolean>;
+    canRead: boolean;
+    canUpdate: boolean;
+    canCreate: boolean;
 };
 
 /** What the current user may do with every configured model resource. */
-function listPermittedModels(adminizer: Adminizer, user: User): ModelPermissions[] {
+async function listPermittedModels(adminizer: Adminizer, user: User): Promise<ModelPermissions[]> {
     const has = (token: string) => adminizer.accessRightsHelper.hasPermission(token, user);
-    return listModelResources(adminizer)
-        .map((resource) => ({
+    const permitted: ModelPermissions[] = [];
+    for (const resource of listModelResources(adminizer)) {
+        const entry: ModelPermissions = {
             resource,
-            canRead: has(`read-${resource.name}-model`),
-            canUpdate: has(`update-${resource.name}-model`),
-            canCreate: has(`create-${resource.name}-model`),
-        }))
-        .filter((entry) => entry.canRead || entry.canUpdate);
+            canRead: await has(`read-${resource.name}-model`),
+            canUpdate: await has(`update-${resource.name}-model`),
+            canCreate: await has(`create-${resource.name}-model`),
+        };
+        if (entry.canRead || entry.canUpdate) permitted.push(entry);
+    }
+    return permitted;
 }
 
 /**
@@ -37,18 +40,18 @@ function listPermittedModels(adminizer: Adminizer, user: User): ModelPermissions
  * own permissions is reachable, which is what makes these skills safe to hand
  * to non-administrator accounts.
  */
-function requireModel(adminizer: Adminizer, user: User, name: string, action: 'read' | 'update'): ModelResource {
+async function requireModel(adminizer: Adminizer, user: User, name: string, action: 'read' | 'update'): Promise<ModelResource> {
     const resource = resolveModelResource(adminizer, name);
     if (!resource?.model) throw new Error(`Model "${name}" is not available.`);
     const token = action === 'read' ? `read-${resource.name}-model` : `update-${resource.name}-model`;
-    if (!adminizer.accessRightsHelper.hasPermission(token, user)) {
+    if (!await adminizer.accessRightsHelper.hasPermission(token, user)) {
         throw new Error(`You are not allowed to ${action} the "${resource.name}" model.`);
     }
     return resource;
 }
 
-function modelNames(adminizer: Adminizer, user: User, action: 'read' | 'update'): string[] {
-    return listPermittedModels(adminizer, user)
+async function modelNames(adminizer: Adminizer, user: User, action: 'read' | 'update'): Promise<string[]> {
+    return (await listPermittedModels(adminizer, user))
         .filter((entry) => (action === 'read' ? entry.canRead : entry.canUpdate))
         .map((entry) => entry.resource.name);
 }
@@ -134,8 +137,8 @@ export function buildBuiltinAgentSkills(adminizer: Adminizer): AiAssistantAgentS
         id: 'list_data_models',
         description: 'List the data models the current user may read or edit, with their fields, allowed operations and admin URLs.',
         inputSchema: {type: 'object', properties: {}, additionalProperties: false},
-        execute: (_input, {user}) => ({
-            models: listPermittedModels(adminizer, user).map(({resource, canRead, canUpdate, canCreate}) => ({
+        execute: async (_input, {user}) => ({
+            models: (await listPermittedModels(adminizer, user)).map(({resource, canRead, canUpdate, canCreate}) => ({
                 name: resource.name,
                 title: resource.config?.title ?? resource.name,
                 canRead,
@@ -163,13 +166,13 @@ export function buildBuiltinAgentSkills(adminizer: Adminizer): AiAssistantAgentS
             },
             additionalProperties: false,
         },
-        execute: (input, {user}) => {
+        execute: async (input, {user}) => {
             const needle = slugify(input.query);
             const matches = (...values: Array<string | undefined>): boolean =>
                 !needle || slugify(values.filter(Boolean).join(' ')).includes(needle);
 
             const sections = new Map<string, Record<string, unknown>[]>();
-            for (const item of listAccessibleMenuItems(adminizer, user)) {
+            for (const item of await listAccessibleMenuItems(adminizer, user)) {
                 if (!matches(item.title, item.id, item.section, item.link, item.modelResourceName)) continue;
                 const section = item.section || 'Platform';
                 if (!sections.has(section)) sections.set(section, []);
@@ -180,7 +183,7 @@ export function buildBuiltinAgentSkills(adminizer: Adminizer): AiAssistantAgentS
                 sections: [...sections].map(([section, items]) => ({section, items})),
                 // Record and other parametrized pages have no fixed URL, so the
                 // agent gets them as templates to fill in.
-                templates: adminizer.adminLinkHandler.listTemplates(user)
+                templates: (await adminizer.adminLinkHandler.listTemplates(user))
                     .filter((template) => matches(template.title, template.id, template.section, template.description, template.template))
                     .map((template) => ({
                         id: template.id,
@@ -212,15 +215,15 @@ export function buildBuiltinAgentSkills(adminizer: Adminizer): AiAssistantAgentS
             additionalProperties: false,
         },
         requiresUser: true,
-        describe: (user) => {
-            const models = modelNames(adminizer, user, 'read');
+        describe: async (user) => {
+            const models = await modelNames(adminizer, user, 'read');
             return {
                 description: `Read records of a data model the current user may read. Readable models: ${models.join(', ') || 'none'}.`,
                 inputSchema: withModelEnum(readRecords.inputSchema, models),
             };
         },
         execute: async (input, {user}) => {
-            const resource = requireModel(adminizer, user, String(input.model ?? ''), 'read');
+            const resource = await requireModel(adminizer, user, String(input.model ?? ''), 'read');
             const criteria = parseCriteria(input.filter);
             const limit = Math.min(Math.max(Math.trunc(Number(input.limit) || DEFAULT_RECORDS), 1), MAX_RECORDS);
             const fields = Array.isArray(input.fields) ? input.fields.map(String) : [];
@@ -254,15 +257,15 @@ export function buildBuiltinAgentSkills(adminizer: Adminizer): AiAssistantAgentS
             additionalProperties: false,
         },
         requiresUser: true,
-        describe: (user) => {
-            const models = modelNames(adminizer, user, 'update');
+        describe: async (user) => {
+            const models = await modelNames(adminizer, user, 'update');
             return {
                 description: `Update one record of a data model the current user may edit. Editable models: ${models.join(', ') || 'none'}.`,
                 inputSchema: withModelEnum(updateRecord.inputSchema, models),
             };
         },
         execute: async (input, {user}) => {
-            const resource = requireModel(adminizer, user, String(input.model ?? ''), 'update');
+            const resource = await requireModel(adminizer, user, String(input.model ?? ''), 'update');
             const id = String(input.id ?? '').trim();
             if (!id) throw new Error('id of the record to update is required');
             const values = input.values && typeof input.values === 'object' && !Array.isArray(input.values)

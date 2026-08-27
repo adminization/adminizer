@@ -196,7 +196,7 @@ export class WidgetHandler {
             if (!this.adminizer.accessRightsHelper.hasToken(readToken)) {
                 continue;
             }
-            if (!this.adminizer.accessRightsHelper.hasPermission(readToken, user)) {
+            if (!await this.adminizer.accessRightsHelper.hasPermission(readToken, user)) {
                 continue;
             }
 
@@ -250,7 +250,7 @@ export class WidgetHandler {
             let id_key = 0
             for (const widget of this.widgets) {
                 if (widget.widgetType === 'switcher') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
+                    if (await this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
                         widgets.push({
                             id: `${widget.id}__${id_key}`,
                             type: widget.widgetType,
@@ -264,7 +264,7 @@ export class WidgetHandler {
                         })
                     }
                 } else if (widget.widgetType === 'info') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
+                    if (await this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
                         widgets.push({
                             id: `${widget.id}__${id_key}`,
                             type: widget.widgetType,
@@ -280,7 +280,7 @@ export class WidgetHandler {
                         })
                     }
                 } else if (widget.widgetType === 'action') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
+                    if (await this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
                         widgets.push({
                             id: `${widget.id}__${id_key}`,
                             type: widget.widgetType,
@@ -294,7 +294,7 @@ export class WidgetHandler {
                         })
                     }
                 } else if (widget.widgetType === 'link') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
+                    if (await this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
                         let links_id_key = 0
                         for (const link of widget.links) {
                             widgets.push({
@@ -312,7 +312,7 @@ export class WidgetHandler {
                         }
                     }
                 } else if (widget.widgetType === 'custom') {
-                    if (this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
+                    if (await this.adminizer.accessRightsHelper.hasPermission(this.resolveAccessRightsToken(widget), dashboardUser)) {
                         widgets.push({
                             id: `${widget.id}_${id_key}`,
                             type: widget.widgetType,

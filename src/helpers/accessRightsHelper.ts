@@ -100,7 +100,7 @@ export class AccessRightsHelper {
             .filter((item, pos, self) => self.indexOf(item) === pos);
     }
 
-    public enoughPermissions(tokens: string[], user: User): boolean {
+    public async enoughPermissions(tokens: string[], user: User): Promise<boolean> {
         if (user.isAdministrator) {
             return true;
         }
@@ -110,14 +110,42 @@ export class AccessRightsHelper {
             return true;
         }
 
-        return tokens.some((token) => Boolean(this.hasPermission(token, user)));
+        for (const token of tokens) {
+            if (await this.hasPermission(token, user)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    public hasPermission(
+    /** Fail-closed synchronous variant of {@link enoughPermissions}. */
+    public enoughStaticPermissions(tokens: string[], user: User): boolean {
+        if (user.isAdministrator) {
+            return true;
+        }
+
+        if (!tokens.length) {
+            return true;
+        }
+
+        return tokens.some((token) => this.hasStaticPermission(token, user));
+    }
+
+    /**
+     * The single access decision: the token exists, a group of this user carries
+     * it, and — for a contextual token — its own `check` accepts the context.
+     *
+     * Always asynchronous on purpose. A `boolean | Promise<boolean>` union made
+     * `if (hasPermission(...))` compile while silently granting access, because
+     * a pending promise is truthy. Callers that genuinely cannot await use
+     * {@link hasStaticPermission} instead.
+     */
+    public async hasPermission(
         tokenId: string | undefined,
         user: User,
         context?: PermissionContext,
-    ): boolean | Promise<boolean> {
+    ): Promise<boolean> {
         if (!this.adminizer.config.auth.enable || user.isAdministrator) {
             return true;
         }
@@ -135,6 +163,38 @@ export class AccessRightsHelper {
         }
 
         return this.runTokenCheck(token, user, context ?? {});
+    }
+
+    /**
+     * Synchronous access decision for call sites that cannot await, such as the
+     * field configuration built by `DataAccessor`.
+     *
+     * A contextual token is denied here: its `check` is asynchronous and there
+     * is no context to hand it, so the only safe answer is "no". Model CRUD
+     * tokens never declare `check`, so the ordinary panel paths are unaffected.
+     */
+    public hasStaticPermission(tokenId: string | undefined, user: User): boolean {
+        if (!this.adminizer.config.auth.enable || user.isAdministrator) {
+            return true;
+        }
+
+        const token = this.getRegisteredToken(tokenId);
+        if (!token) {
+            return false;
+        }
+        if (!this.hasAssignedPermission(token.id, user)) {
+            return false;
+        }
+
+        if (token.check) {
+            Adminizer.log.warn(
+                "AccessRightsHelper > hasStaticPermission: contextual token denied in a synchronous check",
+                token.id,
+            );
+            return false;
+        }
+
+        return true;
     }
 
     /** Returns trusted option IDs granted by all groups for a contextual token. */

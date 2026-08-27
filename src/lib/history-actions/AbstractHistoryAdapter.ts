@@ -144,14 +144,14 @@ export abstract class AbstractHistoryAdapter {
      * @param user - User whose permissions are checked.
      * @returns Array of model names (in lowercase) the user can access.
      */
-    public getModels(user: User): string[] {
+    public async getModels(user: User): Promise<string[]> {
         const models = Array.from(this.adminizer.modelHandler.model.entries())
             .filter(([, model]) => !this.excludedModels.has(model.modelname))
             .map(([resourceName]) => resourceName);
 
         const accessModels: string[] = [];
         for (const model of models) {
-            const access = this.adminizer.accessRightsHelper.enoughPermissions([
+            const access = await this.adminizer.accessRightsHelper.enoughPermissions([
                 `read-${model}-model`,
             ], user);
             if (access) accessModels.push(model);
@@ -170,7 +170,7 @@ export abstract class AbstractHistoryAdapter {
     * @protected
     */
     protected async _getAllModelHistory(history: HistoryActions[], user: User): Promise<HistoryActions[]> {
-        const accessToUsersHistory = this.adminizer.accessRightsHelper.enoughPermissions([
+        const accessToUsersHistory = await this.adminizer.accessRightsHelper.enoughPermissions([
             `users-history-${this.id}`
         ], user);
 
@@ -195,8 +195,8 @@ export abstract class AbstractHistoryAdapter {
      */
     protected async _getAllHistory(history: HistoryActions[], user: User): Promise<(HistoryActions & { displayName: string })[]> {
         try {
-            const accessModels = this.getModels(user);
-            const accessToUsersHistory = this.adminizer.accessRightsHelper.enoughPermissions([
+            const accessModels = await this.getModels(user);
+            const accessToUsersHistory = await this.adminizer.accessRightsHelper.enoughPermissions([
                 `users-history-${this.id}`
             ], user);
 

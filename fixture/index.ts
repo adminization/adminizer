@@ -62,6 +62,10 @@ import {HandsontableTestApp} from "./apps/handsontable-test/HandsontableTestApp"
 import {AiAssistantApp} from "./apps/ai-assistant/AiAssistantApp";
 import {RecordScopeTestApp} from "./apps/record-scope-test/RecordScopeTestApp";
 
+// Kept out of the lift: the demo grants name Test records by id and are assigned to the
+// fixture users, so they can only be written once the host has seeded both.
+const recordScopeTestApp = new RecordScopeTestApp();
+
 process.env.AP_PASSWORD_SALT = "FIXTURE"
 
 const TMP_DIR = path.join(process.cwd(), ".tmp");
@@ -120,6 +124,8 @@ if (ormType === "sequelize") {
         }
     }
 
+    await seedRecordScopeDemo();
+
     // Enable debug logging
     Adminizer.logger.level = 'debug';
 } else if (ormType === "typeorm") {
@@ -156,6 +162,8 @@ if (ormType === "sequelize") {
         }
     }
 
+    await seedRecordScopeDemo();
+
     Adminizer.logger.level = 'debug';
 } else {
     throw new Error(`Unsupported fixture ORM "${ormType}". Supported ORM: sequelize, typeorm`);
@@ -163,6 +171,15 @@ if (ormType === "sequelize") {
 
 // Finish
 
+
+/** Idempotent, and a no-op while the Test table is empty — safe on every boot. */
+async function seedRecordScopeDemo() {
+    try {
+        await recordScopeTestApp.seedDemoData();
+    } catch (err) {
+        console.error("Error during record-scope demo seeding:", err);
+    }
+}
 
 async function cleanTempFolder() {
     try {
@@ -256,7 +273,8 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
         // add HandsontableTest -- production JSComponents smoke test
         await adminizer.appManager.enable(new HandsontableTestApp());
 
-        await adminizer.appManager.enable(new RecordScopeTestApp());
+        // add RecordScopeTest -- contextual access token granted per Test record
+        await adminizer.appManager.enable(recordScopeTestApp);
 
         const aiAssistantApp = new AiAssistantApp({
             defaultModel: adminizer.config.aiAssistant?.defaultModel,

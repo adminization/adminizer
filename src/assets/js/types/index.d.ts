@@ -31,11 +31,24 @@ export interface NavItem extends MenuItem {
     section?: string;
 }
 
+/**
+ * Presentation of a navbar section header, keyed by the translated section name.
+ */
+export interface NavSection {
+    icon?: string;
+    order?: number;
+}
+
 type FlashMessages = 'info' | 'error' | 'success' | string;
 
 export interface SharedData {
     name: string;
     menu: NavItem[];
+    /**
+     * Per-section metadata for `menu`, keyed by the section name carried by
+     * each NavItem. Sections missing from the map render with defaults.
+     */
+    menuSections?: Record<string, NavSection> | null;
     brand: string,
     logout: string
     logoutBtn: string

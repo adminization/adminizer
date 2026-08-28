@@ -56,7 +56,10 @@ export function AppSidebar() {
                                 <MenubarTrigger asChild
                                                 className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md">
                                     <SidebarMenuButton asChild>
-                                        <Button variant="ghost" asChild className={`w-full ${!page.props.section ? 'pointer-events-none' : ''}`}>
+                                        {/* px-2 matches SidebarMenuButton's p-2, so the brand icon lines
+                                            up with the section and menu icons below it. Forced, because
+                                            Button's has-[>svg]:px-3 matches the chevron and outranks it. */}
+                                        <Button variant="ghost" asChild className={`w-full px-2! ${!page.props.section ? 'pointer-events-none' : ''}`}>
                                             <div>
                                                 <MaterialIcon name="rocket_launch" className="!text-[18px]"/>
                                                 <span

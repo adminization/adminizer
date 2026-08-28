@@ -194,6 +194,7 @@ export function bindInertia(adminizer: Adminizer) {
                 common: commonMessages,
             },
             menu,
+            menuSections: req.user ? menuHelper.getSections(req) : null,
             title: menuHelper.getBrandTitle(),
             brand: menuHelper.getBrandTitle(),
             logout: menuHelper.getLogoutUrl(),

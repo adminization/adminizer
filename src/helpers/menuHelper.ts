@@ -4,7 +4,7 @@
  * @constructor
  */
 import { User } from "../models/User";
-import { ActionType, AdminpanelConfig, HrefConfig, ModelConfig } from "../interfaces/adminpanelConfig";
+import { ActionType, AdminpanelConfig, HrefConfig, ModelConfig, NavbarSectionConfig } from "../interfaces/adminpanelConfig";
 import { GroupsAccessRightsHelper } from "./accessRightsHelper";
 
 export type MenuItem = {
@@ -93,6 +93,19 @@ export class MenuHelper {
             return this.config.brand.link.title;
         }
         return 'Adminizer';
+    }
+
+    /**
+     * Presentation metadata of navbar sections, keyed by section name.
+     *
+     * Only sections declared under `navbar.sections` are present: a section
+     * used by links but never configured simply has no entry, and the UI falls
+     * back to its default rendering.
+     *
+     * @returns {Record<string, NavbarSectionConfig>}
+     */
+    public getSections(): Record<string, NavbarSectionConfig> {
+        return { ...(this.config.navbar?.sections ?? {}) };
     }
 
     /**

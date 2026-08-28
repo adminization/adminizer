@@ -162,6 +162,14 @@ export interface AdminpanelConfig {
         sectionHandlers?: {
             [section: string]: (user: User, links: HrefConfig[]) => HrefConfig[]
         }
+        /**
+         * Presentation metadata for navbar sections, keyed by section name.
+         * The sections themselves are declared by the `section` field of individual
+         * links; this map only controls how a section header is drawn.
+         */
+        sections?: {
+            [section: string]: NavbarSectionConfig
+        }
     }
     /**
      * Policies that will be executed before going to every page
@@ -686,6 +694,23 @@ export interface HrefConfig {
      * Optional section grouping for navbar items (side navigation)
      */
     section?: string
+}
+
+/**
+ * Presentation of a single navbar section header.
+ */
+export interface NavbarSectionConfig {
+    /**
+     * Icon of the section header. Also used as the section's trigger in the
+     * collapsed (icon-only) sidebar.
+     */
+    icon?: MaterialIcon
+    /**
+     * Explicit position of the section. Sections carrying an `order` are sorted
+     * ascending and placed before the ones without it, which keep the default
+     * ordering (`Platform` first, `System` last, the rest alphabetically).
+     */
+    order?: number
 }
 
 export interface MediaManagerConfig {

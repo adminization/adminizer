@@ -1,5 +1,5 @@
 import {Adminizer} from "../lib/Adminizer";
-import { HrefConfig } from "../interfaces/adminpanelConfig";
+import { HrefConfig, NavbarSectionConfig } from "../interfaces/adminpanelConfig";
 import { MenuItem } from "./menuHelper";
 import { listAccessibleMenuItems } from "./navigationAccessHelper";
 
@@ -31,6 +31,17 @@ export class InertiaMenuHelper {
             section: item.section ? req.i18n.__(item.section) : item.section,
             subItems: item.subItems?.map((subItem) => this.translateHrefItem(req, subItem)),
         };
+    }
+
+    /**
+     * Navbar section metadata keyed by the *translated* section name, so the UI
+     * can look it up with the already-translated `section` of a menu item.
+     */
+    public getSections(req: ReqType): Record<string, NavbarSectionConfig> {
+        const sections = this.adminizer.menuHelper.getSections();
+        return Object.fromEntries(
+            Object.entries(sections).map(([name, section]) => [req.i18n.__(name), section])
+        );
     }
 
     public getBrandTitle() {

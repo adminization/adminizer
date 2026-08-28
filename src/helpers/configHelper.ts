@@ -168,7 +168,13 @@ export class ConfigHelper {
 				additionalLinks: [
 					...builtinLinks,
 					...(config.navbar?.additionalLinks || [])
-				]
+				],
+				// Merged per section name so an app declaring its own sections
+				// keeps the built-in ones, while still being able to override them.
+				sections: {
+					...defaultConfig.navbar?.sections,
+					...config.navbar?.sections
+				}
 			}
 		};
 

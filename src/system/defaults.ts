@@ -41,7 +41,13 @@ let adminpanelConfig: AdminpanelConfig = {
                 section: 'System',
                 type: 'self'
             }
-        ]
+        ],
+        // Icons for the two sections the panel ships with. Projects may add
+        // their own sections here, or override these.
+        sections: {
+            Platform: { icon: 'dashboard' },
+            System: { icon: 'settings' }
+        }
     },
 
     brand: {

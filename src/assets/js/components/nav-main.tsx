@@ -83,7 +83,15 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
         return withoutQuery.replace(/\/$/, '');
     };
 
-    const sectionIcon = (section: string) => sections[section]?.icon || DEFAULT_SECTION_ICON;
+    /**
+     * Falls back to the icon of the section's first item that has one: in the
+     * collapsed rail the icon is all that tells two sections apart, and configs
+     * predating `navbar.sections` would otherwise show identical folders.
+     */
+    const sectionIcon = (section: string, itemsInSection: NavItem[]) =>
+        sections[section]?.icon
+        || itemsInSection.find(item => item.icon)?.icon
+        || DEFAULT_SECTION_ICON;
 
     const groupedItems = items.reduce((acc: Record<string, NavItem[]>, item) => {
         const section = item.section || 'Platform';
@@ -214,13 +222,13 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                                     Tooltip and swallow the trigger props. The dropdown labels
                                     itself with the section name instead. */}
                                 <SidebarMenuButton isActive={!!activeEntry} aria-label={section}>
-                                    <MaterialIcon name={sectionIcon(section)} className="!text-[18px]" />
+                                    <MaterialIcon name={sectionIcon(section, itemsInSection)} className="!text-[18px]" />
                                     <span>{section}</span>
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent side="right" align="start" className="min-w-56 z-[1003]">
                                 <DropdownMenuLabel className="flex items-center gap-2">
-                                    <MaterialIcon name={sectionIcon(section)} className="!text-[18px]" />
+                                    <MaterialIcon name={sectionIcon(section, itemsInSection)} className="!text-[18px]" />
                                     <span>{section}</span>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
@@ -312,7 +320,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                             {/* Icon first, chevron pushed to the far right, so section
                                 icons sit on the same line as the brand icon above them. */}
                             <div className="flex w-full items-center gap-2">
-                                <MaterialIcon name={sectionIcon(section)} className="!text-[16px]" />
+                                <MaterialIcon name={sectionIcon(section, itemsInSection)} className="!text-[16px]" />
                                 <span className="overflow-hidden text-ellipsis whitespace-nowrap">{section}</span>
                                 <ChevronRight
                                     className={`ml-auto shrink-0 transform transition-transform duration-200 ${isOpenNow ? 'rotate-90' : ''}`}

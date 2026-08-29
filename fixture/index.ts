@@ -61,6 +61,9 @@ import {WidgetsApp} from "./apps/widgets/WidgetsApp";
 import {HandsontableTestApp} from "./apps/handsontable-test/HandsontableTestApp";
 import {AiAssistantApp} from "./apps/ai-assistant/AiAssistantApp";
 import {RecordScopeTestApp} from "./apps/record-scope-test/RecordScopeTestApp";
+import {ProjectGraphApp} from "./apps/project-graph/ProjectGraphApp";
+import {installProjectGraphSequelizeModels} from "./apps/project-graph/ProjectGraphModels";
+import {projectGraphTypeOrmModels} from "./apps/project-graph/ProjectGraphTypeOrmModels";
 
 // Kept out of the lift: the demo grants name Test records by id and are assigned to the
 // fixture users, so they can only be written once the host has seeded both.
@@ -82,6 +85,10 @@ process.env.JWT_SECRET = "fixture-jwt-secret"
 
 
 const ormType = process.env.ORM ?? "sequelize";
+// The Project -> Task -> Message access-graph demo lives entirely in its own app:
+// ENABLE_PROJECT_GRAPH=false removes its models, its graph and its panel sections.
+const projectGraphEnabled = (process.env.ENABLE_PROJECT_GRAPH ?? "true") === "true";
+const projectGraphApp = projectGraphEnabled ? new ProjectGraphApp() : undefined;
 let adminizer: Adminizer;
 const fixtureSystemModels = {
     User: "UserAP",
@@ -119,6 +126,7 @@ if (ormType === "sequelize") {
         try {
             await seedDatabase(orm.models, 77);
             console.log("Database seeded with random data!");
+            await projectGraphApp?.seedDemoData();
         } catch (seedErr) {
             console.error("Error during database seeding:", seedErr);
         }
@@ -140,6 +148,8 @@ if (ormType === "sequelize") {
             JsonSchemaTypeOrm,
             CategoryTypeOrm,
             TestCatalogTypeOrm,
+            // App entities must be known before initialize() - TypeORM cannot add them later
+            ...(projectGraphEnabled ? projectGraphTypeOrmModels : []),
         ],
         synchronize: process.env.ORM_ALTER !== "false",
         logging: false,
@@ -157,6 +167,7 @@ if (ormType === "sequelize") {
         try {
             await seedTypeOrmDatabase(dataSource, 77);
             console.log("TypeORM database seeded with random data!");
+            await projectGraphApp?.seedDemoData();
         } catch (seedErr) {
             console.error("Error during TypeORM database seeding:", seedErr);
         }
@@ -262,6 +273,19 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
             await adminizer.appManager.enable(new NavigationApp({
                 ...navigationAppConfig,
             }));
+            if (projectGraphEnabled) {
+                // An app registers models with the panel, but the tables belong to the host ORM
+                await installProjectGraphSequelizeModels(sequelizeAdapter.sequelize, true, {
+                    user: fixtureSystemModels.User,
+                    group: fixtureSystemModels.Group,
+                });
+            }
+        }
+
+        // add ProjectGraph -- the accessGraph demo: Project -> Task -> Message
+        // (its demo data is seeded by the host below, once the fixture users exist)
+        if (projectGraphApp) {
+            await adminizer.appManager.enable(projectGraphApp);
         }
 
         // add NotificationSender -- user message notification sender

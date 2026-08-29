@@ -4,9 +4,19 @@ import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import packageJson from './package.json';
 
+// Vite rejects requests whose Host header is not localhost (DNS-rebinding
+// protection). The fixture dev server is routinely opened by machine name
+// (http://dev0:3000) or through a tunnel, so allow every host by default and
+// narrow it down with ADMINIZER_ALLOWED_HOSTS="dev0,foo.local" when needed.
+const allowedHostsEnv = (process.env.ADMINIZER_ALLOWED_HOSTS ?? '')
+    .split(',')
+    .map(host => host.trim())
+    .filter(Boolean);
+
 
 export default defineConfig({
     server: {
+        allowedHosts: allowedHostsEnv.length > 0 ? allowedHostsEnv : true,
         fs: {
             allow: ['.', 'fixture'] // Разрешить Vite читать файлы из fixture/
         }

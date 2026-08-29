@@ -19,7 +19,7 @@ type ModelPermissions = {
     canCreate: boolean;
 };
 
-/** What the current user may do with every configured model resource. */
+/** The model resources the current user may read or edit, with the CRUD flags of each. */
 async function listPermittedModels(adminizer: Adminizer, user: User): Promise<ModelPermissions[]> {
     const has = (token: string) => adminizer.accessRightsHelper.hasPermission(token, user);
     const permitted: ModelPermissions[] = [];
@@ -35,11 +35,7 @@ async function listPermittedModels(adminizer: Adminizer, user: User): Promise<Mo
     return permitted;
 }
 
-/**
- * Resolves a model this user may use for `action`. Nothing outside the user's
- * own permissions is reachable, which is what makes these skills safe to hand
- * to non-administrator accounts.
- */
+/** Resolves a model this user may use for `action`, throwing when they may not. */
 async function requireModel(adminizer: Adminizer, user: User, name: string, action: 'read' | 'update'): Promise<ModelResource> {
     const resource = resolveModelResource(adminizer, name);
     if (!resource?.model) throw new Error(`Model "${name}" is not available.`);
@@ -90,7 +86,7 @@ function slugify(value: unknown): string {
     return String(value ?? '').trim().toLowerCase().replace(/[\s_-]+/g, '-');
 }
 
-/** A navigation entry as the agent sees it: the sub-actions of a menu item. */
+/** The sub-actions of a menu item, recursively, as the agent sees them. */
 function describeNavigationActions(actions: HrefConfig[] | null | undefined): unknown[] {
     return (actions ?? []).map((action) => ({
         id: action.id || action.title,
@@ -116,7 +112,8 @@ function describeNavigationItem(item: MenuItem): Record<string, unknown> {
 
 /** Field names of a model resource that this user may see or write. */
 function fieldNames(adminizer: Adminizer, user: User, resource: ModelResource, action: 'list' | 'edit'): string[] {
-    return Object.keys(new DataAccessor(adminizer, user, resource, action).getFieldsConfig());
+    // undefined = no rights on the model at all: report no fields instead of throwing.
+    return Object.keys(new DataAccessor(adminizer, user, resource, action).getFieldsConfig() ?? {});
 }
 
 /**
@@ -228,13 +225,15 @@ export function buildBuiltinAgentSkills(adminizer: Adminizer): AiAssistantAgentS
             const limit = Math.min(Math.max(Math.trunc(Number(input.limit) || DEFAULT_RECORDS), 1), MAX_RECORDS);
             const fields = Array.isArray(input.fields) ? input.fields.map(String) : [];
             const accessor = new DataAccessor(adminizer, user, resource, 'list');
-            const records = await resource.model!.find(criteria, accessor);
-            const limited = records.slice(0, limit) as Array<Record<string, unknown>>;
+            // `limit` belongs in the query: slicing afterwards would read the whole table.
+            // `total` is then a separate COUNT over the same access-scoped criteria.
+            const records = await resource.model!.find({...criteria, limit}, accessor) as Array<Record<string, unknown>>;
+            const total = await resource.model!.count(criteria, accessor);
             return toJsonSafe({
                 model: resource.name,
-                total: records.length,
-                count: limited.length,
-                records: fields.length ? limited.map((record) => pickFields(record, fields)) : limited,
+                total,
+                count: records.length,
+                records: fields.length ? records.map((record) => pickFields(record, fields)) : records,
             });
         },
     };

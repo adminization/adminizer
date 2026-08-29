@@ -51,7 +51,8 @@
 * [Authorization](Authorization.md)
 * [Access Rights Tokens](AccessRights/access-rights-tokens.md)
 * [Field-Level Restrictions](AccessRights/AccessRightsModelFields.md)
-* [User-Owned Records](AccessRights/user-owned-records.md)
+* [User-Owned Records & Memberships](AccessRights/user-owned-records.md)
+* [Record Access Cheat Sheet](AccessRights/record-access-cheatsheet.md)
 
 ## Other
 

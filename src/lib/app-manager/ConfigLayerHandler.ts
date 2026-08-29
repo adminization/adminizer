@@ -1,5 +1,6 @@
 import type {Adminizer} from "../Adminizer";
 import type {AppConfigPatch} from "./AdminizerApp";
+import {refreshInternalModelAccess} from "../../system/buildInternalModelAccess";
 
 export interface ConfigLayerRecord {
     id: string;
@@ -145,6 +146,10 @@ export class ConfigLayerHandler {
             delete targetConfig[key];
         }
         Object.assign(this.adminizer.config, rebuilt);
+
+        // The rebuilt config may change what the record-access resolvers query (e.g. an
+        // app-patched accessGraph), so the internal allowlists must follow synchronously.
+        refreshInternalModelAccess(this.adminizer);
     }
 
     private getLayerId(appName: string, layerId: string): string {

@@ -184,6 +184,16 @@ Each internal access scope has an allowlist of models. Built-in scopes include:
 | `navigation` | Navigation storage |
 | `widgets` | Dashboard widgets |
 | `feed` | Feed export |
+| `data-accessor` | `DataAccessor` lookups for object-form `userAccessRelation` |
+
+The `data-accessor` scope is filled automatically from the model configs: every intermediate model
+named by an object-form `userAccessRelation` — including the `through` membership model and `Group`
+when the `{field, through, via, group}` form is used — is whitelisted
+(see [User-Owned Records](AccessRights/user-owned-records.md)). The `accessGraph` section adds its
+own lookups the same way: each graph's membership model, `Group` when the membership declares
+`group`, and every graph model whose id list feeds the next level down. The allowlist is built at
+boot and rebuilt whenever an app config layer changes the merged config or an app registers or
+unregisters a model, so runtime-enabled apps get their lookups without a restart.
 
 Projects can extend the allowlist with `system.internalModelAccess`:
 

@@ -3,6 +3,7 @@ import {ControllerHelper} from "../src/helpers/controllerHelper";
 import {DataAccessor} from "../src/lib/DataAccessor";
 import {ModelHandler} from "../src/lib/model/ModelHandler";
 import bindAccessRights from "../src/system/bindAccessRights";
+import {buildInternalModelAccess} from "../src/system/buildInternalModelAccess";
 
 describe("model resource aliases", () => {
     it("keeps system resources and project host models in separate indexes", () => {
@@ -51,7 +52,7 @@ describe("model resource aliases", () => {
         const adminizer = {
             config,
             modelHandler,
-            accessRightsHelper: {hasPermission: vi.fn(() => true)},
+            accessRightsHelper: {hasStaticPermission: vi.fn(() => true)},
         } as any;
 
         const resource = ControllerHelper.findModelResource({
@@ -65,7 +66,8 @@ describe("model resource aliases", () => {
 
         const accessor = new DataAccessor(adminizer, {isAdministrator: true} as any, resource, "list");
         accessor.getFieldsConfig();
-        expect(adminizer.accessRightsHelper.hasPermission).toHaveBeenCalledWith("read-Customer-model", expect.anything());
+        // DataAccessor emits token ids in their canonical lowercase form
+        expect(adminizer.accessRightsHelper.hasStaticPermission).toHaveBeenCalledWith("read-customer-model", expect.anything());
 
         const registerModelTokens = vi.fn();
         await bindAccessRights({
@@ -74,5 +76,32 @@ describe("model resource aliases", () => {
         } as any);
         expect(registerModelTokens).toHaveBeenCalledWith("User");
         expect(registerModelTokens).toHaveBeenCalledWith("Customer");
+    });
+
+    it("puts membership models in the internal allowlist under the exact names the resolver queries", () => {
+        const modelHandler = new ModelHandler();
+        // Project resources shadow the "User" and "Group" host models: host-model-first
+        // resolution would yield "Customer"/"Team", but the membership resolver queries
+        // the through model by resource name and the group narrowing the literal "Group".
+        modelHandler.add("User", {modelname: "User", attributes: {}} as any, {hostModelName: "UserAP"});
+        modelHandler.add("Customer", {modelname: "User", attributes: {}} as any, {hostModelName: "User", primary: true});
+        modelHandler.add("Group", {modelname: "Group", attributes: {}} as any, {hostModelName: "GroupAP"});
+        modelHandler.add("Team", {modelname: "Group", attributes: {}} as any, {hostModelName: "Group", primary: true});
+        modelHandler.add("Deal", {modelname: "Deal", attributes: {}} as any);
+
+        const config = {
+            models: {
+                Deal: {userAccessRelation: {field: "customer", through: "User", via: "owner", group: "grp"}},
+            },
+            accessGraph: {
+                deal: {root: "Deal", membership: {through: "User", via: "owner", group: "grp"}},
+            },
+        } as any;
+
+        const accessMap = buildInternalModelAccess(config, modelHandler)!;
+        expect(accessMap["data-accessor"]).toContain("User");
+        expect(accessMap["data-accessor"]).toContain("Group");
+        expect(accessMap["data-accessor"]).not.toContain("Customer");
+        expect(accessMap["data-accessor"]).not.toContain("Team");
     });
 });

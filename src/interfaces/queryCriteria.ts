@@ -73,6 +73,19 @@ export interface QueryCriteria<TModel = any> {
     where?: CriteriaWhere<TModel>;
     select?: CriteriaSelect;
     populate?: CriteriaPopulate<TModel>;
+    /**
+     * Record-access confinement of single populated associations, keyed by association
+     * name and ANDed into the populate JOIN's ON clause: a populated record failing the
+     * condition arrives as its bare foreign-key value instead of an object, while the
+     * owning row itself stays in the result — unlike `populate.<field>.where`, which
+     * confines the owning rows.
+     *
+     * Set exclusively by `DataAccessor.pushDownPopulateAccess` for the associations the
+     * adapter declared pushdown-capable (`AbstractModel.canPushdownPopulateAccess`);
+     * `sanitizeUserRelationAccess` discards an incoming value, so hand-built criteria
+     * cannot suppress the association verification that trusts this key.
+     */
+    populateOn?: Record<string, CriteriaWhere>;
     sort?: CriteriaSort;
     limit?: number;
     skip?: number;

@@ -21,6 +21,9 @@ export function parseGroupPermissionGrant(value: unknown): GroupPermissionGrant 
     };
 }
 
+/** `<verb>-<model>-model` — the id shape registered by {@link AccessRightsHelper.registerModelTokens}. */
+const MODEL_CRUD_TOKEN_PATTERN = /^(create|read|update|delete)-.+-model$/;
+
 export class AccessRightsHelper {
 
     private _tokens: AccessRightsToken[] = [];
@@ -40,6 +43,15 @@ export class AccessRightsHelper {
         }
         if (accessRightsToken.check && typeof accessRightsToken.check !== "function") {
             throw new Error("Adminpanel > Can not register token: check must be a function");
+        }
+        // Model CRUD tokens are consulted from synchronous paths (DataAccessor field
+        // config), where a contextual `check` cannot run and is denied. Such a token would
+        // silently hide every field of the model, so it is rejected at registration.
+        if (accessRightsToken.check && MODEL_CRUD_TOKEN_PATTERN.test(accessRightsToken.id)) {
+            throw new Error(
+                `Adminpanel > Can not register token "${accessRightsToken.id}": model CRUD tokens are ` +
+                `evaluated synchronously and cannot carry a contextual "check"`
+            );
         }
 
         for (let i = 0; i < this._tokens.length; i++) {

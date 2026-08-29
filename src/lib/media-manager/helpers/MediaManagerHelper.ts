@@ -192,15 +192,18 @@ export async function populateVariants(
     const mediaModel = "models" in host
         ? host.models.get<MediaManagerItem>(model)
         : host.modelHandler.internal("media-manager").get<MediaManagerItem>(model);
-    const items: MediaManagerItem[] = [];
-
-    for (const variant of variants ?? []) {
-        const populated = await mediaModel.findOne({where: {id: variant.id}});
-        if (populated) {
-            items.push(populated);
-        }
+    const ids = (variants ?? []).map((variant) => variant.id).filter((id) => id !== null && id !== undefined);
+    if (!ids.length) {
+        return [];
     }
-    return items;
+
+    // One query for the whole set; the input order is preserved and gaps are dropped
+    const populated = await mediaModel.find({where: {id: {in: ids}}} as never);
+    const byId = new Map((populated ?? []).map((item) => [String(item.id), item]));
+
+    return (variants ?? [])
+        .map((variant) => byId.get(String(variant.id)))
+        .filter((item): item is MediaManagerItem => Boolean(item));
 }
 
 export function getAssociationFieldName(model: any, associationName: string): string {

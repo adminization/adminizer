@@ -84,7 +84,7 @@ export default async function view(req: ReqType, res: ResType) {
             })
 
         default:
-            fields = await FieldsHelper.loadAssociations(req, fields, "edit");
+            fields = await FieldsHelper.loadAssociations(req, fields, "edit", dataAccessor.recordAccessCache);
             for (const field of Object.keys(fields)) {
                 let fieldConfigConfig = fields[field].config as BaseFieldConfig;
                 if (fieldConfigConfig.type === 'mediamanager') {

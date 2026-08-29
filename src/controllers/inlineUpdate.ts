@@ -80,11 +80,19 @@ export default async function inlineUpdate(req: ReqType, res: ResType) {
 
     // Update record
     const id = req.params.id;
-    const params: Record<string, string | number> = {};
-    params[modelResource.config.identifierField || req.adminizer.config.identifierField] = id;
+    // Reuse the resolved identifier: without the primary-key fallback the key is
+    // `undefined`, the adapter drops the unknown condition, and the update hits every
+    // record the user may reach instead of the one addressed by :id.
+    const params: Record<string, string | number> = {[identifierField]: id};
 
     try {
-        await modelResource.model.update(params, { [fieldName]: convertedValue }, dataAccessor);
+        const updated = await modelResource.model.update(params, { [fieldName]: convertedValue }, dataAccessor);
+
+        // Record access is enforced by the criteria, so a record out of the user's reach
+        // simply matches nothing. Reporting success would leave the edited value on screen.
+        if (!updated.length) {
+            return res.status(404).json({ error: 'Record not found' });
+        }
 
         return res.json({
             success: true, 

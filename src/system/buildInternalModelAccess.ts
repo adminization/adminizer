@@ -1,6 +1,24 @@
 import { AdminpanelConfig } from "../interfaces/adminpanelConfig";
 import { InternalModelAccessMap } from "../interfaces/internalModelAccess";
+import { collectAccessGraphInternalModels } from "../lib/access-graph/AccessGraphResolver";
 import { ModelHandler } from "../lib/model/ModelHandler";
+import type { Adminizer } from "../lib/Adminizer";
+
+/**
+ * Rebuilds the internal-scope allowlists from the current config and model registry.
+ * Called at boot and again on every change that can alter what the resolvers query:
+ * config rebuilds (app config layers) and app model (un)registration. Must not throw
+ * on a broken app graph — graph problems only log and the affected models fail closed.
+ */
+export function refreshInternalModelAccess(adminizer: Adminizer): void {
+    if (!adminizer.config) {
+        return;
+    }
+
+    adminizer.modelHandler.configureInternalAccess(
+        buildInternalModelAccess(adminizer.config, adminizer.modelHandler)
+    );
+}
 
 export function buildInternalModelAccess(
     config: AdminpanelConfig,
@@ -51,18 +69,34 @@ function getDataAccessorInternalModels(
             continue;
         }
 
-		const model = modelHandler.getResource(modelName);
-		const intermediateModelName = model?.attributes?.[userAccessRelation.field]?.model;
-		if (intermediateModelName) {
-			const resourceName = modelHandler.resolveAssociationResource(
-				intermediateModelName,
-				model?.attributes?.[userAccessRelation.field]?.resourceName
-			);
-			if (resourceName) {
-				models.push(resourceName);
+		// Must mirror what the resolver queries at request time. Membership form: the
+		// `through` model resolved as a resource name/alias (getResourceRecord) plus the
+		// literal "Group" when declared — the membership target `field` points at is never
+		// fetched through the internal scope. Via form: the intermediate model.
+		if (userAccessRelation.through) {
+			const throughResource = modelHandler.getResourceRecord(userAccessRelation.through)?.name;
+			if (throughResource) {
+				models.push(throughResource);
+			}
+			if (userAccessRelation.group) {
+				models.push("Group");
+			}
+		} else {
+			const model = modelHandler.getResource(modelName);
+			const intermediateModelName = model?.attributes?.[userAccessRelation.field]?.model;
+			if (intermediateModelName) {
+				const resourceName = modelHandler.resolveAssociationResource(
+					intermediateModelName,
+					model?.attributes?.[userAccessRelation.field]?.resourceName
+				);
+				if (resourceName) {
+					models.push(resourceName);
+				}
 			}
 		}
     }
+
+    models.push(...collectAccessGraphInternalModels(config.accessGraph, modelHandler));
 
     return Array.from(new Set(models));
 }

@@ -41,6 +41,22 @@ export type ModelAnyInstance = {
     [key: string]: ModelAnyField
 }
 
+/**
+ * One level of an accessGraph pushdown subquery, innermost first: the level SELECTs
+ * `select` from `model`, filtered either by the previous (inner) level's subquery on
+ * `parentAttribute` or by literal `conditions`. Attribute names are Adminizer attributes
+ * (association aliases or plain columns) — the adapter maps them to physical columns.
+ */
+export interface GraphSubqueryLevel {
+    model: AbstractModel<any>;
+    /** Attribute whose values the level yields. */
+    select: string;
+    /** Attribute filtered by the previous (inner) level's subquery. */
+    parentAttribute?: string;
+    /** IN-conditions on this level's own attributes (an empty values list matches nothing). */
+    conditions?: Array<{attribute: string; values: unknown[]}>;
+}
+
 export abstract class AbstractModel<T> {
     public readonly modelname: string;
     public readonly attributes: ModelAttributes;
@@ -69,6 +85,39 @@ export abstract class AbstractModel<T> {
     protected abstract _destroy(criteria: QueryCriteria<T>): Promise<T[]>;
 
     protected abstract _count(criteria: QueryCriteria<T>): Promise<number>;
+
+    /**
+     * accessGraph pushdown hook (stage 3): compiles the level chain into an opaque operand
+     * for an `{in: ...}` criteria on this model — one nested subquery instead of
+     * materialized id lists. Returns `undefined` when the chain cannot be pushed down
+     * (foreign adapter or connection, unknown attribute); the caller then falls back to
+     * per-level materialization. Adapters without pushdown support simply don't implement it.
+     *
+     * What it buys: the fallback issues one query per level and inlines every intermediate id
+     * the user can reach into the final `IN (...)`, so a read costs whatever the user's account
+     * holds — a member of 500 projects drags ~25 000 task ids through the app to render one page.
+     * A chain compiled here is a single statement of constant size at any account size, which is
+     * why implementing it is worth the raw-SQL surface. Because the fallback is silent, an
+     * implementation that quietly declines is a performance regression nobody is told about —
+     * decline only where correctness demands it (see the Sequelize adapter's `defaultScope` and
+     * `paranoid` handling), and keep it equivalent to the materialized walk row for row.
+     *
+     * @param decline call it with a human-readable reason before returning `undefined`. The
+     * resolver logs that reason once per model, which is the only signal an operator gets that a
+     * configured `pushdown: true` is not doing anything for this chain.
+     */
+    public compileGraphInSubquery?(
+        levels: GraphSubqueryLevel[],
+        decline?: (reason: string) => void,
+    ): Promise<unknown | undefined>;
+
+    /**
+     * Whether `criteria.populateOn` works for `association` on this model: the adapter
+     * can AND the condition into that populate JOIN and hand a filtered-out record back
+     * as its bare foreign-key value. Emitters must check this before setting the key —
+     * an unsupported association has to keep the post-read verification instead.
+     */
+    public canPushdownPopulateAccess?(association: string): boolean;
 
     protected createInternalRepository(accessToken: symbol, modelName: string = this.modelname): InternalModelRepository<T> {
         if (accessToken !== INTERNAL_MODEL_ACCESS_TOKEN) {
@@ -232,15 +281,23 @@ export abstract class AbstractModel<T> {
 
     public async findOne(criteria: QueryCriteria<T>, dataAccessor: DataAccessor): Promise<Partial<T> | null> {
         criteria = await dataAccessor.sanitizeUserRelationAccess(criteria);
+        criteria = await dataAccessor.pushDownPopulateAccess(criteria);
         let record = await this._findOne(criteria);
+        if (!record) {
+            return null;
+        }
 
-        return record ? dataAccessor.process(record, criteria) : null;
+        // Populated associations are not covered by the criteria above — see processManyWithAccess
+        const [processed] = await dataAccessor.processManyWithAccess([record], criteria);
+        return processed;
     }
 
     public async find(criteria: QueryCriteria<T>, dataAccessor: DataAccessor): Promise<Partial<T>[]> {
         criteria = await dataAccessor.sanitizeUserRelationAccess(criteria);
+        criteria = await dataAccessor.pushDownPopulateAccess(criteria);
         let records = await this._find(criteria);
-        return records.map(record => dataAccessor.process(record, criteria));
+        // Populated associations are not covered by the criteria above — see processManyWithAccess
+        return dataAccessor.processManyWithAccess(records, criteria);
     }
 
     /**
@@ -265,7 +322,8 @@ export abstract class AbstractModel<T> {
     }
 
     public async updateOne(criteria: QueryCriteria<T>, data: Partial<T>, dataAccessor: DataAccessor): Promise<Partial<T> | null> {
-        let _data = dataAccessor.process(data);
+        // Write rules apply on update too: the record may not move out of the user's reach
+        let _data = await dataAccessor.setUserRelationAccess(dataAccessor.process(data));
 
         // Get the old record first for diff
         criteria = await dataAccessor.sanitizeUserRelationAccess(criteria);
@@ -294,7 +352,8 @@ export abstract class AbstractModel<T> {
     }
 
     public async update(criteria: QueryCriteria<T>, data: Partial<T>, dataAccessor: DataAccessor): Promise<Partial<T>[]> {
-        let _data = dataAccessor.process(data);
+        // Write rules apply on update too: the record may not move out of the user's reach
+        let _data = await dataAccessor.setUserRelationAccess(dataAccessor.process(data));
         criteria = await dataAccessor.sanitizeUserRelationAccess(criteria);
 
         // Get old records automatically

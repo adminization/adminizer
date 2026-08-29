@@ -11,6 +11,7 @@ import {
 import { v4 as uuid } from "uuid";
 import { AbstractAdapter, AbstractAdapterOptions, AbstractModel, Attribute, ModelAttributes } from "../AbstractModel";
 import { CriteriaPopulate, CriteriaSelect, QueryCriteria } from "../../../interfaces/queryCriteria";
+import { Adminizer } from "../../Adminizer";
 
 /**
  * Experimental TypeORM adapter.
@@ -23,6 +24,10 @@ type AdminizerSchema = Record<string, any>;
 type TypeOrmEntity = Function | string | EntitySchema;
 
 const ROOT_ALIAS = "record";
+
+/** Always-false / always-true predicates: an empty IN-list must not depend on driver quirks. */
+const MATCH_NOTHING = "1 = 0";
+const MATCH_EVERYTHING = "1 = 1";
 
 function normalizeModelName(modelName: string): string {
     return modelName.toLowerCase();
@@ -379,7 +384,7 @@ export class TypeOrmModel<T extends ObjectLiteral> extends AbstractModel<T> {
     } {
         const criteriaSortValue = "sort" in criteria ? criteria.sort : undefined;
         const isOrderingSort = typeof criteriaSortValue === "string";
-        const { where: nestedWhere, skip, limit, sort, select, populate, ...rest } = criteria as any;
+        const { where: nestedWhere, skip, limit, sort, select, populate, populateOn: _populateOn, ...rest } = criteria as any;
         if (!isOrderingSort && criteriaSortValue !== undefined) {
             rest.sort = criteriaSortValue;
         }
@@ -394,7 +399,11 @@ export class TypeOrmModel<T extends ObjectLiteral> extends AbstractModel<T> {
         };
     }
 
-    private addRequestedRelations(qb: SelectQueryBuilder<T>, populate?: CriteriaPopulate): Map<string, string> {
+    private addRequestedRelations(
+        qb: SelectQueryBuilder<T>,
+        populate?: CriteriaPopulate,
+        populateOn?: QueryCriteria["populateOn"]
+    ): Map<string, string> {
         const aliases = new Map<string, string>();
         const relations = populate ? Object.keys(populate) : this.relationNames;
 
@@ -403,7 +412,14 @@ export class TypeOrmModel<T extends ObjectLiteral> extends AbstractModel<T> {
                 continue;
             }
             const alias = `${ROOT_ALIAS}_${relationName}`;
-            qb.leftJoinAndSelect(`${ROOT_ALIAS}.${relationName}`, alias);
+            const joinCondition = populateOn?.[relationName]
+                ? this.buildJoinCondition(populateOn[relationName], alias)
+                : undefined;
+            if (joinCondition) {
+                qb.leftJoinAndSelect(`${ROOT_ALIAS}.${relationName}`, alias, joinCondition.sql, joinCondition.params);
+            } else {
+                qb.leftJoinAndSelect(`${ROOT_ALIAS}.${relationName}`, alias);
+            }
             aliases.set(relationName, alias);
         }
 
@@ -447,19 +463,105 @@ export class TypeOrmModel<T extends ObjectLiteral> extends AbstractModel<T> {
         return aliases;
     }
 
+    /**
+     * `criteria.populateOn` support: many-to-one with its FK declared as a real column
+     * property — the hydrated entity then carries the value the filtered association
+     * collapses to. (An undeclared FK leaves `joinColumns[0].propertyName` equal to the
+     * relation's own property name.)
+     */
+    public canPushdownPopulateAccess(association: string): boolean {
+        const relation = this.getRelation(association);
+        const joinColumn = relation?.joinColumns[0];
+        return Boolean(
+            relation?.isManyToOne
+            && joinColumn?.propertyName
+            && joinColumn.propertyName !== relation.propertyName
+            && this.metadata.columns.some((column) => column.propertyName === joinColumn.propertyName)
+        );
+    }
+
+    /**
+     * Renders a `populateOn` entry into the JOIN's ON clause. Only the shapes the
+     * record-access layer marks pushdown-safe (primitive equality, `{in: [...]}`) are
+     * supported; anything else fails closed to a never-matching condition — the
+     * association then collapses to its foreign key rather than leaking.
+     */
+    private buildJoinCondition(
+        on: Record<string, unknown>,
+        alias: string
+    ): { sql: string; params: Record<string, unknown> } {
+        const expressions: string[] = [];
+        const params: Record<string, unknown> = {};
+
+        for (const [field, value] of Object.entries(on)) {
+            if (value === null) {
+                expressions.push(`${alias}.${field} IS NULL`);
+                continue;
+            }
+            if (["string", "number", "boolean"].includes(typeof value)) {
+                const param = this.nextParamName();
+                expressions.push(`${alias}.${field} = :${param}`);
+                params[param] = value;
+                continue;
+            }
+            const inList = value && typeof value === "object" && Object.keys(value).length === 1
+                ? (value as { in?: unknown }).in
+                : undefined;
+            if (Array.isArray(inList)) {
+                if (!inList.length) {
+                    expressions.push(MATCH_NOTHING);
+                    continue;
+                }
+                const param = this.nextParamName();
+                expressions.push(`${alias}.${field} IN (:...${param})`);
+                params[param] = inList;
+                continue;
+            }
+            expressions.push(MATCH_NOTHING);
+        }
+
+        return { sql: expressions.join(" AND ") || MATCH_NOTHING, params };
+    }
+
+    /** A record filtered out of a `populateOn` JOIN comes back as its bare foreign key. */
+    private collapsePopulateOn(entities: T[], populateOn?: QueryCriteria["populateOn"]): void {
+        if (!populateOn) {
+            return;
+        }
+        for (const association of Object.keys(populateOn)) {
+            const fkProperty = this.getRelation(association)?.joinColumns[0]?.propertyName;
+            if (!fkProperty || fkProperty === association) {
+                continue;
+            }
+            for (const entity of entities as Record<string, unknown>[]) {
+                if (entity[association] == null && entity[fkProperty] != null) {
+                    entity[association] = entity[fkProperty];
+                }
+            }
+        }
+    }
+
     private isNativeWhere(where: unknown): where is Brackets | NotBrackets {
         return where instanceof Brackets || where instanceof NotBrackets;
     }
 
     private applyFindOptions(qb: SelectQueryBuilder<T>, criteria: QueryCriteria): void {
         const options = this.normalizeCriteria(criteria);
-        const aliases = this.addRequestedRelations(qb, criteria.populate);
+        const aliases = this.addRequestedRelations(qb, criteria.populate, criteria.populateOn);
 
         if (this.isNativeWhere(options.where) || Object.keys(options.where).length > 0) {
             this.applyWhere(qb, options.where, ROOT_ALIAS, aliases);
         }
         if (options.select) {
-            qb.select(options.select.map((field) => `${ROOT_ALIAS}.${field}`));
+            // The populateOn collapse reads the FK properties — keep them selected.
+            const selected = [...options.select];
+            for (const association of Object.keys(criteria.populateOn ?? {})) {
+                const fkProperty = this.getRelation(association)?.joinColumns[0]?.propertyName;
+                if (fkProperty && fkProperty !== association && !selected.includes(fkProperty)) {
+                    selected.push(fkProperty);
+                }
+            }
+            qb.select(selected.map((field) => `${ROOT_ALIAS}.${field}`));
         }
         for (const [field, direction] of options.order) {
             const orderColumn = this.getOrderColumn(ROOT_ALIAS, field);
@@ -497,7 +599,16 @@ export class TypeOrmModel<T extends ObjectLiteral> extends AbstractModel<T> {
         alias: string,
         relationAliases: Map<string, string>
     ): Brackets | undefined {
-        const entries = Object.entries(where).filter(([, value]) => value !== undefined);
+        const entries = Object.entries(where).filter(([key, value]) => {
+            if (value === undefined) {
+                // Historical behaviour: an undefined value drops the condition. Record-access
+                // filters never emit one, so this only fires for hand-built criteria — but a
+                // dropped condition widens the query, so it must not stay silent.
+                Adminizer.log.warn(`TypeORM adapter: criteria field "${key}" has an undefined value and was dropped`);
+                return false;
+            }
+            return true;
+        });
         if (!entries.length) {
             return undefined;
         }
@@ -588,6 +699,9 @@ export class TypeOrmModel<T extends ObjectLiteral> extends AbstractModel<T> {
         }
 
         if (Array.isArray(value)) {
+            if (!value.length) {
+                return { sql: MATCH_NOTHING };
+            }
             const param = this.nextParamName();
             return { sql: `${column} IN (:...${param})`, params: { [param]: value } };
         }
@@ -597,7 +711,15 @@ export class TypeOrmModel<T extends ObjectLiteral> extends AbstractModel<T> {
             const params: Record<string, unknown> = {};
 
             for (const [operator, raw] of Object.entries(value)) {
-                if (raw === undefined) continue;
+                if (raw === undefined || raw === null) {
+                    // Access scoping emits `in` lists, so an absent operand must fail
+                    // closed (match nothing) rather than silently widen the query.
+                    // Other operators keep the historical skip: filter builders rely on it.
+                    if (operator === "in" || operator === "$in") {
+                        expressions.push(MATCH_NOTHING);
+                    }
+                    continue;
+                }
                 const built = this.buildOperatorCondition(column, operator, raw);
                 if (!built) continue;
                 expressions.push(built.sql);
@@ -658,10 +780,18 @@ export class TypeOrmModel<T extends ObjectLiteral> extends AbstractModel<T> {
                 return { sql: `CAST(${column} AS TEXT) LIKE :${param}`, params: { [param]: `%${value}` } };
             case "in":
             case "$in":
+                // An empty list matches nothing on every driver; the spread placeholder
+                // would depend on TypeORM's empty-array handling.
+                if (Array.isArray(value) && !value.length) {
+                    return { sql: MATCH_NOTHING };
+                }
                 return { sql: `${column} IN (:...${param})`, params };
             case "notIn":
             case "nin":
             case "$notIn":
+                if (Array.isArray(value) && !value.length) {
+                    return { sql: MATCH_EVERYTHING };
+                }
                 return { sql: `${column} NOT IN (:...${param})`, params };
             case "between":
             case "$between": {
@@ -681,7 +811,15 @@ export class TypeOrmModel<T extends ObjectLiteral> extends AbstractModel<T> {
                 const serialized = JSON.stringify(value).replace(/[%_]/g, "\\$&");
                 return { sql: `CAST(${column} AS TEXT) LIKE :${param}`, params: { [param]: `%${serialized}%` } };
             }
+            case "intersects":
+                // Emitted only by the (unsupported) collection form of
+                // `userAccessRelation` — fail loudly instead of silently dropping the
+                // condition, which would widen the query (sequelize adapter parity).
+                throw new Error(`TypeORM adapter does not support the "intersects" operator (column "${column}")`);
             default:
+                Adminizer.log.warn(
+                    `TypeORM adapter: unsupported criteria operator "${operator}" was dropped for column "${column}"`
+                );
                 return undefined;
         }
     }
@@ -820,13 +958,19 @@ export class TypeOrmModel<T extends ObjectLiteral> extends AbstractModel<T> {
     protected async _findOne(criteria: QueryCriteria = {}): Promise<T | null> {
         const qb = this.createQueryBuilder();
         this.applyFindOptions(qb, criteria);
-        return await qb.getOne();
+        const record = await qb.getOne();
+        if (record) {
+            this.collapsePopulateOn([record], criteria.populateOn);
+        }
+        return record;
     }
 
     protected async _find(criteria: QueryCriteria = {}): Promise<T[]> {
         const qb = this.createQueryBuilder();
         this.applyFindOptions(qb, criteria);
-        return await qb.getMany();
+        const records = await qb.getMany();
+        this.collapsePopulateOn(records, criteria.populateOn);
+        return records;
     }
 
     protected async _updateOne(criteria: QueryCriteria, data: Partial<T>): Promise<T | null> {

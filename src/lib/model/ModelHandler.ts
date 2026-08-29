@@ -80,6 +80,12 @@ export class ModelHandler {
 	private hostModelResources: Map<string, Set<string>> = new Map();
 	private internalAccess?: InternalModelAccessFactory;
 	private appAccessRecords = new Map<string, AppModelAccessRecord>();
+	private registryEpoch = 0;
+
+	/** Bumped on every registry mutation; consumers key their caches on it. */
+	get registryVersion(): number {
+		return this.registryEpoch;
+	}
 
 	add<T>(resourceName: string, modelInstance: AbstractModel<T>, options?: ModelRegistrationOptions): void;
 	/** @deprecated Pass `{ aliases }` in ModelRegistrationOptions, or preferably use the canonical resource name. */
@@ -106,6 +112,7 @@ export class ModelHandler {
 			enabled: true,
 		});
 		this.registerAliases(resourceName, normalizedOptions.aliases ?? []);
+		this.registryEpoch++;
 		Adminizer.log.debug(`Model resource [${resourceName}] was registered for host model [${hostModelName}]`)
 	}
 
@@ -125,6 +132,7 @@ export class ModelHandler {
 			enabled: true,
 		});
 		this.registerHostModel(modelName, modelName, false);
+		this.registryEpoch++;
 		Adminizer.log.debug(`Model with name [${normalizedModelName}] was registered by app [${appName}]`)
 
 		return normalizedModelName;
@@ -138,6 +146,7 @@ export class ModelHandler {
 
 		this.models.delete(normalizeName(id));
 		this.unregisterHostModel(record.hostModelName, record.name);
+		this.registryEpoch++;
 	}
 
 	disable(id: string): void {
@@ -147,6 +156,7 @@ export class ModelHandler {
 		}
 
 		record.enabled = false;
+		this.registryEpoch++;
 	}
 
 	enable(id: string): void {
@@ -156,6 +166,7 @@ export class ModelHandler {
 		}
 
 		record.enabled = true;
+		this.registryEpoch++;
 	}
 
 	getByApp(appName: string): ModelRecord[] {

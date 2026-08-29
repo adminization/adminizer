@@ -21,3 +21,6 @@ The dashboard is assembled from widgets. Switchers toggle things on and off,
 info widgets show numbers, action widgets run one-off commands.
 
 See also [models-guide](models-guide) for working with data models.
+
+And [project-graph](project-graph) shows what per-project access rights feel like
+from the inside.

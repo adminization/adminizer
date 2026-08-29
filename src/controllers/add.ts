@@ -27,7 +27,7 @@ export default async function add(req: ReqType, res: ResType) {
     let fields = dataAccessor.getFieldsConfig();
 
     // add deprecated 'records' to config
-    fields = await FieldsHelper.loadAssociations(req, fields, "add");
+    fields = await FieldsHelper.loadAssociations(req, fields, "add", dataAccessor.recordAccessCache);
 
     let data = {}; //list of field values
 

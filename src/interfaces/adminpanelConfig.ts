@@ -131,6 +131,26 @@ export interface AdminpanelConfig {
         [key: string]: ModelConfig
     }
     /**
+     * Relationship-based record access (ReBAC): each key declares one access graph —
+     * models whose records inherit visibility from a root model down parent edges.
+     * Membership is granted once, on root records (same `through` form as the membership
+     * variant of `userAccessRelation`), and every model of the graph is filtered by it
+     * transitively. The graph wins over a covered model's own `userAccessRelation`: once a
+     * graph covers a model, that declaration stops applying. Declaring both is a configuration
+     * error and is reported as one when the graph compiles.
+     * Global CRUD tokens remain the upper bound: the graph narrows visibility, it never
+     * grants access the token gates denied.
+     *
+     * EXPERIMENTAL: the configuration format and access semantics may change in a minor release.
+     * Declaring this section makes Adminizer log a warning at boot naming the graphs in use.
+     *
+     * @beta
+     *
+     */
+    accessGraph?: {
+        [graphKey: string]: AccessGraphConfig
+    }
+    /**
      * For custom adminpanel sections, displays inside header
      * */
     sections?: HrefConfig[]
@@ -483,10 +503,34 @@ export interface ModelConfig {
      * */
     identifierField?: string
     /** In this field we can set model field, for which we want to check user access right.
-     *  May be association or association-many to User or Group */
+     *  May be association or association-many to User or Group
+     *
+     *  @deprecated Declare record access with {@link AdminpanelConfig.accessGraph} instead.
+     *  The membership form (`{field, through, via, group}`) is a single-edge access graph
+     *  written in a second syntax — same `membership` declaration, `field` becomes the
+     *  `include` edge's `parent`. The string and `{field, via}` forms have no graph
+     *  equivalent yet (the graph seeds root ids from membership rows, not from an owner
+     *  foreign key), so this option is removed in stages rather than at once.
+     *  Note that this option is already inert wherever an `accessGraph` covers the model:
+     *  the graph wins and the declaration below is ignored.
+     *
+     *  TODO: removal plan, its prerequisites and the migration recipe live in
+     *  `.ai-notes/todo/user-access-relation-removal.md`; the reasoning behind the
+     *  deprecation — including the one behaviour the graph does not reproduce (its root
+     *  model becomes record-restricted too) — in `.ai-notes/user-access-relation-deprecation.md`.
+     */
     userAccessRelation?: {
-        field: string // field that associates to the intermediate model
-        via?: string // field in intermediate model that associates with User/Group
+        field: string // field that associates to the intermediate model (the membership target when `through` is set)
+        via?: string // field in intermediate/membership model that associates with User/Group
+        /** Membership form: a join model holding exactly one relation to the model `field` points at,
+         *  a `via` relation to User and, optionally, a `group` relation to Group. Records are then
+         *  filtered to the targets the user has a membership row for. */
+        through?: string
+        /** Field in `through` that associates with Group. When set, a membership only counts for the
+         *  actions whose CRUD token (`<verb>-<model>-model`) that group carries, so the same user may
+         *  hold different rights in different targets. Global tokens remain the upper bound: this
+         *  narrows rows, it never grants access the token gates denied. */
+        group?: string
     } | string
     userAccessRelationCallback?: (userWithGroups: UserWithGroups, record: any) => boolean
     /**
@@ -497,6 +541,86 @@ export interface ModelConfig {
 }
 
 type UserWithGroups = User & { groups: Group[] }
+
+/** CRUD verb of the action being performed, as used in `<verb>-<model>-model` tokens. */
+export type AccessGraphActionVerb = "create" | "read" | "update" | "delete"
+
+/** Ids of the root records the user may see, `"all"` for an explicit bypass, or
+ *  `undefined` to fall back to the declared `membership`. */
+export type AccessGraphRootIds = unknown[] | "all" | undefined
+
+/**
+ * One access graph: a root model carrying memberships plus the models that inherit
+ * its visibility down explicit parent edges.
+ */
+export interface AccessGraphConfig {
+    /** Root model of the graph; memberships are granted on its records. */
+    root: string
+    /**
+     * Membership declaration at the root: `through` is a join model holding exactly one
+     * relation to the root model, a `via` relation to User and, optionally, a `group`
+     * relation to Group. With `group` declared, a membership only counts for the actions
+     * whose CRUD token (`<verb>-<model>-model`, checked against the model being accessed)
+     * that group carries.
+     */
+    membership?: {
+        through: string
+        via: string
+        group?: string
+    }
+    /**
+     * Models covered by the graph. Each entry names the association alias the model uses
+     * to look at its parent in the graph; the parent model is derived from that alias and
+     * must itself belong to the graph (the root or another `include` entry). Exactly one
+     * edge per model — the parent is never guessed from foreign keys.
+     */
+    include?: {
+        [modelName: string]: {
+            /** Association alias on this model pointing at its parent in the graph. */
+            parent: string
+        }
+    }
+    /**
+     * Stage 2: denormalized root-id columns. For a listed model the read filter collapses
+     * to one step — `{<column>: {in: graphRootIds}}` — instead of walking the parent chain.
+     * The column is maintained by the application; Adminizer only filters by it. The model
+     * still declares its `include` edge — writes keep validating the chosen parent.
+     */
+    graphRootField?: {
+        [modelName: string]: string
+    }
+    /**
+     * Stage 3: compile the read filter into one nested-subquery SQL emitted by the adapter
+     * instead of materializing intermediate id lists in the application. Applies when every
+     * model on the path (and the membership model) lives on the same adapter connection;
+     * otherwise the resolver falls back to per-level materialization automatically. The SQL
+     * is generated from this declaration — no hand-written queries.
+     *
+     * Why it exists: the default walk costs one query per level of the chain, and the last of
+     * them carries every intermediate id the user can reach as a literal `IN (...)` list. The
+     * price of the filter therefore grows with the size of the user's data, not with the size
+     * of the page — a member of 500 projects ships ~25 000 task ids to render 25 rows, while
+     * the pushed-down form emits one statement of constant size whatever the account holds.
+     * The accounts it slows down first are the biggest ones.
+     *
+     * Setting it is a permission, not a guarantee: a chain that cannot be compiled goes back to
+     * materialization, and the write path never uses pushdown at all. The fallback is invisible in
+     * the result, so it is logged — one warning per model, naming the graph and the reason. Silence
+     * means the chain compiled.
+     */
+    pushdown?: boolean
+    /**
+     * Token id that lets its holders see the whole graph unfiltered. Matched against the
+     * token grants of the user's global groups; it does not need to be a registered token.
+     */
+    bypassToken?: string
+    /**
+     * Replaces the membership source at the root without touching the graph below it.
+     * Returning `undefined` falls back to the declared `membership`; `"all"` is the
+     * explicit bypass. The result is still bounded by global tokens.
+     */
+    resolveGraphRootIds?: (user: User, actionVerb: AccessGraphActionVerb) => Promise<AccessGraphRootIds> | AccessGraphRootIds
+}
 
 export type ModelFieldConfig = (BaseFieldConfig | TuiEditorFieldConfig) & { groupsAccessRights?: string[] }
 

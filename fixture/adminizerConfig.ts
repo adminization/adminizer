@@ -348,7 +348,8 @@ const models: AdminpanelConfig["models"] = {
         title: 'Json schema',
         model: 'jsonschema',
         navbar: {
-            groupsAccessRights: ["admins"]
+            groupsAccessRights: ["admins"],
+            section: 'Content'
         },
         fields: {
             data: {
@@ -408,6 +409,9 @@ const models: AdminpanelConfig["models"] = {
         title: 'Категории',
         model: 'category',
         icon: 'category',
+        navbar: {
+            section: 'Content'
+        },
         displayName: (data: any) => {
             return data?.slug ?? 'no data'
         },
@@ -566,7 +570,12 @@ const config: AdminpanelConfig = {
                 title: 'Test Catalog',
                 icon: 'bug_report'
             }
-        ]
+        ],
+        sections: {
+            Platform: { icon: 'dashboard', order: 1 },
+            Content: { icon: 'article', order: 2 },
+            System: { icon: 'settings', order: 3 }
+        }
     },
     sections: [
         {

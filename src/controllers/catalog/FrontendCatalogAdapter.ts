@@ -100,11 +100,11 @@ export class FrontendCatalog {
     }
 
     async getActions(items: NodeModel<any>[], type: string) {
-        let arrItems = []
-        for (const item of items) {
+        // The lookups are independent — resolve them in parallel instead of one by one
+        const arrItems = await Promise.all(items.map((item) => {
             if (item.data.id === 0) item.data.id = null;
-            arrItems.push(await this.catalog.find(item.data))
-        }
+            return this.catalog.find(item.data);
+        }))
         if (type === 'tools') {
             return (await this.catalog.getActions(arrItems))?.filter(e => e.displayTool);
         } else {
@@ -113,11 +113,10 @@ export class FrontendCatalog {
     }
 
     async handleAction(actionId: string, items: any[], data: any, req: ReqType) {
-        let arrItems = []
-        for (const item of items) {
+        const arrItems = await Promise.all(items.map((item) => {
             if (item.data.id === 0) item.data.id = null;
-            arrItems.push(await this.catalog.find(item.data))
-        }
+            return this.catalog.find(item.data);
+        }))
         return this.catalog.handleAction(actionId, arrItems, data, req);
     }
 

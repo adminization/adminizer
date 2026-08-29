@@ -1,6 +1,7 @@
 import { Group } from "../models/Group";
 import {Adminizer} from "../lib/Adminizer";
 import { GROUP_FILTER_VISIBILITY_TOKEN } from "../policies/permissionResolvers";
+import { ownershipTransferToken } from "../lib/access-graph/shared";
 
 export default async function bindAccessRights(adminizer: Adminizer) {
     if (adminizer.config.models) {
@@ -8,6 +9,17 @@ export default async function bindAccessRights(adminizer: Adminizer) {
         for (const [resourceName, model] of Object.entries(models)) {
             if (typeof model !== "boolean") {
                 adminizer.accessRightsHelper.registerModelTokens(resourceName);
+
+                // Records of an access-restricted model are pinned to their owner; this token is the
+                // opt-in way back to the pre-scoping workflow of handing one over.
+                if (model && typeof model === "object" && model.userAccessRelation) {
+                    adminizer.accessRightsHelper.registerToken({
+                        id: ownershipTransferToken(resourceName),
+                        name: "Transfer ownership",
+                        description: "Allows setting the owner of a record explicitly instead of inheriting the current user's one",
+                        department: `Model ${resourceName}`
+                    });
+                }
             }
         }
     }

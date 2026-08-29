@@ -32,7 +32,9 @@ function createAdminizer(permitted: string[]) {
         modelname: "Test",
         primaryKey: "id",
         attributes: {},
-        find: async () => records,
+        // Like the adapters: the query applies `limit`, the count ignores it
+        find: async (criteria: any = {}) => (typeof criteria.limit === "number" ? records.slice(0, criteria.limit) : records),
+        count: async () => records.length,
         updateOne: async (_criteria: any, values: any) => ({...records[0], ...values}),
     };
 

@@ -45,7 +45,8 @@ import bindHistory from "../system/bindHistory";
 import bindCustomFilterHandlers from "../system/bindCustomFilterHandlers";
 import { CustomFilterHandler } from "./filters/CustomFilterHandler";
 import { FeedbackHandler } from "./feedback/FeedbackHandler";
-import { buildInternalModelAccess } from "../system/buildInternalModelAccess";
+import { refreshInternalModelAccess } from "../system/buildInternalModelAccess";
+import { validateAccessGraph } from "./access-graph/AccessGraphResolver";
 import { AppManager } from "./app-manager/AppManager";
 import { ControllerHandler } from "./app-manager/ControllerHandler";
 import { AssetHandler } from "./app-manager/AssetHandler";
@@ -197,6 +198,12 @@ export class Adminizer {
         this.assetHandler = new AssetHandler(this);
         this.configLayerHandler = new ConfigLayerHandler(this);
         this.appManager = new AppManager(this);
+
+        // App model (un)registration changes what the record-access resolvers may query,
+        // so the internal allowlists must follow; config-layer rebuilds refresh them
+        // synchronously inside rebuildConfig itself.
+        this.emitter.on("app:model:registered", () => refreshInternalModelAccess(this));
+        this.emitter.on("app:model:unregistered", () => refreshInternalModelAccess(this));
     }
 
     /**
@@ -325,7 +332,10 @@ export class Adminizer {
 
         // validate models
         validateSystemModels(this);
-        this.modelHandler.configureInternalAccess(buildInternalModelAccess(this.config, this.modelHandler));
+        refreshInternalModelAccess(this);
+        // Fail loud on structural accessGraph errors at boot; later config rebuilds only
+        // log them and the affected models fail closed at access time.
+        validateAccessGraph(this);
 
         bindCustomFilterHandlers(this);
 

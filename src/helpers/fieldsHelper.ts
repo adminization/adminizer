@@ -2,6 +2,7 @@ import { ActionType, BaseFieldConfig, FieldsTypes, ModelConfig } from "../interf
 import { ModelResource } from "../interfaces/types";
 import { Attribute, ModelAnyInstance } from "../lib/model/AbstractModel";
 import { DataAccessor } from "../lib/DataAccessor";
+import { RecordAccessCache } from "../lib/access-graph/RecordAccessCache";
 import { Adminizer } from "../lib/Adminizer";
 export type Field = {
 	config: BaseFieldConfig & {
@@ -36,7 +37,17 @@ export class FieldsHelper {
 	 * @deprecated this method has overload association tree on each request that is not optimize
 	 */
 	// TODO: make separate request for all dropdown relations by api call
-	public static async loadAssociations(req: ReqType, fields: Fields, action?: ActionType): Promise<Fields> {
+	public static async loadAssociations(
+		req: ReqType,
+		fields: Fields,
+		action?: ActionType,
+		recordAccessCache: RecordAccessCache = new RecordAccessCache()
+	): Promise<Fields> {
+		// `getFieldsConfig()` returns undefined when the user has no rights on the model at all
+		if (!fields) {
+			return {};
+		}
+
 		/**
 		 * Load all associated records for given field key
 		 *
@@ -78,7 +89,8 @@ export class FieldsHelper {
 					model: Model,
 					uri: `${req.adminizer.config.routePrefix}/model/${resolvedModelName}`
 				};
-				let dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "view");
+				// One cache for every dropdown of the page: the record-access lookups are identical
+				let dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "view", recordAccessCache);
 				list = await Model.find({}, dataAccessor);
 			} catch (e) {
 				Adminizer.log.error(e)

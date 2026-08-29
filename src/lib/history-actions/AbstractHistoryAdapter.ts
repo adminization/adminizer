@@ -75,6 +75,92 @@ export abstract class AbstractHistoryAdapter {
     }
 
     /**
+     * Record-level access for history rows. A history row names a record (`modelName` +
+     * `modelId`), so a user holding the history token could otherwise read diffs and old
+     * values of records they cannot reach (`userAccessRelation` or accessGraph) — the
+     * model-level filter above does not look at individual records. Resolved in one query
+     * per referenced model.
+     *
+     * A user's own actions always stay visible: a delete removes the very row an access
+     * check would have to match, and hiding it would erase the author's own audit trail.
+     */
+    protected async filterHistoryByRecordAccess(history: HistoryActions[], user: User): Promise<HistoryActions[]> {
+        if (!history.length || user.isAdministrator) {
+            return history;
+        }
+
+        const byModel = new Map<string, HistoryActions[]>();
+        for (const historyRecord of history) {
+            const bucket = byModel.get(historyRecord.modelName);
+            if (bucket) {
+                bucket.push(historyRecord);
+            } else {
+                byModel.set(historyRecord.modelName, [historyRecord]);
+            }
+        }
+
+        const denied = new Set<HistoryActions>();
+        for (const records of byModel.values()) {
+            const visibleIds = await this.visibleRecordIds(records, user);
+            if (!visibleIds) {
+                continue; // the model carries no record access rules — model-level access is enough
+            }
+
+            for (const historyRecord of records) {
+                const isOwnAction = historyRecord.user && String(historyRecord.user.id) === String(user.id);
+                if (!isOwnAction && !visibleIds.has(String(historyRecord.modelId))) {
+                    denied.add(historyRecord);
+                }
+            }
+        }
+
+        return denied.size ? history.filter((historyRecord) => !denied.has(historyRecord)) : history;
+    }
+
+    /** True when the user may see the record this history row refers to. */
+    protected async isHistoryRecordAccessible(historyRecord: HistoryActions, user: User): Promise<boolean> {
+        const [allowed] = await this.filterHistoryByRecordAccess([historyRecord], user);
+        return Boolean(allowed);
+    }
+
+    /**
+     * Ids of the referenced records the user actually reaches, or `undefined` when the
+     * model has no record access rules at all (then there is nothing to check).
+     */
+    private async visibleRecordIds(records: HistoryActions[], user: User): Promise<Set<string> | undefined> {
+        const modelResource = this.findModelResource(records[0]);
+        if (!modelResource.model) {
+            // The model is gone, so nothing can be verified — fail closed.
+            return new Set();
+        }
+
+        let accessWhere: Record<string, unknown>;
+        try {
+            const dataAccessor = new DataAccessor(this.adminizer, user, modelResource, "view");
+            accessWhere = await dataAccessor.getRecordAccessWhere();
+        } catch (e) {
+            // A misconfigured graph must not open the history up.
+            Adminizer.log.error(`History > could not resolve the record access of "${modelResource.name}"`, e);
+            return new Set();
+        }
+
+        if (!Object.keys(accessWhere).length) {
+            return undefined;
+        }
+
+        const primaryKey = (modelResource.model.primaryKey ?? "id") as string;
+        // History stores ids as strings; the column may well be numeric.
+        const isNumericKey = modelResource.model.attributes?.[primaryKey]?.type === "number";
+        const ids = Array.from(new Set(records.map((historyRecord) => historyRecord.modelId)))
+            .map((id) => (isNumericKey ? Number(id) : id))
+            .filter((id) => !(typeof id === "number" && Number.isNaN(id)));
+
+        const rows = await this.internalModel(modelResource.name)
+            .find({where: {...accessWhere, [primaryKey]: {in: ids}}});
+        return new Set((rows ?? []).map((row: Record<string, unknown>) => String(row[primaryKey])));
+    }
+
+    /**
      * Registers access rights for this history adapter.
      * Called during construction with a slight delay to ensure Adminizer is ready.
      *
@@ -180,7 +266,7 @@ export abstract class AbstractHistoryAdapter {
             });
         }
 
-        return history;
+        return this.filterHistoryByRecordAccess(history, user);
     }
 
 
@@ -216,6 +302,9 @@ export abstract class AbstractHistoryAdapter {
                 }
             }
 
+            // Model-level access is not enough: drop rows about records the user cannot reach
+            accessHistory = await this.filterHistoryByRecordAccess(accessHistory, user);
+
             // Grouping records by model for optimization
             const fieldsCache = new Map<string, any>();
 
@@ -226,7 +315,8 @@ export abstract class AbstractHistoryAdapter {
                 // We use a cache so as not to create a DataAccessor for each record
                 if (!fieldsCache.has(modelKey)) {
                     const dataAccessor = new DataAccessor(this.adminizer, user, modelResource, "edit");
-                    let fields = dataAccessor.getFieldsConfig();
+                    // No access rights to the model at all: keep the diff empty instead of throwing
+                    let fields = dataAccessor.getFieldsConfig() ?? {};
                     fields = await this.loadAssociations(fields, user, "edit");
                     fieldsCache.set(modelKey, fields);
                 }
@@ -255,9 +345,17 @@ export abstract class AbstractHistoryAdapter {
      * @protected
      */
     protected async _getModelFieldsHistory(history: HistoryActions, user: User): Promise<Record<string, any>> {
+        if (!await this.isHistoryRecordAccessible(history, user)) {
+            Adminizer.log.debug(
+                `History > record ${history.modelName}#${history.modelId} is out of reach of user "${user.login}"`
+            );
+            return {};
+        }
+
         const modelResource = this.findModelResource(history);
         const dataAccessor = new DataAccessor(this.adminizer, user, modelResource, "edit");
-        let fields = dataAccessor.getFieldsConfig();
+        // No access rights to the model at all: nothing to format, not a crash
+        let fields = dataAccessor.getFieldsConfig() ?? {};
         fields = await this.loadAssociations(fields, user, "edit");
 
         let data: Record<string, any> = {};
@@ -321,6 +419,8 @@ export abstract class AbstractHistoryAdapter {
     */
     protected async setModelsDisplayName(history: HistoryActions[]): Promise<(HistoryActions & { displayName: string })[]> {
         const modifiedHistory: (HistoryActions & { displayName: string })[] = [];
+        // One lookup per referenced model instead of one per history row
+        const referencedRecords = await this.loadReferencedRecords(history);
 
         for (const historyRecord of history) {
             const modelResource = this.findModelResource(historyRecord);
@@ -335,7 +435,7 @@ export abstract class AbstractHistoryAdapter {
             }
 
             try {
-                const record = await this.internalModel(modelResource.name).findOne({where: {id: historyRecord.modelId}});
+                const record: any = referencedRecords.get(this.referenceKey(historyRecord)) ?? null;
 
                 let displayValue: string;
 
@@ -363,6 +463,52 @@ export abstract class AbstractHistoryAdapter {
         return modifiedHistory;
     }
 
+    /** `modelName#modelId` — the identity of the record a history row refers to. */
+    private referenceKey(historyRecord: HistoryActions): string {
+        return `${historyRecord.modelName}#${String(historyRecord.modelId)}`;
+    }
+
+    /**
+     * Records referenced by the given history rows, fetched with one query per model.
+     * Missing rows (deleted records, models that are gone) are simply absent from the map.
+     */
+    private async loadReferencedRecords(history: HistoryActions[]): Promise<Map<string, Record<string, unknown>>> {
+        const idsByModel = new Map<string, Set<unknown>>();
+        for (const historyRecord of history) {
+            const bucket = idsByModel.get(historyRecord.modelName);
+            if (bucket) {
+                bucket.add(historyRecord.modelId);
+            } else {
+                idsByModel.set(historyRecord.modelName, new Set([historyRecord.modelId]));
+            }
+        }
+
+        const referenced = new Map<string, Record<string, unknown>>();
+        for (const [modelName, ids] of idsByModel) {
+            const modelResource = this.findModelResource({modelName} as HistoryActions);
+            if (!modelResource.model) {
+                continue;
+            }
+
+            const primaryKey = (modelResource.model.primaryKey ?? "id") as string;
+            const isNumericKey = modelResource.model.attributes?.[primaryKey]?.type === "number";
+            const values = Array.from(ids)
+                .map((id) => (isNumericKey ? Number(id) : id))
+                .filter((id) => !(typeof id === "number" && Number.isNaN(id)));
+
+            try {
+                const rows = await this.internalModel(modelResource.name).find({where: {[primaryKey]: {in: values}}});
+                for (const row of rows ?? []) {
+                    referenced.set(`${modelName}#${String(row[primaryKey])}`, row);
+                }
+            } catch (e) {
+                Adminizer.log.error(`History > could not load the records referenced in "${modelName}"`, e);
+            }
+        }
+
+        return referenced;
+    }
+
     /**
      * Filters related model IDs to only those that exist in the database.
      *
@@ -373,14 +519,14 @@ export abstract class AbstractHistoryAdapter {
      * @template T - Type of the ID (string or number).
      */
     protected async getModelRelationsHistory<T extends string | number>(model: string, ids: T[]): Promise<T[]> {
-        const data: T[] = [];
-        for (const id of ids) {
-            const record = await this.internalModel(model).findOne({where: {id}});
-            if (record) {
-                data.push(id);
-            }
+        if (!ids.length) {
+            return [];
         }
-        return data;
+
+        // One query for the whole set; the input order is preserved
+        const records = await this.internalModel(model).find({where: {id: {in: ids}}});
+        const existing = new Set((records ?? []).map((record: Record<string, unknown>) => String(record.id)));
+        return ids.filter((id) => existing.has(String(id)));
     }
 
     /**

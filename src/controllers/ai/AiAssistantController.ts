@@ -14,7 +14,7 @@ export class AiAssistantController {
 
         const models = (await Promise.all(handler.getModels().map(async (model) => ({
             model,
-            allowed: await req.adminizer.accessRightsHelper.hasPermission(`ai-assistant-${model.id}`, req.user),
+            allowed: await req.adminizer.accessRightsHelper.checkPermission(`ai-assistant-${model.id}`, req.user),
         })))).filter(({allowed}) => allowed).map(({model}) => model);
 
         return res.json(models);

@@ -136,7 +136,7 @@ export class OpenAiModelService extends AbstractAiModelService {
 
     private async userHasPermission(modelResource: ModelResource, user: User, action: ActionType): Promise<boolean> {
         const token = this.getPermissionToken(modelResource, action);
-        return await this.context.hasPermission(token, user);
+        return await this.context.checkPermission(token, user);
     }
 
     private getPermissionToken(modelResource: ModelResource, action: ActionType): string {

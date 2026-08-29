@@ -79,6 +79,8 @@ export class ModelHandler {
 	private modelAliases: Map<string, string> = new Map();
 	private hostModelResources: Map<string, Set<string>> = new Map();
 	private internalAccess?: InternalModelAccessFactory;
+	private internalAccessEpoch = -1;
+	private internalAccessRefresh?: () => void;
 	private appAccessRecords = new Map<string, AppModelAccessRecord>();
 	private registryEpoch = 0;
 
@@ -305,6 +307,19 @@ export class ModelHandler {
 
 	configureInternalAccess(accessMap?: InternalModelAccessMap): void {
 		this.internalAccess = new InternalModelAccessFactory((modelName) => this.model.get(modelName), accessMap);
+		this.internalAccessEpoch = this.registryEpoch;
+	}
+
+	/**
+	 * Installs the rebuild of the internal allowlists (Adminizer wires it to
+	 * `refreshInternalModelAccess`). The allowlists mirror the registry, so every registry
+	 * mutation — a host `add` after init, an app `register`/`unregister`, `enable`/`disable` —
+	 * has to be reflected there, not only the ones that emit `app:model:*`. Mutations merely
+	 * mark the map stale and the rebuild runs on the next internal access, so a boot that
+	 * registers dozens of models pays for one rebuild instead of one per model.
+	 */
+	setInternalAccessRefresher(refresh: () => void): void {
+		this.internalAccessRefresh = refresh;
 	}
 
 	internal(scopeName: string): InternalModelScope {
@@ -312,6 +327,12 @@ export class ModelHandler {
 	}
 
 	private getInternalAccess(): InternalModelAccessFactory {
+		// Only `configureInternalAccess` stamps the epoch, so a refresher that cannot build a
+		// map yet (no config) leaves the allowlists stale instead of marking them fresh.
+		if (this.internalAccessRefresh && this.internalAccessEpoch !== this.registryEpoch) {
+			this.internalAccessRefresh();
+		}
+
 		if (!this.internalAccess) {
 			throw new Error("Internal model access is not configured");
 		}

@@ -471,7 +471,7 @@ export class OpenAiDataAgentService extends AbstractAiModelService {
             }
 
             const token = `read-${resource.model.modelname}-model`;
-            if (await this.context.hasPermission(token, user)) {
+            if (await this.context.checkPermission(token, user)) {
                 readable.push({name: resource.name, config: resource.config});
             }
         }

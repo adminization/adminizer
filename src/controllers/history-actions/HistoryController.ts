@@ -14,7 +14,7 @@ export class HistoryController {
             const rawModels = await adapter.getModels(req.user);
             let users: User[] = []
 
-            const accessToUsersHistory = await req.adminizer.accessRightsHelper.enoughPermissions([
+            const accessToUsersHistory = await req.adminizer.accessRightsHelper.checkAnyPermission([
                 `users-history-${adapter.id}`
             ], req.user);
 
@@ -138,7 +138,7 @@ export class HistoryController {
             return false
         }
 
-        const hasPermission = await req.adminizer.accessRightsHelper.hasPermission(
+        const hasPermission = await req.adminizer.accessRightsHelper.checkPermission(
             `history-${req.adminizer.config.history?.adapter ?? 'default'}`,
             req.user
         );

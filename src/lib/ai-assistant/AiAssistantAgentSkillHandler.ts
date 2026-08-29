@@ -115,7 +115,7 @@ export class AiAssistantAgentSkillHandler {
     }
 
     private async isPermitted(skill: RegisteredSkill, user: User): Promise<boolean> {
-        return !skill.accessRightsToken || this.adminizer.accessRightsHelper.hasPermission(skill.accessRightsToken, user);
+        return !skill.accessRightsToken || this.adminizer.accessRightsHelper.checkPermission(skill.accessRightsToken, user);
     }
 
     private async describe(skill: RegisteredSkill, user: User): Promise<AiAssistantAgentSkillDescriptor> {

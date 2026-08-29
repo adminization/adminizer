@@ -3,6 +3,7 @@ import {AccessRightsHelper} from "../src/helpers/accessRightsHelper";
 import {listAccessibleMenuItems} from "../src/helpers/navigationAccessHelper";
 import {AdminLinkHandler} from "../src/lib/admin-links/AdminLinkHandler";
 import {AiAssistantAgentSkillHandler} from "../src/lib/ai-assistant/AiAssistantAgentSkillHandler";
+import {AppManager} from "../src/lib/app-manager/AppManager";
 import {WidgetHandler} from "../src/lib/widgets/widgetHandler";
 import type {Adminizer} from "../src/lib/Adminizer";
 import type {User} from "../src/models/User";
@@ -75,10 +76,10 @@ describe("contextual tokens across the panel surfaces", () => {
     it("narrows access to the granted scope instead of the whole token", async () => {
         const {accessRightsHelper} = createAdminizer();
 
-        expect(await accessRightsHelper.hasPermission(SCOPED_TOKEN, operator, {project: "a"})).toBe(true);
-        expect(await accessRightsHelper.hasPermission(SCOPED_TOKEN, operator, {project: "b"})).toBe(false);
+        expect(await accessRightsHelper.checkPermission(SCOPED_TOKEN, operator, {project: "a"})).toBe(true);
+        expect(await accessRightsHelper.checkPermission(SCOPED_TOKEN, operator, {project: "b"})).toBe(false);
         // Rights sent by a client can never widen the grant.
-        expect(await accessRightsHelper.hasPermission(SCOPED_TOKEN, operator, {project: "b", rights: ["b"]})).toBe(false);
+        expect(await accessRightsHelper.checkPermission(SCOPED_TOKEN, operator, {project: "b", rights: ["b"]})).toBe(false);
     });
 
     it("denies a contextual token in a synchronous check, having no context to judge by", () => {
@@ -144,5 +145,116 @@ describe("contextual tokens across the panel surfaces", () => {
 
         expect((await skillHandler.getAvailable(operator)).map((skill) => skill.id)).not.toContain("project_report");
         await expect(skillHandler.execute("project_report", {}, operator)).rejects.toThrow(/is not available/);
+    });
+});
+
+/**
+ * Modules and apps outside this repository call the deprecated `hasPermission`
+ * as `if (hasPermission(...))`, and nothing can make them await. So it must stay
+ * a real boolean: were it `async`, every such check would read a pending promise
+ * — truthy — and grant access to everyone.
+ */
+describe("the deprecated synchronous access-rights API", () => {
+    function withPlainToken() {
+        const adminizer = createAdminizer();
+        adminizer.accessRightsHelper.registerToken({
+            id: "plain-token", name: "Plain", description: "Ordinary token", department: "Fixture",
+        });
+        return adminizer;
+    }
+
+    /** The deprecation lines only — message and caller frame joined, as the logger emits them. */
+    function deprecationWarnings(): string[] {
+        return logger.warn.mock.calls
+            .map(([line]) => line)
+            .filter((line): line is string => typeof line === "string" && line.includes("is deprecated"));
+    }
+
+    const holder = {
+        id: 8, login: "holder", isAdministrator: false,
+        groups: [{name: "operators", tokens: ["plain-token"]}],
+    } as unknown as User;
+    const outsider = {
+        id: 9, login: "outsider", isAdministrator: false, groups: [{name: "guests", tokens: []}],
+    } as unknown as User;
+
+    it("returns a boolean, never a promise", () => {
+        const {accessRightsHelper} = withPlainToken();
+
+        expect(accessRightsHelper.hasPermission("plain-token", holder)).toBe(true);
+        expect(accessRightsHelper.hasPermission("plain-token", outsider)).toBe(false);
+        expect(accessRightsHelper.hasPermission("unregistered-token", holder)).toBe(false);
+        expect(accessRightsHelper.enoughPermissions(["plain-token"], holder)).toBe(true);
+        expect(accessRightsHelper.enoughPermissions(["plain-token"], outsider)).toBe(false);
+        expect(accessRightsHelper.enoughPermissions([], outsider)).toBe(true);
+    });
+
+    it("denies a contextual token rather than granting it unchecked", () => {
+        const {accessRightsHelper} = withPlainToken();
+
+        // `operator` does carry SCOPED_TOKEN; without an await its `check` cannot
+        // run, and the only safe answer is a denial.
+        expect(accessRightsHelper.hasPermission(SCOPED_TOKEN, operator)).toBe(false);
+        expect(accessRightsHelper.enoughPermissions([SCOPED_TOKEN], operator)).toBe(false);
+    });
+
+    it("warns once per call site, naming the replacement", () => {
+        const {accessRightsHelper} = withPlainToken();
+        logger.warn.mockClear();
+
+        const staleModule = () => accessRightsHelper.hasPermission("plain-token", holder);
+        staleModule();
+        staleModule();
+
+        expect(deprecationWarnings()).toHaveLength(1);
+        expect(deprecationWarnings()[0]).toContain("checkPermission");
+    });
+
+    it("warns again for a second stale caller instead of silencing it", () => {
+        const {accessRightsHelper} = withPlainToken();
+        logger.warn.mockClear();
+
+        const firstModule = () => accessRightsHelper.hasPermission("plain-token", holder);
+        const secondModule = () => accessRightsHelper.hasPermission("plain-token", holder);
+        firstModule();
+        secondModule();
+
+        // Keyed on the method alone, the first caller would have spent the only
+        // warning of the process and hidden the second one entirely.
+        expect(deprecationWarnings()).toHaveLength(2);
+        expect(deprecationWarnings()[0]).toContain("firstModule");
+        expect(deprecationWarnings()[1]).toContain("secondModule");
+    });
+
+    it("names the calling app, not the runtime bridge forwarding to the helper", () => {
+        const adminizer: any = withPlainToken();
+        adminizer.modelHandler.createAppAccess = () => ({});
+        const runtime = new AppManager(adminizer as Adminizer).createRuntime("demo-app");
+        logger.warn.mockClear();
+
+        const staleApp = () => runtime.accessRights.hasPermission("plain-token", holder);
+        staleApp();
+
+        expect(deprecationWarnings()).toHaveLength(1);
+        expect(deprecationWarnings()[0]).toContain("staleApp");
+        expect(deprecationWarnings()[0]).not.toContain("AppManager");
+    });
+
+    it("keeps the app runtime bridge synchronous too", () => {
+        const adminizer: any = withPlainToken();
+        adminizer.modelHandler.createAppAccess = () => ({});
+        const runtime = new AppManager(adminizer as Adminizer).createRuntime("demo-app");
+
+        expect(runtime.accessRights.hasPermission("plain-token", holder)).toBe(true);
+        expect(runtime.accessRights.hasPermission("plain-token", outsider)).toBe(false);
+        expect(runtime.accessRights.hasPermission(SCOPED_TOKEN, operator)).toBe(false);
+    });
+
+    it("resolves the contextual token through the asynchronous replacement", async () => {
+        const {accessRightsHelper} = withPlainToken();
+
+        expect(await accessRightsHelper.checkPermission(SCOPED_TOKEN, operator, {project: "a"})).toBe(true);
+        expect(await accessRightsHelper.checkPermission(SCOPED_TOKEN, operator, {project: "b"})).toBe(false);
+        expect(await accessRightsHelper.checkAnyPermission(["plain-token"], holder)).toBe(true);
     });
 });

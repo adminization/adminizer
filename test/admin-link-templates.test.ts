@@ -20,9 +20,9 @@ function createAdminizer(permitted: string[], menuItems: any[] = []) {
             },
         },
         accessRightsHelper: {
-            hasPermission: async (token: string) => permitted.includes(token),
+            checkPermission: async (token: string) => permitted.includes(token),
             hasStaticPermission: (token: string) => permitted.includes(token),
-            enoughPermissions: async (tokens: string[]) => !tokens.length || tokens.some((token) => permitted.includes(token)),
+            checkAnyPermission: async (tokens: string[]) => !tokens.length || tokens.some((token) => permitted.includes(token)),
             enoughStaticPermissions: (tokens: string[]) => !tokens.length || tokens.some((token) => permitted.includes(token)),
         },
         catalogHandler: {

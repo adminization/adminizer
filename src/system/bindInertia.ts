@@ -171,7 +171,7 @@ export function bindInertia(adminizer: Adminizer) {
         // A broken implementation must never take the panel down with it.
         const menu = req.user ? await menuHelper.getMenuItems(req) : null;
         const historyAccess = req.user && req.adminizer.config.history.enabled
-            ? await req.adminizer.accessRightsHelper.hasPermission(
+            ? await req.adminizer.accessRightsHelper.checkPermission(
                 `history-${req.adminizer.config.history?.adapter ?? 'default'}`,
                 req.user,
             )

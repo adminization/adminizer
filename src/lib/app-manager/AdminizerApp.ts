@@ -151,7 +151,15 @@ export interface AppRuntime {
 }
 
 export interface AppRuntimeAccessRights {
-    hasPermission(token: string, user: User, context?: PermissionContext): Promise<boolean>;
+    /** The full decision, including a contextual token's own `check`. */
+    checkPermission(token: string, user: User, context?: PermissionContext): Promise<boolean>;
+    /**
+     * @deprecated Use {@link AppRuntimeAccessRights.checkPermission}. Synchronous
+     * and fail-closed: a contextual token is denied here, because there is no way
+     * to run its asynchronous `check` without awaiting. Kept synchronous so that
+     * apps written against it can never read a pending promise as "granted".
+     */
+    hasPermission(token: string, user: User): boolean;
     getPermissionRights(token: string, user: User): string[] | null;
 }
 
@@ -205,7 +213,9 @@ export interface AppAiAssistantContext {
     routePrefix: string;
     getModelResources(): ModelResource[];
     resolveModelResource(modelName: string): ModelResource | undefined;
-    hasPermission(token: string, user: User): Promise<boolean>;
+    checkPermission(token: string, user: User): Promise<boolean>;
+    /** @deprecated Use {@link AppAiAssistantContext.checkPermission}; this one fails closed on contextual tokens. */
+    hasPermission(token: string, user: User): boolean;
     createDataAccessor(modelResource: ModelResource, user: User, action: ActionType): DataAccessor;
     /** UI tools available to this user, including methods registered by apps. */
     getUiMethods(user: User): Promise<AiAssistantUiMethod[]>;

@@ -21,7 +21,7 @@ type ModelPermissions = {
 
 /** The model resources the current user may read or edit, with the CRUD flags of each. */
 async function listPermittedModels(adminizer: Adminizer, user: User): Promise<ModelPermissions[]> {
-    const has = (token: string) => adminizer.accessRightsHelper.hasPermission(token, user);
+    const has = (token: string) => adminizer.accessRightsHelper.checkPermission(token, user);
     const permitted: ModelPermissions[] = [];
     for (const resource of listModelResources(adminizer)) {
         const entry: ModelPermissions = {
@@ -40,7 +40,7 @@ async function requireModel(adminizer: Adminizer, user: User, name: string, acti
     const resource = resolveModelResource(adminizer, name);
     if (!resource?.model) throw new Error(`Model "${name}" is not available.`);
     const token = action === 'read' ? `read-${resource.name}-model` : `update-${resource.name}-model`;
-    if (!await adminizer.accessRightsHelper.hasPermission(token, user)) {
+    if (!await adminizer.accessRightsHelper.checkPermission(token, user)) {
         throw new Error(`You are not allowed to ${action} the "${resource.name}" model.`);
     }
     return resource;

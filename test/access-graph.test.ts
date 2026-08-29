@@ -646,6 +646,21 @@ describe("accessGraph", () => {
             expect(result.where).toEqual({task: {in: [t1.get("id")]}});
         });
 
+        it("a host model registered after boot joins the internal allowlist", async () => {
+            // Hosts that bind their models after adminizer.init() (a late model collection,
+            // not an app) go through modelHandler.add, which fires no app:model:* event.
+            const ctx = await buildContext({accessGraph: projectGraph, skipModels: ["ProjectMember"]});
+            const {p1} = await seedTwoProjects(ctx);
+
+            ctx.adminizer.modelHandler.add(
+                "ProjectMember",
+                new ctx.adapter.Model("ProjectMember", ctx.models.ProjectMember)
+            );
+
+            const task = await ctx.accessor("Task", member(7)).sanitizeUserRelationAccess();
+            expect(task.where).toEqual({project: {in: [p1.get("id")]}});
+        });
+
         it("an app model registered at runtime joins the graph and the internal allowlist", async () => {
             const ctx = await buildContext({accessGraph: projectGraph, skipModels: ["Task"]});
             const {p1, t1} = await seedTwoProjects(ctx);

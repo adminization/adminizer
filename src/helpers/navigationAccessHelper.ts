@@ -7,7 +7,7 @@ import type {MenuItem} from './menuHelper';
 export async function filterAccessibleHrefItems(adminizer: Adminizer, user: User, items: HrefConfig[]): Promise<HrefConfig[]> {
     const accessible: HrefConfig[] = [];
     for (const item of items) {
-        if (item.accessRightsToken && !await adminizer.accessRightsHelper.hasPermission(item.accessRightsToken, user)) {
+        if (item.accessRightsToken && !await adminizer.accessRightsHelper.checkPermission(item.accessRightsToken, user)) {
             continue;
         }
         accessible.push({
@@ -31,7 +31,7 @@ export async function listAccessibleMenuItems(adminizer: Adminizer, user: User):
         const actions = await filterAccessibleHrefItems(adminizer, user, menuItem.actions ?? []);
         const tokens = actions.map((item) => item.accessRightsToken).filter(Boolean) as string[];
         if (menuItem.accessRightsToken) tokens.push(menuItem.accessRightsToken);
-        if (await adminizer.accessRightsHelper.enoughPermissions(tokens, user)) {
+        if (await adminizer.accessRightsHelper.checkAnyPermission(tokens, user)) {
             menu.push({...menuItem, actions});
         }
     }

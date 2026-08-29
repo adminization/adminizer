@@ -101,7 +101,7 @@ export function requirePermission(
 
         const tokenId = resolveToken(token, req);      
           
-        const hasPermission = await req.adminizer.accessRightsHelper.hasPermission(tokenId, req.user);
+        const hasPermission = await req.adminizer.accessRightsHelper.checkPermission(tokenId, req.user);
         
         if (!hasPermission) {
             forbidden(req, res, mode);
@@ -132,7 +132,7 @@ export function requireAnyPermission(
             .map((token) => resolveToken(token, req))
             .filter((token): token is string => Boolean(token));
 
-        const hasPermission = await req.adminizer.accessRightsHelper.enoughPermissions(tokenIds, req.user);
+        const hasPermission = await req.adminizer.accessRightsHelper.checkAnyPermission(tokenIds, req.user);
         if (!hasPermission) {
             forbidden(req, res, mode);
             return;

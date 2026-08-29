@@ -216,7 +216,7 @@ export class RecordScopeTestApp extends AbstractAdminizerApp<RecordScopeTestAppC
     private async allowedIds(req: ReqType, records: Row[], user: unknown): Promise<string[]> {
         const decisions = await Promise.all(records.map(async (record) => ({
             id: String(record.id),
-            allowed: await req.runtime.accessRights.hasPermission(this.config.token, user as any, {
+            allowed: await req.runtime.accessRights.checkPermission(this.config.token, user as any, {
                 testId: String(record.id),
             }),
         })));

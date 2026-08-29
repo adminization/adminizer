@@ -28,8 +28,8 @@ describe("contextual access rights", () => {
         } as any;
 
         expect(helper.getPermissionRights("record-scope-test", user)).toEqual(["a", "b", "c"]);
-        expect(await helper.hasPermission("record-scope-test", user, {testId: "b", rights: ["client-value"]})).toBe(true);
-        expect(await helper.hasPermission("record-scope-test", user, {testId: "missing", rights: ["missing"]})).toBe(false);
+        expect(await helper.checkPermission("record-scope-test", user, {testId: "b", rights: ["client-value"]})).toBe(true);
+        expect(await helper.checkPermission("record-scope-test", user, {testId: "missing", rights: ["missing"]})).toBe(false);
     });
 
     it("returns null for unrestricted access", () => {
@@ -55,7 +55,7 @@ describe("contextual access rights", () => {
             groups: [{tokens: ["failing-token"]}],
         } as any;
 
-        expect(await helper.hasPermission("failing-token", user, {})).toBe(false);
+        expect(await helper.checkPermission("failing-token", user, {})).toBe(false);
     });
 
     it("runs a token callback even without a context object", async () => {
@@ -77,14 +77,14 @@ describe("contextual access rights", () => {
             groups: [{tokens: [{tokenId: "user-only-token", rights: ["allowed"]}]}],
         } as any;
 
-        expect(await helper.hasPermission("user-only-token", user)).toBe(true);
+        expect(await helper.checkPermission("user-only-token", user)).toBe(true);
         expect(checked).toBe(true);
     });
 
     it("allows administrators before validating a token", async () => {
         const helper = createHelper();
 
-        expect(await helper.hasPermission("missing-token", {isAdministrator: true} as any)).toBe(true);
+        expect(await helper.checkPermission("missing-token", {isAdministrator: true} as any)).toBe(true);
         expect(helper.hasStaticPermission("missing-token", {isAdministrator: true} as any)).toBe(true);
     });
 });

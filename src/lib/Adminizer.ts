@@ -199,11 +199,12 @@ export class Adminizer {
         this.configLayerHandler = new ConfigLayerHandler(this);
         this.appManager = new AppManager(this);
 
-        // App model (un)registration changes what the record-access resolvers may query,
-        // so the internal allowlists must follow; config-layer rebuilds refresh them
-        // synchronously inside rebuildConfig itself.
-        this.emitter.on("app:model:registered", () => refreshInternalModelAccess(this));
-        this.emitter.on("app:model:unregistered", () => refreshInternalModelAccess(this));
+        // Registering or unregistering a model changes what the record-access resolvers may
+        // query, so the internal allowlists must follow the registry. Keying it on the
+        // registry itself also covers hosts that bind models directly through
+        // `modelHandler.add` after init, which emits no app:model:* event; config-layer
+        // rebuilds refresh them synchronously inside rebuildConfig itself.
+        this.modelHandler.setInternalAccessRefresher(() => refreshInternalModelAccess(this));
     }
 
     /**

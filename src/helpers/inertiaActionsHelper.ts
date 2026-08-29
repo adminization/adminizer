@@ -15,7 +15,7 @@ export default async function inertiaActionsHelper(actionType: ActionType, model
         const actions = req.adminizer.menuHelper.getGlobalActions(modelResource.config, actionType)
         if (actions && actions.length > 0) {
             for (const action of actions) {
-                if (await req.adminizer.accessRightsHelper.hasPermission(action.accessRightsToken, req.user)) {
+                if (await req.adminizer.accessRightsHelper.checkPermission(action.accessRightsToken, req.user)) {
                     resActions.push({
                         link: action.link,
                         id: action.id,

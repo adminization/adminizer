@@ -6,9 +6,10 @@ import type { Adminizer } from "../lib/Adminizer";
 
 /**
  * Rebuilds the internal-scope allowlists from the current config and model registry.
- * Called at boot and again on every change that can alter what the resolvers query:
- * config rebuilds (app config layers) and app model (un)registration. Must not throw
- * on a broken app graph — graph problems only log and the affected models fail closed.
+ * Called at boot, synchronously on config rebuilds (app config layers), and lazily on the
+ * next internal access after any model-registry mutation — Adminizer installs it as the
+ * registry's refresher. Must not throw on a broken app graph — graph problems only log
+ * and the affected models fail closed.
  */
 export function refreshInternalModelAccess(adminizer: Adminizer): void {
     if (!adminizer.config) {

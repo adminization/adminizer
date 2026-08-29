@@ -24,9 +24,17 @@ export function parseGroupPermissionGrant(value: unknown): GroupPermissionGrant 
 /** `<verb>-<model>-model` — the id shape registered by {@link AccessRightsHelper.registerModelTokens}. */
 const MODEL_CRUD_TOKEN_PATTERN = /^(create|read|update|delete)-.+-model$/;
 
+/**
+ * Stack frames of the code that merely forwards a deprecated call: this helper
+ * itself and the app-manager runtime bridge. Naming either of them would hide
+ * the module we are actually trying to point at.
+ */
+const FORWARDING_FRAME_PATTERN = /[\\/](?:helpers[\\/]accessRightsHelper|app-manager[\\/]AppManager)\.[cm]?[jt]s/;
+
 export class AccessRightsHelper {
 
     private _tokens: AccessRightsToken[] = [];
+    private warnedDeprecations = new Set<string>();
     public adminizer: Adminizer;
 
     constructor(adminizer: Adminizer) {
@@ -112,48 +120,16 @@ export class AccessRightsHelper {
             .filter((item, pos, self) => self.indexOf(item) === pos);
     }
 
-    public async enoughPermissions(tokens: string[], user: User): Promise<boolean> {
-        if (user.isAdministrator) {
-            return true;
-        }
-
-        // No tokens required — access granted for all authenticated users
-        if (!tokens.length) {
-            return true;
-        }
-
-        for (const token of tokens) {
-            if (await this.hasPermission(token, user)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /** Fail-closed synchronous variant of {@link enoughPermissions}. */
-    public enoughStaticPermissions(tokens: string[], user: User): boolean {
-        if (user.isAdministrator) {
-            return true;
-        }
-
-        if (!tokens.length) {
-            return true;
-        }
-
-        return tokens.some((token) => this.hasStaticPermission(token, user));
-    }
-
     /**
-     * The single access decision: the token exists, a group of this user carries
+     * The full access decision: the token exists, a group of this user carries
      * it, and — for a contextual token — its own `check` accepts the context.
      *
-     * Always asynchronous on purpose. A `boolean | Promise<boolean>` union made
-     * `if (hasPermission(...))` compile while silently granting access, because
-     * a pending promise is truthy. Callers that genuinely cannot await use
-     * {@link hasStaticPermission} instead.
+     * This is the only entry point that can honour a contextual `check`, and the
+     * one every Adminizer call site uses. It replaces {@link hasPermission},
+     * which stays synchronous forever so that modules written against it cannot
+     * be broken open by a missing `await`.
      */
-    public async hasPermission(
+    public async checkPermission(
         tokenId: string | undefined,
         user: User,
         context?: PermissionContext,
@@ -175,6 +151,26 @@ export class AccessRightsHelper {
         }
 
         return this.runTokenCheck(token, user, context ?? {});
+    }
+
+    /** Grants when {@link checkPermission} grants any of `tokens`. */
+    public async checkAnyPermission(tokens: string[], user: User): Promise<boolean> {
+        if (user.isAdministrator) {
+            return true;
+        }
+
+        // No tokens required — access granted for all authenticated users
+        if (!tokens.length) {
+            return true;
+        }
+
+        for (const token of tokens) {
+            if (await this.checkPermission(token, user)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -207,6 +203,80 @@ export class AccessRightsHelper {
         }
 
         return true;
+    }
+
+    /** Fail-closed synchronous variant of {@link checkAnyPermission}. */
+    public enoughStaticPermissions(tokens: string[], user: User): boolean {
+        if (user.isAdministrator) {
+            return true;
+        }
+
+        if (!tokens.length) {
+            return true;
+        }
+
+        return tokens.some((token) => this.hasStaticPermission(token, user));
+    }
+
+    /**
+     * @deprecated Use {@link checkPermission}, which can honour a contextual
+     * token's `check`. This method stays synchronous and fails closed.
+     *
+     * Kept synchronous deliberately, and never to be made `async`. Modules and
+     * apps outside this repository call it as `if (hasPermission(...))`, and we
+     * can neither find nor warn them at compile time. An `async` version returns
+     * a pending promise there, which is truthy — every such check would grant
+     * access to everyone. So this signature is frozen at `boolean`: the worst a
+     * stale caller gets is a denial it can see, never a silent grant.
+     */
+    public hasPermission(tokenId: string | undefined, user: User): boolean {
+        this.warnDeprecated("hasPermission", "checkPermission");
+        return this.hasStaticPermission(tokenId, user);
+    }
+
+    /**
+     * @deprecated Use {@link checkAnyPermission}. Synchronous and fail-closed
+     * for the same reason as {@link hasPermission}.
+     */
+    public enoughPermissions(tokens: string[], user: User): boolean {
+        this.warnDeprecated("enoughPermissions", "checkAnyPermission");
+        return this.enoughStaticPermissions(tokens, user);
+    }
+
+    /**
+     * Warns once per call site, with the caller's frame so the module still
+     * using it can actually be found.
+     *
+     * Keyed on the frame rather than the method name: an app reaching the
+     * deprecated method through the runtime bridge used to spend the single
+     * warning of the whole process on a frame naming `AppManager` instead of
+     * itself, after which no other stale caller could ever surface.
+     */
+    private warnDeprecated(method: string, replacement: string): void {
+        const callerFrame = this.resolveCallerFrame();
+        const warned = `${method}@${callerFrame ?? "unknown"}`;
+        if (this.warnedDeprecations.has(warned)) {
+            return;
+        }
+        this.warnedDeprecations.add(warned);
+
+        Adminizer.log.warn(
+            `AccessRightsHelper > ${method} is deprecated and cannot evaluate contextual tokens ` +
+            `(they are denied). Use the asynchronous ${replacement} instead.`,
+            callerFrame ?? "",
+        );
+    }
+
+    /**
+     * The first stack frame outside the forwarding layer — this helper and the
+     * app-manager bridge — which is the module that actually made the call.
+     */
+    private resolveCallerFrame(): string | undefined {
+        return new Error().stack
+            ?.split("\n")
+            .slice(1)
+            .map((frame) => frame.trim())
+            .find((frame) => frame.startsWith("at ") && !FORWARDING_FRAME_PATTERN.test(frame));
     }
 
     /** Returns trusted option IDs granted by all groups for a contextual token. */

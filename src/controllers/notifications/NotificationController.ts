@@ -9,7 +9,7 @@ export class NotificationController {
 
         if (req.method.toUpperCase() === 'POST') {
             const {s, notificationClass} = req.body;
-            const hasPermission = await req.adminizer.accessRightsHelper.hasPermission(
+            const hasPermission = await req.adminizer.accessRightsHelper.checkPermission(
                 `notification-${notificationClass}`,
                 req.user
             );
@@ -55,7 +55,7 @@ export class NotificationController {
         let activeServices = []
 
         for (const service of services) {
-            const hasPermission = await req.adminizer.accessRightsHelper.hasPermission(
+            const hasPermission = await req.adminizer.accessRightsHelper.checkPermission(
                 `notification-${service.notificationClass}`,
                 req.user
             );
@@ -96,7 +96,7 @@ export class NotificationController {
                 const notificationClass = event.notificationClass;
 
                 // UNIFIED rights check via AccessRightsHelper
-                const hasPermission = await req.adminizer.accessRightsHelper.hasPermission(
+                const hasPermission = await req.adminizer.accessRightsHelper.checkPermission(
                     `notification-${notificationClass}`,
                     req.user
                 );
@@ -121,7 +121,7 @@ export class NotificationController {
 
         const allowedServices = (await Promise.all(services.map(async (service) => ({
             service,
-            allowed: await req.adminizer.accessRightsHelper.hasPermission(
+            allowed: await req.adminizer.accessRightsHelper.checkPermission(
                 `notification-${service.notificationClass}`,
                 req.user,
             ),
@@ -189,7 +189,7 @@ export class NotificationController {
             const {limit = 20, skip = 0, unreadOnly = false} = req.query;
 
             // Checking access rights
-            const hasPermission = await req.adminizer.accessRightsHelper.hasPermission(
+            const hasPermission = await req.adminizer.accessRightsHelper.checkPermission(
                 `notification-${notificationClass}`,
                 req.user
             );
@@ -230,7 +230,7 @@ export class NotificationController {
             const services = req.adminizer.notificationHandler.getAllServices();
             const allowedServices = (await Promise.all(services.map(async (service) => ({
                 service,
-                allowed: await req.adminizer.accessRightsHelper.hasPermission(
+                allowed: await req.adminizer.accessRightsHelper.checkPermission(
                     `notification-${service.notificationClass}`,
                     req.user,
                 ),

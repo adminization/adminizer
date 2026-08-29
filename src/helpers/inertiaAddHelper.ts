@@ -184,7 +184,7 @@ export default async function inertiaAddHelper(req: ReqType, modelResource: Mode
                 ? req.adminizer.modelHandler.resolveModelName(rawRelatedModel)
                 : undefined
             if (relatedModel && req.user) {
-                canCreateRelated = await req.adminizer.accessRightsHelper.hasPermission(`create-${relatedModel}-model`, req.user)
+                canCreateRelated = await req.adminizer.accessRightsHelper.checkPermission(`create-${relatedModel}-model`, req.user)
             } else if (relatedModel && !req.adminizer.config.auth?.enable) {
                 canCreateRelated = true
             }

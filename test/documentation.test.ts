@@ -72,7 +72,7 @@ function createAdminizer(permitted: string[]) {
             documentation: {enabled: true},
         },
         accessRightsHelper: {
-            hasPermission: (token: string, user: User) => Boolean((user as any).isAdministrator) || permitted.includes(token),
+            checkPermission: async (token: string, user: User) => Boolean((user as any).isAdministrator) || permitted.includes(token),
         },
     } as unknown as Adminizer;
     const handler = new DocumentationHandler(adminizer);

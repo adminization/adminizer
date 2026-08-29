@@ -97,7 +97,7 @@ export class AiAssistantUiMethodHandler {
         const available: AiAssistantUiMethod[] = [];
         for (const method of this.methods.values()) {
             if (method.accessRightsToken
-                && !await this.adminizer.accessRightsHelper.hasPermission(method.accessRightsToken, user)) {
+                && !await this.adminizer.accessRightsHelper.checkPermission(method.accessRightsToken, user)) {
                 continue;
             }
             available.push({...method, inputSchema: {...method.inputSchema}});

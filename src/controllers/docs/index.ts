@@ -124,7 +124,7 @@ export async function docsSchema(req: ReqType, res: ResType) {
     if (!resource) {
         return res.status(404).json({error: req.i18n.__('Model not found')});
     }
-    if (!await req.adminizer.accessRightsHelper.hasPermission(`read-${resource.name}-model`, req.user)) {
+    if (!await req.adminizer.accessRightsHelper.checkPermission(`read-${resource.name}-model`, req.user)) {
         return res.status(403).json({error: req.i18n.__('Access denied')});
     }
 

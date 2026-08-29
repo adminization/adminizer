@@ -65,16 +65,16 @@ export async function inertiaListHelper(modelResource: ModelResource, req: ReqTy
         pageSizeOptions: [5, 20, 50],
     } as listProps
 
-    if (modelResource.config.add && await req.adminizer.accessRightsHelper.hasPermission(`create-${modelResource.name}-model`, req.user)) {
+    if (modelResource.config.add && await req.adminizer.accessRightsHelper.checkPermission(`create-${modelResource.name}-model`, req.user)) {
         props.crudActions.createTitle = req.i18n.__('create')
     }
-    if (modelResource.config.edit && await req.adminizer.accessRightsHelper.hasPermission(`update-${modelResource.name}-model`, req.user)) {
+    if (modelResource.config.edit && await req.adminizer.accessRightsHelper.checkPermission(`update-${modelResource.name}-model`, req.user)) {
         props.crudActions.editTitle = req.i18n.__('Edit')
     }
-    if (modelResource.config.view && await req.adminizer.accessRightsHelper.hasPermission(`read-${modelResource.name}-model`, req.user)) {
+    if (modelResource.config.view && await req.adminizer.accessRightsHelper.checkPermission(`read-${modelResource.name}-model`, req.user)) {
         props.crudActions.viewsTitle = req.i18n.__('View')
     }
-    if (modelResource.config.remove && await req.adminizer.accessRightsHelper.hasPermission(`delete-${modelResource.name}-model`, req.user)) {
+    if (modelResource.config.remove && await req.adminizer.accessRightsHelper.checkPermission(`delete-${modelResource.name}-model`, req.user)) {
         props.crudActions.deleteTitle = req.i18n.__('Delete')
     }
 
@@ -82,7 +82,7 @@ export async function inertiaListHelper(modelResource: ModelResource, req: ReqTy
 
     if (req.adminizer.menuHelper.hasInlineActions(modelResource.config, 'list')) {
         for (const inlineAction of req.adminizer.menuHelper.getInlineActions(modelResource.config, 'list')) {
-            if (await req.adminizer.accessRightsHelper.hasPermission(inlineAction.accessRightsToken, req.user)) {
+            if (await req.adminizer.accessRightsHelper.checkPermission(inlineAction.accessRightsToken, req.user)) {
                 props.inlineActions.push({
                     icon: inlineAction.icon,
                     id: inlineAction.id,

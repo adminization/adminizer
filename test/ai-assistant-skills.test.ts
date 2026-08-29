@@ -47,9 +47,9 @@ function createAdminizer(permitted: string[]) {
             models: {Test: {model: "Test", title: "Test"}, Secret: {model: "Secret", title: "Secret"}},
         },
         accessRightsHelper: {
-            hasPermission: async (token: string) => has(token),
+            checkPermission: async (token: string) => has(token),
             hasStaticPermission: (token: string) => has(token),
-            enoughPermissions: async (tokens: string[]) => !tokens.length || tokens.some(has),
+            checkAnyPermission: async (tokens: string[]) => !tokens.length || tokens.some(has),
             enoughStaticPermissions: (tokens: string[]) => !tokens.length || tokens.some(has),
         },
         modelHandler: {

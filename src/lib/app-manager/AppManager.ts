@@ -482,6 +482,7 @@ class RuntimeAppSetupContext implements AppSetupContext {
             routePrefix: this.adminizer.config.routePrefix,
             getModelResources: () => listModelResources(this.adminizer),
             resolveModelResource: (modelName: string) => resolveModelResource(this.adminizer, modelName),
+            checkPermission: (token, user) => this.adminizer.accessRightsHelper.checkPermission(token, user),
             hasPermission: (token, user) => this.adminizer.accessRightsHelper.hasPermission(token, user),
             createDataAccessor: (modelResource, user, action) =>
                 new DataAccessor(this.adminizer, user, modelResource, action),
@@ -620,8 +621,13 @@ export class AppManager {
                 },
             },
             accessRights: {
-                hasPermission: async (token, user, context) =>
-                    await this.adminizer.accessRightsHelper.hasPermission(token, user, context),
+                checkPermission: (token, user, context) =>
+                    this.adminizer.accessRightsHelper.checkPermission(token, user, context),
+                // Synchronous, like the helper method it forwards to: an app built against the
+                // pre-async runtime calls this without awaiting, and a promise would read as
+                // "granted" there. See `AccessRightsHelper.hasPermission`.
+                hasPermission: (token, user) =>
+                    this.adminizer.accessRightsHelper.hasPermission(token, user),
                 getPermissionRights: (token, user) =>
                     this.adminizer.accessRightsHelper.getPermissionRights(token, user),
             },

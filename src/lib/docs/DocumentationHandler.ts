@@ -131,7 +131,7 @@ export class DocumentationHandler {
     /** Whether the subsystem is up and this user may read documentation at all. */
     public async canRead(user?: User): Promise<boolean> {
         if (!this.enabled || !user) return false;
-        return Boolean(await this.adminizer.accessRightsHelper.hasPermission(this.baseToken, user));
+        return Boolean(await this.adminizer.accessRightsHelper.checkPermission(this.baseToken, user));
     }
 
     /**
@@ -199,7 +199,7 @@ export class DocumentationHandler {
      * the models, with the same token DataAccessor gates the data itself.
      */
     private async allowed(user: User, meta: DocMeta): Promise<boolean> {
-        const has = (token: string) => this.adminizer.accessRightsHelper.hasPermission(token, user);
+        const has = (token: string) => this.adminizer.accessRightsHelper.checkPermission(token, user);
         if (!(await has(this.baseToken))) return false;
         if (meta.accessRightsToken && !(await has(meta.accessRightsToken))) return false;
         if (meta.models.length > 0) {

@@ -81,7 +81,7 @@ export class AdminLinkHandler {
         const accessible: ResolvedAdminLink[] = [];
         for (const link of this.links.values()) {
             if (wanted && this.slug(link.type) !== wanted) continue;
-            if (link.accessRightsToken && !await this.adminizer.accessRightsHelper.hasPermission(link.accessRightsToken, user)) continue;
+            if (link.accessRightsToken && !await this.adminizer.accessRightsHelper.checkPermission(link.accessRightsToken, user)) continue;
             accessible.push(link);
         }
         return accessible;
@@ -124,7 +124,7 @@ export class AdminLinkHandler {
         const templates: ResolvedAdminLinkTemplate[] = [];
         const push = async (template: ResolvedAdminLinkTemplate): Promise<void> => {
             if (DESTRUCTIVE_PATH.test(template.template)) return;
-            if (template.accessRightsToken && !await this.adminizer.accessRightsHelper.hasPermission(template.accessRightsToken, user)) return;
+            if (template.accessRightsToken && !await this.adminizer.accessRightsHelper.checkPermission(template.accessRightsToken, user)) return;
             if (templates.some((existing) => existing.template === template.template || existing.id === template.id)) return;
             templates.push(template);
         };

@@ -14,6 +14,7 @@ import { getFieldError, hasFormErrors, resetFormErrors } from '@/hooks/form-stat
 import InputError from "@/components/input-error.tsx";
 import { AddProps } from '@/pages/add';
 import { adminApi } from '@/lib/admin-api';
+import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { DialogStackHandle } from '@/components/ui/dialog-stack';
 import HistoryDialogStack from '@/components/history/HistoryDialogStack';
@@ -105,7 +106,8 @@ const AddForm: FC<{
             setData,
             post,
             processing,
-            transform
+            transform,
+            errors
         } = useForm<Record<string, any>>({
             ...Object.fromEntries((fields || []).map(field => [field.name, field.value ?? undefined])),
             jsonPopupCatalog: catalog
@@ -179,11 +181,19 @@ const AddForm: FC<{
             // return
             if (catalog) {
                 setCatalogProcessing(true)
-                const res = await adminApi.post<{ record: any }>(page.props.postLink, data)
-                if (res.status === 200) {
-                    if (callback) {
-                        isNavigation ? callback(res.data.record, navTargetBlank, navVisible) : callback(res.data.record)
+                try {
+                    const res = await adminApi.post<{ record: any }>(page.props.postLink, data)
+                    if (res.status === 200) {
+                        if (callback) {
+                            isNavigation ? callback(res.data.record, navTargetBlank, navVisible) : callback(res.data.record)
+                        }
                     }
+                } catch (err) {
+                    // the record was not saved: show why and let the user fix the form
+                    const response = (err as { response?: { data?: { error?: string } } })?.response;
+                    toast.error(response?.data?.error ?? t("Error: Invalid field data"));
+                } finally {
+                    setCatalogProcessing(false)
                 }
             } else {
                 const backUrl = localStorage.getItem('backUrl')
@@ -244,7 +254,7 @@ const AddForm: FC<{
                                         {field.type === "markdown" || field.type === "table" || field.type === "jsonEditor" || field.type === "codeEditor" || field.type === "geoJson" ?
                                             <>
                                                 <LabelRenderer field={field} />
-                                                <InputError message={getFieldError(`${field.type}-${field.name}`)} />
+                                                <InputError message={errors[field.name] ?? getFieldError(`${field.type}-${field.name}`)} />
                                                 <LazyField
                                                     field={field}
                                                     value={data[field.name]}
@@ -258,7 +268,7 @@ const AddForm: FC<{
                                             :
                                             <>
                                                 <LabelRenderer field={field} />
-                                                <InputError message={getFieldError(`${field.type}-${field.name}`)} />
+                                                <InputError message={errors[field.name] ?? getFieldError(`${field.type}-${field.name}`)} />
                                                 <FieldRenderer
                                                     field={field}
                                                     value={data[field.name]}

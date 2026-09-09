@@ -5,12 +5,14 @@ import {inertiaUserHelper} from "../helpers/inertiaUserHelper";
 import { User } from "../models/User";
 import { Group } from "../models/Group";
 import { generateUserApiKey } from "../helpers/apiKeyHelper";
+import {describeSaveError} from "../helpers/saveErrorHelper";
 
 export default async function (req: ReqType, res: ResType) {
     let modelResource = ControllerHelper.findModelResource(req);
     const internalUsers = req.adminizer.modelHandler.internal("users");
     const groupModel = internalUsers.get<Group>("Group");
     const userModel = internalUsers.get<User>("User");
+    let errors: Record<string, string> | undefined; //per field save errors
     let groups: Group[];
     try {
         groups = await groupModel.find({});
@@ -56,10 +58,18 @@ export default async function (req: ReqType, res: ResType) {
 
         } catch (e) {
             Adminizer.log.error(e);
-            req.session.messages.adminError.push(e.message || 'Something went wrong...');
+            const {message, fieldErrors} = describeSaveError(e, undefined, req);
+            req.flash.setFlashMessage('error', message);
+            // Inertia renders the page as usual on 4xx, so the form comes back marked
+            req.Inertia.setStatusCode(422);
+            errors = fieldErrors;
         }
     }
     const props = inertiaUserHelper(modelResource, req, groups)
+
+    if (errors) {
+        (props as Record<string, unknown>).errors = errors;
+    }
     return req.Inertia.render({
         component: 'add-user',
         props: props

@@ -13,6 +13,7 @@ import {
 import {DataAccessor} from "../lib/DataAccessor";
 import {Adminizer} from "../lib/Adminizer";
 import inertiaAddHelper from "../helpers/inertiaAddHelper";
+import {describeSaveError} from "../helpers/saveErrorHelper";
 
 export default async function edit(req: ReqType, res: ResType) {
     //Check id
@@ -32,6 +33,7 @@ export default async function edit(req: ReqType, res: ResType) {
 
     let record;
     let dataAccessor;
+    let errors: Record<string, string> | undefined; //per field save errors
     const id = req.params.id
     try {
         dataAccessor = new DataAccessor(req.adminizer, req.user, modelResource, "edit");
@@ -149,8 +151,18 @@ export default async function edit(req: ReqType, res: ResType) {
             }
         } catch (e) {
             Adminizer.log.error(e);
-            req.session.messages.adminError.push(e.message || 'Something went wrong...');
-            return e;
+            const {message, fieldErrors} = describeSaveError(e, fields, req);
+
+            if (req.body.jsonPopupCatalog) {
+                return res.status(422).json({error: message, errors: fieldErrors ?? {}})
+            }
+
+            req.flash.setFlashMessage('error', message);
+            // Inertia renders the page as usual on 4xx, so the form comes back filled and marked
+            req.Inertia.setStatusCode(422);
+            errors = fieldErrors;
+            // give the form back with what the user submitted, not with the stored values
+            record = {...record, ...reqData};
         }
     } // END POST
 
@@ -166,6 +178,10 @@ export default async function edit(req: ReqType, res: ResType) {
         }
     }
     const props = await inertiaAddHelper(req, modelResource, fields, record)
+
+    if (errors) {
+        props.errors = errors;
+    }
     if (req.query?.without_layout) {
         return res.json({
             props: props

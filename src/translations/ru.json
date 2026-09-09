@@ -325,5 +325,7 @@
   "Title is required": "Заголовок обязателен",
   "File size exceeds the 5 MB limit": "Размер файла превышает 5 МБ",
   "Remove file": "Удалить файл",
-  "Max 5 MB per file": "Макс. 5 МБ на файл"
+  "Max 5 MB per file": "Макс. 5 МБ на файл",
+  "This value is already taken": "Это значение уже занято",
+  "Something went wrong...": "Что-то пошло не так..."
 }

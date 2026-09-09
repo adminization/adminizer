@@ -306,5 +306,7 @@
   "Failed to update filter columns": "Failed to update filter columns",
   "GroupAP model not found": "GroupAP model not found",
   "Failed to load groups": "Failed to load groups",
-  "Internal server error": "Internal server error"
+  "Internal server error": "Internal server error",
+  "This value is already taken": "This value is already taken",
+  "Something went wrong...": "Something went wrong..."
 }

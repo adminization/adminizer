@@ -178,5 +178,7 @@
   "Title is required": "제목은 필수입니다",
   "File size exceeds the 5 MB limit": "파일 크기가 5MB 제한을 초과합니다",
   "Remove file": "파일 삭제",
-  "Max 5 MB per file": "파일당 최대 5MB"
+  "Max 5 MB per file": "파일당 최대 5MB",
+  "This value is already taken": "이 값은 이미 사용 중입니다",
+  "Something went wrong...": "문제가 발생했습니다..."
 }

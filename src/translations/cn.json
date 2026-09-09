@@ -178,5 +178,7 @@
   "Title is required": "标题为必填项",
   "File size exceeds the 5 MB limit": "文件大小超过 5 MB 限制",
   "Remove file": "删除文件",
-  "Max 5 MB per file": "每个文件最大 5 MB"
+  "Max 5 MB per file": "每个文件最大 5 MB",
+  "This value is already taken": "该值已被占用",
+  "Something went wrong...": "出了点问题..."
 }

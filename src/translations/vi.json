@@ -178,5 +178,7 @@
   "Title is required": "Tiêu đề là bắt buộc",
   "File size exceeds the 5 MB limit": "Kích thước tệp vượt quá giới hạn 5 MB",
   "Remove file": "Xóa tệp",
-  "Max 5 MB per file": "Tối đa 5 MB mỗi tệp"
+  "Max 5 MB per file": "Tối đa 5 MB mỗi tệp",
+  "This value is already taken": "Giá trị này đã được sử dụng",
+  "Something went wrong...": "Đã có lỗi xảy ra..."
 }

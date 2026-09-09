@@ -161,6 +161,7 @@ export default function AddUserForm() {
                                     disabled={processing || page.props.view}
                                     placeholder={getField('login')?.label}
                                 />
+                                <InputError message={errors.login} />
                             </div>
                             <div className="grid gap-4">
                                 <Label htmlFor={getField('fullName')?.name}>{getField('fullName')?.label}</Label>

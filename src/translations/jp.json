@@ -178,5 +178,7 @@
   "Title is required": "タイトルは必須です",
   "File size exceeds the 5 MB limit": "ファイルサイズが5MBの制限を超えています",
   "Remove file": "ファイルを削除",
-  "Max 5 MB per file": "ファイルあたり最大5MB"
+  "Max 5 MB per file": "ファイルあたり最大5MB",
+  "This value is already taken": "この値は既に使用されています",
+  "Something went wrong...": "問題が発生しました..."
 }

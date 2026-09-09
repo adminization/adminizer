@@ -4,6 +4,7 @@ import {Adminizer} from "../lib/Adminizer";
 import {inertiaGroupHelper} from "../helpers/inertiaGroupHelper";
 import { User } from "../models/User";
 import { Group } from "../models/Group";
+import {describeSaveError} from "../helpers/saveErrorHelper";
 
 export default async function addGroup(req: ReqType, res: ResType) {
 
@@ -11,6 +12,7 @@ export default async function addGroup(req: ReqType, res: ResType) {
     const internalUsers = req.adminizer.modelHandler.internal("users");
     const userModel = internalUsers.get<User>("User");
     const groupModel = internalUsers.get<Group>("Group");
+    let errors: Record<string, string> | undefined; //per field save errors
 
     let users: User[];
     try {
@@ -76,11 +78,19 @@ export default async function addGroup(req: ReqType, res: ResType) {
             return req.Inertia.redirect(`${req.adminizer.config.routePrefix}/model/Group`)
         } catch (e) {
             Adminizer.log.error(e);
-            req.session.messages.adminError.push(e.message || 'Something went wrong...');
+            const {message, fieldErrors} = describeSaveError(e, undefined, req);
+            req.flash.setFlashMessage('error', message);
+            // Inertia renders the page as usual on 4xx, so the form comes back marked
+            req.Inertia.setStatusCode(422);
+            errors = fieldErrors;
         }
     }
 
     const props = inertiaGroupHelper(modelResource, req, users, groupedTokens)
+
+    if (errors) {
+        (props as Record<string, unknown>).errors = errors;
+    }
     return req.Inertia.render({
         component: 'add-group',
         props: props as unknown as Record<string | number | symbol, unknown>

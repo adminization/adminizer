@@ -178,5 +178,7 @@
   "Title is required": "O título é obrigatório",
   "File size exceeds the 5 MB limit": "O tamanho do arquivo excede o limite de 5 MB",
   "Remove file": "Remover arquivo",
-  "Max 5 MB per file": "Máx. 5 MB por arquivo"
+  "Max 5 MB per file": "Máx. 5 MB por arquivo",
+  "This value is already taken": "Este valor já está em uso",
+  "Something went wrong...": "Algo deu errado..."
 }

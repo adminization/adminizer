@@ -11,6 +11,7 @@ import {
 import {DataAccessor} from "../lib/DataAccessor";
 import {Adminizer} from "../lib/Adminizer";
 import inertiaAddHelper from "../helpers/inertiaAddHelper";
+import {describeSaveError} from "../helpers/saveErrorHelper";
 
 export default async function add(req: ReqType, res: ResType) {
     let modelResource = ControllerHelper.findModelResource(req);
@@ -29,7 +30,8 @@ export default async function add(req: ReqType, res: ResType) {
     // add deprecated 'records' to config
     fields = await FieldsHelper.loadAssociations(req, fields, "add", dataAccessor.recordAccessCache);
 
-    let data = {}; //list of field values
+    let data: Record<string, any> | undefined; //submitted field values, kept only to refill the form after a failed save
+    let errors: Record<string, string> | undefined; //per field save errors
 
     if (req.method.toUpperCase() === 'POST') {
         let reqData: any = RequestProcessor.processRequest(req, fields);
@@ -116,11 +118,24 @@ export default async function add(req: ReqType, res: ResType) {
             }
         } catch (e) {
             Adminizer.log.error(e);
-            req.session.messages.adminError.push(e.message || 'Something went wrong...');
+            const {message, fieldErrors} = describeSaveError(e, fields, req);
+
+            if (req.body.jsonPopupCatalog) {
+                return res.status(422).json({error: message, errors: fieldErrors ?? {}})
+            }
+
+            req.flash.setFlashMessage('error', message);
+            // Inertia renders the page as usual on 4xx, so the form comes back filled and marked
+            req.Inertia.setStatusCode(422);
+            errors = fieldErrors;
             data = reqData;
         }
     }
-    const props = await inertiaAddHelper(req, modelResource, fields)
+    const props = await inertiaAddHelper(req, modelResource, fields, undefined, false, data)
+
+    if (errors) {
+        props.errors = errors;
+    }
 
     if (req.query?.without_layout) {
         return res.json({

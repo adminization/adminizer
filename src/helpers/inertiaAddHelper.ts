@@ -72,8 +72,16 @@ interface FieldProps extends Record<string | number | symbol, unknown> {
     model: string
 }
 
-export default async function inertiaAddHelper(req: ReqType, modelResource: ModelResource, fields: Fields, record?: Record<string, string | boolean | number | string[]>, view: boolean = false) {
+/**
+ * @param record existing record, its presence switches the form into edit mode
+ * @param view read only mode
+ * @param formValues values to prefill the fields with without switching into edit mode,
+ *        used to give the form back to the user when saving failed
+ */
+export default async function inertiaAddHelper(req: ReqType, modelResource: ModelResource, fields: Fields, record?: Record<string, string | boolean | number | string[]>, view: boolean = false, formValues?: Record<string, any>) {
     const actionType = 'add';
+    // `record` drives the edit/add mode of the form, `values` only drives the field values
+    const values = record ?? formValues;
     let props: FieldProps = {
         edit: !!record,
         view: view,
@@ -116,7 +124,7 @@ export default async function inertiaAddHelper(req: ReqType, modelResource: Mode
         let disabled = fieldConfig.disabled ?? false
         let required = fieldConfig.required ?? false
         let options: any = {}
-        let value = record ? record[key] : undefined
+        let value = values ? values[key] : undefined
         let relatedModel: string | undefined = undefined
         let canCreateRelated = false
         const controlContext = `${modelResource.name}.${key}`
@@ -131,7 +139,7 @@ export default async function inertiaAddHelper(req: ReqType, modelResource: Mode
             if (type === 'range') {
                 options = { ...fieldConfig.options }
                 if ("min" in fieldConfig.options) {
-                    value = record ? record[key] : fieldConfig.options.min ? fieldConfig.options.min : 0
+                    value = values ? values[key] : fieldConfig.options.min ? fieldConfig.options.min : 0
                 }
             }
             // Format datetime for datetime-local input (YYYY-MM-DDTHH:mm)
@@ -159,7 +167,7 @@ export default async function inertiaAddHelper(req: ReqType, modelResource: Mode
 
         if (type === 'color') {
             fieldType = 'color'
-            value = record ? (record[key] ? record[key] : '#000000') : '#000000'
+            value = values ? (values[key] ? values[key] : '#000000') : '#000000'
         }
 
         if (type === 'select') {
@@ -380,8 +388,11 @@ export function setAssociationValues(field: Field, value: string[]) {
         if (value === null) return []
 
         if (Array.isArray(value)) {
+            // a populated record holds objects, a submitted form holds plain identifiers
             return value
-                .map(val => (val as unknown as { [key: string]: any })[displayField])
+                .map(val => (val !== null && typeof val === 'object')
+                    ? (val as unknown as { [key: string]: any })[displayField]
+                    : String(val))
         }
 
         if (typeof value === 'object') {

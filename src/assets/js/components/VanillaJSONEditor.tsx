@@ -3,6 +3,9 @@ import {
     JSONEditorPropsOptional,
     JsonEditor,
     createAjvValidator,
+    isTextContent,
+    toJSONContent,
+    Content,
     JSONSchema, OnChangeStatus, ContentValidationErrors
 } from 'vanilla-jsoneditor';
 import {useEffect, useRef, useState} from 'react';
@@ -18,10 +21,33 @@ function normalizeContent(content: any, json: any) {
     return json !== undefined ? {json} : undefined;
 }
 
+function contentKey(content: any) {
+    return content === undefined ? 'undefined' : JSON.stringify(content);
+}
+
+// In text mode the editor emits {text}, in tree mode {json}. Consumers expect the parsed
+// value, so always hand them {json} and report unparsable text as a field error.
+function toJson(content: Content): {json?: unknown; parseError?: string} {
+    if (!isTextContent(content)) {
+        return {json: content.json};
+    }
+    if (content.text.trim() === '') {
+        return {json: undefined};
+    }
+    try {
+        return {json: toJSONContent(content).json};
+    } catch (err) {
+        return {parseError: err instanceof Error ? err.message : 'Invalid JSON'};
+    }
+}
+
 export default function VanillaJSONEditor(props: JSONEditorPropsOptional & Record<string, any>) {
     const refContainer = useRef<HTMLDivElement | null>(null);
     const refEditor = useRef<JsonEditor | null>(null);
     const refPrevProps = useRef<JSONEditorPropsOptional>(props);
+    // Serialized content of the last onChange we emitted: the parent feeds it straight back
+    // as a prop, and pushing that echo into the editor would rewrite what the user is typing.
+    const refEmittedContent = useRef<string | undefined>(undefined);
 
     const {appearance} = useAppearance()
     const [theme, setTheme] = useState<string>('')
@@ -33,11 +59,13 @@ export default function VanillaJSONEditor(props: JSONEditorPropsOptional & Recor
 
     useEffect(()=>{
        if(refEditor.current){
-           refEditor.current.updateProps({
-               content: normalizeContent(props.content, props.json)
-           })
+           const content = normalizeContent(props.content, props.json);
+           if (contentKey(content) === refEmittedContent.current) {
+               return;
+           }
+           refEditor.current.updateProps({content})
        }
-       
+
     }, [props.content, props.json])
 
     useEffect(() => {
@@ -51,16 +79,24 @@ export default function VanillaJSONEditor(props: JSONEditorPropsOptional & Recor
                 validator,
                 content,
                 onChange: (content: any, previousContent: any, status: OnChangeStatus) => {
-                    if (validator) {
-                        const isEmpty = content.json === undefined
+                    const {json, parseError} = toJson(content);
+
+                    if (parseError) {
+                        setFieldError(props.name, true, parseError);
+                    } else if (validator) {
+                        const isEmpty = json === undefined
                         const validationError = isEmpty
                             ? ['error']
                             : (status.contentErrors as ContentValidationErrors)?.validationErrors;
 
                         setFieldError(props.name, !!validationError?.length, 'Error validation JSON schema');
+                    } else {
+                        setFieldError(props.name, false);
                     }
+
                     if (props.onChange) {
-                        props.onChange(content, previousContent, status);
+                        refEmittedContent.current = contentKey(normalizeContent(json, undefined));
+                        props.onChange({json} as Content, previousContent, status);
                     }
                 }
             }
@@ -69,7 +105,7 @@ export default function VanillaJSONEditor(props: JSONEditorPropsOptional & Recor
         // Trigger onChange manually
         if (refEditor.current) {
             // Get the current content
-            const currentContent = refEditor.current.get();
+            const {json, parseError} = toJson(refEditor.current.get());
 
             // Validate the content
             const validationResult = refEditor.current.validate();
@@ -78,8 +114,9 @@ export default function VanillaJSONEditor(props: JSONEditorPropsOptional & Recor
 
 
             if (props.onChange) {
+                refEmittedContent.current = contentKey(normalizeContent(json, undefined));
                 props.onChange(
-                    currentContent,
+                    {json} as Content,
                     //@ts-ignore
                     undefined,
                     {
@@ -93,7 +130,7 @@ export default function VanillaJSONEditor(props: JSONEditorPropsOptional & Recor
             }
 
             // Set the error state
-            setFieldError(props.name, hasErrors, 'Error validation JSON schema');
+            setFieldError(props.name, hasErrors || !!parseError, parseError ?? 'Error validation JSON schema');
         }
 
         return () => {
@@ -112,7 +149,12 @@ export default function VanillaJSONEditor(props: JSONEditorPropsOptional & Recor
             // since the last time to prevent syncing issues
             const changedProps = filterUnchangedProps(props, refPrevProps.current);
             if ('content' in changedProps || 'json' in changedProps) {
-                changedProps.content = normalizeContent(props.content, props.json);
+                const content = normalizeContent(props.content, props.json);
+                if (contentKey(content) === refEmittedContent.current) {
+                    delete changedProps.content;
+                } else {
+                    changedProps.content = content;
+                }
                 delete (changedProps as Record<string, any>).json;
             }
             if ('schema' in changedProps) {

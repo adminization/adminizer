@@ -804,6 +804,18 @@ export interface CreateUpdateConfig {
     controller?: string | ControllerFunction
 }
 
+/**
+ * Badge of a sidebar item: a value, or a resolver computing it for the user
+ * the menu is built for. A resolver runs on every request and only for items
+ * that user may open, so it must be cheap — return a cached count, never run a
+ * query per call. A resolver that throws is logged and renders no badge.
+ * `0`, `''` and `undefined` render nothing.
+ */
+export type MenuBadge =
+    | number
+    | string
+    | ((user: User) => number | string | undefined | Promise<number | string | undefined>)
+
 export interface HrefConfig {
     id: string
     title: string
@@ -829,10 +841,10 @@ export interface HrefConfig {
      * Count shown next to the item in the expanded sidebar (rendered as
      * `SidebarMenuBadge`). `0`, `''` and `undefined` render nothing. Not drawn
      * in the collapsed icon rail, where a number without a label means nothing.
-     * Dynamic values: set it from `navbar.handleAdditionalLinks` /
-     * `navbar.sectionHandlers`, which run on every request.
+     * Either a value or a resolver computing it per request for the user the
+     * menu is built for — see `MenuBadge`.
      */
-    badge?: number | string
+    badge?: MenuBadge
 }
 
 /**

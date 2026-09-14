@@ -51,6 +51,28 @@ describe("admin link templates", () => {
         expect(ids).not.toContain("model-Test-add");
     });
 
+    it("keeps a model hidden from the navbar out of the registry", async () => {
+        const {adminizer, adminLinkHandler} = createAdminizer(
+            ["update-Hidden-model", "create-Hidden-model", "update-Managed-model"],
+        );
+        Object.assign(adminizer.config.models as Record<string, unknown>, {
+            Hidden: {model: "Hidden", title: "Hidden", navbar: {visible: false}},
+            Managed: {model: "Managed", title: "Managed", navbar: {groupsAccessRights: ["managers"]}},
+        });
+        const ids = (await adminLinkHandler.listTemplates(operator)).map((template) => template.id);
+
+        expect(ids).not.toContain("model-Hidden-edit");
+        expect(ids).not.toContain("model-Hidden-add");
+        expect(ids).not.toContain("model-Managed-edit");
+        await expect(adminLinkHandler.resolveTemplate(operator, "model-Hidden-edit", {id: "1"}))
+            .rejects.toThrow(/not available/);
+
+        // The group rule is per user: a manager still gets the template.
+        const manager = {...operator, groups: [{name: "managers", tokens: []}]} as unknown as User;
+        const managerIds = (await adminLinkHandler.listTemplates(manager)).map((template) => template.id);
+        expect(managerIds).toContain("model-Managed-edit");
+    });
+
     it("resolves a template into a concrete url and encodes the values", async () => {
         const {adminLinkHandler} = createAdminizer(["update-Test-model"]);
 

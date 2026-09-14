@@ -1,6 +1,7 @@
 import {listAccessibleMenuItems} from '../../helpers/navigationAccessHelper';
 import {matchesPathPattern} from '../../helpers/pathPattern';
-import type {MenuItem} from '../../helpers/menuHelper';
+import {isModelHiddenInNavbar, type MenuItem} from '../../helpers/menuHelper';
+import type {MenuBadge} from '../../interfaces/adminpanelConfig';
 import type {User} from '../../models/User';
 import type {Adminizer} from '../Adminizer';
 
@@ -12,8 +13,8 @@ export interface AdminLink {
     title?: string;
     section?: string;
     accessRightsToken?: string;
-    /** Count shown next to the item in the sidebar; see `HrefConfig.badge`. */
-    badge?: number | string;
+    /** Count shown next to the item in the sidebar: a value or a per-user resolver, see `MenuBadge`. */
+    badge?: MenuBadge;
 }
 
 export interface ResolvedAdminLink extends AdminLink {
@@ -296,6 +297,9 @@ export class AdminLinkHandler {
         ];
 
         for (const [model, config] of Object.entries(this.adminizer.config.models ?? {})) {
+            // A model kept out of this user's navbar (`navbar.visible: false`,
+            // `navbar.groupsAccessRights`) is kept out of the registry as well.
+            if (typeof config === 'object' && config && isModelHiddenInNavbar(user, config)) continue;
             const title = typeof config === 'object' && config?.title ? config.title : model;
             const section = typeof config === 'object' ? config?.navbar?.section : undefined;
             builtin(

@@ -42,7 +42,11 @@ So navigation is exposed in two shapes:
 `listTemplates(user)` returns everything parametrized the user may open:
 
 * `model-<Model>-edit` and `model-<Model>-add` for every configured model,
-  gated by `update-<Model>-model` / `create-<Model>-model`;
+  gated by `update-<Model>-model` / `create-<Model>-model`. A model hidden from
+  the user's navbar (`navbar.visible: false`, or `navbar.groupsAccessRights`
+  naming groups the user is not in) gets neither — the menu is the single rule
+  for what the registry, and therefore search, the assistant and breadcrumbs,
+  may show;
 * `catalog-<slug>-item` for every catalog, gated by `catalog-<slug>`;
 * `link-<slug>` for any navigation entry or registered admin link whose own
   `link` carries `:placeholders`;

@@ -4,7 +4,7 @@
  * @constructor
  */
 import { User } from "../models/User";
-import { ActionType, AdminpanelConfig, HrefConfig, ModelConfig, NavbarSectionConfig } from "../interfaces/adminpanelConfig";
+import { ActionType, AdminpanelConfig, HrefConfig, MenuBadge, ModelConfig, NavbarSectionConfig } from "../interfaces/adminpanelConfig";
 import { GroupsAccessRightsHelper } from "./accessRightsHelper";
 
 export type MenuItem = {
@@ -17,7 +17,21 @@ export type MenuItem = {
     accessRightsToken: string | null;
     modelResourceName?: string;
     section?: string;
-    badge?: number | string;
+    /** Raw value from the config; `listAccessibleMenuItems` resolves it per user. */
+    badge?: MenuBadge;
+}
+
+/**
+ * True when a model's item must not be in this user's navbar: `navbar.visible`
+ * is `false`, or `navbar.groupsAccessRights` names groups the user is not in.
+ * The navigation registry (`AdminLinkHandler`) applies the same rule to the
+ * model's record templates, so a model hidden from the menu is hidden from
+ * search, the assistant and breadcrumbs as well.
+ */
+export function isModelHiddenInNavbar(user: User, config: ModelConfig): boolean {
+    if (typeof config.navbar?.visible === 'boolean') return !config.navbar.visible;
+    if (config.navbar?.groupsAccessRights) return !GroupsAccessRightsHelper.hasAccess(user, config.navbar.groupsAccessRights);
+    return false;
 }
 
 export class MenuHelper {
@@ -237,13 +251,7 @@ export class MenuHelper {
         if (this.config.models) {
             const _this = this;
             Object.entries<ModelConfig>(this.config.models).forEach(function ([key, val]) {
-                const hide =
-                    typeof val.navbar?.visible === 'boolean'
-                        ? !val.navbar.visible
-                        : val.navbar?.groupsAccessRights
-                        ? !GroupsAccessRightsHelper.hasAccess(user, val.navbar.groupsAccessRights)
-                        : false;
-                if (!hide) {
+                if (!isModelHiddenInNavbar(user, val)) {
                     if (val.tools && val.tools.length > 0 && val.tools[0].id !== "overview") {
                         val.tools.unshift({
                             id: "overview",

@@ -31,10 +31,12 @@ existing projects is listed under **Breaking**, each with what to do about it.
 * **Runnable `accessGraph` demo in the fixture** — `fixture/apps/project-graph/` packages the
   `Project → Task → Message` chain (models, graph, per-project roles and demo data) as an
   Adminizer app; `ENABLE_PROJECT_GRAPH=false` removes it entirely.
-* **Sidebar item counts.** `badge?: number | string` on `navbar.additionalLinks[*]`,
-  `ctx.adminLink({...})` and any item returned by `handleAdditionalLinks` is drawn as a
-  `SidebarMenuBadge` in the expanded sidebar (never in the collapsed rail). Menus without it
-  render exactly as before.
+* **Sidebar item counts.** `badge` on `navbar.additionalLinks[*]`, `ctx.adminLink({...})` and any
+  item returned by `handleAdditionalLinks` is drawn as a `SidebarMenuBadge` in the expanded
+  sidebar (never in the collapsed rail). It is a number/string, or a resolver
+  `(user) => count | Promise<count>` evaluated per request for the items the user may open, so
+  an app owns both its link and its count; a resolver that throws is logged and renders nothing.
+  Menus without it render exactly as before.
 * **Breadcrumbs from page props.** Any Inertia page — app modules included — may send
   `breadcrumbs: [{title, href?}]`; the header renders them (the last crumb needs no `href`).
 * **Navigation registry powers breadcrumbs and search.** `AdminLinkHandler` gains
@@ -45,6 +47,11 @@ existing projects is listed under **Breaking**, each with what to do about it.
   evaluated shared prop; the default `'manual'` changes nothing.
 * `GET {routePrefix}/api/links/search?q=` — JSON proxy of the registry search, filtered by the
   caller's permissions.
+* **A model hidden from the navbar is hidden from the registry.** `navbar.visible: false`, or
+  `navbar.groupsAccessRights` naming groups the user is not in, now also suppresses the model's
+  automatic `model-<Model>-edit` / `model-<Model>-add` link templates, so the model is absent
+  from the global search, the assistant's navigation and auto breadcrumbs. Previously only the
+  menu item was hidden and the assistant could still open such a model through its template.
 * **Global search (Ctrl/Cmd+K)** in the header, backed by the same registry. It also handles the
   assistant's `search-admin-links` browser action, which previously had no listener.
 * **`moduleLayout: 'bare'`** for app pages: the `module` page drops its content margin, so an

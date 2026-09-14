@@ -97,7 +97,7 @@ await adminizer.appManager.enable(new MyApp());
 | `ctx.aiAssistant(resource)` | Register an app-owned AI assistant handler with model factories. |
 | `ctx.skills.agent(skill)` | Register a server-side AI assistant skill (a tool every compatible agent may call). See [Agent Skills](AiAssistant/AgentSkills.md). |
 | `ctx.skills.uiMethod(method)` | Register a browser capability an agent may trigger through a `ui.method` frame. See [Admin Links & UI Methods](AiAssistant/AdminLinksAndUiMethods.md). |
-| `ctx.adminLink(link)` | Register a standalone admin page in the navigation and in agent link search. |
+| `ctx.adminLink(link)` | Register a standalone admin page in the navigation and in agent link search. An optional `badge` (value or per-user resolver) shows a count next to it. |
 | `ctx.adminLinkTemplate(template)` | Register a parametrized page (e.g. `/admin/orders/:id/invoice`) the assistant may open. |
 | `ctx.mediaManager(resource)` | Register an app-owned media manager through a factory that receives `AppRuntime`. |
 | `ctx.catalog(catalog)` | Register a catalog factory and its optional React template components. |

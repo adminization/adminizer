@@ -230,7 +230,8 @@ module.exports.adminpanel = {
 
 ## Hide model
 
-You can hide model from left navbar using `hide` option.
+You can hide a model from the left navbar with `navbar.visible: false`, or show its item only to
+some groups with `navbar.groupsAccessRights`.
 
 ```javascript
 module.exports.adminpanel = {
@@ -238,11 +239,18 @@ module.exports.adminpanel = {
         users: {
             title: 'Users', // Menu title for model
             model: 'User', // Model definition for model
-            hide: true
+            navbar: {
+                visible: false
+            }
         }
     }
 }
 ```
+
+A model hidden this way is also left out of the navigation registry (`AdminLinkHandler`): it
+gets no automatic `model-<Model>-edit` / `model-<Model>-add` link templates, so it does not
+appear in the global search, the assistant's navigation or auto breadcrumbs. Its routes and
+permissions are unaffected — the pages still open by URL.
 
 ## Ignored fields
 You can hide fields from all actions by setting `visible: false`.
@@ -474,7 +482,11 @@ module.exports = config;
         [key:string]: {
             title: string
             model: string // Model name
-            hide: boolean // Hide model in left navbar
+            navbar: {
+                visible: boolean // false hides the model from the navbar and the navigation registry (search, assistant, breadcrumbs)
+                groupsAccessRights: string[] // Groups that see the menu item; others get neither the item nor the model's link templates
+                section: string // Navbar section of the item
+            }
             fields: {
                 [key: string]: {
                     title: string
@@ -595,7 +607,7 @@ module.exports = config;
             section?: string
             accessRightsToken?: string
             subItems?: HrefConfig[]
-            badge?: number | string  // count shown next to the item; 0/'' render nothing
+            badge?: number | string | ((user: User) => number | string | undefined | Promise<number | string | undefined>)  // count next to the item, or a per-user resolver; 0/'' render nothing
         }[]
         // Called after all links (static + model-generated) are collected. Returns final array.
         handleAdditionalLinks: (user: User, allLinks: HrefConfig[]) => HrefConfig[]
@@ -658,7 +670,7 @@ You could use:
 - `additionalLinks` in `navbar` to define static links in the sidenav panel
 - `handleAdditionalLinks(user, allLinks)` in `navbar` to filter or transform all navbar links (static + model-generated) after all links are collected
 - `sectionHandlers` in `navbar` to apply a handler to links of a specific section, after all links are collected
-- `badge` on any link shows a count in the expanded sidebar; compute dynamic counts in `handleAdditionalLinks`
+- `badge` on any link (`additionalLinks`, `ctx.adminLink`, items returned by `handleAdditionalLinks`) shows a count in the expanded sidebar. Pass a number/string, or a resolver `(user) => count | Promise<count>` for a per-user value: it runs on every request, only for items the user may open, so return a cached count rather than querying per call; a resolver that throws is logged and renders nothing
 - `global` or `inline` actions in `actions` property of `list` view
 - `tools` property to create link like Model submenu
 

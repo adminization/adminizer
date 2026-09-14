@@ -24,7 +24,12 @@ export interface Columns {
     }
 }
 
-export interface NavItem extends MenuItem {
+/**
+ * A menu item as the browser receives it. `badge` resolvers run on the server
+ * (`listAccessibleMenuItems`), so here it is always a plain value.
+ */
+export interface NavItem extends Omit<MenuItem, 'badge'> {
+    badge?: number | string;
     type: 'blank' | 'self';
     /**
      * Section grouping for navbar items (side navigation)

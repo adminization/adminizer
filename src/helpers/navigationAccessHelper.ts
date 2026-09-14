@@ -1,5 +1,5 @@
-import type {HrefConfig} from '../interfaces/adminpanelConfig';
-import type {Adminizer} from '../lib/Adminizer';
+import type {HrefConfig, MenuBadge} from '../interfaces/adminpanelConfig';
+import {Adminizer} from '../lib/Adminizer';
 import type {User} from '../models/User';
 import type {MenuItem} from './menuHelper';
 
@@ -19,10 +19,26 @@ export async function filterAccessibleHrefItems(adminizer: Adminizer, user: User
 }
 
 /**
+ * The badge of a menu item for this user: a plain value as is, a resolver
+ * called with the user. A failing resolver must not take the page down — it
+ * is logged and the item renders without a badge.
+ */
+export async function resolveMenuBadge(user: User, badge: MenuBadge | undefined, itemId: string): Promise<number | string | undefined> {
+    if (typeof badge !== 'function') return badge;
+    try {
+        return await badge(user);
+    } catch (error) {
+        Adminizer.log.error(`navigation > badge of "${itemId}" failed: ${error}`);
+        return undefined;
+    }
+}
+
+/**
  * The navigation menu a user may actually open: configured models, additional
  * links and app-contributed pages, filtered with the very same rules the
  * sidebar uses. Titles are left untranslated, so callers that need i18n (the
- * Inertia page props) translate on top of this.
+ * Inertia page props) translate on top of this. Badge resolvers are evaluated
+ * here, after the permission check, so they never run for a hidden page.
  */
 export async function listAccessibleMenuItems(adminizer: Adminizer, user: User): Promise<MenuItem[]> {
     const menu: MenuItem[] = [];
@@ -32,7 +48,7 @@ export async function listAccessibleMenuItems(adminizer: Adminizer, user: User):
         const tokens = actions.map((item) => item.accessRightsToken).filter(Boolean) as string[];
         if (menuItem.accessRightsToken) tokens.push(menuItem.accessRightsToken);
         if (await adminizer.accessRightsHelper.checkAnyPermission(tokens, user)) {
-            menu.push({...menuItem, actions});
+            menu.push({...menuItem, actions, badge: await resolveMenuBadge(user, menuItem.badge, menuItem.id)});
         }
     }
 
@@ -46,7 +62,7 @@ export async function listAccessibleMenuItems(adminizer: Adminizer, user: User):
             icon: null,
             accessRightsToken: link.accessRightsToken ?? null,
             section: link.section || 'Platform',
-            badge: link.badge,
+            badge: await resolveMenuBadge(user, link.badge, link.id),
         });
     }
 

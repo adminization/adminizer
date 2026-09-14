@@ -1,3 +1,6 @@
+import {listAccessibleMenuItems} from '../../helpers/navigationAccessHelper';
+import {matchesPathPattern} from '../../helpers/pathPattern';
+import type {MenuItem} from '../../helpers/menuHelper';
 import type {User} from '../../models/User';
 import type {Adminizer} from '../Adminizer';
 
@@ -9,6 +12,8 @@ export interface AdminLink {
     title?: string;
     section?: string;
     accessRightsToken?: string;
+    /** Count shown next to the item in the sidebar; see `HrefConfig.badge`. */
+    badge?: number | string;
 }
 
 export interface ResolvedAdminLink extends AdminLink {
@@ -42,6 +47,26 @@ export interface AdminLinkTemplate {
 export interface ResolvedAdminLinkTemplate extends AdminLinkTemplate {
     owner: string;
     params: AdminLinkTemplateParam[];
+}
+
+/** A hit of `AdminLinkHandler.search`: a concrete page or a template plus its placeholders. */
+export interface AdminLinkSearchResult {
+    id: string;
+    title: string;
+    /** Concrete page, ready to open. Absent for templates. */
+    link?: string;
+    /** Parametrized page: fill `params` and resolve through `resolveTemplate`. */
+    template?: string;
+    /** Placeholders that must be filled to open a template. */
+    params?: AdminLinkTemplateParam[];
+    description?: string;
+    section?: string;
+}
+
+/** One crumb of `AdminLinkHandler.locate`; the page itself carries no `href`. */
+export interface AdminBreadcrumb {
+    title: string;
+    href?: string;
 }
 
 /** Segments no template may point at: opening one mutates data. */
@@ -147,6 +172,91 @@ export class AdminLinkHandler {
         return this.buildHref(template, params);
     }
 
+    /**
+     * Search exactly the navigation a user can open: the menu the sidebar
+     * renders (sub-items included) plus every link template. Permission-safe by
+     * construction, so the result may be handed to an agent or to the browser.
+     * Parametrized pages are returned as templates, so a record page is
+     * reachable even though its URL only exists once the id is known.
+     */
+    async search(user: User, query = ''): Promise<AdminLinkSearchResult[]> {
+        const needle = this.slug(query);
+        const result: AdminLinkSearchResult[] = [];
+        const matches = (...values: Array<string | undefined>): boolean =>
+            !needle || this.slug(values.filter(Boolean).join(' ')).includes(needle);
+
+        const add = (item: any, section?: string): void => {
+            if (!item?.link || !item?.title) return;
+            const link: AdminLinkSearchResult = {
+                id: String(item.id || item.title), title: String(item.title), link: String(item.link),
+                section: item.section || section,
+            };
+            // A link with placeholders is surfaced as a template instead.
+            if (!/:[A-Za-z0-9_]+/.test(link.link!) && matches(link.title, link.id, link.section)) result.push(link);
+            for (const child of item.actions ?? item.subItems ?? []) add(child, link.section);
+        };
+
+        for (const item of await listAccessibleMenuItems(this.adminizer, user)) add(item, item.section);
+
+        for (const template of await this.listTemplates(user)) {
+            if (!matches(template.title, template.id, template.section, template.description, template.template)) continue;
+            result.push({
+                id: template.id,
+                title: template.title,
+                template: template.template,
+                params: template.params,
+                description: template.description,
+                section: template.section,
+                // A template without placeholders is already a usable link.
+                link: template.params.length ? undefined : template.template,
+            });
+        }
+        return result;
+    }
+
+    /**
+     * Breadcrumb chain of an admin url: every page of the registry — menu items
+     * and their actions, app links, link templates — whose path is a prefix of
+     * it, shortest first. The last crumb has no `href` when it is the page
+     * itself. Pages this user may not open never appear.
+     *
+     * `menu` lets a caller that already holds the user's menu (bindInertia
+     * computes a translated one per request) skip a second computation.
+     */
+    async locate(user: User, url: string, menu?: MenuItem[]): Promise<AdminBreadcrumb[]> {
+        const prefix = (this.adminizer.config.routePrefix || '').replace(/\/+$/, '');
+        const path = this.normalizePath(url);
+        if (path !== prefix && !path.startsWith(`${prefix}/`)) return [];
+
+        // Concrete pages: exact path -> title.
+        const pages = new Map<string, string>();
+        const collect = (item: any): void => {
+            const link = typeof item?.link === 'string' ? item.link : '';
+            if (link.startsWith('/') && item?.title && !/:[A-Za-z0-9_]+/.test(link)) {
+                pages.set(this.normalizePath(link), String(item.title));
+            }
+            for (const child of item?.actions ?? item?.subItems ?? []) collect(child);
+        };
+        for (const item of menu ?? await listAccessibleMenuItems(this.adminizer, user)) collect(item);
+        const templates = await this.listTemplates(user);
+
+        const crumbs: AdminBreadcrumb[] = [];
+        const segments = path.slice(prefix.length).split('/').filter(Boolean);
+        for (let depth = 1; depth <= segments.length; depth++) {
+            const candidate = `${prefix}/${segments.slice(0, depth).join('/')}`;
+            const title = pages.get(candidate)
+                ?? templates.find((template) => matchesPathPattern(template.template, candidate))?.title;
+            if (title) crumbs.push({title, href: candidate});
+        }
+        const last = crumbs[crumbs.length - 1];
+        if (last?.href === path) delete last.href;
+        return crumbs;
+    }
+
+    private normalizePath(url: string): string {
+        return url.replace(/[?#].*$/, '').replace(/\/+$/, '') || '/';
+    }
+
     /** Fills the placeholders of a template with url-encoded values. */
     buildHref(template: ResolvedAdminLinkTemplate, params: Record<string, unknown> = {}): string {
         return template.template.replace(/:([A-Za-z0-9_]+)/g, (_match, name: string) => {
@@ -242,6 +352,6 @@ export class AdminLinkHandler {
     }
 
     private slug(value: string): string {
-        return String(value).trim().toLowerCase().replace(/[\s_-]+/g, '-');
+        return String(value ?? '').trim().toLowerCase().replace(/[\s_-]+/g, '-');
     }
 }

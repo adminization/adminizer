@@ -595,6 +595,7 @@ module.exports = config;
             section?: string
             accessRightsToken?: string
             subItems?: HrefConfig[]
+            badge?: number | string  // count shown next to the item; 0/'' render nothing
         }[]
         // Called after all links (static + model-generated) are collected. Returns final array.
         handleAdditionalLinks: (user: User, allLinks: HrefConfig[]) => HrefConfig[]
@@ -602,6 +603,8 @@ module.exports = config;
         sectionHandlers: {
             [section: string]: (user: User, links: HrefConfig[]) => HrefConfig[]
         }
+        breadcrumbs?: 'manual' | 'auto' // 'auto' derives crumbs from the navigation registry
+
     }
     // Policies that will be executed before going to every page
     policies: string | string[] | Function | Function[]
@@ -655,6 +658,7 @@ You could use:
 - `additionalLinks` in `navbar` to define static links in the sidenav panel
 - `handleAdditionalLinks(user, allLinks)` in `navbar` to filter or transform all navbar links (static + model-generated) after all links are collected
 - `sectionHandlers` in `navbar` to apply a handler to links of a specific section, after all links are collected
+- `badge` on any link shows a count in the expanded sidebar; compute dynamic counts in `handleAdditionalLinks`
 - `global` or `inline` actions in `actions` property of `list` view
 - `tools` property to create link like Model submenu
 

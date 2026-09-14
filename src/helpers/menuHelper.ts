@@ -17,6 +17,7 @@ export type MenuItem = {
     accessRightsToken: string | null;
     modelResourceName?: string;
     section?: string;
+    badge?: number | string;
 }
 
 export class MenuHelper {
@@ -229,6 +230,7 @@ export class MenuHelper {
                 icon: resolvedLink.icon || null,
                 accessRightsToken: resolvedLink.accessRightsToken || null,
                 section: resolvedLink.section || 'Platform',
+                badge: resolvedLink.badge,
             });
         });
 

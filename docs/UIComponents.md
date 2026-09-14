@@ -16,11 +16,20 @@ const { MonacoEditor, MultiSelect } = window.JSComponents;
 const { Pencil } = window.LucideReact;
 ```
 
-## NPM import (after `npm run build`)
+## Importing components into a module
+
+Do **not** import panel components from the `adminizer` package: a module runs inside the
+panel and must reuse the instances the panel already mounted (same React, same Radix contexts,
+same stylesheet). The supported way is the runtime registry:
 
 ```tsx
-import { Button } from 'adminizer/ui/button.js';
+const { Button, Dialog, DialogContent } = window.UIComponents;
 ```
+
+Types come from `adminizer-module.d.ts` (`import 'adminizer/adminizer-module'` or add the file
+to your `tsconfig` `include`). The compiled `ui/components/ui/*.d.ts` files in the package are
+shipped for editors that map them through `tsconfig` `paths`; they are declarations only and
+have no runtime counterpart.
 
 ---
 
@@ -43,12 +52,17 @@ const { Avatar, AvatarImage, AvatarFallback } = window.UIComponents;
 
 ### Badge
 
-Small inline label. Supports `variant`: `default` | `secondary` | `destructive` | `outline`.
+Small inline label. Supports `variant`: `default` | `secondary` | `destructive` | `warning` | `outline`.
+
+Use `warning` for states that need a human but are not errors (waiting for review, pending
+approval); it is backed by the `--warning` / `--warning-foreground` palette tokens and follows
+light/dark with the panel.
 
 ```tsx
 const { Badge } = window.UIComponents;
 
 <Badge variant="destructive">Error</Badge>
+<Badge variant="warning">Needs review</Badge>
 <Badge variant="outline">Draft</Badge>
 ```
 
@@ -506,14 +520,12 @@ const { Slider } = window.UIComponents;
 
 ### Sonner (Toaster)
 
-Toast notifications. Add `<Toaster />` once at the app root, then call `sonner.toast()`.
+Toast notifications. The panel layout mounts one `<Toaster/>` for every page inside the admin
+shell — app modules must **not** mount their own, because every extra `Toaster` subscribes to the
+same queue and renders every toast once more. Just call `window.sonner.toast(...)`.
 
 ```tsx
-const { Toaster } = window.UIComponents;
-// In app root:
-<Toaster richColors position="bottom-right" />
-
-// Anywhere in the app:
+// Anywhere in the module — no Toaster to mount:
 window.sonner.toast('Saved successfully');
 window.sonner.toast.error('Something went wrong');
 window.sonner.toast.promise(fetchData(), { loading: 'Loading...', success: 'Done', error: 'Failed' });

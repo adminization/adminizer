@@ -568,9 +568,11 @@ const config: AdminpanelConfig = {
                 type: "self",
                 link: `${routePrefix}/catalog/test-catalog`,
                 title: 'Test Catalog',
-                icon: 'bug_report'
+                icon: 'bug_report',
+                badge: 3
             }
         ],
+        breadcrumbs: 'auto',
         sections: {
             Platform: { icon: 'dashboard', order: 1 },
             Content: { icon: 'article', order: 2 },

@@ -2,7 +2,6 @@ import {Skeleton} from "@/components/ui/skeleton.tsx";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {Switch} from "@/components/ui/switch.tsx";
-import {Toaster} from "@/components/ui/sonner.tsx";
 import {
     DialogStack,
     DialogStackBody,
@@ -188,7 +187,6 @@ const WidgetLayout = () => {
 
     return (
         <>
-        <Toaster position="top-center" richColors closeButton />
         <div
             className={`flex h-full flex-1 flex-col gap-4 rounded-xl p-4 `}>
             {loading ? (

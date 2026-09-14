@@ -30,7 +30,7 @@ export default function HandsontableTest() {
     }), []);
 
     return (
-        <section className="space-y-4">
+        <section className="space-y-4 p-4">
             <div>
                 <h1 className="text-xl font-semibold">Handsontable Test</h1>
                 <p className="text-sm text-muted-foreground">

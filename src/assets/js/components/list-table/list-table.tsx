@@ -2,7 +2,6 @@ import {usePage} from '@inertiajs/react';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {DataTable} from '@/components/table/data-table';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select.tsx';
-import {Toaster} from '@/components/ui/sonner';
 import {toast} from 'sonner';
 import {generatePagination} from '@/lib/pagination.ts';
 import PaginationRender from '@/components/pagination-render.tsx';
@@ -148,7 +147,6 @@ const ListTable = () => {
 
     return (
         <>
-            <Toaster position="top-center" richColors closeButton/>
             <div className={`flex h-full min-h-0 flex-1 flex-col gap-4 rounded-xl p-4 ${loading ? 'opacity-50' : ''}`}>
                 <TableToolbar
                     header={header}

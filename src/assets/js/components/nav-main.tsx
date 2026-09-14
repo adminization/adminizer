@@ -3,6 +3,7 @@ import {
     SidebarGroupLabel,
     SidebarGroupContent,
     SidebarMenu,
+    SidebarMenuBadge,
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarMenuSub,
@@ -200,6 +201,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                 >
                     <EntryLink entry={item as NavEntry} />
                 </SidebarMenuButton>
+                {item.badge ? <SidebarMenuBadge>{item.badge}</SidebarMenuBadge> : null}
             </SidebarMenuItem>
         )
     );

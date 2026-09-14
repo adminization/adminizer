@@ -1,20 +1,9 @@
-import {listAccessibleMenuItems} from '../../helpers/navigationAccessHelper';
 import type {User} from '../../models/User';
 import type {Adminizer} from '../Adminizer';
-import type {AdminLinkTemplateParam} from '../admin-links/AdminLinkHandler';
+import type {AdminLinkSearchResult} from '../admin-links/AdminLinkHandler';
 
-export interface AiAssistantAdminLink {
-    id: string;
-    title: string;
-    /** Concrete page, ready for `navigate`. Absent for templates. */
-    link?: string;
-    /** Parametrized page: pass `template` plus `params` to `navigate`. */
-    template?: string;
-    /** Placeholders that must be filled to open a template. */
-    params?: AdminLinkTemplateParam[];
-    description?: string;
-    section?: string;
-}
+/** @deprecated Use `AdminLinkSearchResult`; kept as an alias for compatibility. */
+export type AiAssistantAdminLink = AdminLinkSearchResult;
 
 /**
  * A browser capability an AI service may expose as a tool.  The agent emits
@@ -105,48 +94,9 @@ export class AiAssistantUiMethodHandler {
         return available;
     }
 
-    /**
-     * Search exactly the navigation a user can open.  This intentionally uses
-     * MenuHelper rather than client-side markup, therefore a tool result is
-     * permission-safe and works when the assistant panel is not visible.
-     *
-     * Parametrized pages are returned as templates, so a record page is
-     * reachable even though its URL only exists once the id is known.
-     */
-    async searchAdminLinks(user: User, query = ''): Promise<AiAssistantAdminLink[]> {
-        const needle = this.slug(query);
-        const result: AiAssistantAdminLink[] = [];
-        const matches = (...values: Array<string | undefined>): boolean =>
-            !needle || this.slug(values.filter(Boolean).join(' ')).includes(needle);
-
-        const add = (item: any, section?: string): void => {
-            if (!item?.link || !item?.title) return;
-            const link: AiAssistantAdminLink = {
-                id: String(item.id || item.title), title: String(item.title), link: String(item.link),
-                section: item.section || section,
-            };
-            // A link with placeholders is surfaced as a template instead.
-            if (!/:[A-Za-z0-9_]+/.test(link.link!) && matches(link.title, link.id, link.section)) result.push(link);
-            for (const child of item.actions ?? item.subItems ?? []) add(child, link.section);
-        };
-
-        // Exactly the menu the sidebar renders for this user, sub-items included.
-        for (const item of await listAccessibleMenuItems(this.adminizer, user)) add(item, item.section);
-
-        for (const template of await this.adminizer.adminLinkHandler.listTemplates(user)) {
-            if (!matches(template.title, template.id, template.section, template.description, template.template)) continue;
-            result.push({
-                id: template.id,
-                title: template.title,
-                template: template.template,
-                params: template.params,
-                description: template.description,
-                section: template.section,
-                // A template without placeholders is already a usable link.
-                link: template.params.length ? undefined : template.template,
-            });
-        }
-        return result;
+    /** The registry search (`AdminLinkHandler.search`), kept here for model services. */
+    searchAdminLinks(user: User, query = ''): Promise<AiAssistantAdminLink[]> {
+        return this.adminizer.adminLinkHandler.search(user, query);
     }
 
     /**
@@ -173,9 +123,5 @@ export class AiAssistantUiMethodHandler {
             throw new Error('This page changes data and cannot be opened by the assistant.');
         }
         return href;
-    }
-
-    private slug(value: string): string {
-        return String(value ?? '').trim().toLowerCase().replace(/[\s_-]+/g, '-');
     }
 }

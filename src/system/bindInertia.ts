@@ -195,6 +195,21 @@ export function bindInertia(adminizer: Adminizer) {
             },
             menu,
             menuSections: req.user ? menuHelper.getSections(req) : null,
+            // Auto breadcrumbs. A function prop is evaluated by the Inertia
+            // adapter only when the key is rendered and only when the page did
+            // not send `breadcrumbs` of its own — page props override shared
+            // props before evaluation.
+            ...(menu && adminizer.config.navbar?.breadcrumbs === 'auto' ? {
+                breadcrumbs: async () => {
+                    try {
+                        const crumbs = await adminizer.adminLinkHandler.locate(req.user, req.originalUrl || req.url, menu);
+                        return crumbs.map((crumb) => ({...crumb, title: req.i18n.__(crumb.title)}));
+                    } catch (error) {
+                        Adminizer.log.error(`bindInertia > breadcrumbs failed: ${error}`);
+                        return [];
+                    }
+                },
+            } : {}),
             title: menuHelper.getBrandTitle(),
             brand: menuHelper.getBrandTitle(),
             logout: menuHelper.getLogoutUrl(),

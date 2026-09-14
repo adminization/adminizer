@@ -11,6 +11,24 @@ data:
 Both are permission-scoped: an agent can only see and open what its user could
 reach by clicking.
 
+## One registry, four consumers
+
+`AdminLinkHandler` is the single source of truth for "where am I / where may I
+go". Everything that answers that question reads it, so there is never a second
+list of pages to keep in sync:
+
+| Consumer | Entry point |
+|---|---|
+| Sidebar | `listAccessibleMenuItems()` — the menu the panel renders. |
+| Agent | `AiAssistantUiMethodHandler.searchAdminLinks()`, a thin delegate to `AdminLinkHandler.search(user, query)`. |
+| Breadcrumbs | `AdminLinkHandler.locate(user, url)` — the chain of registry pages whose path prefixes the url. Served as a lazy shared prop when `navbar.breadcrumbs` is `'auto'`. |
+| Global search palette | `GET {routePrefix}/api/links/search?q=` → `search()`. |
+
+`search()` returns concrete links and templates; `locate()` returns
+`{title, href?}` crumbs, shortest first, with no `href` on the page itself. Both
+drop anything the user may not open, so their results are safe to hand to an
+agent or to the browser.
+
 ## Why templates
 
 A concrete record page has no fixed URL — it only exists once the id is known.
@@ -162,7 +180,8 @@ bundle registers an executor for it.
 * `navigate` → `resolveAdminHref(input.href)` then a visit through
   `window.InertiajsReact.router`, falling back to a full page load.
 * `search-admin-links` → dispatches the browser event
-  `adminizer:ai-search-admin-links` with the input as `detail`.
+  `adminizer:ai-search-admin-links` with the input as `detail`, handled by the
+  panel's global search, which opens with the query prefilled.
 
 ### `resolveAdminHref()`
 

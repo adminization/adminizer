@@ -214,6 +214,40 @@ Use `mode: "ui"` for Inertia pages and `mode: "api"` for JSON endpoints.
 
 Adminizer renders app pages with the shared Inertia page `module`. Your controller passes `moduleComponent`; the page dynamically imports that ES module and renders its default export.
 
+Props of the `module` page:
+
+| Prop | Type | Meaning |
+|---|---|---|
+| `moduleComponent` | `string` | URL of the ES module whose default export is rendered. Required. |
+| `moduleComponentCSS` | `string` | URL of a stylesheet injected once as a global `<link>`. See *Styling App Modules*. |
+| `breadcrumbs` | `Array<{title: string; href?: string}>` | Shown in the panel header. Omit `href` on the last crumb. Titles are rendered as given — translate them in the controller (`req.i18n.__`). |
+| `moduleLayout` | `'default' \| 'bare'` | `'bare'` removes the content margin so the module root becomes a direct child of the scroll container (log viewers, canvases, diff views). Default keeps today's `m-2 md:m-5`. |
+
+Everything else in `props` is passed to the module component as-is.
+
+With `navbar.breadcrumbs: 'auto'` pages that send no `breadcrumbs` get them from the registry;
+register your deep pages with `ctx.adminLinkTemplate` and they appear in the chain.
+
+With `moduleLayout: 'bare'` the module root becomes a direct child of
+`div.flex.min-h-full.w-full.flex-col`, so padding is yours to decide; add
+`className="flex-1 min-h-0"` on the root to fill the scroll area's height.
+
+```ts
+return req.Inertia.render({
+  component: "module",
+  props: {
+    moduleComponent,
+    breadcrumbs: [
+      {title: "Agentiz", href: `${req.runtime.config.routePrefix}/agentiz`},
+      {title: "Projects", href: `${req.runtime.config.routePrefix}/agentiz/projects`},
+      {title: project.name},
+    ],
+    moduleLayout: "bare",
+    data,
+  },
+});
+```
+
 ```tsx
 // MyAppPage.tsx
 export default function MyAppPage({ data }: { data?: { rows: Array<{ id: number; name: string }> } }) {
@@ -618,6 +652,17 @@ Preflight and reset the panel around your module:
 
 ```css
 /* MyAppPage.css */
+
+/* Theme namespaces (spacing, typography, radii, shadows, animations…). Without this
+   import Tailwind v4 has no scales, and every utility that reads one — p-4, text-sm,
+   rounded-md, gap-2 — is silently not generated. `theme(reference)` makes the namespaces
+   available to the compiler but emits NO custom properties, so this file cannot
+   perturb the panel's palette; utilities compile with a fallback baked in, e.g.
+   `font-size: var(--text-sm, 0.875rem)`. */
+@import "tailwindcss/theme.css" layer(theme) theme(reference);
+
+/* Utilities only. Importing `tailwindcss` wholesale would also bring Preflight and
+   reset the panel around your module. */
 @import "tailwindcss/utilities.css" layer(utilities);
 
 /* Tell Tailwind what to scan — the module's own sources, nothing else. */
@@ -633,10 +678,17 @@ Preflight and reset the panel around your module:
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius: var(--radius);
+  /* Radii: Tailwind reads --radius-sm|md|lg|xl, never --radius itself. Map them the way
+     Adminizer's own app.css does. NEVER write `--radius: var(--radius)` here — it compiles
+     to a self-referencing property on :root and squares every corner of the whole panel. */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 ```
 
@@ -682,6 +734,11 @@ Two limits worth knowing:
 - Duplicate utility definitions are harmless: your file and the panel's declare the same class with
   the same value, and later wins with an identical result. Divergence only appears through theme
   tokens, which is exactly what the `@theme inline` mapping above prevents.
+- **A module stylesheet is global.** It is injected as a `<link>` into `document.head`, after
+  the panel's own stylesheet and for the whole document — not scoped to the module. Anything
+  you write into `:root` (directly or through `@theme` without `inline`) lands on every page of
+  the panel and wins, because it loads last. Keep the file to utilities and the `@theme inline`
+  mapping above; never redefine a panel variable.
 
 ## Fixture Examples
 

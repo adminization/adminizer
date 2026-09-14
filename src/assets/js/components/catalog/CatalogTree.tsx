@@ -43,7 +43,6 @@ import {
 import CatalogDialogStack from "@/components/catalog/CatalogDialogStack.tsx";
 import {DialogStackHandle} from "@/components/ui/dialog-stack.tsx";
 import MaterialIcon from "@/components/material-icon.tsx";
-import {Toaster} from "@/components/ui/sonner.tsx";
 import {toast} from "sonner";
 import {DropdownMenu} from "@radix-ui/react-dropdown-menu";
 import {DropdownMenuContent, DropdownMenuGroup, DropdownMenuTrigger} from "@/components/ui/dropdown-menu.tsx";
@@ -745,7 +744,6 @@ const CatalogTree = () => {
                 </>
             ) : (
                 <CatalogContext.Provider value={{ messages }}>
-                    <Toaster position="top-center" richColors closeButton/>
                     <div className="flex gap-8 items-center mb-4">
                         <h1 className="text-[28px] leading-[36px] text-foreground">{catalog.catalogName}</h1>
                         {catalog.idList.length === 1 && selectedCatalogId && (

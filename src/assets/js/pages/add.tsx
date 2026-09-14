@@ -3,7 +3,6 @@ import {withAppLayout} from "@/layouts/with-app-layout";
 import AddForm from "@/components/add-form.tsx";
 import {usePage} from "@inertiajs/react";
 import {useEffect} from "react";
-import {Toaster} from "@/components/ui/sonner.tsx";
 import {toast} from "sonner";
 
 export interface AddProps {
@@ -52,7 +51,6 @@ function Add() {
 
     return (
         <>
-            <Toaster position="top-center" richColors closeButton/>
             <AddForm page={page} catalog={false}/>
         </>
     )

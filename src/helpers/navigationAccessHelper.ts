@@ -46,6 +46,7 @@ export async function listAccessibleMenuItems(adminizer: Adminizer, user: User):
             icon: null,
             accessRightsToken: link.accessRightsToken ?? null,
             section: link.section || 'Platform',
+            badge: link.badge,
         });
     }
 

@@ -31,6 +31,26 @@ existing projects is listed under **Breaking**, each with what to do about it.
 * **Runnable `accessGraph` demo in the fixture** — `fixture/apps/project-graph/` packages the
   `Project → Task → Message` chain (models, graph, per-project roles and demo data) as an
   Adminizer app; `ENABLE_PROJECT_GRAPH=false` removes it entirely.
+* **Sidebar item counts.** `badge?: number | string` on `navbar.additionalLinks[*]`,
+  `ctx.adminLink({...})` and any item returned by `handleAdditionalLinks` is drawn as a
+  `SidebarMenuBadge` in the expanded sidebar (never in the collapsed rail). Menus without it
+  render exactly as before.
+* **Breadcrumbs from page props.** Any Inertia page — app modules included — may send
+  `breadcrumbs: [{title, href?}]`; the header renders them (the last crumb needs no `href`).
+* **Navigation registry powers breadcrumbs and search.** `AdminLinkHandler` gains
+  `search(user, query)` (the assistant's `searchAdminLinks` now delegates to it;
+  `AiAssistantAdminLink` stays as an alias of `AdminLinkSearchResult`) and `locate(user, url)`,
+  the breadcrumb chain of a url built from menu items, app links and link templates. With
+  `navbar.breadcrumbs: 'auto'` pages that send no `breadcrumbs` receive that chain as a lazily
+  evaluated shared prop; the default `'manual'` changes nothing.
+* `GET {routePrefix}/api/links/search?q=` — JSON proxy of the registry search, filtered by the
+  caller's permissions.
+* **Global search (Ctrl/Cmd+K)** in the header, backed by the same registry. It also handles the
+  assistant's `search-admin-links` browser action, which previously had no listener.
+* **`moduleLayout: 'bare'`** for app pages: the `module` page drops its content margin, so an
+  edge-to-edge canvas, log or diff viewer no longer fights it with negative margins.
+* **`--warning` / `--warning-foreground`** palette tokens (light and dark) with the
+  `--color-warning` theme mapping; `Badge` gains `variant="warning"`.
 
 ### Breaking / security
 
@@ -103,6 +123,23 @@ destroyed records the deleted row did not own:
   compiled.
 * A record-access filter no longer overwrites a caller's filter on the same field — the two are combined
   with `and`.
+* **Module stylesheet recipe** (`docs/BuildingModules.md`) omitted `tailwindcss/theme.css`, so
+  scale-based utilities (`p-4`, `text-sm`, `rounded-md`…) were silently not generated, and its
+  `--radius: var(--radius)` line compiled to a self-referencing `:root` property that squared
+  every corner of the panel. The example now imports the theme with `theme(reference)` and maps
+  `--radius-sm|md|lg|xl`.
+* **`adminizer/ui/*` package export removed.** It pointed at `./dist/…`, which does not exist in
+  the published package (the package root *is* `dist/`), and the files behind it import the
+  build-time `@/` alias — the import never resolved at runtime in any release. Modules use
+  `window.UIComponents`; types come from `adminizer-module.d.ts`.
+* **App modules receive fresh props.** The `module` page rendered the module with the props
+  captured when its bundle was first imported, so a partial reload (`router.reload({only})`) or a
+  `preserveState` visit left it stale; it now re-renders with the current page props.
+* **`window.sonner.toast(...)` from an app module is visible.** The layout mounts a single
+  `Toaster`; the per-page copies are gone. *Modules that mounted their own `<Toaster/>` as a
+  workaround must remove it, or every toast shows twice.*
+* **The command palette dialog is clickable.** `CommandDialog` never passed a z-index, so the
+  `z-[1010]` `DialogOverlay` covered its own `z-50` content and swallowed every click.
 * **A single-record update no longer widens to every record in the user's reach.** Both adapters
   read field conditions from `criteria.where` when it has keys and from the top level otherwise;
   injecting the access filter into `where` therefore orphaned a flat criteria such as `{id}`.

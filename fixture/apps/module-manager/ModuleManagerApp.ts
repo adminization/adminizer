@@ -109,6 +109,7 @@ export class ModuleManagerApp extends AbstractAdminizerApp<ModuleManagerAppConfi
                 component: "module",
                 props: {
                     moduleComponent,
+                    breadcrumbs: [{title: "Module manager"}],
                     data: {
                         modules
                     },

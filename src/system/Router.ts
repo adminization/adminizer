@@ -34,6 +34,7 @@ import { HistoryController } from "../controllers/history-actions/HistoryControl
 import { AiAssistantController } from "../controllers/ai/AiAssistantController";
 import { AiAgentController } from "../controllers/ai/AiAgentController";
 import listUserFilters from "../controllers/listUserFilters";
+import { searchAdminLinks } from "../controllers/adminLinks";
 import {
     requireAnyPermission,
     requireAuthAPI,
@@ -431,6 +432,16 @@ export default class Router {
         adminizer.app.post(
             `${adminizer.config.routePrefix}/api/user-key/regenerate`,
             withPolicies(regenerateUserApiKey, requireAuthEnabled(), requireAuthAPI())
+        );
+
+        /**
+         * Navigation registry search — consumed by the global search palette
+         * (src/assets/js/components/global-search.tsx). Results are filtered by
+         * the user's permissions inside the registry.
+         */
+        adminizer.app.get(
+            `${adminizer.config.routePrefix}/api/links/search`,
+            withPolicies(searchAdminLinks, requireAuthAPI())
         );
 
         /**

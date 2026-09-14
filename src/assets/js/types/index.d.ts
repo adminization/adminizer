@@ -8,7 +8,8 @@ export interface Auth {
 
 export interface BreadcrumbItem {
     title: string;
-    href: string;
+    /** Absent on the last crumb: the page itself is not a link. */
+    href?: string;
 }
 
 
@@ -75,6 +76,14 @@ export interface SharedData {
         count: number;
         items: Array<{id: string; title: string; section?: string}>;
     } | null;
+    /**
+     * Breadcrumbs of the page. Sent by the page's own controller, or resolved
+     * from the navigation registry when `navbar.breadcrumbs` is `'auto'`.
+     * Absent/`null` — the header shows none.
+     */
+    breadcrumbs?: BreadcrumbItem[] | null;
+    /** Only the `module` page reads it: `'bare'` drops the content margin. */
+    moduleLayout?: 'default' | 'bare';
     [key: string]: unknown;
 }
 

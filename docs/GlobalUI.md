@@ -38,6 +38,24 @@ Make sure the Adminizer bundle is loaded before your module so that `registerUIC
 
 The `registerUIComponents()` function automatically creates `window.UIComponents` if it doesn't already exist. This avoids runtime errors like `Uncaught TypeError: Cannot convert undefined or null to object` when the container is missing.
 
+## Global search
+
+The panel header carries a search palette, opened with `Ctrl/Cmd+K` or its button. It searches the
+**navigation registry** — the same server-side list of pages the sidebar and the AI assistant read
+(`GET {routePrefix}/api/links/search?q=`), so results are filtered by the user's permissions: a page
+someone may not open never appears.
+
+An app page reaches the palette by being registered, not by anything frontend-side:
+
+| Registration | Appears as |
+|---|---|
+| `ctx.adminLink({id, title, link, …})` | a page, openable from the palette |
+| `navbar.additionalLinks` / model config | a page, openable from the palette |
+| `ctx.adminLinkTemplate({template: "/x/:id"})` | a search hit, but not yet openable — a parametrized page needs an id |
+
+The palette is also the handler of the assistant's `search-admin-links` browser action
+(`adminizer:ai-search-admin-links`): it opens with the agent's query prefilled.
+
 ## Built-In Control Globals
 
 `window.JSComponents` also exposes selected built-in controls such as `VanillaJSONEditor`, `HandsonTable`, and `MonacoEditor`.

@@ -1,3 +1,4 @@
+import {matchesPathPattern} from '../../helpers/pathPattern';
 import type {Adminizer} from '../Adminizer';
 
 export interface DocMeta {
@@ -155,12 +156,7 @@ export abstract class AbstractDocumentation {
 
     /** Matches an Express-style pattern (`/model/:name`) against a concrete path. */
     protected matchesUrl(pattern: string, url: string): boolean {
-        const path = url.replace(/[?#].*$/, '').replace(/\/+$/, '') || '/';
-        const source = pattern.replace(/\/+$/, '') || '/';
-        const regex = new RegExp(`^${
-            source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/:[A-Za-z0-9_]+/g, '[^/]+')
-        }$`);
-        return regex.test(path);
+        return matchesPathPattern(pattern, url);
     }
 
     /** Lines containing the query, trimmed to a little context around the match. */

@@ -4,6 +4,9 @@
  * Include this file in your module project to get full type support and
  * inline JSDoc hints for window.UIComponents, window.JSComponents and globals.
  *
+ * `window.UIComponents` is the only supported way to use panel components from a
+ * module at runtime. The package does not export component modules.
+ *
  * tsconfig.json:
  * ```json
  * { "compilerOptions": { "paths": {} }, "include": ["adminizer-module.d.ts"] }

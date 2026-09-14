@@ -4,7 +4,6 @@ import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/c
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {toast} from "sonner";
 import axios from "@/lib/axios-compat";
-import {Toaster} from "@/components/ui/sonner";
 import {router} from "@inertiajs/react";
 import DeleteModal from "@/components/modals/del-modal";
 
@@ -56,7 +55,6 @@ export default function ModuleManager({data}: ModuleManagerProps) {
 
     return (
         <>
-            <Toaster position="top-center" richColors closeButton/>
             <Card className="py-4">
                 <CardHeader>
                     <CardTitle>Менеджер модулей</CardTitle>

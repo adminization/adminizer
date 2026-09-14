@@ -65,6 +65,7 @@ export class HandsontableTestApp extends AbstractAdminizerApp<HandsontableTestAp
                 component: "module",
                 props: {
                     moduleComponent,
+                    moduleLayout: "bare",
                     data: {},
                 },
             });

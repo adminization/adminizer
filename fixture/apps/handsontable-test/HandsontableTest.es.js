@@ -1,6 +1,6 @@
 var d = { exports: {} }, s = {};
 var l;
-function m() {
+function p() {
   if (l) return s;
   l = 1;
   var r = /* @__PURE__ */ Symbol.for("react.transitional.element"), o = /* @__PURE__ */ Symbol.for("react.fragment");
@@ -22,10 +22,10 @@ function m() {
   return s.Fragment = o, s.jsx = a, s.jsxs = a, s;
 }
 var c;
-function p() {
-  return c || (c = 1, d.exports = m()), d.exports;
+function m() {
+  return c || (c = 1, d.exports = p()), d.exports;
 }
-var n = p();
+var n = m();
 const R = window.React.useMemo, v = window.React.useState, f = window.JSComponents.HandsonTable, h = [
   { feature: "window.JSComponents", status: "loaded", value: 1 },
   { feature: "HandsonTable", status: "rendered", value: 2 },
@@ -45,7 +45,7 @@ function w() {
     width: "100%",
     licenseKey: "non-commercial-and-evaluation"
   }), []);
-  return /* @__PURE__ */ n.jsxs("section", { className: "space-y-4", children: [
+  return /* @__PURE__ */ n.jsxs("section", { className: "space-y-4 p-4", children: [
     /* @__PURE__ */ n.jsxs("div", { children: [
       /* @__PURE__ */ n.jsx("h1", { className: "text-xl font-semibold", children: "Handsontable Test" }),
       /* @__PURE__ */ n.jsx("p", { className: "text-sm text-muted-foreground", children: "Source: @/js-components/handsontable" })

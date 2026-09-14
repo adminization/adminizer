@@ -190,6 +190,13 @@ export interface AdminpanelConfig {
         sections?: {
             [section: string]: NavbarSectionConfig
         }
+        /**
+         * Breadcrumbs of pages that send none of their own (`breadcrumbs` prop).
+         * `'auto'` resolves them from the navigation registry: menu items, app
+         * links and link templates whose URL is a prefix of the current one.
+         * `'manual'` (default) shows only what a page sends.
+         */
+        breadcrumbs?: 'manual' | 'auto'
     }
     /**
      * Policies that will be executed before going to every page
@@ -818,6 +825,14 @@ export interface HrefConfig {
      * Optional section grouping for navbar items (side navigation)
      */
     section?: string
+    /**
+     * Count shown next to the item in the expanded sidebar (rendered as
+     * `SidebarMenuBadge`). `0`, `''` and `undefined` render nothing. Not drawn
+     * in the collapsed icon rail, where a number without a label means nothing.
+     * Dynamic values: set it from `navbar.handleAdditionalLinks` /
+     * `navbar.sectionHandlers`, which run on every request.
+     */
+    badge?: number | string
 }
 
 /**

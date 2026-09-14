@@ -11,7 +11,6 @@ import axios from "@/lib/axios-compat";
 import {Textarea} from "@/components/ui/textarea";
 import {Label} from "@/components/ui/label";
 import {Checkbox} from "@/components/ui/checkbox";
-import {Toaster} from "@/components/ui/sonner";
 import {toast} from "sonner";
 import * as LucideReact from 'lucide-react'
 
@@ -53,7 +52,6 @@ export default function NotificationSender({data}: AppContentProps) {
 
     return (
         <>
-            <Toaster position="top-center" richColors closeButton/>
             <div className="grid gap-4">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-[400px]">
                     <div className="flex items-center gap-2">

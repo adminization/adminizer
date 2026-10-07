@@ -12,7 +12,7 @@ export default async function initUser(req: ReqType, res: ResType) {
     const userModel = req.adminizer.modelHandler.internal("auth").get<User>("User");
     let admins: User[] = await userModel.find({where: {isAdministrator: true}});
     if (admins.length) {
-        res.redirect(`${req.adminizer.config.routePrefix}/model/User/login`);
+        return res.redirect(`${req.adminizer.config.routePrefix}/model/User/login`);
     }
 
     if (req.method.toUpperCase() === "POST") {

@@ -51,6 +51,14 @@ import {renderIndexPage, NavTreeNode} from "./pages/indexPage";
 import {FileFeedbackHandler} from "./feedback/FileFeedbackHandler";
 import {NotificationSenderApp} from "./apps/notification-sender/NotificationSenderApp";
 import {ModuleManagerApp} from "./apps/module-manager/ModuleManagerApp";
+import {
+    configureDefaultContext,
+    registerReportsContext,
+    StudioContextApp,
+    SupportContextApp,
+    SystemContextApp,
+    VariantsContextApp,
+} from "./apps/contexts/ContextDemoApps";
 import {NavigationApp} from "./apps/navigation/NavigationApp";
 import {navigationAppConfig} from "./apps/navigation/navigationConfig";
 import {installNavigationSequelizeModel, navigationModelName} from "./apps/navigation/NavigationModel";
@@ -311,6 +319,17 @@ async function ormSharedFixtureLift(adminizer: Adminizer) {
 
         // add ModuleManager -- module manager
         await adminizer.appManager.enable(new ModuleManagerApp());
+
+        // Layout contexts, see docs/Layout Contexts.md: the default one with an
+        // overridden part, a host-registered one (Reports), inherited layout
+        // with overrides (System), partially inherited and fully custom layouts
+        // (Support, Studio) and the plain layout values (Inherited, Plain, Kiosk).
+        configureDefaultContext(adminizer);
+        registerReportsContext(adminizer);
+        await adminizer.appManager.enable(new SystemContextApp());
+        await adminizer.appManager.enable(new SupportContextApp());
+        await adminizer.appManager.enable(new StudioContextApp());
+        await adminizer.appManager.enable(new VariantsContextApp());
 
 
 

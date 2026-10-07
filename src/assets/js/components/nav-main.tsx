@@ -15,6 +15,7 @@ import { type NavItem, SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import React, { useState, useRef, forwardRef } from 'react';
 import MaterialIcon from '@/components/material-icon.tsx';
+import { findActiveLink, menuLinks, normalizeUrl } from '@/lib/active-link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible.tsx';
 import { ChevronRight } from 'lucide-react';
 import {
@@ -79,11 +80,6 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
     const isRail = state === 'collapsed' && !isMobile;
     const sections = page.props.menuSections ?? {};
 
-    const normalizeUrl = (url: string) => {
-        const withoutQuery = url.split('?')[0];
-        return withoutQuery.replace(/\/$/, '');
-    };
-
     /**
      * Falls back to the icon of the section's first item that has one: in the
      * collapsed rail the icon is all that tells two sections apart, and configs
@@ -134,11 +130,10 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
         return init;
     });
 
-    const isActiveItem = (itemLink: string) => {
-        const currentUrl = normalizeUrl(page.url);
-        const normalizedItemLink = normalizeUrl(itemLink);
-        return currentUrl === normalizedItemLink || currentUrl.startsWith(`${normalizedItemLink}/`);
-    };
+    // Only the most specific matching link is active.
+    const activeLink = findActiveLink(menuLinks(items), page.url);
+
+    const isActiveItem = (itemLink: string) => activeLink !== null && normalizeUrl(itemLink) === activeLink;
 
     // Add ref to store the current state
     const openGroupsRef = useRef(openGroups);
@@ -166,7 +161,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
             <Collapsible
                 key={item.title}
                 asChild
-                defaultOpen={isActiveItem(item.link)}
+                defaultOpen={isActiveItem(item.link) || item.actions.some((action) => isActiveItem(action.link))}
                 className="group/collapsible"
             >
                 <SidebarMenuItem>

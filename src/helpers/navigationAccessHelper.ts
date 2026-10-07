@@ -3,11 +3,23 @@ import {Adminizer} from '../lib/Adminizer';
 import type {User} from '../models/User';
 import type {MenuItem} from './menuHelper';
 
+/**
+ * True for a link to a page of a layout context this user may not enter
+ * (`context` of a model or a route): the page would answer 403.
+ */
+export async function isBlockedLink(adminizer: Adminizer, user: User | undefined, link: unknown): Promise<boolean> {
+    // Partial Adminizer stand-ins (tests) may come without contexts.
+    return typeof link === 'string' && !!adminizer.contextHandler && await adminizer.contextHandler.isBlocked(link, user);
+}
+
 /** Drops the sub-items this user may not open, recursively. */
 export async function filterAccessibleHrefItems(adminizer: Adminizer, user: User, items: HrefConfig[]): Promise<HrefConfig[]> {
     const accessible: HrefConfig[] = [];
     for (const item of items) {
         if (item.accessRightsToken && !await adminizer.accessRightsHelper.checkPermission(item.accessRightsToken, user)) {
+            continue;
+        }
+        if (await isBlockedLink(adminizer, user, item.link)) {
             continue;
         }
         accessible.push({
@@ -44,6 +56,7 @@ export async function listAccessibleMenuItems(adminizer: Adminizer, user: User):
     const menu: MenuItem[] = [];
 
     for (const menuItem of adminizer.menuHelper.getMenuItems(user)) {
+        if (await isBlockedLink(adminizer, user, menuItem.link)) continue;
         const actions = await filterAccessibleHrefItems(adminizer, user, menuItem.actions ?? []);
         const tokens = actions.map((item) => item.accessRightsToken).filter(Boolean) as string[];
         if (menuItem.accessRightsToken) tokens.push(menuItem.accessRightsToken);

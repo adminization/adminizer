@@ -2,6 +2,7 @@ import {Adminizer} from "../lib/Adminizer";
 import { HrefConfig, NavbarSectionConfig } from "../interfaces/adminpanelConfig";
 import { MenuItem } from "./menuHelper";
 import { listAccessibleMenuItems } from "./navigationAccessHelper";
+import type { AdminContext } from "../lib/app-manager/ContextHandler";
 
 export class InertiaMenuHelper {
     private adminizer: Adminizer;
@@ -10,8 +11,11 @@ export class InertiaMenuHelper {
         this.adminizer = adminizer
     }
 
-    public async getMenuItems(req: ReqType): Promise<MenuItem[]> {
-        return (await listAccessibleMenuItems(this.adminizer, req.user))
+    public async getMenuItems(req: ReqType, context?: AdminContext): Promise<MenuItem[]> {
+        const items = context
+            ? await this.adminizer.contextHandler.listMenuItems(context, req.user)
+            : await listAccessibleMenuItems(this.adminizer, req.user);
+        return items
             .map((menuItem) => this.translateMenuItem(req, menuItem))
     }
 
@@ -37,8 +41,10 @@ export class InertiaMenuHelper {
      * Navbar section metadata keyed by the *translated* section name, so the UI
      * can look it up with the already-translated `section` of a menu item.
      */
-    public getSections(req: ReqType): Record<string, NavbarSectionConfig> {
-        const sections = this.adminizer.menuHelper.getSections();
+    public getSections(req: ReqType, context?: AdminContext): Record<string, NavbarSectionConfig> {
+        const sections = context
+            ? this.adminizer.contextHandler.getSections(context)
+            : this.adminizer.menuHelper.getSections();
         return Object.fromEntries(
             Object.entries(sections).map(([name, section]) => [req.i18n.__(name), section])
         );

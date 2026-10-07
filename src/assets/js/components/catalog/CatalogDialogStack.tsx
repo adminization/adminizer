@@ -154,14 +154,20 @@ const CatalogDialogStack: React.FC<CatalogDialogStackProps> = (
                 </DialogStackContent>
 
                 <DialogStackContent>
-                    <div className="h-full overflow-y-auto mt-5">
-                        <AddForm page={addProps}
-                                 catalog={true}
-                                 callback={addModel}
-                                 openNewWindowLabel={messages["Open in a new window"]}
-                                 visibleLable={messages["Visible"]}
-                        />
-                    </div>
+                    {/* The third step exists only for "model.link"/"component" (pick an existing record
+                        OR create a new one). For popupType === 'model' the add form is already on the
+                        second step; rendering it here as well put a second hidden <form> with the same
+                        field ids into the DOM. The wrapper stays so the stack step indexes do not shift. */}
+                    {PopupEvent === 'create' && popupType !== 'model' &&
+                        <div className="h-full overflow-y-auto mt-5">
+                            <AddForm page={addProps}
+                                     catalog={true}
+                                     callback={addModel}
+                                     openNewWindowLabel={messages["Open in a new window"]}
+                                     visibleLable={messages["Visible"]}
+                            />
+                        </div>
+                    }
                 </DialogStackContent>
             </DialogStackBody>
         </DialogStack>

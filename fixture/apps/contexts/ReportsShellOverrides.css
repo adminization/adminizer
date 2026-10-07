@@ -1,0 +1,79 @@
+/* Stylesheet of the Reports context (`layout.stylesheet`). */
+
+.reports-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 6px;
+}
+
+.reports-rail a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    opacity: 0.7;
+}
+
+.reports-rail a:hover,
+.reports-rail a.reports-rail-active {
+    opacity: 1;
+    background: var(--sidebar-accent);
+}
+
+/* The mobile sidebar is a sheet; the rail would only take the page's width. */
+@media (max-width: 767px) {
+    .reports-rail {
+        display: none;
+    }
+}
+
+.reports-caption {
+    padding: 0 8px;
+    font-size: 11px;
+    opacity: 0.6;
+}
+
+.reports-periods {
+    display: flex;
+    gap: 4px;
+    padding: 0 8px;
+}
+
+/* This stylesheet loads after the panel's, so `display` above would beat the
+   `group-data-[state=collapsed]:hidden` utility on the same element. */
+[data-state="collapsed"] .reports-periods {
+    display: none;
+}
+
+.reports-periods button {
+    flex: 1;
+    padding: 2px 0;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.reports-periods button.reports-period-active {
+    background: var(--sidebar-accent);
+    font-weight: 600;
+}
+
+.reports-banner {
+    padding: 4px 16px;
+    font-size: 12px;
+    text-align: center;
+    background: var(--sidebar-accent);
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+}
+
+.reports-tag {
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+}

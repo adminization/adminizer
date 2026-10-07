@@ -440,6 +440,13 @@ export interface ModelConfig {
         section?: string
     }
     /**
+     * Id of the layout context the model's pages (`/model/<name>/...`) belong
+     * to: they render in that context, and users who may not enter it get 403
+     * on every one of them, related-record dialogs included (404 when no such
+     * context is registered). Left out, the pages behave as before.
+     */
+    context?: string
+    /**
      * Model resource fields configuration
      * */
     fields?: FieldsModels

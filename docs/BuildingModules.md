@@ -99,6 +99,7 @@ await adminizer.appManager.enable(new MyApp());
 | `ctx.skills.uiMethod(method)` | Register a browser capability an agent may trigger through a `ui.method` frame. See [Admin Links & UI Methods](AiAssistant/AdminLinksAndUiMethods.md). |
 | `ctx.adminLink(link)` | Register a standalone admin page in the navigation and in agent link search. An optional `badge` (value or per-user resolver) shows a count next to it. |
 | `ctx.adminLinkTemplate(template)` | Register a parametrized page (e.g. `/admin/orders/:id/invoice`) the assistant may open. |
+| `ctx.context(context)` | Register a layout context: own URL prefix, navbar and, optionally, a layout — inherited with some parts overridden, or a custom one. Returns its scope; `page()` adds a route, a menu item and breadcrumbs in one call. See [Layout Contexts](Layout%20Contexts.md). |
 | `ctx.mediaManager(resource)` | Register an app-owned media manager through a factory that receives `AppRuntime`. |
 | `ctx.catalog(catalog)` | Register a catalog factory and its optional React template components. |
 | `ctx.listener(event, handler)` | Subscribe to Adminizer events. The handler receives `(payload, runtime)`. |
@@ -209,6 +210,8 @@ Supported policy types:
 | `{ type: "any-permission", tokens, mode?: "ui" | "api" }` | Require any token from a list. |
 
 Use `mode: "ui"` for Inertia pages and `mode: "api"` for JSON endpoints.
+
+`context: "<id>"` declares the layout context the route belongs to: the page renders in that context, and users who may not enter it get 403 (404 if no such context is registered). See [Layout Contexts](Layout%20Contexts.md#pages-declaring-their-context).
 
 ## Frontend Page Module
 
@@ -752,6 +755,7 @@ The fixture contains several current app-module examples:
 | `navigation` | `fixture/apps/navigation/*` | Runtime model, model access, catalog factory, catalog template components, sidebar links, `model:updated` listener. |
 | `media-manager` | `fixture/apps/media-manager/*` | Dynamic Sequelize models, app-owned storage implementation, scoped model access, manager registration, lifecycle cleanup. |
 | `quill-editor` | `fixture/apps/quill-editor/*` | App-owned WYSIWYG control, lazy component and stylesheet assets, and a dedicated ES module build. |
+| `context-system`, `context-support`, `context-studio` | `fixture/apps/contexts/*` | Layout contexts: inherited layout with overridden parts and own navbar, partially inherited layout, fully custom layout. See [Layout Contexts](Layout%20Contexts.md). |
 
 ## Field Controls
 

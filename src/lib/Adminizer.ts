@@ -50,6 +50,7 @@ import { validateAccessGraph } from "./access-graph/AccessGraphResolver";
 import { AppManager } from "./app-manager/AppManager";
 import { ControllerHandler } from "./app-manager/ControllerHandler";
 import { AssetHandler } from "./app-manager/AssetHandler";
+import { ContextHandler } from "./app-manager/ContextHandler";
 import { ConfigLayerHandler } from "./app-manager/ConfigLayerHandler";
 import { AccessRightsHandler } from "./access-rights/AccessRightsHandler";
 import { AiAssistantUiMethodHandler } from './ai-assistant/AiAssistantUiMethodHandler';
@@ -165,6 +166,7 @@ export class Adminizer {
     appManager: AppManager
     controllerHandler: ControllerHandler
     assetHandler: AssetHandler
+    contextHandler: ContextHandler
     configLayerHandler: ConfigLayerHandler
     accessRightsHandler: AccessRightsHandler
 
@@ -196,6 +198,7 @@ export class Adminizer {
 
         this.controllerHandler = new ControllerHandler(this);
         this.assetHandler = new AssetHandler(this);
+        this.contextHandler = new ContextHandler(this);
         this.configLayerHandler = new ConfigLayerHandler(this);
         this.appManager = new AppManager(this);
 

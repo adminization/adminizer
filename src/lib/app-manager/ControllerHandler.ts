@@ -16,6 +16,8 @@ interface ControllerRecord {
     method: AppControllerMethod;
     path: string;
     enabled: boolean;
+    /** Removes the route's layout context declaration. */
+    unassign?: () => void;
 }
 
 export class ControllerHandler {
@@ -37,6 +39,12 @@ export class ControllerHandler {
             path: fullPath,
             enabled: true,
         };
+        if (controller.context) {
+            record.unassign = this.adminizer.contextHandler.assign(controller.route, controller.context, {
+                owner: appName,
+                exact: true,
+            });
+        }
 
         const middleware = bindWithMiddlewares(
             this.adminizer,
@@ -102,6 +110,7 @@ export class ControllerHandler {
         }
 
         this.removeRoute(record.path, record.method);
+        record.unassign?.();
         this.controllers.delete(id);
         this.adminizer.emitter.emit("app:controller:unregistered", {
             appName: record.appName,

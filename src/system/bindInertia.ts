@@ -7,6 +7,8 @@ import { InertiaMenuHelper } from "../helpers/inertiaMenuHelper";
 import { getUiTranslations } from "../lib/ui-i18n/getUiTranslations";
 import { getAssetVersion } from "../helpers/assetVersionHelper";
 import { COMMON_UI_TRANSLATION_KEYS } from "../lib/ui-i18n/uiTranslationKeys";
+import type { AdminContext } from "../lib/app-manager/ContextHandler";
+import type { MenuItem } from "../helpers/menuHelper";
 
 export function bindInertia(adminizer: Adminizer) {
     const escapeHtmlAttribute = (value: string): string => value
@@ -153,7 +155,7 @@ export function bindInertia(adminizer: Adminizer) {
     );
 
 
-    adminizer.app.use(async (req: ReqType, _, next) => {
+    adminizer.app.use(async (req: ReqType, res, next) => {
         checkAuth(req, adminizer)
         const defaultLocale = typeof req.adminizer.config.translation !== "boolean"
             ? req.adminizer.config.translation.defaultLocale
@@ -166,10 +168,27 @@ export function bindInertia(adminizer: Adminizer) {
         })
         const menuHelper = new InertiaMenuHelper(adminizer)
 
-        // Contextual documentation of this page: metadata only, and null when
-        // the subsystem is off or the user may not read documentation.
-        // A broken implementation must never take the panel down with it.
-        const menu = req.user ? await menuHelper.getMenuItems(req) : null;
+        // The layout context of the request decides which menu and which
+        // layout the page gets; the default context reproduces the plain panel.
+        // Context, menu and switcher are computed once, and only when a page
+        // is rendered: API calls and partial reloads that skip them pay nothing.
+        let resolvedContext: Promise<{ context: AdminContext; contexts: AdminContext[] }> | undefined;
+        const resolveContext = () => resolvedContext ??= (async () => {
+            const context = await adminizer.contextHandler.resolve(req);
+            const contexts = req.user ? await adminizer.contextHandler.listAccessible(req.user) : [];
+            // Only page visits move the user between contexts: a rendered page
+            // asked for by the browser, never an asset or an API call.
+            const isPageVisit = req.headers["x-inertia"] !== undefined || (req.headers.accept ?? "").includes("text/html");
+            if (req.user && contexts.length > 1 && isPageVisit) adminizer.contextHandler.remember(req, res, context);
+            return {context, contexts};
+        })();
+        let resolvedMenu: Promise<MenuItem[] | null> | undefined;
+        const resolveMenu = () => resolvedMenu ??= (async () =>
+            req.user ? menuHelper.getMenuItems(req, (await resolveContext()).context) : null
+        )();
+        const contextProps = (context: AdminContext) =>
+            adminizer.contextHandler.toProps({...context, title: req.i18n.__(context.title)});
+
         const historyAccess = req.user && req.adminizer.config.history.enabled
             ? await req.adminizer.accessRightsHelper.checkPermission(
                 `history-${req.adminizer.config.history?.adapter ?? 'default'}`,
@@ -177,6 +196,9 @@ export function bindInertia(adminizer: Adminizer) {
             )
             : false;
 
+        // Contextual documentation of this page: metadata only, and null when
+        // the subsystem is off or the user may not read documentation.
+        // A broken implementation must never take the panel down with it.
         let docs = null;
         try {
             docs = req.user ? await adminizer.documentationHandler.forContextMeta(req.user, req.path) : null;
@@ -193,16 +215,21 @@ export function bindInertia(adminizer: Adminizer) {
                 locale,
                 common: commonMessages,
             },
-            menu,
-            menuSections: req.user ? menuHelper.getSections(req) : null,
+            menu: resolveMenu,
+            menuSections: async () => req.user ? menuHelper.getSections(req, (await resolveContext()).context) : null,
+            adminContext: async () => contextProps((await resolveContext()).context),
+            adminContexts: async () => (await resolveContext()).contexts
+                .filter((item) => item.switcher !== false)
+                .map(contextProps),
             // Auto breadcrumbs. A function prop is evaluated by the Inertia
             // adapter only when the key is rendered and only when the page did
             // not send `breadcrumbs` of its own — page props override shared
             // props before evaluation.
-            ...(menu && adminizer.config.navbar?.breadcrumbs === 'auto' ? {
+            ...(req.user && adminizer.config.navbar?.breadcrumbs === 'auto' ? {
                 breadcrumbs: async () => {
                     try {
-                        const crumbs = await adminizer.adminLinkHandler.locate(req.user, req.originalUrl || req.url, menu);
+                        const menu = await resolveMenu();
+                        const crumbs = await adminizer.adminLinkHandler.locate(req.user, req.originalUrl || req.url, menu ?? undefined);
                         return crumbs.map((crumb) => ({...crumb, title: req.i18n.__(crumb.title)}));
                     } catch (error) {
                         Adminizer.log.error(`bindInertia > breadcrumbs failed: ${error}`);
@@ -249,6 +276,10 @@ export function bindInertia(adminizer: Adminizer) {
 
         next();
     })
+
+    // Pages declared to belong to a layout context the user may not enter are
+    // blocked here, before any route; `req.user` is known by now.
+    adminizer.app.use(adminizer.contextHandler.guard());
 }
 
 function checkAuth(req: ReqType, adminizer: Adminizer) {

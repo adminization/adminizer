@@ -347,6 +347,9 @@ const models: AdminpanelConfig["models"] = {
     JsonSchema: {
         title: 'Json schema',
         model: 'jsonschema',
+        // Layout contexts demo: the pages of this model always render in the
+        // System context (fixture/apps/contexts), whatever the user came from.
+        context: 'system',
         navbar: {
             groupsAccessRights: ["admins"],
             section: 'Content'

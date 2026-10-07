@@ -45,6 +45,34 @@ export interface NavSection {
     order?: number;
 }
 
+/** A module of a context layout chain (`ContextHandler.resolveLayout`). */
+export interface AdminContextLayer {
+    /** URL of the ES module; its named exports are slot overrides. */
+    module: string;
+    /** `Layout`: the default export is the whole layout. */
+    default?: 'Layout';
+}
+
+/** A layout context as sent by the server (`ContextHandler.toProps`). */
+export interface AdminContextInfo {
+    id: string;
+    title: string;
+    icon: string | null;
+    /** Full URL prefix of the context, `routePrefix` included. */
+    prefix: string;
+    /** Where the switcher leads. */
+    link: string;
+    /**
+     * Override modules applied in order over the root: the stock shell or
+     * nothing at all. A module exporting `Layout` replaces the whole layout.
+     */
+    layout: {
+        root: 'stock' | 'none';
+        layers: AdminContextLayer[];
+        stylesheets: string[];
+    };
+}
+
 type FlashMessages = 'info' | 'error' | 'success' | string;
 
 export interface SharedData {
@@ -55,6 +83,10 @@ export interface SharedData {
      * each NavItem. Sections missing from the map render with defaults.
      */
     menuSections?: Record<string, NavSection> | null;
+    /** The layout context of the page; `menu` and the layout follow it. */
+    adminContext?: AdminContextInfo;
+    /** Contexts the user may switch to; a single entry means no switcher. */
+    adminContexts?: AdminContextInfo[];
     brand: string,
     logout: string
     logoutBtn: string

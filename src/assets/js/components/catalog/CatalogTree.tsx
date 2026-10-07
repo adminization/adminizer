@@ -543,7 +543,11 @@ const CatalogTree = () => {
                 _method: 'createItem'
             })
         } catch (e) {
-            console.log(e)
+            // The record itself is already saved by the add form; tell the user that adding it
+            // to the catalog failed instead of silently swallowing the error
+            console.error(e)
+            const response = (e as { response?: { data?: { error?: string } } })?.response;
+            toast.error(response?.data?.error ?? messages["Error: Invalid field data"])
         } finally {
             dialogRef.current?.close()
             reloadCatalog()

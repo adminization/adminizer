@@ -1,4 +1,4 @@
-import {listAccessibleMenuItems} from '../../helpers/navigationAccessHelper';
+import {isBlockedLink, listAccessibleMenuItems} from '../../helpers/navigationAccessHelper';
 import {matchesPathPattern} from '../../helpers/pathPattern';
 import {isModelHiddenInNavbar, type MenuItem} from '../../helpers/menuHelper';
 import type {MenuBadge} from '../../interfaces/adminpanelConfig';
@@ -108,6 +108,7 @@ export class AdminLinkHandler {
         for (const link of this.links.values()) {
             if (wanted && this.slug(link.type) !== wanted) continue;
             if (link.accessRightsToken && !await this.adminizer.accessRightsHelper.checkPermission(link.accessRightsToken, user)) continue;
+            if (await isBlockedLink(this.adminizer, user, link.link)) continue;
             accessible.push(link);
         }
         return accessible;
@@ -151,6 +152,7 @@ export class AdminLinkHandler {
         const push = async (template: ResolvedAdminLinkTemplate): Promise<void> => {
             if (DESTRUCTIVE_PATH.test(template.template)) return;
             if (template.accessRightsToken && !await this.adminizer.accessRightsHelper.checkPermission(template.accessRightsToken, user)) return;
+            if (await isBlockedLink(this.adminizer, user, template.template)) return;
             if (templates.some((existing) => existing.template === template.template || existing.id === template.id)) return;
             templates.push(template);
         };

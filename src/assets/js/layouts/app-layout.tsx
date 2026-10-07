@@ -1,10 +1,12 @@
-import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
 import {type BreadcrumbItem} from '@/types';
 import {memo, type ReactNode} from 'react';
-import {NotificationProvider} from '@/contexts/NotificationContext';
-import {AiAssistantProvider} from '@/contexts/AiAssistantContext';
-import {AiAssistantViewport} from '@/components/ai-assistant/AiAssistantViewport';
-import RelationDialogStackProvider from '@/components/relation/RelationDialogStack';
+import {AdminFrame} from '@/layouts/admin-frame';
+import {ContextLayoutHost} from '@/layouts/context-layout-host';
+import {registerShellComponents} from '@/shell-globals';
+
+// Custom context layouts are loaded by ContextLayoutHost, so the stock shell
+// parts they may reuse are published together with it.
+registerShellComponents();
 
 interface AppLayoutProps {
     children: ReactNode;
@@ -12,18 +14,13 @@ interface AppLayoutProps {
     className?: string;
 }
 
-const AppLayout = memo(({children, className, breadcrumbs, ...props}: AppLayoutProps) => {
+const AppLayout = memo(({children, className, breadcrumbs}: AppLayoutProps) => {
     return (
-        <NotificationProvider>
-            <AiAssistantProvider>
-                <RelationDialogStackProvider>
-                    <AppLayoutTemplate breadcrumbs={breadcrumbs} className={className} {...props}>
-                        {children}
-                    </AppLayoutTemplate>
-                    <AiAssistantViewport />
-                </RelationDialogStackProvider>
-            </AiAssistantProvider>
-        </NotificationProvider>
+        <AdminFrame>
+            <ContextLayoutHost breadcrumbs={breadcrumbs} className={className}>
+                {children}
+            </ContextLayoutHost>
+        </AdminFrame>
     )
 });
 

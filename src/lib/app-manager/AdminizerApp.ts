@@ -11,6 +11,7 @@ import type {AbstractAiModelService} from "../ai-assistant/AbstractAiModelServic
 import type {AiAssistantUiMethod} from '../ai-assistant/AiAssistantUiMethodHandler';
 import type {AdminLink, AdminLinkTemplate} from '../admin-links/AdminLinkHandler';
 import type {AiAssistantAgentSkill} from '../ai-assistant/AiAssistantAgentSkillHandler';
+import type {AdminContext, AdminContextScope} from './ContextHandler';
 
 export type AppDisposer = () => void | Promise<void>;
 export type AppEventName = string | symbol;
@@ -46,6 +47,12 @@ export interface AppController {
     method: AppControllerMethod;
     middleware: MiddlewareType;
     policies?: AppControllerPolicy[];
+    /**
+     * Id of the layout context the route belongs to: it renders in that
+     * context, and users who may not enter it get 403 (404 when no such
+     * context is registered). Left out, the route behaves as before.
+     */
+    context?: string;
 }
 
 export interface AppAsset {
@@ -239,6 +246,23 @@ export interface AppSkills {
 
 export interface AppAdminLinkResource extends AdminLink {}
 
+/**
+ * A layout context owned by an app. Unlike {@link AdminContext}, layout
+ * modules are given as app assets; they are served and disposed with the app.
+ */
+export interface AppContextResource extends Omit<AdminContext, "layout"> {
+    layout?: "inherit" | "stock" | "none" | "default" | "bare"
+        | { module: AppAsset; stylesheet?: AppAsset; base?: "inherit" | "stock" }
+        | { overrides: AppAsset; stylesheet?: AppAsset }
+        | { component: AppAsset; stylesheet?: AppAsset };
+}
+
+/**
+ * A context registered by an app. Pages may give their component as an app
+ * asset; pages and routes are removed together with the app.
+ */
+export type AppContextScope = AdminContextScope<AppAsset | string>;
+
 export interface AppAdminLinkTemplateResource extends AdminLinkTemplate {}
 
 /**
@@ -266,6 +290,11 @@ export interface AppSetupContext {
     adminLink(link: AppAdminLinkResource): void;
     /** Register a parametrized page (e.g. `/admin/orders/:id/invoice`) the assistant may open. */
     adminLinkTemplate(template: AppAdminLinkTemplateResource): void;
+    /**
+     * Register a layout context: own URL prefix, navbar and, optionally,
+     * layout. The returned scope adds pages to it.
+     */
+    context(context: AppContextResource): AppContextScope;
     listener(event: AppEventName, handler: AppEventHandler): void;
 }
 

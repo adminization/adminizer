@@ -487,6 +487,7 @@ module.exports = config;
                 groupsAccessRights: string[] // Groups that see the menu item; others get neither the item nor the model's link templates
                 section: string // Navbar section of the item
             }
+            context: string // Layout context the model's pages belong to: they always render in it, and users who may not enter it get 403 (see Layout Contexts.md)
             fields: {
                 [key: string]: {
                     title: string

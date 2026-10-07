@@ -13,6 +13,7 @@ import { isObject } from "./JsUtils";
 import { withAssetVersion } from "./assetVersionHelper";
 import { MediaManagerHandler } from "../lib/media-manager/MediaManagerHandler";
 import {Adminizer} from "../lib/Adminizer";
+import { isBlockedLink } from "./navigationAccessHelper";
 
 const missingControlWarnings = new Set<string>();
 
@@ -188,13 +189,22 @@ export default async function inertiaAddHelper(req: ReqType, modelResource: Mode
             options = initOptions
             value = initValue
             const rawRelatedModel = (field.model?.model || field.model?.collection) as string | undefined
+            // `model`/`collection` is the host ORM model name, not an Adminizer resource name:
+            // resolve it the same way FieldsHelper.loadAssoc does, otherwise a host model that
+            // shares its name with a system resource (group -> Group, user -> User) opens the wrong form
             relatedModel = rawRelatedModel
-                ? req.adminizer.modelHandler.resolveModelName(rawRelatedModel)
+                ? req.adminizer.modelHandler.resolveAssociationResource(rawRelatedModel, field.model?.resourceName)
                 : undefined
             if (relatedModel && req.user) {
                 canCreateRelated = await req.adminizer.accessRightsHelper.checkPermission(`create-${relatedModel}-model`, req.user)
             } else if (relatedModel && !req.adminizer.config.auth?.enable) {
                 canCreateRelated = true
+            }
+            // The create form of a model declared to belong to a layout context
+            // the user may not enter answers 403
+            if (canCreateRelated && relatedModel && await isBlockedLink(req.adminizer, req.user,
+                `${req.adminizer.config.routePrefix}/model/${relatedModel}/add`)) {
+                canCreateRelated = false
             }
         }
 

@@ -1,4 +1,5 @@
 import {Adminizer} from "../Adminizer";
+import type {AdminContextLayout} from "./ContextHandler";
 import {
     AbstractAdminizerApp,
     AppAsset,
@@ -16,6 +17,8 @@ import {
     AppSkills,
     AppAdminLinkResource,
     AppAdminLinkTemplateResource,
+    AppContextResource,
+    AppContextScope,
     AppMediaManagerResource,
     AppModelAccessResource,
     AppModelResource,
@@ -51,6 +54,8 @@ class RuntimeAppSetupContext implements AppSetupContext {
     private readonly pendingCatalogRegistrations: Array<() => Promise<void>> = [];
     private configLayerIndex = 0;
     private modelAccessIndex = 0;
+    /** Asset URLs of context page components, by asset id. */
+    private readonly pageComponents = new Map<string, string>();
 
     constructor(
         private adminizer: Adminizer,
@@ -204,6 +209,35 @@ class RuntimeAppSetupContext implements AppSetupContext {
         const resourceId = this.adminizer.adminLinkHandler.addTemplate(template, this.appName);
         this.disposers.push(() => {
             this.adminizer.adminLinkHandler.removeTemplate(resourceId, this.appName);
+        });
+    }
+
+    context(resource: AppContextResource): AppContextScope {
+        const source = resource.layout;
+        let layout: AdminContextLayout | undefined;
+        if (typeof source !== "object") {
+            layout = source;
+        } else {
+            const stylesheet = source.stylesheet ? this.asset(source.stylesheet) : undefined;
+            if ("component" in source) layout = {component: this.asset(source.component), stylesheet};
+            else if ("overrides" in source) layout = {overrides: this.asset(source.overrides), stylesheet};
+            else layout = {module: this.asset(source.module), stylesheet, base: source.base};
+        }
+        const {id} = this.adminizer.contextHandler.register({...resource, layout}, this.appName);
+        this.disposers.push(() => this.adminizer.contextHandler.unregister(id, this.appName));
+        // Pages go through this context: their routes and assets are the app's.
+        return this.adminizer.contextHandler.scope<AppAsset | string>(id, {
+            controller: (controller) => this.controller(controller),
+            component: (component) => {
+                if (typeof component === "string") return component;
+                // One asset however many pages, of however many contexts, render it.
+                let url = this.pageComponents.get(component.id);
+                if (!url) {
+                    url = this.asset(component);
+                    this.pageComponents.set(component.id, url);
+                }
+                return url;
+            },
         });
     }
 

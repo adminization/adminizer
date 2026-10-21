@@ -20,6 +20,7 @@ const config: AdminizerConfig = {
 |--------|-------------|
 | `routePrefix` | Base URL for the panel. Defaults to `/admin`. |
 | `favicon` | Custom favicon URL. Relative values are resolved from `routePrefix`; default is `<routePrefix>/files/favicon.png`. |
+| `bodyLimit` | Largest request body the panel accepts as JSON or urlencoded: bytes or a string such as `"20mb"`. Default `100kb`. Raise it only where whole files are posted as JSON; the parsers run before access policies, so it is also what an anonymous request may make the server read. |
 | `auth` | Authentication settings, for example `{ enable: true, captcha: true }`. |
 | `linkAssets` | Symlink static assets instead of copying them. |
 | `identifierField` | Default primary key for models (usually `id`). |

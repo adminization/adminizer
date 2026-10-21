@@ -97,6 +97,16 @@ export interface AdminpanelConfig {
      */
     favicon?: string
 
+    /**
+     * The largest request body the panel's JSON and urlencoded parsers accept:
+     * bytes or a `bytes` string such as `"20mb"`. A bigger body is refused with
+     * 413. Raise it for a project that posts whole files as JSON (a catalog
+     * import, say) — the parsers run before the access policies, so the limit is
+     * also what an anonymous request may make the server read.
+     * @default "100kb"
+     */
+    bodyLimit?: string | number
+
     /** prepare to impl dashboard*/
     dashboard?: boolean | DashboardConfig
     theme?: string

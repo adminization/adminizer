@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — configurable request body limit
+
+* **`bodyLimit` config option** — the JSON and urlencoded body parsers took body-parser's fixed
+  `100kb`, so a project could not post a file of a few megabytes as JSON (a catalog import ended in
+  a plain `500 Internal Server Error`). `bodyLimit` (bytes or `"20mb"`) sets it; left out, the
+  limit stays `100kb`. The parsers run before the access policies, hence no raised default.
+
 ## Unreleased — record-level access hardening
 
 Security fixes around `userAccessRelation` and the new `accessGraph`. Behaviour that changes for

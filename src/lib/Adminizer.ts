@@ -350,7 +350,7 @@ export class Adminizer {
         // TODO: 'hot reload' problem with deleting access right tokens
         this.menuHelper = new MenuHelper(this.config)
 
-        bindExpressUtils(this.app);
+        bindExpressUtils(this.app, { bodyLimit: this.config.bodyLimit });
         bindReqFunctions(this);
 
         // Bind assets

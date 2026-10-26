@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "node:path";
 import { Adminizer } from "../lib/Adminizer";
 import { InertiaMenuHelper } from "../helpers/inertiaMenuHelper";
+import { toPublicUser } from "../helpers/publicUserHelper";
 import { getUiTranslations } from "../lib/ui-i18n/getUiTranslations";
 import { getAssetVersion } from "../helpers/assetVersionHelper";
 import { COMMON_UI_TRANSLATION_KEYS } from "../lib/ui-i18n/uiTranslationKeys";
@@ -208,7 +209,7 @@ export function bindInertia(adminizer: Adminizer) {
 
         req.Inertia.shareProps({
             auth: {
-                user: req.session.userPretended ?? req.user
+                user: toPublicUser(req.session.userPretended ?? req.user)
             },
             routePrefix: req.adminizer.config.routePrefix,
             i18n: {

@@ -83,7 +83,7 @@ export class ListQueryBuilder {
         ]);
 
         return {
-            data: this.mapData(data),
+            data: this.mapData(data, params.fields),
             total,
             filtered,
             page: params.page,
@@ -746,9 +746,16 @@ export class ListQueryBuilder {
 
     /**
      * Map data for output
+     *
+     * Only the fields the caller asked for (params.fields) or, by default, the
+     * visible ones reach the rows: rows end up in the page HTML, and a field
+     * hidden with `visible: false` (the password hash of User) must not leak there.
      */
-    private mapData(data: any[]): any[] {
+    private mapData(data: any[], requestedFields?: string[]): any[] {
         const out: any[] = [];
+        const outputFields = requestedFields?.length
+            ? requestedFields.filter((key) => key in this.fields)
+            : Object.keys(this.fields).filter((key) => (this.fields[key].config as BaseFieldConfig)?.visible !== false);
 
         data.forEach((elem: any) => {
             const row: any = {};
@@ -758,7 +765,7 @@ export class ListQueryBuilder {
             row[pk] = elem[pk];
 
             // Process each field
-            Object.keys(this.fields).forEach((key: string) => {
+            outputFields.forEach((key: string) => {
                 const fieldConfig = this.fields[key].config as BaseFieldConfig;
                 const fieldModel = this.fields[key].model;
                 const modelConfig = this.fields[key].modelConfig;

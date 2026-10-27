@@ -26,6 +26,19 @@ export type Fields = {
 	[key: string]: Field;
 };
 
+/** Fields without the ones hidden with `visible: false`: those never leave the server. */
+export function getVisibleFields(fields: Fields): Fields {
+	return Object.entries(fields).reduce<Fields>((result, [key, field]) => {
+		const config = field?.config as BaseFieldConfig | undefined;
+		if (config?.visible === false) {
+			return result;
+		}
+
+		result[key] = field;
+		return result;
+	}, {});
+}
+
 export class FieldsHelper {
 	/**
 	 * Load list of records for all associations into `fields`

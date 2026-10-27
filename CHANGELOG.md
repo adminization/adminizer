@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — hidden list fields stay on the server
+
+* **Fields hidden with `visible: false` no longer leave the server.** The list page only dropped
+  them from the table header: its rows still carried every field of the model, so the password
+  hash of `User` sat in the HTML of `/model/User`. The rows of the list, the export and the public
+  feed now carry the visible fields only (the primary key is always there). Filters and sorting
+  can still use hidden fields.
+* **Breaking for exports:** hidden fields are no longer exported, neither by default nor when
+  asked for in `selectedFields`. Make a field visible in `list.fields` to export it.
+* The public feed honours `list.fields` on top of `fields`, as the list does.
+* `apiKey` is hidden in the default `User` list.
+
 ## Unreleased — configurable request body limit
 
 * **`bodyLimit` config option** — the JSON and urlencoded body parsers took body-parser's fixed

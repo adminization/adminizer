@@ -4,7 +4,7 @@ import {ListQueryBuilder} from "../lib/list-query-builder/ListQueryBuilder";
 import {ListQueryBuilderParams} from "../interfaces/listQueryBuilder";
 import {Adminizer} from "../lib/Adminizer";
 import {inertiaListHelper} from "../helpers/inertiaListHelper";
-import {Field, Fields} from "../helpers/fieldsHelper";
+import {Field, Fields, getVisibleFields} from "../helpers/fieldsHelper";
 import {BaseFieldConfig} from "../interfaces/adminpanelConfig";
 import {FilterCondition, Filter} from "../models/Filter";
 import {FilterColumn} from "../models/FilterColumn";
@@ -318,18 +318,6 @@ function applyCustomColumns(fields: Fields, columns: FilterColumn[]): Fields {
     }
 
     return result;
-}
-
-function getVisibleFields(fields: Fields): Fields {
-    return Object.entries(fields).reduce<Fields>((result, [key, field]) => {
-        const config = field?.config as BaseFieldConfig | undefined;
-        if (config?.visible === false) {
-            return result;
-        }
-
-        result[key] = field;
-        return result;
-    }, {});
 }
 
 /**

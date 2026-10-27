@@ -95,6 +95,7 @@ let adminpanelConfig: AdminpanelConfig = {
                     id: { visible: false },
                     email: { visible: false },
                     passwordHashed: { visible: false },
+                    apiKey: { visible: false },
                     timezone: { visible: false },
                     locale: { visible: false },
                     isDeleted: { visible: false },

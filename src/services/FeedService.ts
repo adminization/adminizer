@@ -3,7 +3,7 @@ import { Filter } from "../models/Filter";
 import { DataAccessor } from "../lib/DataAccessor";
 import { ListQueryBuilder } from "../lib/list-query-builder/ListQueryBuilder";
 import { ListQueryBuilderParams } from "../interfaces/listQueryBuilder";
-import { Field, Fields } from "../helpers/fieldsHelper";
+import { Field, Fields, getVisibleFields } from "../helpers/fieldsHelper";
 import { FilterService } from "../lib/filters/FilterService";
 import { User } from "../models/User";
 import { ControllerHelper } from "../helpers/controllerHelper";
@@ -84,13 +84,19 @@ export class FeedService {
             throw new Error(`Model '${modelName}' not found`);
         }
 
-        // Build fields directly from model attributes (bypass permission checks for public API)
-        const fields = this.buildFieldsFromAttributes(modelResource.model.attributes, modelResource.config?.fields || {}, adminizerInstance);
+        // Build fields directly from model attributes (bypass permission checks for public API).
+        // The list config goes on top, as in the list itself: it is where fields get hidden.
+        const listFieldsConfig = ControllerHelper.findActionConfig(modelResource, "list").fields || {};
+        const fieldsConfig = {...modelResource.config?.fields};
+        for (const [key, config] of Object.entries(listFieldsConfig)) {
+            fieldsConfig[key] = {...fieldsConfig[key], ...config};
+        }
+        const fields = this.buildFieldsFromAttributes(modelResource.model.attributes, fieldsConfig, adminizerInstance);
 
-        // Use saved columns if available
-        let displayFields = fields;
+        // Hidden fields (visible: false) never reach the feed; use saved columns if available
+        let displayFields = getVisibleFields(fields);
         if (filter.columns && filter.columns.length > 0) {
-            displayFields = this.applyCustomColumns(fields, filter.columns);
+            displayFields = this.applyCustomColumns(displayFields, filter.columns);
         }
 
         // Convert datetime conditions (same as exportData.ts)

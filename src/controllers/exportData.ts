@@ -3,7 +3,7 @@ import { DataAccessor } from "../lib/DataAccessor";
 import { ListQueryBuilder } from "../lib/list-query-builder/ListQueryBuilder";
 import { ListQueryBuilderParams } from "../interfaces/listQueryBuilder";
 import { Adminizer } from "../lib/Adminizer";
-import { Field, Fields } from "../helpers/fieldsHelper";
+import { Field, Fields, getVisibleFields } from "../helpers/fieldsHelper";
 import { FilterCondition } from "../models/Filter";
 import { FilterColumn } from "../models/FilterColumn";
 import { FilterService } from "../lib/filters/FilterService";
@@ -72,17 +72,16 @@ export default async function exportData(req: ReqType, res: ResType) {
         }
     }
 
-    // Determine fields to export
-    let displayFields = fields;
+    // Determine fields to export: hidden fields (visible: false) are never exported
+    const exportableFields = getVisibleFields(fields);
+    let displayFields = exportableFields;
 
     // Apply selected fields from request body
     if (bodySelectedFields && Array.isArray(bodySelectedFields) && bodySelectedFields.length > 0) {
-        const validFields = bodySelectedFields.filter(f => fields[f]);
+        const validFields = bodySelectedFields.filter(f => exportableFields[f]);
         if (validFields.length > 0) {
             displayFields = validFields.reduce((acc: Fields, key: string) => {
-                if (fields[key]) {
-                    acc[key] = fields[key];
-                }
+                acc[key] = exportableFields[key];
                 return acc;
             }, {} as Fields);
         }

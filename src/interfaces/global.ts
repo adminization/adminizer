@@ -56,7 +56,6 @@ declare global {
         flashMessages: Record<string, string[]>;
         xInertiaCurrentComponent: string | undefined;
         User: User
-        userPretended?: User
     }
     type FlashMessages = 'info' | 'error' | 'success' | string;
 

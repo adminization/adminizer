@@ -3,7 +3,8 @@ import passwordHash from "password-hash";
 import {inertiaLoginHelper} from "../helpers/inertiaAutHelper";
 import {Adminizer} from "../lib/Adminizer";
 import {signUser} from "../lib/helper/jwt";
-import {serialize} from "cookie";
+import {clearPretendedUserId, setPretendedUserId} from "../lib/helper/pretend";
+import {parse, serialize} from "cookie";
 import {User} from "../models/User";
 
 
@@ -28,23 +29,23 @@ export default async function login(req: ReqType, res: ResType) {
             }
 
             if (req.body.pretend) {
-                if (!user) {
-                    return res.sendStatus(404);
-                }
-                if (!req.user.isAdministrator) {
+                // Checked before the lookup result, so a non-administrator cannot probe logins.
+                // While pretending, req.user is the pretended user: pretending further
+                // is only possible if that user is an administrator too.
+                const authToken = parse(req.headers.cookie || '').adminizer_jwt;
+                if (!authToken || !req.user || !req.user.isAdministrator) {
                     return res.sendStatus(403);
                 }
-                req.session.userPretended = user;
-                return req.session.save((err) => {
-                    if (err) {
-                        return res.status(500).send({ error: 'Session save failed' });
-                    }
-                    // Force full page reload after pretend
-                    if (req.headers['x-inertia']) {
-                        return res.writeHead(409, { 'x-inertia-location': `${req.adminizer.config.routePrefix}/` }).end();
-                    }
-                    return res.redirect(`${req.adminizer.config.routePrefix}/`);
-                });
+                if (!user || user.id === undefined) {
+                    return res.sendStatus(404);
+                }
+                // Marked on the server against this token; see lib/helper/pretend.
+                setPretendedUserId(authToken, user.id);
+                // Force full page reload after pretend
+                if (req.headers['x-inertia']) {
+                    return res.writeHead(409, { 'x-inertia-location': `${req.adminizer.config.routePrefix}/` }).end();
+                }
+                return res.redirect(`${req.adminizer.config.routePrefix}/`);
             }
 
             // Verify CAPTCHA solution if enabled
@@ -118,8 +119,8 @@ export default async function login(req: ReqType, res: ResType) {
         }
 
     } else if (req.originalUrl.indexOf("logout") >= 0) {
-        if (req.session.userPretended && req.session.userPretended.id && req.user && req.user.id) {
-            delete (req.session.userPretended);
+        // Logout while pretending only drops the mark: back to the administrator.
+        if (clearPretendedUserId(parse(req.headers.cookie || '').adminizer_jwt)) {
 
             // Force full page reload after unpretend
             if (req.headers['x-inertia']) {

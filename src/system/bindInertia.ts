@@ -209,7 +209,7 @@ export function bindInertia(adminizer: Adminizer) {
 
         req.Inertia.shareProps({
             auth: {
-                user: toPublicUser(req.session.userPretended ?? req.user)
+                user: toPublicUser(req.user)
             },
             routePrefix: req.adminizer.config.routePrefix,
             i18n: {

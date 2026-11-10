@@ -2,6 +2,7 @@ import {Adminizer} from "../lib/Adminizer";
 import {I18n} from "../lib/I18n";
 import {parse} from "cookie";
 import {verifyUser} from "../lib/helper/jwt";
+import {getPretendedUserId} from "../lib/helper/pretend";
 
 const ADMINIZER_REQUEST_DEPRECATION_MESSAGE =
     "req.adminizer is deprecated and will no longer be available starting with Adminizer v6. Use req.runtime instead.";
@@ -85,12 +86,20 @@ export default function bindReqFunctions(adminizer: Adminizer) {
             const user = verifyUser(token, adminizer.jwtSecret);
             if (user) {
                 // Load user with groups (Sequelize adapter auto-populates associations in _findOne)
-                req.user = await adminizer.modelHandler.internal("auth").get("User").findOne({where: {id: user.id}});
-            }
-        }
+                const userModel = adminizer.modelHandler.internal("auth").get("User");
+                req.user = await userModel.findOne({where: {id: user.id}});
 
-        if (req.session.userPretended) {
-            req.user = req.session.userPretended;
+                // "Pretend to be a user": this token may be marked as acting as another user.
+                // Both users are read from the database on every request, so the mark stops
+                // working as soon as the administrator loses the flag or the user is removed.
+                const pretendedUserId = getPretendedUserId(token);
+                if (pretendedUserId !== undefined && req.user?.isAdministrator) {
+                    const pretended = await userModel.findOne({where: {id: pretendedUserId}});
+                    if (pretended) {
+                        req.user = pretended;
+                    }
+                }
+            }
         }
 
         if (typeof adminizer.config.translation !== "boolean" && req.i18n?.setLocale) {

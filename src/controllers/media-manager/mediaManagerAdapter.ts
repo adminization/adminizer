@@ -2,6 +2,7 @@ import {AbstractMediaManager, MediaManagerItem} from "../../lib/media-manager/Ab
 import {randomFileName} from "../../lib/media-manager/helpers/MediaManagerHelper";
 import {MediaManagerConfig} from "../../interfaces/adminpanelConfig";
 import fs from "fs";
+import path from "node:path";
 import multer from 'multer';
 
 export class MediaManagerAdapter {
@@ -136,7 +137,7 @@ export class MediaManagerAdapter {
     }
 
     private checkDirectory(): string {
-        const outputDir = `${process.cwd()}/${this.manager.fileStoragePath}/${this.manager.urlPathPrefix}`;
+        const outputDir = path.resolve(this.manager.fileStoragePath, this.manager.urlPathPrefix);
         if (!fs.existsSync(outputDir)) {
             fs.mkdirSync(outputDir, {recursive: true});
         }

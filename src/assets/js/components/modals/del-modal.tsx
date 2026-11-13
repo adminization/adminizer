@@ -59,7 +59,7 @@ const DeleteModal = forwardRef<HTMLButtonElement, DeleteModalProps>((
                     <DialogClose asChild>
                         {isLink ? (
                             <Button variant="destructive" asChild>
-                                <Link href={link ?? '#'}>
+                                <Link href={link ?? '#'} method="post" as="button">
                                     {delModal.yes}
                                 </Link>
                             </Button>

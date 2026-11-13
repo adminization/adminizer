@@ -5,6 +5,9 @@ import {DataAccessor} from "../lib/DataAccessor";
 import {Adminizer} from "../lib/Adminizer";
 
 export default async function remove(req: ReqType, res: ResType) {
+    if (req.method !== "POST" && req.method !== "DELETE") {
+        return res.set("Allow", "POST, DELETE").sendStatus(405);
+    }
     // Checking id of the record
     if (!req.params.id) {
         Adminizer.log.error(new Error('Admin panel: No id for record provided'));

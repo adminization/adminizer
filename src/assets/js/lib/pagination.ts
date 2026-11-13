@@ -25,7 +25,7 @@ export function generatePagination(
 ): PaginationResult {
 
     const lastPage = Math.ceil(recordsTotal / count);
-    const from = (currentPage - 1) * count + 1;
+    const from = recordsTotal === 0 ? 0 : (currentPage - 1) * count + 1;
     const to = Math.min(currentPage * count, recordsTotal);
 
     const links: PaginationLink[] = [];
@@ -64,7 +64,7 @@ export function generatePagination(
         current_page: currentPage,
         last_page: lastPage,
         next_page_url: currentPage < lastPage ? true : null,
-        prev_page_url: currentPage > 1 ? true : null,
+        prev_page_url: recordsTotal > 0 && currentPage > 1 ? true : null,
         from,
         to,
         links,

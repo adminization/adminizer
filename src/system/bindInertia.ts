@@ -222,6 +222,11 @@ export function bindInertia(adminizer: Adminizer) {
             adminContexts: async () => (await resolveContext()).contexts
                 .filter((item) => item.switcher !== false)
                 .map(contextProps),
+            // Extra items of the user menu (config.userMenu + the context's userMenu).
+            userMenu: async () => req.user
+                ? (await adminizer.contextHandler.listUserMenuItems((await resolveContext()).context, req.user))
+                    .map((item) => ({id: item.id, title: req.i18n.__(item.title), link: item.link, type: item.type, icon: item.icon ?? null}))
+                : [],
             // Auto breadcrumbs. A function prop is evaluated by the Inertia
             // adapter only when the key is rendered and only when the page did
             // not send `breadcrumbs` of its own — page props override shared

@@ -75,6 +75,14 @@ export interface AdminContextInfo {
 
 type FlashMessages = 'info' | 'error' | 'success' | string;
 
+export interface UserMenuItem {
+    id: string;
+    title: string;
+    link: string;
+    type: 'blank' | 'self';
+    icon?: string | null;
+}
+
 export interface SharedData {
     name: string;
     menu: NavItem[];
@@ -90,6 +98,8 @@ export interface SharedData {
     brand: string,
     logout: string
     logoutBtn: string
+    /** Extra items of the user menu, above «Log out» (config.userMenu + the context's userMenu). */
+    userMenu?: UserMenuItem[];
     flash: Record<FlashMessages, string>;
     auth: Auth;
     notifications: boolean;

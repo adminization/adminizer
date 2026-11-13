@@ -71,6 +71,11 @@ export interface AdminContext {
      */
     navbar?: "inherit" | AdminContextNavbar;
     /**
+     * Items of the user menu (above «Log out»), after the global
+     * `config.userMenu`. Left out, a context shows the default context's.
+     */
+    userMenu?: HrefConfig[];
+    /**
      * Users lacking the token neither see the context in the switcher nor get
      * its shell, and may not open the pages declared to belong to it.
      */
@@ -80,7 +85,7 @@ export interface AdminContext {
 }
 
 /** What may be changed about the built-in context mounted at `routePrefix`. */
-export type DefaultAdminContextOptions = Partial<Pick<AdminContext, "title" | "icon" | "layout" | "navbar" | "switcher" | "home">>;
+export type DefaultAdminContextOptions = Partial<Pick<AdminContext, "title" | "icon" | "layout" | "navbar" | "switcher" | "home" | "userMenu">>;
 
 /** A page of a context: a route under its prefix, a menu item and breadcrumbs in one call. */
 export interface AdminContextPage<Component = string> {
@@ -405,6 +410,16 @@ export class ContextHandler {
             });
         }
         return menu;
+    }
+
+    /**
+     * The untranslated user-menu items of a context for this user: the global
+     * `config.userMenu`, then the context's own (the default context's when it
+     * has none), without the ones the user may not open.
+     */
+    async listUserMenuItems(context: AdminContext, user: User): Promise<HrefConfig[]> {
+        const own = context.userMenu ?? (context.id === DEFAULT_ADMIN_CONTEXT_ID ? [] : this.getDefault().userMenu ?? []);
+        return filterAccessibleHrefItems(this.adminizer, user, [...(this.adminizer.config.userMenu ?? []), ...own]);
     }
 
     getSections(context: AdminContext): Record<string, NavbarSectionConfig> {

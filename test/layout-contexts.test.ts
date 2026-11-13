@@ -286,6 +286,36 @@ describe("layout contexts: navbar", () => {
     });
 });
 
+describe("layout contexts: user menu", () => {
+    const item = (id: string, extra: Record<string, unknown> = {}) => ({id, title: id, link: `/admin/${id}`, type: "self" as const, ...extra});
+
+    it("puts the global items first, then the context's own or the default context's", async () => {
+        const adminizer = createAdminizer();
+        const {contextHandler} = adminizer;
+        (adminizer.config as any).userMenu = [item("profile")];
+        contextHandler.configureDefault({userMenu: [item("settings")]});
+        contextHandler.register({id: "a", title: "A", prefix: "/a"});
+        contextHandler.register({id: "b", title: "B", prefix: "/b", userMenu: [item("b-help")]});
+        const ids = async (id: string) => (await contextHandler.listUserMenuItems(contextHandler.get(id)!, userWith())).map((i) => i.id);
+        expect(await ids("default")).toEqual(["profile", "settings"]);
+        expect(await ids("a")).toEqual(["profile", "settings"]);
+        expect(await ids("b")).toEqual(["profile", "b-help"]);
+    });
+
+    it("hides items the user lacks the token for", async () => {
+        const {contextHandler} = createAdminizer();
+        contextHandler.configureDefault({userMenu: [item("open"), item("secret", {accessRightsToken: "secret"})]});
+        const ids = async (user: TestUser) => (await contextHandler.listUserMenuItems(contextHandler.getDefault(), user)).map((i) => i.id);
+        expect(await ids(userWith())).toEqual(["open"]);
+        expect(await ids(userWith("secret"))).toEqual(["open", "secret"]);
+    });
+
+    it("is empty when nothing is configured", async () => {
+        const {contextHandler} = createAdminizer();
+        expect(await contextHandler.listUserMenuItems(contextHandler.getDefault(), userWith())).toEqual([]);
+    });
+});
+
 describe("layout contexts: pages of a context", () => {
     function setup(context: Partial<AdminContext> = {}) {
         const adminizer = createAdminizer();

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — items of the user menu
+
+* **`userMenu` config option and context option** — links drawn in the user menu (the dropdown
+  under the user in the sidebar), above «Log out»: settings, profile, help. `config.userMenu`
+  shows in every layout context; a context adds its own through `userMenu` of the context
+  (`contextHandler.configureDefault({userMenu})` for the default one), a context without its own
+  shows the default context's. Items are `HrefConfig`: titles are translated, `accessRightsToken`
+  and links to contexts the user may not enter hide an item. Reaches the browser as the shared
+  prop `userMenu`; `ContextHandler.listUserMenuItems(context, user)` lists them on the server.
+* The Russian translation gets «Log out».
+
 ## Unreleased — hidden list fields stay on the server
 
 * **Fields hidden with `visible: false` no longer leave the server.** The list page only dropped

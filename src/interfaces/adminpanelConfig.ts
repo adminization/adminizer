@@ -173,6 +173,13 @@ export interface AdminpanelConfig {
         link: boolean | string | HrefConfig
     }
     /**
+     * Extra items of the user menu (the dropdown under the user in the
+     * sidebar), drawn above «Log out» in every layout context. A context adds
+     * its own through `userMenu` of the context. Titles are translated;
+     * `accessRightsToken` hides an item from users lacking it.
+     */
+    userMenu?: HrefConfig[]
+    /**
      * Left-side navigation bar
      * */
     navbar?: {

@@ -5,6 +5,7 @@ import {Adminizer} from "../lib/Adminizer";
 import {signUser} from "../lib/helper/jwt";
 import {serialize} from "cookie";
 import {User} from "../models/User";
+import {authCookieOptions} from "../helpers/authCookieHelper";
 
 
 export default async function login(req: ReqType, res: ResType) {
@@ -80,9 +81,7 @@ export default async function login(req: ReqType, res: ResType) {
                         isAdministrator: user.isAdministrator,
                     }, req.adminizer.jwtSecret);
                     res.setHeader('Set-Cookie', serialize('adminizer_jwt', token, {
-                        httpOnly: true,
-                        sameSite: 'lax',
-                        path: '/',
+                        ...authCookieOptions(req),
                         maxAge: 60 * 60 * 24 * 7 * 2,
                     }));
 
@@ -129,9 +128,7 @@ export default async function login(req: ReqType, res: ResType) {
         }
         req.user = undefined;
         res.setHeader('Set-Cookie', serialize('adminizer_jwt', '', {
-            httpOnly: true,
-            sameSite: 'lax',
-            path: '/',
+            ...authCookieOptions(req),
             expires: new Date(0),
         }));
 

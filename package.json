@@ -2,9 +2,12 @@
 	"name": "adminizer",
 	"type": "module",
 	"version": "5.1.0",
-	"main": "index.js",
+	"main": "dist/index.js",
 	"exports": {
-		".": "./index.js",
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
 		"./lib/DataAccessor": "./dist/lib/DataAccessor.js",
 		"./adminizer-module": "./adminizer-module.d.ts"
 	},
@@ -182,5 +185,6 @@
 			"react": "$react",
 			"react-dom": "$react-dom"
 		}
-	}
+	},
+	"types": "dist/index.d.ts"
 }

@@ -101,7 +101,7 @@ const HistoryList: FC<HistoryListProps> = ({ modelName, modelId, handleWatchHist
                                         {new Date(item.createdAt).toLocaleString()}
                                     </TableCell>
                                     <TableCell className="p-2 self-start pt-2.5 capitalize">
-                                        {item.action}
+                                        {t(item.action)}
                                     </TableCell>
                                     <TableCell className="p-2 self-start pt-2.5 max-w-[250px] whitespace-break-spaces">
                                         <div className="max-w-[500px] whitespace-break-spaces font-medium text-chart-3">

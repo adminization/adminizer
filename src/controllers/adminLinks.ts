@@ -6,5 +6,5 @@
  */
 export async function searchAdminLinks(req: ReqType, res: ResType) {
     const query = typeof req.query.q === 'string' ? req.query.q : '';
-    return res.json({results: await req.adminizer.adminLinkHandler.search(req.user, query)});
+    return res.json({results: await req.adminizer.adminLinkHandler.search(req.user, query, key => req.i18n.__(key))});
 }

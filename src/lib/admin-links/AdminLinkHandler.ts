@@ -71,6 +71,8 @@ export interface AdminBreadcrumb {
 
 /** Segments no template may point at: opening one mutates data. */
 const DESTRUCTIVE_PATH = /\/model\/[^/]+\/remove(\/|$)/i;
+type Translate = (key: string) => string;
+const untranslated: Translate = key => key;
 
 /** Server-side registry of standalone admin pages contributed by applications. */
 export class AdminLinkHandler {
@@ -145,16 +147,22 @@ export class AdminLinkHandler {
      * items, templates registered by apps and any navigation link that carries
      * placeholders of its own.
      */
-    async listTemplates(user: User): Promise<ResolvedAdminLinkTemplate[]> {
+    async listTemplates(user: User, translate: Translate = untranslated): Promise<ResolvedAdminLinkTemplate[]> {
         const templates: ResolvedAdminLinkTemplate[] = [];
         const push = async (template: ResolvedAdminLinkTemplate): Promise<void> => {
             if (DESTRUCTIVE_PATH.test(template.template)) return;
             if (template.accessRightsToken && !await this.adminizer.accessRightsHelper.checkPermission(template.accessRightsToken, user)) return;
             if (templates.some((existing) => existing.template === template.template || existing.id === template.id)) return;
-            templates.push(template);
+            templates.push({
+                ...template,
+                title: translate(template.title),
+                section: template.section ? translate(template.section) : undefined,
+                description: template.description ? translate(template.description) : undefined,
+                params: template.params.map(param => ({...param, description: param.description ? translate(param.description) : undefined})),
+            });
         };
 
-        for (const template of this.builtinTemplates(user)) await push(template);
+        for (const template of this.builtinTemplates(user, translate)) await push(template);
         for (const template of this.templates.values()) await push(template);
         return templates;
     }
@@ -179,7 +187,7 @@ export class AdminLinkHandler {
      * Parametrized pages are returned as templates, so a record page is
      * reachable even though its URL only exists once the id is known.
      */
-    async search(user: User, query = ''): Promise<AdminLinkSearchResult[]> {
+    async search(user: User, query = '', translate: Translate = untranslated): Promise<AdminLinkSearchResult[]> {
         const needle = this.slug(query);
         const result: AdminLinkSearchResult[] = [];
         const matches = (...values: Array<string | undefined>): boolean =>
@@ -188,8 +196,8 @@ export class AdminLinkHandler {
         const add = (item: any, section?: string): void => {
             if (!item?.link || !item?.title) return;
             const link: AdminLinkSearchResult = {
-                id: String(item.id || item.title), title: String(item.title), link: String(item.link),
-                section: item.section || section,
+                id: String(item.id || item.title), title: translate(String(item.title)), link: String(item.link),
+                section: item.section || section ? translate(item.section || section) : undefined,
             };
             // A link with placeholders is surfaced as a template instead.
             if (!/:[A-Za-z0-9_]+/.test(link.link!) && matches(link.title, link.id, link.section)) result.push(link);
@@ -198,7 +206,7 @@ export class AdminLinkHandler {
 
         for (const item of await listAccessibleMenuItems(this.adminizer, user)) add(item, item.section);
 
-        for (const template of await this.listTemplates(user)) {
+        for (const template of await this.listTemplates(user, translate)) {
             if (!matches(template.title, template.id, template.section, template.description, template.template)) continue;
             result.push({
                 id: template.id,
@@ -274,7 +282,7 @@ export class AdminLinkHandler {
     }
 
     /** Templates derived from the current configuration, catalogs and navigation. */
-    private builtinTemplates(user: User): ResolvedAdminLinkTemplate[] {
+    private builtinTemplates(user: User, translate: Translate = untranslated): ResolvedAdminLinkTemplate[] {
         const prefix = (this.adminizer.config.routePrefix || '').replace(/\/+$/, '');
         const templates: ResolvedAdminLinkTemplate[] = [];
         const builtin = (
@@ -296,26 +304,26 @@ export class AdminLinkHandler {
         ];
 
         for (const [model, config] of Object.entries(this.adminizer.config.models ?? {})) {
-            const title = typeof config === 'object' && config?.title ? config.title : model;
+            const title = translate(typeof config === 'object' && config?.title ? config.title : model);
             const section = typeof config === 'object' ? config?.navbar?.section : undefined;
             builtin(
-                `model-${model}-edit`, `${title}: open record`,
+                `model-${model}-edit`, `${title}: ${translate('open record')}`,
                 `${prefix}/model/${model}/edit/:id`, `update-${model}-model`,
-                `Open the edit page of a single ${title} record by its id.`, section, recordId,
+                translate('Open the edit page of a single {model} record by its id.').replace('{model}', title), section, recordId,
             );
             builtin(
-                `model-${model}-add`, `${title}: create record`,
+                `model-${model}-add`, `${title}: ${translate('create record')}`,
                 `${prefix}/model/${model}/add`, `create-${model}-model`,
-                `Open the create form of ${title}.`, section,
+                translate('Open the create form of {model}.').replace('{model}', title), section,
             );
         }
 
         for (const catalog of this.adminizer.catalogHandler.getAll()) {
             if (!catalog?.slug) continue;
             builtin(
-                `catalog-${catalog.slug}-item`, `${catalog.name || catalog.slug}: open item`,
+                `catalog-${catalog.slug}-item`, `${translate(catalog.name || catalog.slug)}: ${translate('open item')}`,
                 `${prefix}/catalog/${catalog.slug}/:id`, `catalog-${catalog.slug}`,
-                `Open a single item of the ${catalog.name || catalog.slug} catalog by its id.`,
+                translate('Open a single item of the {catalog} catalog by its id.').replace('{catalog}', translate(catalog.name || catalog.slug)),
                 undefined, recordId,
             );
         }

@@ -122,8 +122,8 @@ export default async function inertiaAddHelper(req: ReqType, modelResource: Mode
         //@ts-ignore TODO: fix model validations
         const isIn = typeof fieldConfig.isIn === 'object' ? fieldConfig.isIn : (field.model && typeof { ...field.model.validations }.isIn === 'object' ? { ...field.model.validations }.isIn : [])
 
-        let label = fieldConfig.title ?? ''
-        let tooltip = fieldConfig.tooltip ?? ''
+        let label = req.i18n.__(fieldConfig.title ?? '')
+        let tooltip = fieldConfig.tooltip ? req.i18n.__(fieldConfig.tooltip) : ''
         let name = key
         let fieldType: PropsFieldType = 'text'
         let disabled = fieldConfig.disabled ?? false

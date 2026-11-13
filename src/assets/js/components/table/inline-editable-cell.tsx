@@ -5,6 +5,7 @@ import { simpleSanitizeHtml } from '@/lib/utils';
 import { adminApi } from '@/lib/admin-api';
 import { toast } from 'sonner';
 import { BaseFieldConfig } from '../../../../interfaces/adminpanelConfig';
+import { useI18n } from '@/hooks/use-i18n';
 
 interface InlineEditableCellProps {
     value: any;
@@ -27,6 +28,7 @@ export function InlineEditableCell({
     hasDisplayModifier,
     onUpdateRecord
 }: InlineEditableCellProps) {
+    const { t } = useI18n();
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState(value);
     const [isLoading, setIsLoading] = useState(false);
@@ -157,7 +159,7 @@ export function InlineEditableCell({
             <div
                 className="text-center max-w-[300px] overflow-hidden text-ellipsis cursor-pointer hover:bg-muted/50 rounded transition-colors"
                 onDoubleClick={handleDoubleClick}
-                title="Double-click to edit"
+                title={t('Double-click to edit')}
             >
                 {value ? '✓' : '✗'}
             </div>
@@ -197,7 +199,7 @@ export function InlineEditableCell({
         <div
             className="text-center max-w-[300px] overflow-hidden text-ellipsis cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 transition-colors"
             onDoubleClick={handleDoubleClick}
-            title="Double-click to edit"
+            title={t('Double-click to edit')}
             dangerouslySetInnerHTML={{ __html: cleanHtml }}
         />
     );

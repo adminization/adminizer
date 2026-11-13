@@ -170,7 +170,10 @@ const ListTable = () => {
                             <div
                                 className="grid grid-cols-2 md:grid-cols-1 gap-4 items-center justify-items-center md:justify-items-normal">
                                 <p className="text-sm text-foreground/70">
-                                    Show {pagination.from} - {pagination.to} of {pagination.total}
+                                    {t('Showing {from} - {to} of {total}')
+                                        .replace('{from}', String(pagination.from))
+                                        .replace('{to}', String(pagination.to))
+                                        .replace('{total}', String(pagination.total))}
                                 </p>
                                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
                                     {renderColumnVisibilityControl({display: 'icon', side: 'top'})}

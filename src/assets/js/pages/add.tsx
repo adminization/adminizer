@@ -31,6 +31,7 @@ export interface AddProps {
     postLink: string,
     [key: string]: unknown;
     model: string
+    recordId?: string | number
 }
 const breadcrumbs: BreadcrumbItem[] = [];
 

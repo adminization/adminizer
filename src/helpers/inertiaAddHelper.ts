@@ -69,7 +69,8 @@ interface FieldProps extends Record<string | number | symbol, unknown> {
         title: string,
     },
     postLink: string,
-    model: string
+    model: string,
+    recordId?: string
 }
 
 /**
@@ -82,6 +83,9 @@ export default async function inertiaAddHelper(req: ReqType, modelResource: Mode
     const actionType = 'add';
     // `record` drives the edit/add mode of the form, `values` only drives the field values
     const values = record ?? formValues;
+    const identifierField = modelResource.config.identifierField || req.adminizer.config.identifierField || 'id';
+    // History identity must survive hiding the primary-key field in a form.
+    const recordId = record?.[identifierField] ?? (record ? req.params?.id : undefined);
     let props: FieldProps = {
         edit: !!record,
         view: view,
@@ -99,7 +103,8 @@ export default async function inertiaAddHelper(req: ReqType, modelResource: Mode
         btnHistory: {
             title: req.i18n.__('History'),
         },
-        postLink: record ? `${modelResource.uri}/edit/${record.id}` : `${modelResource.uri}/add`,
+        postLink: record ? `${modelResource.uri}/edit/${recordId}` : `${modelResource.uri}/add`,
+        recordId: recordId == null ? undefined : String(recordId),
         model: modelResource.name.toLocaleLowerCase()
     }
     props.actions = await inertiaActionsHelper(actionType, modelResource, req)

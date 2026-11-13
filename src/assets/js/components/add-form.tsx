@@ -336,7 +336,7 @@ const AddForm: FC<{
                     {(history && (edit || view)) && <HistoryDialogStack
                         dialogRef={dialogRef}
                         modelName={model}
-                        modelId={fields.find(e => e.name === 'id')?.value}
+                        modelId={page.props.recordId ?? fields.find(e => e.name === 'id')?.value}
                         callback={(data) => {
                             for (const key of Object.keys(data)) {
                                 setData(key, data[key]);

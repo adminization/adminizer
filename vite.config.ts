@@ -57,6 +57,8 @@ export default defineConfig({
         jsx: 'automatic',
     },
     resolve: {
+        // Linked host apps may use another React major; bundle the panel with one instance.
+        dedupe: ['react', 'react-dom'],
         alias: {
             '@': path.resolve(import.meta.dirname, './src/assets/js'),
         },
